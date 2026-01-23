@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace NetEdf.StoreTypes;
 
 // https://habr.com/ru/articles/350796/
@@ -53,13 +55,18 @@ public static class VarInt
     public const int ErrBufOverflow = -1;
     public const int ErrBufTooSmall = -1;
 
-    public static int GetEncSize(byte x) => GetEncSize((ulong)x);
-    public static int GetEncSize(int x) => GetEncSize((ulong)EncodeZigZag32(x));
-    public static int GetEncSize(long x) => GetEncSize((ulong)EncodeZigZag64(x));
-    public static int GetEncSize(ushort x) => GetEncSize((ulong)x);
-    public static int GetEncSize(uint x) => GetEncSize((ulong)x);
+    public static int GetEncSize(sbyte x) => GetEncSize(EncodeZigZag16((short)x));
+    public static int GetEncSize(short x) => GetEncSize(EncodeZigZag16(x));
+    public static int GetEncSize(int x) => GetEncSizeX(EncodeZigZag32(x));
+    public static int GetEncSize(long x) => GetEncSizeX(EncodeZigZag64(x));
+
+    public static int GetEncSize(byte x) => GetEncSizeX((ushort)x);
+    public static int GetEncSize(ushort x) => GetEncSizeX(x);
+    public static int GetEncSize(uint x) => GetEncSizeX(x);
     public static int GetEncSize(ulong x)
     {
+        return GetEncSizeX(x);
+        /*
         int n = 0;
         while (127 < x)
         {
@@ -69,10 +76,66 @@ public static class VarInt
         }
         n++;
         return n;
+        */
+    }
+
+
+
+    public static int GetEncSizeX<T>(T x)
+        where T : struct, IBinaryInteger<T>, IUnsignedNumber<T>
+    {
+        int n = 0;
+        T mm = T.CreateChecked(127);
+        while (mm < x)
+        {
+            n++;
+            x >>= 7;
+            x--;
+        }
+        n++;
+        return n;
+    }
+
+    public static int EncodeX<T>(T x, Span<byte> buf)
+        where T : struct, IBinaryInteger<T>, IUnsignedNumber<T>
+    {
+        int n = 0;
+        T mm = T.CreateChecked(127);
+        while (mm < x)
+        {
+            if (n >= buf.Length)
+                return ErrBufOverflow;
+            buf[n++] = (byte)(byte.CreateTruncating(x) & 0x7F | 0x80);
+            x >>= 7;
+            x--;
+        }
+        buf[n++] = byte.CreateTruncating(x);
+        return n;
+    }
+    public static int DecodeX<T>(ReadOnlySpan<byte> buf, out T x)
+        where T : struct, IBinaryInteger<T>, IMinMaxValue<T>, IUnsignedNumber<T>
+    {
+        x = default;
+        int n = 0;
+        for (int shift = 0; shift < x.GetByteCount() * 8; shift += 7)
+        {
+            if (n >= buf.Length)
+                return ErrBufTooSmall;
+            byte b = buf[n++];
+            T add = (T.CreateTruncating(b)) << shift;
+            if (T.MaxValue - x < add) // check overflow
+                return ErrValueOverflow;
+            x += add;
+            if ((b & 0x80) == 0)
+                return n;
+        }
+        return -3;
     }
 
     public static int EncodeUInt64(ulong x, Span<byte> buf)
     {
+        return EncodeX(x, buf);
+        /*
         int n = 0;
         while (127 < x)
         {
@@ -84,9 +147,12 @@ public static class VarInt
         }
         buf[n++] = (byte)x;
         return n;
+        */
     }
     public static int EncodeUInt32(uint x, Span<byte> buf)
     {
+        return EncodeX(x, buf);
+        /*
         int n = 0;
         while (127 < x)
         {
@@ -98,9 +164,12 @@ public static class VarInt
         }
         buf[n++] = (byte)x;
         return n;
+        */
     }
     public static int EncodeUInt16(ushort x, Span<byte> buf)
     {
+        return EncodeX(x, buf);
+        /*
         int n = 0;
         while (127 < x)
         {
@@ -112,6 +181,7 @@ public static class VarInt
         }
         buf[n++] = (byte)x;
         return n;
+        */
     }
 
     public static int EncodeInt16(short x, Span<byte> buf) => EncodeUInt16(EncodeZigZag16(x), buf);
@@ -122,19 +192,22 @@ public static class VarInt
     {
         var b = new byte[maxVarintBytes];
         var dataLen = EncodeUInt64(value, b);
-        return (0 < dataLen) ? b.AsSpan(0, dataLen).ToArray() : [];
+        //return (0 < dataLen) ? b.AsSpan(0, dataLen).ToArray() : [];
+        // EncodeUInt64 падает только при недостаточном буфере,
+        // буфер тут всегда достаточный - проверка не требуется
+        return b.AsSpan(0, dataLen).ToArray();
     }
     public static byte[] EncodeUInt32(uint value)
     {
         var b = new byte[maxVarintBytes];
         var dataLen = EncodeUInt32(value, b);
-        return (0 < dataLen) ? b.AsSpan(0, dataLen).ToArray() : [];
+        return b.AsSpan(0, dataLen).ToArray();
     }
     public static byte[] EncodeUInt16(ushort value)
     {
         var b = new byte[maxVarintBytes];
         var dataLen = EncodeUInt16(value, b);
-        return (0 < dataLen) ? b.AsSpan(0, dataLen).ToArray() : [];
+        return b.AsSpan(0, dataLen).ToArray();
     }
 
     public static byte[] EncodeInt64(long value) => EncodeUInt64(EncodeZigZag64(value));
@@ -143,6 +216,8 @@ public static class VarInt
 
     public static int DecodeUInt64(ReadOnlySpan<byte> buf, out ulong x)
     {
+        return DecodeX(buf, out x);
+        /*
         x = 0;
         int n = 0;
         for (int shift = 0; shift < 64; shift += 7)
@@ -158,9 +233,12 @@ public static class VarInt
                 return n;
         }
         return -3;
+        */
     }
     public static int DecodeUInt32(ReadOnlySpan<byte> buf, out uint x)
     {
+        return DecodeX(buf, out x);
+        /*
         x = 0;
         int n = 0;
         for (int shift = 0; shift < 32; shift += 7)
@@ -176,9 +254,12 @@ public static class VarInt
                 return n;
         }
         return -3;
+        */
     }
     public static int DecodeUInt16(ReadOnlySpan<byte> buf, out ushort x)
     {
+        return DecodeX(buf, out x);
+        /*
         x = 0;
         int n = 0;
         for (int shift = 0; shift < 16; shift += 7)
@@ -190,18 +271,17 @@ public static class VarInt
             if (ushort.MaxValue - x < add) // check overflow
             {
                 return ErrValueOverflow;
-                /*
-                ushort rest = (ushort)(ushort.MaxValue - x);
-                ushort xx = (ushort)(b << shift);
-                if (rest < xx)
-                    return -1;
-                */
+                //ushort rest = (ushort)(ushort.MaxValue - x);
+                //ushort xx = (ushort)(b << shift);
+                //if (rest < xx)
+                //    return -1;
             }
             x += add;
             if ((b & 0x80) == 0)
                 return n;
         }
         return -3;
+        */
     }
 
     public static int DecodeInt64(ReadOnlySpan<byte> buffer, out long result)
@@ -230,4 +310,18 @@ public static class VarInt
     public static ulong EncodeZigZag64(long n) => (ulong)(n << 1 ^ n >> 63);
     public static long DecodeZigZag64(ulong n) => (long)(n >> 1) ^ -(long)(n & 1);
 
+    #region oveloaded  functions
+    public static int Encode(ushort value, Span<byte> buf) => EncodeUInt16(value, buf);
+    public static int Encode(uint value, Span<byte> buf) => EncodeUInt32(value, buf);
+    public static int Encode(ulong value, Span<byte> buf) => EncodeUInt64(value, buf);
+    public static int Encode(short value, Span<byte> buf) => EncodeInt16(value, buf);
+    public static int Encode(int value, Span<byte> buf) => EncodeInt32(value, buf);
+    public static int Encode(long value, Span<byte> buf) => EncodeInt64(value, buf);
+    public static int Decode(ReadOnlySpan<byte> buf, out ushort x) => DecodeUInt16(buf, out x);
+    public static int Decode(ReadOnlySpan<byte> buf, out uint x) => DecodeUInt32(buf, out x);
+    public static int Decode(ReadOnlySpan<byte> buf, out ulong x) => DecodeUInt64(buf, out x);
+    public static int Decode(ReadOnlySpan<byte> buf, out short x) => DecodeInt16(buf, out x);
+    public static int Decode(ReadOnlySpan<byte> buf, out int x) => DecodeInt32(buf, out x);
+    public static int Decode(ReadOnlySpan<byte> buf, out long x) => DecodeInt64(buf, out x);
+    #endregion
 }
