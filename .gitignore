@@ -56,6 +56,10 @@ Release/
 Thumbs.db
 .vs/
 doc/~$*
+*.coverage
+[Bb]in/
+[Oo]bj/
+[Ll]og/
 src/Test/*.tdf
 src/Test/*.bdf
 src/Test/*Conv.*

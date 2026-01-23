@@ -51,16 +51,13 @@
     <ClInclude Include="edf_cfg.h" />
     <ClInclude Include="SiamFileFormat.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include=".editorconfig" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{36ae8c27-72c0-4f51-a815-6a21f682808f}</ProjectGuid>
     <RootNamespace>dfc</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>edf</ProjectName>
+    <ProjectName>Cedf</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
