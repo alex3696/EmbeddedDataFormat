@@ -2,6 +2,12 @@ using NetEdf.StoreTypes;
 
 namespace NetEdf.src;
 
+[BinarySerializable]
+public partial class KeyVal123
+{
+    public int Key { get; set; }
+    public int Val { get; set; }
+}
 public class BinWriter : BaseBlockWriter
 {
     readonly Stream _bw;
@@ -55,11 +61,10 @@ public class BinWriter : BaseBlockWriter
     {
         Flush();
         _current.Type = BlockType.VarData;
+        KeyVal123 kk = new();
+        kk.Serialize();
 
-
-
-
-        return rawSize;
+        return 1;
     }
 
     public static int EdfWriteBin(string? str, Stream dst)

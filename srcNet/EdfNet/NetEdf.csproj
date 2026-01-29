@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\EdfBinGenerator\EdfBinGenerator.csproj"
+					  OutputItemType="Analyzer"
+					  ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

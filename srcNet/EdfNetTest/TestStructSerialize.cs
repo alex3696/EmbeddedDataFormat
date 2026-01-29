@@ -2,7 +2,7 @@ using NetEdf.Base;
 using NetEdf.src;
 using NetEdf.StoreTypes;
 using System.Text;
-
+using NetEdf;
 namespace NetEdfTest;
 
 
@@ -15,6 +15,15 @@ public struct MyPos
 }
 
 
+[BinarySerializable]
+public partial class KeyVal
+{
+    public string Test { get; set; }
+    public int Key { get; set; }
+    public int Val { get; set; }
+
+}
+
 [TestClass]
 public class TestStructSerialize
 {
@@ -23,7 +32,8 @@ public class TestStructSerialize
 
 
 
-    class KeyValueStruct
+
+    public partial class KeyValueStruct
     {
         public string Key { get; set; }
         public string Value { get; set; }
@@ -32,6 +42,10 @@ public class TestStructSerialize
     [TestMethod]
     public void TestPackUnpack()
     {
+        KeyVal kvs = new() { Key = 0xFABC, Val = 0x1234, Test="123" };
+        byte [] bin = kvs.Serialize();
+        //KeyVal.
+
         TypeRec TestStructInf = new()
         {
             Inf = new()
