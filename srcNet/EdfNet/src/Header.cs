@@ -17,11 +17,10 @@ public enum Options : UInt32
 public class Header : IEquatable<Header>
 {
     public byte VersMajor = 0x01;
-    public byte VersMinor = 0x02;
-    public byte VersPatch = 0x03;
+    public byte VersMinor = 0x00;
     public UInt16 Encoding = 65001;
     public UInt16 Blocksize = 256;
-    public Options Flags = Options.Default;
+    public Options Flags = Options.Default | Options.UseCrc;
     public byte[]? Reserved;
 
     public Header()
@@ -39,10 +38,9 @@ public class Header : IEquatable<Header>
             {
                 VersMajor = b[0],
                 VersMinor = b[1],
-                VersPatch = b[2],
-                Encoding = BinaryPrimitives.ReadUInt16LittleEndian(b.Slice(3, sizeof(UInt16))),
-                Blocksize = BinaryPrimitives.ReadUInt16LittleEndian(b.Slice(5, sizeof(UInt16))),
-                Flags = (Options)BinaryPrimitives.ReadUInt32LittleEndian(b.Slice(7, sizeof(UInt32))),
+                Encoding = BinaryPrimitives.ReadUInt16LittleEndian(b.Slice(2, sizeof(UInt16))),
+                Blocksize = BinaryPrimitives.ReadUInt16LittleEndian(b.Slice(4, sizeof(UInt16))),
+                Flags = (Options)BinaryPrimitives.ReadUInt32LittleEndian(b.Slice(6, sizeof(UInt32))),
             };
         }
         throw new ArgumentException($"array is not Header");
@@ -53,10 +51,9 @@ public class Header : IEquatable<Header>
         var b = new byte[16];
         b[0] = VersMajor;
         b[1] = VersMinor;
-        b[2] = VersPatch;
-        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(3, sizeof(UInt16)), Encoding);
-        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(5, sizeof(UInt16)), Blocksize);
-        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(7, sizeof(UInt32)), (UInt32)Flags);
+        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(2, sizeof(UInt16)), Encoding);
+        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(4, sizeof(UInt16)), Blocksize);
+        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(6, sizeof(UInt32)), (UInt32)Flags);
         return b;
     }
 

@@ -6,6 +6,7 @@ namespace NetEdf.src;
 public enum PoType : byte
 {
     Struct = 0,
+    Char,
     // integres
     Int8,
     UInt8,
@@ -20,11 +21,14 @@ public enum PoType : byte
     Single,
     Double,
     // strings
-    Char,
     String,
 }
 public static class PoTypeExt
 {
+    public static bool IsPoType(this PoType p)
+    {
+        return Enum.IsDefined(p);
+    }
     public static byte GetSizeOf(this PoType p)
     {
         return p switch
@@ -41,11 +45,19 @@ public static class PoTypeExt
 
 public class TypeInfo : IEquatable<TypeInfo>
 {
-    public string? Name { get; set; }
-    public PoType Type { get; set; }
-    public uint[] Dims { get; set; }
-    public TypeInfo[] Items { get; set; }
+    public PoType Type;// { get; set; }
+    public string? Name;// { get; set; }
+    public uint[]? Dims;// { get; set; }
+    public TypeInfo[]? Items;// { get; set; }
 
+
+    public TypeInfo(PoType type, string? name, uint[]? dims = default, TypeInfo[]? childs = default)
+    {
+        Name = name;
+        Type = type;
+        Dims = dims ?? [];
+        Items = (PoType.Struct == type) ? (Items = childs ?? []) : [];
+    }
     public TypeInfo(string? name, PoType type, uint[]? dims = default, TypeInfo[]? childs = default)
     {
         Name = name;
@@ -146,7 +158,7 @@ public class TypeInfo : IEquatable<TypeInfo>
         rest = rest.Slice(1);
         if (255 < bNameSize)
             throw new ArgumentException("name len mismatch");
-        var name = Encoding.UTF8.GetString(rest.Slice(0, bNameSize).ToArray());
+        var name = Encoding.UTF8.GetString(rest.Slice(0, bNameSize));
         rest = rest.Slice(bNameSize);
         // childs
         List<TypeInfo>? childs = null;

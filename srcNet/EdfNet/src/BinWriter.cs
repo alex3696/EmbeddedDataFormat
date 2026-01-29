@@ -1,10 +1,12 @@
+using NetEdf.StoreTypes;
+
 namespace NetEdf.src;
 
 public class BinWriter : BaseBlockWriter
 {
     readonly Stream _bw;
     BinBlock _current;
-    byte _seq;
+
     readonly StructWriter _dw;
 
     public BinWriter(Stream stream, Header cfg, StructWriter.WritePrimitivesFn fn)
@@ -23,31 +25,90 @@ public class BinWriter : BaseBlockWriter
     }
     public override void Flush()
     {
-        Write(_current);
+        _current.Write(_bw);
         _dw.Clear();
         _current.Clear();
     }
-    public int Write(BinBlock bb)
-    {
-        if (0 == bb.Type || 0 == bb.Qty)
-            return 0;
-
-        _bw.WriteByte((byte)bb.Type);
-        _bw.WriteByte(_seq++);
-        _bw.Write(BitConverter.GetBytes((ushort)bb.Qty));
-        _bw.Write(bb.Data);
-        return bb.Qty;
-    }
-
-
     public override void Write(Header h)
     {
         Flush();
         _currDataType = null;
+        //_current.Clear();
         _current.Type = BlockType.Header;
         _current.Add(h.ToBytes());
+        //_current.Write(_bw);
         Flush();
     }
+    public void WriteInfo(TypeRec t)
+    {
+        Flush();
+        _current.Type = BlockType.VarInfo;
+        var ms = new MemoryStream(_current._data);
+        _current.Qty += (ushort)EdfWriteBin(t.Id, ms);
+        _current.Qty += (ushort)EdfWriteBin(t.Inf, ms);
+        _current.Qty += (ushort)EdfWriteBin(t.Name, ms);
+        _current.Qty += (ushort)EdfWriteBin(t.Desc, ms);
+        _currDataType = t.Inf;
+        Flush();
+    }
+    public int WriteBin(TypeInfo t, object obj)
+    {
+        Flush();
+        _current.Type = BlockType.VarData;
+
+
+
+
+        return rawSize;
+    }
+
+    public static int EdfWriteBin(string? str, Stream dst)
+    {
+        if (string.IsNullOrEmpty(str))
+            return 0;
+        var len = (byte)int.Min(0xFE, Encoding.UTF8.GetByteCount(str));
+        Span<byte> buffer = stackalloc byte[len];
+        Encoding.UTF8.GetBytes(str, buffer);
+        dst.WriteByte(len);
+        dst.Write(buffer);
+        return len;
+    }
+    public static long EdfWriteBin(TypeInfo inf, Stream dst)
+    {
+        var begin = dst.Position;
+        var bw = new BinaryWriter(dst);
+        bw.Write((byte)inf.Type);
+        if (null != inf.Dims && 0 < inf.Dims.Length)
+        {
+            bw.Write((byte)inf.Dims.Length);
+            for (int i = 0; i < inf.Dims.Length; i++)
+                bw.Write(inf.Dims[i]);
+        }
+        else
+        {
+            bw.Write((byte)0);
+        }
+        EdfWriteBin(inf.Name, dst);
+
+        if (PoType.Struct == inf.Type && null != inf.Items && 0 < inf.Items.Length)
+        {
+            bw.Write((byte)inf.Items.Length);
+            for (int i = 0; i < inf.Items.Length; i++)
+            {
+                EdfWriteBin(inf.Items[i], dst);
+            }
+        }
+        return dst.Position - begin;
+    }
+    public int EdfWriteBin(int val, Stream dst)
+    {
+        Span<byte> buffer = stackalloc byte[sizeof(int)];
+        BinaryPrimitives.WriteInt32LittleEndian(buffer, val);
+        dst.Write(buffer);
+        return sizeof(int);
+    }
+
+
     public override void WriteVarInfo(TypeInfo t)
     {
         Flush();
@@ -56,6 +117,7 @@ public class BinWriter : BaseBlockWriter
         _current.Add(t.ToBytes());
         Flush();
     }
+
     public override void WriteVarData(ReadOnlySpan<byte> src)
     {
         if (null != _currDataType && 0 < src.Length)
@@ -75,7 +137,7 @@ public class BinWriter : BaseBlockWriter
                 writed += w;
                 if (0 < ret)
                 {
-                    Write(_current);
+                    _current.Write(_bw);
                     _current.Clear();
                     dst = _current.EmptySpan;
                 }

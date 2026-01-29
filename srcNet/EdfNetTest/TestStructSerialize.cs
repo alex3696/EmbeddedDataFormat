@@ -5,18 +5,6 @@ using System.Text;
 
 namespace NetEdfTest;
 
-[StructLayout(LayoutKind.Explicit, Size = 11, Pack = 1)]
-public struct MyStructType
-{
-    [FieldOffset(0)]
-    public UInt16 Type;
-    [FieldOffset(2)]
-    public Byte DeviceNumber;
-    [FieldOffset(3)]
-    public UInt32 TableVersion;
-    [FieldOffset(7)]
-    public UInt32 SerialNumber;
-}
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
 public struct MyPos
@@ -32,6 +20,72 @@ public class TestStructSerialize
 {
     static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
     static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
+
+
+
+    class KeyValueStruct
+    {
+        public string Key { get; set; }
+        public string Value { get; set; }
+        public byte[] Arr { get; set; }
+    }
+    [TestMethod]
+    public void TestPackUnpack()
+    {
+        TypeRec TestStructInf = new()
+        {
+            Inf = new()
+            {
+                Type = PoType.Struct,
+                Name = "KeyValue",
+                Dims = [2],
+                Items =
+                [
+                    new (PoType.String, "Key"),
+                    new (PoType.String, "Value"),
+                    new()
+                    {
+                        Type = PoType.Struct, Name = "Internal",
+                        Items =
+                        [
+                            new ("Test", PoType.UInt8, [3]),
+                        ]
+                    }
+                ]
+            }
+        };
+        byte[] binBuf = new byte[1024];
+        var memStream = new MemoryStream(binBuf);
+        using var bw = new BinWriter(memStream, Header.Default, Primitives.BinToBin);
+        bw.WriteInfo(TestStructInf);
+
+        KeyValueStruct val1 = new() { Key = "Key1", Value = "Value1", Arr = [11, 22, 33] };
+        KeyValueStruct val2 = new() { Key = "Key2", Value = "Value2", Arr = [11, 22, 33] };
+
+        bw.WriteBin(TestStructInf.Inf, val1);
+        bw.WriteBin(TestStructInf.Inf, val2);
+        memStream.Close();
+
+        var mssrc = new MemoryStream(binBuf);
+        byte[] buf = new byte[1024];
+        var mem = new MemoryStream(buf);
+
+        var reader = new BinReader(mssrc);
+
+        if (!reader.ReadBlock())
+            Assert.Fail("there are no block");
+        var header = reader.ReadHeader();
+        if (!reader.ReadBlock())
+            Assert.Fail("there are no block");
+        var rec = reader.ReadInfo();
+        Assert.IsNotNull(rec);
+        if (!reader.ReadBlock())
+            Assert.Fail("there are no block");
+
+        reader.TryRead(rec.Inf, out KeyValueStruct? data);
+
+    }
+
 
 
     Var _intVar = new
@@ -157,7 +211,7 @@ public class TestStructSerialize
         }
         // read
         using var rstream = new FileStream(path, FileMode.Open, FileAccess.Read);
-        using var br = new BinReader(rstream, null, Primitives.BinToBin);
+        using var br = new BinReader(rstream);
 
         var hRestored = br.Cfg;
         bool b2 = br.TryReadVar(out var rintVar);

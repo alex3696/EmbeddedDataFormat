@@ -19,6 +19,33 @@ public static class ArrayExt
 
 public static class Primitives
 {
+    public static int SrcToBin<T>(PoType t, object obj, Span<byte> dst)
+    {
+        var needLen = t.GetSizeOf();
+        if (dst.Length < needLen)
+            return dst.Length - needLen;
+        switch (t)
+        {
+            default: break;
+            case PoType.Int8: dst[0] = (byte)obj; return 1;
+            case PoType.UInt8: dst[0] = (byte)obj; return 1;
+            case PoType.Int16: BinaryPrimitives.WriteInt16LittleEndian(dst, (short)obj); return 2;
+            case PoType.UInt16: BinaryPrimitives.WriteUInt16LittleEndian(dst, (ushort)obj); return 2;
+            case PoType.Int32: BinaryPrimitives.WriteInt32LittleEndian(dst, (int)obj); return 4;
+            case PoType.UInt32: BinaryPrimitives.WriteUInt32LittleEndian(dst, (uint)obj); return 4;
+            case PoType.Int64: BinaryPrimitives.WriteInt64LittleEndian(dst, (long)obj); return 8;
+            case PoType.UInt64: BinaryPrimitives.WriteUInt64LittleEndian(dst, (ulong)obj); return 8;
+            case PoType.Half: BinaryPrimitives.WriteHalfLittleEndian(dst, (Half)obj); return 2;
+            case PoType.Single: BinaryPrimitives.WriteSingleLittleEndian(dst, (float)obj); return 4;
+            case PoType.Double: BinaryPrimitives.WriteDoubleLittleEndian(dst, (double)obj); return 8;
+            case PoType.Char: dst[0] = (byte)obj; return 1;
+            case PoType.String:
+                int len = EdfBinString.WriteBin((string)obj, dst);
+                return 0 > len ? -len : 0;
+        }
+        return -2;
+    }
+
     public static int PackToPack(PoType t, ReadOnlySpan<byte> src, Span<byte> dst, out int srcSz, out int dstSz)
     {
         if (src.Length < 1)

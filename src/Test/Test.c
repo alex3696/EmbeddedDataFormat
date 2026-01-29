@@ -84,7 +84,9 @@ static int PackUnpack()
 	{
 		.Inf =
 		{
-			.Type = Struct, .Name = "KeyValue", .Dims = {1, (uint32_t[]) { 2 } } ,
+			.Type = Struct,
+			.Name = "KeyValue",
+			.Dims = {1, (uint32_t[]) { 2 } } ,
 			.Childs =
 			{
 				.Count = (uint8_t)3,
@@ -114,12 +116,12 @@ static int PackUnpack()
 	EdfWriter_t* dw = &w;
 
 	uint8_t binBuf[1024] = { 0 };
-	MemStream_t fstream = { 0 };
-	if ((err = MemStreamOutOpen(&fstream, binBuf, sizeof(binBuf))))
+	MemStream_t memStream = { 0 };
+	if ((err = MemStreamOutOpen(&memStream, binBuf, sizeof(binBuf))))
 		return err;
-	err = EdfOpenStream(dw, (Stream_t*)&fstream, "wb");
+	err = EdfOpenStream(dw, (Stream_t*)&memStream, "wb");
 	err = EdfWriteInfo(dw, &TestStructInf, &writed);
-	dw->Stream.Inst.Mem.WPos = 0;
+	memStream.WPos = 0;
 
 	TestStruct_t val1 = { "Key1", "Value1", { 11,22,33 } };
 	TestStruct_t val2 = { "Key2", "Value2", { 11,22,33 } };

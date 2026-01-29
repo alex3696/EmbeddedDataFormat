@@ -36,7 +36,7 @@ public class TxtWriter : BaseBlockWriter
     public override void Write(Header h)
     {
         Write($"~ ");
-        Write($"version={h.VersMajor}.{h.VersMinor}.{h.VersPatch} bs = {h.Blocksize} encoding={h.Encoding} flags={h.Flags} \n");
+        Write($"version={h.VersMajor}.{h.VersMinor} bs = {h.Blocksize} encoding={h.Encoding} flags={h.Flags} \n");
         Write($"// ? - struct @ - data // - comment");
     }
     public override void WriteVarInfo(TypeInfo t)

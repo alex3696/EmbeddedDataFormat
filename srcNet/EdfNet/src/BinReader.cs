@@ -5,13 +5,15 @@ public class BinReader : IDisposable
     public readonly Header Cfg;
     readonly byte[] _data;
     readonly BinaryReader _br;
-    private BinBlock? _current = default;
+    private BinBlock _current;
     public UInt16 EqQty;
     public byte Seq;
 
+    public UInt16 Pos;
+
     readonly StructWriter _bw;
 
-    public BinReader(Stream stream, Header? header, StructWriter.WritePrimitivesFn fn)
+    public BinReader(Stream stream, Header? header = default, StructWriter.WritePrimitivesFn? fn = default)
     {
         _br = new BinaryReader(stream);
         _data = new byte[16];
@@ -25,7 +27,117 @@ public class BinReader : IDisposable
             Cfg = Header.Default;
         _data = new byte[Cfg.Blocksize];
 
-        _bw = new StructWriter(fn);
+        _bw = new StructWriter(fn ?? Primitives.BinToBin);
+        _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
+    }
+
+    public bool ReadBlock()
+    {
+        BlockType t = (BlockType)_br.ReadByte();
+        if (Enum.IsDefined(t))
+        {
+            var seq = _br.ReadByte();
+            var len = _br.ReadUInt16();
+            if (0 < len)
+            {
+                _current.Type = t;
+                _current.Seq = seq;
+                _current.Qty = len;
+                _br.Read(_current._data, 0, len);
+                Pos = 0;
+                return true;
+            }
+        }
+        return false;
+    }
+    public BlockType GetBlockType() => _current.Type;
+    public byte GetBlockSeq() => _current.Seq;
+    public ushort GetBlockLen() => _current.Qty;
+    public Span<byte> GetBlockData() => _current._data.AsSpan(0, _current.Qty);
+
+    public Header? ReadHeader()
+    {
+        if (_current.Type == BlockType.Header)
+            return Header.Parse(_current.Data);
+        return null;
+    }
+    public TypeRec? ReadInfo()
+    {
+        if (_current.Type == BlockType.VarInfo)
+        {
+            TypeRec rec = new()
+            {
+                Id = BinaryPrimitives.ReadInt32LittleEndian(_current._data),
+                Inf = TypeInfo.Parse(_current.Data.Slice(sizeof(uint))),
+            };
+            return rec;
+        }
+        return null;
+    }
+
+    public static int ReadBin(TypeInfo t, Span<byte> src, Type csType, out object? ret)
+    {
+        if (!Enum.IsDefined(t.Type))
+            throw new ArgumentOutOfRangeException($"wrong PoType={t.Type}");
+        switch (t.Type)
+        {
+            default:
+            case PoType.Struct:
+                ret = default;
+                if (null == t.Items)
+                    return 0;
+                ret = Activator.CreateInstance(csType);
+                var fields = csType.GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
+                int fieldId = 0;
+                int readed = 0;
+                foreach (var child in t.Items)
+                {
+                    var field = fields[fieldId++];
+                    readed += ReadBin(child, src, field.GetType(), out var childVal);
+                    if (0 < readed)
+                    {
+                        field.SetValue(ret, childVal);
+                    }
+                    src = src.Slice(readed);
+                }
+                return readed;
+            case PoType.Char:
+            case PoType.UInt8: ret = MemoryMarshal.Read<byte>(src); return t.Type.GetSizeOf();
+            case PoType.Int8: ret = MemoryMarshal.Read<sbyte>(src); return t.Type.GetSizeOf();
+            case PoType.UInt16: ret = MemoryMarshal.Read<ushort>(src); return t.Type.GetSizeOf();
+            case PoType.Int16: ret = MemoryMarshal.Read<short>(src); return t.Type.GetSizeOf();
+            case PoType.UInt32: ret = MemoryMarshal.Read<uint>(src); return t.Type.GetSizeOf();
+            case PoType.Int32: ret = MemoryMarshal.Read<int>(src); return t.Type.GetSizeOf();
+            case PoType.UInt64: ret = MemoryMarshal.Read<ulong>(src); return t.Type.GetSizeOf();
+            case PoType.Int64: ret = MemoryMarshal.Read<long>(src); return t.Type.GetSizeOf();
+            case PoType.Half: ret = MemoryMarshal.Read<Half>(src); return t.Type.GetSizeOf();
+            case PoType.Single: ret = MemoryMarshal.Read<float>(src); return t.Type.GetSizeOf();
+            case PoType.Double: ret = MemoryMarshal.Read<double>(src); return t.Type.GetSizeOf();
+            case PoType.String:
+                var len = (byte)int.Min(0xFE, src[0]);
+                if (0 < len)
+                {
+                    ret = Encoding.UTF8.GetString(src.Slice(1, len));
+                    return (ushort)(1 + len);
+                }
+                else
+                {
+                    ret = string.Empty;
+                    return 1;
+                }
+        }
+    }
+
+
+
+    public int TryRead<T>(TypeInfo t, [NotNullWhen(true)] out T? ret)
+    {
+        int readed = ReadBin(t, _current._data, typeof(T), out var result);
+        if (null != result)
+            ret = (T)Convert.ChangeType(result, typeof(T));
+        else
+            ret = default;
+        return readed;
     }
 
     public void Dispose()
@@ -37,8 +149,7 @@ public class BinReader : IDisposable
     {
         if (TryGet(out BinBlock? blk)
             && blk.Type == BlockType.Header
-            && 16 == blk.Data.Length
-            && 0xbd == blk.Data[0] && 0xf0 == blk.Data[1])
+            && 16 == blk.Data.Length)
         {
             h = Header.Parse(blk.Data);
             Clear();
@@ -116,7 +227,7 @@ public class BinReader : IDisposable
         return false;
     }
 
-    public BinBlock? Get() => _current ?? ReadBlock();
+    public BinBlock? Get() => _current;
     public bool TryGet([NotNullWhen(true)] out BinBlock? blk)
     {
         blk = Get();
@@ -124,7 +235,7 @@ public class BinReader : IDisposable
     }
     public BinBlock? Clear() => _current = null;
 
-    private BinBlock? ReadBlock()
+    private BinBlock? ReadBlock1()
     {
         try
         {

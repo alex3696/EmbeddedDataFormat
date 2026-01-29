@@ -46,7 +46,6 @@ public static class StructSerialize
 
 
     public static T FromBytes<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(ReadOnlySpan<byte> b)
-        where T : struct
     {
         T ret = default;
 
@@ -63,7 +62,6 @@ public static class StructSerialize
 
     }
     public static byte[] ToBytes<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T obj)
-        where T : struct
     {
         int size = 0;
         List<byte[]> items = [];

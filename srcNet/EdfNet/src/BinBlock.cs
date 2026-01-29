@@ -3,14 +3,16 @@ namespace NetEdf.src;
 public class BinBlock
 {
     public BlockType Type;
+    public byte Seq;
     public UInt16 Qty;
     public readonly byte[] _data;
 
     public BinBlock(BlockType t, byte[] d, UInt16 qty, byte seq = 0)
     {
         Type = t;
-        _data = d;
+        Seq = seq;
         Qty = qty;
+        _data = d;
     }
 
     public bool IsFull => Qty == _data.Length;
@@ -26,6 +28,15 @@ public class BinBlock
         d.CopyTo(_data.AsSpan(Qty));
         Qty += (ushort)d.Length;
     }
+    public int Write(Stream st)
+    {
+        if (0 == Type || 0 == Qty)
+            return 0;
 
-
+        st.WriteByte((byte)Type);
+        st.WriteByte(Seq++);
+        st.Write(BitConverter.GetBytes((ushort)Qty));
+        st.Write(Data);
+        return Qty;
+    }
 }

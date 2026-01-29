@@ -13,7 +13,6 @@ public interface IDfWriter
 public static class IDfWriterExt
 {
     public static void WriteVarData<T>(this IDfWriter t, T val, bool flush = true)
-        where T : struct
     {
         t.WriteVarData(StructSerialize.ToBytes(val));
     }
