@@ -2,7 +2,7 @@ using NetEdf.StoreTypes;
 
 namespace NetEdf.src;
 
-[BinarySerializable]
+[EdfBinSerializable]
 public partial class KeyVal123
 {
     public int Key { get; set; }
@@ -62,7 +62,7 @@ public class BinWriter : BaseBlockWriter
         Flush();
         _current.Type = BlockType.VarData;
         KeyVal123 kk = new();
-        kk.Serialize();
+        kk.SerializeBin(new byte[1024]);
 
         return 1;
     }

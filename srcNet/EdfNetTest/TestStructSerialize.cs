@@ -1,8 +1,8 @@
+using NetEdf;
 using NetEdf.Base;
 using NetEdf.src;
 using NetEdf.StoreTypes;
 using System.Text;
-using NetEdf;
 namespace NetEdfTest;
 
 
@@ -15,13 +15,23 @@ public struct MyPos
 }
 
 
-[BinarySerializable]
+[EdfBinSerializable]
+public partial struct SubVal
+{
+    public SubVal()
+    {
+    }
+    public double ValDouble { get; set; } = 0x11;
+    public byte ValByte { get; set; } = 0x22;
+    public sbyte ValSByte { get; set; } = 0x33;
+}
+[EdfBinSerializable]
 public partial class KeyVal
 {
     public string Test { get; set; }
     public int Key { get; set; }
     public int Val { get; set; }
-
+    public SubVal subVal { get; set; }
 }
 
 [TestClass]
@@ -42,9 +52,11 @@ public class TestStructSerialize
     [TestMethod]
     public void TestPackUnpack()
     {
-        KeyVal kvs = new() { Key = 0xFABC, Val = 0x1234, Test="123" };
-        byte [] bin = kvs.Serialize();
-        //KeyVal.
+        KeyVal kvs = new() { Key = 0xFABC, Val = 0x1234, Test = "123", subVal=new SubVal() };
+        Span<byte> sa = stackalloc byte[1024];
+        kvs.SerializeBin(sa);
+        int bc = KeyVal.DeserializeBin(sa, out var okv);
+
 
         TypeRec TestStructInf = new()
         {
