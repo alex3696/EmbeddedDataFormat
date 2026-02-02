@@ -8,6 +8,16 @@ public static class EdfBinString
             return 1;
         return (byte)int.Min(0xFE, Encoding.UTF8.GetByteCount(str));
     }
+    public static int WriteBin(string? str, Stream dst)
+    {
+        Span<byte> buf = stackalloc byte[256];
+        var ret = WriteBin(str, buf);
+        if (0 < ret)
+        {
+            dst.Write(buf.Slice(0, ret));
+        }
+        return ret;
+    }
     public static int WriteBin(string? str, Span<byte> dst)
     {
         if (1 > dst.Length)

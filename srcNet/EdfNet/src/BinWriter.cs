@@ -1,13 +1,5 @@
-using NetEdf.StoreTypes;
-
 namespace NetEdf.src;
 
-[EdfBinSerializable]
-public partial class KeyVal123
-{
-    public int Key { get; set; }
-    public int Val { get; set; }
-}
 public class BinWriter : BaseBlockWriter
 {
     readonly Stream _bw;
@@ -52,8 +44,8 @@ public class BinWriter : BaseBlockWriter
         var ms = new MemoryStream(_current._data);
         _current.Qty += (ushort)EdfWriteBin(t.Id, ms);
         _current.Qty += (ushort)EdfWriteBin(t.Inf, ms);
-        _current.Qty += (ushort)EdfWriteBin(t.Name, ms);
-        _current.Qty += (ushort)EdfWriteBin(t.Desc, ms);
+        _current.Qty += (ushort)EdfBinString.WriteBin(t.Name, ms);
+        _current.Qty += (ushort)EdfBinString.WriteBin(t.Desc, ms);
         _currDataType = t.Inf;
         Flush();
     }
@@ -61,23 +53,13 @@ public class BinWriter : BaseBlockWriter
     {
         Flush();
         _current.Type = BlockType.VarData;
-        KeyVal123 kk = new();
-        kk.SerializeBin(new byte[1024]);
+        var props = obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
+
 
         return 1;
     }
 
-    public static int EdfWriteBin(string? str, Stream dst)
-    {
-        if (string.IsNullOrEmpty(str))
-            return 0;
-        var len = (byte)int.Min(0xFE, Encoding.UTF8.GetByteCount(str));
-        Span<byte> buffer = stackalloc byte[len];
-        Encoding.UTF8.GetBytes(str, buffer);
-        dst.WriteByte(len);
-        dst.Write(buffer);
-        return len;
-    }
+
     public static long EdfWriteBin(TypeInfo inf, Stream dst)
     {
         var begin = dst.Position;
@@ -93,7 +75,7 @@ public class BinWriter : BaseBlockWriter
         {
             bw.Write((byte)0);
         }
-        EdfWriteBin(inf.Name, dst);
+        EdfBinString.WriteBin(inf.Name, dst);
 
         if (PoType.Struct == inf.Type && null != inf.Items && 0 < inf.Items.Length)
         {
