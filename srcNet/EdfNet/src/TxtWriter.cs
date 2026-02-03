@@ -39,10 +39,10 @@ public class TxtWriter : BaseBlockWriter
         Write($"version={h.VersMajor}.{h.VersMinor} bs = {h.Blocksize} encoding={h.Encoding} flags={h.Flags} \n");
         Write($"// ? - struct @ - data // - comment");
     }
-    public override void WriteVarInfo(TypeInfo t)
+    public override void WriteVarInfo(TypeInf t)
     {
         Write($"\n\n? ");
-        Write(TypeInfo.ToString(t).TrimStart('\n'));
+        Write(TypeInf.ToString(t).TrimStart('\n'));
         _currDataType = t;
         _tw.Clear();
     }

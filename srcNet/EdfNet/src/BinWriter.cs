@@ -42,14 +42,14 @@ public class BinWriter : BaseBlockWriter
         Flush();
         _current.Type = BlockType.VarInfo;
         var ms = new MemoryStream(_current._data);
-        _current.Qty += (ushort)EdfWriteBin(t.Id, ms);
-        _current.Qty += (ushort)EdfWriteBin(t.Inf, ms);
-        _current.Qty += (ushort)EdfBinString.WriteBin(t.Name, ms);
-        _current.Qty += (ushort)EdfBinString.WriteBin(t.Desc, ms);
+        _current.Qty += (ushort)Primitives.SrcToBin(PoType.UInt32, t.Id, ms);
+        _current.Qty += (ushort)Write(t.Inf, ms);
+        _current.Qty += (ushort)Primitives.SrcToBin(PoType.String, t.Name ?? string.Empty, ms);
+        _current.Qty += (ushort)Primitives.SrcToBin(PoType.String, t.Desc ?? string.Empty, ms);
         _currDataType = t.Inf;
         Flush();
     }
-    public int WriteBin(TypeInfo t, object obj)
+    public int Write(TypeInf t, object obj)
     {
         Flush();
         _current.Type = BlockType.VarData;
@@ -58,9 +58,82 @@ public class BinWriter : BaseBlockWriter
 
         return 1;
     }
+    int WriteObj(TypeInf inf, Span<byte> dst, object obj, ref int skip, ref int wqty)
+    {
+        int writed = 0;
+        /*
+        uint totalElement = 1;
+        for (int i = 0; i < inf.Dims?.Length; i++)
+            totalElement *= inf.Dims[i];
+
+        if (0 == skip && 1 < totalElement)
+            WriteSep(SepBeginArray, ref dst, ref writed);
+        for (int i = 0; i < totalElement; i++)
+        {
+            if (PoType.Struct == inf.Type)
+            {
+                if (inf.Items != null && 0 != inf.Items.Length)
+                {
+                    if (0 == skip)
+                        WriteSep(SepBeginStruct, ref dst, ref writed);
+                    foreach (var s in inf.Items)
+                    {
+                        var wr = WriteObj(s, ref src, ref dst, ref skip, ref wqty, ref readed, ref writed);
+                        if (0 != wr)
+                            return wr;
+                    }
+                    if (0 == skip)
+                        WriteSep(SepEndStruct, ref dst, ref writed);
+                }
+            }
+            else
+            {
+                if (0 < skip)
+                {
+                    skip--;
+                    wqty++;
+                    continue;
+                }
+                int wr = _writePrimitives(inf.Type, src, dst, out int r, out int w);
+                if (0 == wr)
+                {
+                    wqty++;
+                    readed += r;
+                    writed += w;
+                    src = src.Slice(r);
+                    dst = dst.Slice(w);
+                    WriteSep(SepVar, ref dst, ref writed);
+                }
+                else
+                    return wr;
+            }
+        }
+        if (0 == skip && 1 < totalElement)
+            WriteSep(SepEndArray, ref dst, ref writed);
+        */
+        return 0;
+    }
+    public int WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int writed) => 0;
+    public byte[]? SepBeginStruct = null;
+    public byte[]? SepEndStruct = null;
+    public byte[]? SepBeginArray = null;
+    public byte[]? SepEndArray = null;
+    public byte[]? SepVar = null;
+    public byte[]? SepRecBegin = null;
+    public byte[]? SepRecEnd = null;
 
 
-    public static long EdfWriteBin(TypeInfo inf, Stream dst)
+    public static long Write(Header h, Stream dst)
+    {
+        Span<byte> b = stackalloc byte[16];
+        b[0] = h.VersMajor;
+        b[1] = h.VersMinor;
+        BinaryPrimitives.WriteUInt16LittleEndian(b.Slice(2, sizeof(UInt16)), h.Encoding);
+        BinaryPrimitives.WriteUInt16LittleEndian(b.Slice(4, sizeof(UInt16)), h.Blocksize);
+        BinaryPrimitives.WriteUInt32LittleEndian(b.Slice(6, sizeof(UInt32)), (UInt32)h.Flags);
+        return b.Length;
+    }
+    public static long Write(TypeInf inf, Stream dst)
     {
         var begin = dst.Position;
         var bw = new BinaryWriter(dst);
@@ -82,21 +155,14 @@ public class BinWriter : BaseBlockWriter
             bw.Write((byte)inf.Items.Length);
             for (int i = 0; i < inf.Items.Length; i++)
             {
-                EdfWriteBin(inf.Items[i], dst);
+                Write(inf.Items[i], dst);
             }
         }
         return dst.Position - begin;
     }
-    public int EdfWriteBin(int val, Stream dst)
-    {
-        Span<byte> buffer = stackalloc byte[sizeof(int)];
-        BinaryPrimitives.WriteInt32LittleEndian(buffer, val);
-        dst.Write(buffer);
-        return sizeof(int);
-    }
 
 
-    public override void WriteVarInfo(TypeInfo t)
+    public override void WriteVarInfo(TypeInf t)
     {
         Flush();
         _currDataType = t;

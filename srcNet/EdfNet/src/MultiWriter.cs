@@ -23,7 +23,7 @@ public class MultiWriter : IDfWriter
         foreach (var w in _w)
             w.WriteVarData(b);
     }
-    public void WriteVarInfo(TypeInfo t)
+    public void WriteVarInfo(TypeInf t)
     {
         foreach (var w in _w)
             w.WriteVarInfo(t);

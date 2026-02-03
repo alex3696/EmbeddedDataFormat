@@ -6,7 +6,7 @@ namespace NetEdf.src;
 
 public class Var
 {
-    public TypeInfo Info { get; set; }
+    public TypeInf Info { get; set; }
     public List<byte[]>? Values
     {
         get => _values;
@@ -24,12 +24,12 @@ public class Var
         _values = null;
     }
 
-    public Var(TypeInfo inf, List<byte[]>? values)
+    public Var(TypeInf inf, List<byte[]>? values)
     {
         Info = inf;
         Values = values;
     }
-    public Var(TypeInfo inf, byte[]? value = null)
+    public Var(TypeInf inf, byte[]? value = null)
     {
         Info = inf;
         if (value != null)
@@ -94,7 +94,7 @@ public class Var
     {
         return new Var
         (
-            inf: new TypeInfo(name, PoType.String),
+            inf: new TypeInf(name, PoType.String),
             value: BString.GetBytes(val)
         );
     }

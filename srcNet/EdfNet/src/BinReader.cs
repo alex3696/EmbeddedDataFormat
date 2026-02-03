@@ -68,14 +68,14 @@ public class BinReader : IDisposable
             TypeRec rec = new()
             {
                 Id = BinaryPrimitives.ReadInt32LittleEndian(_current._data),
-                Inf = TypeInfo.Parse(_current.Data.Slice(sizeof(uint))),
+                Inf = TypeInf.Parse(_current.Data.Slice(sizeof(uint))),
             };
             return rec;
         }
         return null;
     }
 
-    public static int ReadBin(TypeInfo t, Span<byte> src, Type csType, out object? ret)
+    public static int ReadBin(TypeInf t, Span<byte> src, Type csType, out object? ret)
     {
         if (!Enum.IsDefined(t.Type))
             throw new ArgumentOutOfRangeException($"wrong PoType={t.Type}");
@@ -130,7 +130,7 @@ public class BinReader : IDisposable
 
 
 
-    public int TryRead<T>(TypeInfo t, [NotNullWhen(true)] out T? ret)
+    public int TryRead<T>(TypeInf t, [NotNullWhen(true)] out T? ret)
     {
         int readed = ReadBin(t, _current._data, typeof(T), out var result);
         if (null != result)
@@ -158,19 +158,19 @@ public class BinReader : IDisposable
         h = default;
         return false;
     }
-    public bool TryReadVarInfo([NotNullWhen(true)] out TypeInfo? v)
+    public bool TryReadVarInfo([NotNullWhen(true)] out TypeInf? v)
     {
         if (TryGet(out BinBlock? blk)
             && blk.Type == BlockType.VarInfo)
         {
-            v = TypeInfo.Parse(blk.Data);
+            v = TypeInf.Parse(blk.Data);
             Clear();
             return true;
         }
         v = default;
         return false;
     }
-    public bool TryReadData(TypeInfo inf, ReadOnlySpan<byte> src, [NotNullWhen(true)] out List<byte[]>? ret)
+    public bool TryReadData(TypeInf inf, ReadOnlySpan<byte> src, [NotNullWhen(true)] out List<byte[]>? ret)
     {
         List<byte[]> r = [];
         byte[] buff = new byte[255];
@@ -188,7 +188,7 @@ public class BinReader : IDisposable
         ret = r;
         return true;
     }
-    public bool TryReadVarData(TypeInfo inf, [NotNullWhen(true)] out List<byte[]>? v)
+    public bool TryReadVarData(TypeInf inf, [NotNullWhen(true)] out List<byte[]>? v)
     {
         if (TryGet(out BinBlock? blk))
         {

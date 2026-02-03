@@ -5,7 +5,7 @@ namespace NetEdf.src;
 public interface IDfWriter
 {
     void Write(Header v);
-    void WriteVarInfo(TypeInfo t);
+    void WriteVarInfo(TypeInf t);
     void WriteVarData(ReadOnlySpan<byte> b);
     void Flush();
 }

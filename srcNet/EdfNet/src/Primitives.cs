@@ -19,7 +19,12 @@ public static class ArrayExt
 
 public static class Primitives
 {
-    public static int SrcToBin<T>(PoType t, object obj, Span<byte> dst)
+    public static int SrcToBin(PoType t, object obj, Stream dst)
+    {
+        Span<byte> b = stackalloc byte[t.GetSizeOf()];
+        return SrcToBin(t, obj, b);
+    }
+    public static int SrcToBin(PoType t, object obj, Span<byte> dst)
     {
         var needLen = t.GetSizeOf();
         if (dst.Length < needLen)

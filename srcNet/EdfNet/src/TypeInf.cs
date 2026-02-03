@@ -43,33 +43,33 @@ public static class PoTypeExt
     }
 }
 
-public class TypeInfo : IEquatable<TypeInfo>
+public class TypeInf : IEquatable<TypeInf>
 {
     public PoType Type;// { get; set; }
     public string? Name;// { get; set; }
     public uint[]? Dims;// { get; set; }
-    public TypeInfo[]? Items;// { get; set; }
+    public TypeInf[]? Items;// { get; set; }
 
 
-    public TypeInfo(PoType type, string? name, uint[]? dims = default, TypeInfo[]? childs = default)
+    public TypeInf(PoType type, string? name, uint[]? dims = default, TypeInf[]? childs = default)
     {
         Name = name;
         Type = type;
         Dims = dims ?? [];
         Items = (PoType.Struct == type) ? (Items = childs ?? []) : [];
     }
-    public TypeInfo(string? name, PoType type, uint[]? dims = default, TypeInfo[]? childs = default)
+    public TypeInf(string? name, PoType type, uint[]? dims = default, TypeInf[]? childs = default)
     {
         Name = name;
         Type = type;
         Dims = dims ?? [];
         Items = (PoType.Struct == type) ? (Items = childs ?? []) : [];
     }
-    public TypeInfo(string? name, uint[]? dims = null, TypeInfo[]? childs = null)
+    public TypeInf(string? name, uint[]? dims = null, TypeInf[]? childs = null)
         : this(name, PoType.Struct, dims, childs)
     {
     }
-    public TypeInfo()
+    public TypeInf()
         : this(string.Empty, PoType.Int32)
     {
     }
@@ -94,13 +94,13 @@ public class TypeInfo : IEquatable<TypeInfo>
     }
 
 
-    public bool Equals(TypeInfo? y)
+    public bool Equals(TypeInf? y)
     {
         if (null == y)
             return false;
         return Enumerable.SequenceEqual(ToBytes(), y.ToBytes());
     }
-    public override bool Equals(object? obj) => Equals(obj as TypeInfo);
+    public override bool Equals(object? obj) => Equals(obj as TypeInf);
     public override int GetHashCode() => ToBytes().GetHashCode();
 
     public byte[] ToBytes()
@@ -129,8 +129,8 @@ public class TypeInfo : IEquatable<TypeInfo>
         }
         return [.. ret];
     }
-    public static TypeInfo Parse(ReadOnlySpan<byte> b) => FromBytes(b, out _);
-    static TypeInfo FromBytes(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
+    public static TypeInf Parse(ReadOnlySpan<byte> b) => FromBytes(b, out _);
+    static TypeInf FromBytes(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
     {
         rest = b;
         if (2 > rest.Length)
@@ -161,25 +161,25 @@ public class TypeInfo : IEquatable<TypeInfo>
         var name = Encoding.UTF8.GetString(rest.Slice(0, bNameSize));
         rest = rest.Slice(bNameSize);
         // childs
-        List<TypeInfo>? childs = null;
+        List<TypeInf>? childs = null;
         if (PoType.Struct == type && 0 < rest.Length)
         {
             byte childsCount = rest[0];
             rest = rest.Slice(1);
-            childs = new List<TypeInfo>(childsCount);
+            childs = new List<TypeInf>(childsCount);
             for (int i = 0; i < childsCount; i++)
                 childs.Add(FromBytes(rest, out rest));
         }
-        return new TypeInfo(name, type, dims, childs?.ToArray());
+        return new TypeInf(name, type, dims, childs?.ToArray());
     }
 
-    public static string ToString(TypeInfo s)
+    public static string ToString(TypeInf s)
     {
         StringBuilder sb = new(capacity: 512);
         ToString(s, sb, 0);
         return sb.ToString(1, sb.Length - 1);
     }
-    public static void ToString(TypeInfo s, StringBuilder sb, int noffset)
+    public static void ToString(TypeInf s, StringBuilder sb, int noffset)
     {
         string offset = GetOffset(noffset);
 

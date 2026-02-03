@@ -14,7 +14,7 @@ public class StructWriter
     readonly byte[] _srcBuf = new byte[256];
     int _srcLen = 0;
 
-    public int WriteMultipleValues(TypeInfo inf, ReadOnlySpan<byte> xsrc, Span<byte> dst, out int readed, out int writed)
+    public int WriteMultipleValues(TypeInf inf, ReadOnlySpan<byte> xsrc, Span<byte> dst, out int readed, out int writed)
     {
         readed = writed = 0;
         int wr;
@@ -53,7 +53,7 @@ public class StructWriter
         while (0 == wr && 0 < src.Length);
         return wr;
     }
-    public int WriteSingleValue(TypeInfo inf, ReadOnlySpan<byte> src, Span<byte> dst, out int readed, out int writed)
+    public int WriteSingleValue(TypeInf inf, ReadOnlySpan<byte> src, Span<byte> dst, out int readed, out int writed)
     {
         int wqty = 0;
         readed = writed = 0;
@@ -73,7 +73,7 @@ public class StructWriter
         }
         return wr;
     }
-    protected int WriteData(TypeInfo inf, ref ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int readed, ref int writed)
+    protected int WriteData(TypeInf inf, ref ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int readed, ref int writed)
     {
         uint totalElement = 1;
         for (int i = 0; i < inf.Dims?.Length; i++)

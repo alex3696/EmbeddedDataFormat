@@ -88,8 +88,8 @@ public class TestStructSerialize
         KeyValueStruct val1 = new() { Key = "Key1", Value = "Value1", Arr = [11, 22, 33] };
         KeyValueStruct val2 = new() { Key = "Key2", Value = "Value2", Arr = [11, 22, 33] };
 
-        bw.WriteBin(TestStructInf.Inf, val1);
-        bw.WriteBin(TestStructInf.Inf, val2);
+        bw.Write(TestStructInf.Inf, val1);
+        bw.Write(TestStructInf.Inf, val2);
         memStream.Close();
 
         var mssrc = new MemoryStream(binBuf);
@@ -116,7 +116,7 @@ public class TestStructSerialize
 
     Var _intVar = new
     (
-        inf: new TypeInfo()
+        inf: new TypeInf()
         {
             Name = "weight variable",
             Type = PoType.Int32,
@@ -125,7 +125,7 @@ public class TestStructSerialize
     );
     Var _charVar = new
     (
-        inf: new TypeInfo()
+        inf: new TypeInf()
         {
             Name = "CharArrayVariable",
             Type = PoType.String,
@@ -140,30 +140,30 @@ public class TestStructSerialize
 
     Var _complexVar = new
     (
-        inf: new TypeInfo()
+        inf: new TypeInf()
         {
             Name = "ComplexVariable",
             Type = PoType.Struct,
             Dims = [],
             Items =
             [
-                new TypeInfo("time", PoType.Int64),
-                new TypeInfo
+                new TypeInf("time", PoType.Int64),
+                new TypeInf
                 (
                     "State",
                     [3],
                     [
-                        new TypeInfo("text", PoType.Int8),
-                        new TypeInfo
+                        new TypeInf("text", PoType.Int8),
+                        new TypeInf
                         (
                             "Pos",
                             [],
                             [
-                                new TypeInfo("x", PoType.Int32),
-                                new TypeInfo("y", PoType.Int32),
+                                new TypeInf("x", PoType.Int32),
+                                new TypeInf("y", PoType.Int32),
                             ]
                         ),
-                        new TypeInfo("Temp", PoType.Double, [2, 2] )
+                        new TypeInf("Temp", PoType.Double, [2, 2] )
                     ]
                 )
             ]
@@ -175,32 +175,32 @@ public class TestStructSerialize
 
     Var _bigVar = new
     (
-        inf: new TypeInfo()
+        inf: new TypeInf()
         {
             Name = "BigVarName",
             Type = PoType.Struct,
             Dims = [],
             Items =
             [
-                new TypeInfo("seq", PoType.UInt8),
-                new TypeInfo("time", PoType.Int64),
-                new TypeInfo("echo", PoType.Double, [20]),
-                new TypeInfo("err", PoType.UInt8),
+                new TypeInf("seq", PoType.UInt8),
+                new TypeInf("time", PoType.Int64),
+                new TypeInf("echo", PoType.Double, [20]),
+                new TypeInf("err", PoType.UInt8),
             ]
         }
     );
 
-    TypeInfo _lasBlockType = new()
+    TypeInf _lasBlockType = new()
     {
         Name = "~WELL INFORMATION",
         Type = PoType.Struct,
         Dims = [],
         Items =
         [
-            new TypeInfo("MNEM", PoType.String),
-            new TypeInfo("UNIT", PoType.String),
-            new TypeInfo("DATA", PoType.String),
-            new TypeInfo("INFORMATION", PoType.String),
+            new TypeInf("MNEM", PoType.String),
+            new TypeInf("UNIT", PoType.String),
+            new TypeInf("DATA", PoType.String),
+            new TypeInf("INFORMATION", PoType.String),
         ]
     };
 
@@ -294,17 +294,17 @@ public class TestStructSerialize
 
         var comment = Var.Make("Comment", "Test Comment");
 
-        var pos = new Var(inf: new TypeInfo("Position", PoType.Int32, [3]));
+        var pos = new Var(inf: new TypeInf("Position", PoType.Int32, [3]));
         pos.AddValue((new int[3] { 1, 2, 3 }).GetBytes());
         pos.AddValue((new int[3] { 4, 5, 6 }).GetBytes());
 
         var pos2 = new Var
         (
-            inf: new TypeInfo("PositionXYZ", PoType.Struct, [],
+            inf: new TypeInf("PositionXYZ", PoType.Struct, [],
             [
-                new TypeInfo("x", PoType.Int32),
-                new TypeInfo("y", PoType.Int32),
-                new TypeInfo("z", PoType.Int32),
+                new TypeInf("x", PoType.Int32),
+                new TypeInf("y", PoType.Int32),
+                new TypeInf("z", PoType.Int32),
             ])
         );
         pos2.AddValue((new int[3] { 11, 12, 13 }).GetBytes());
@@ -393,8 +393,8 @@ public class TestStructSerialize
                         dstWriterT.Write(Header.Parse(bb.Data));
                         break;
                     case BlockType.VarInfo:
-                        dstWriterB.WriteVarInfo(TypeInfo.Parse(bb.Data));
-                        dstWriterT.WriteVarInfo(TypeInfo.Parse(bb.Data));
+                        dstWriterB.WriteVarInfo(TypeInf.Parse(bb.Data));
+                        dstWriterT.WriteVarInfo(TypeInf.Parse(bb.Data));
                         break;
                     case BlockType.VarData:
                         dstWriterB.WriteVarData(bb.Data);
@@ -425,15 +425,15 @@ public class TestStructSerialize
     }
 
 
-    TypeInfo _keyStrValType = new()
+    TypeInf _keyStrValType = new()
     {
         Name = "KeyStrVal",
         Type = PoType.Struct,
         Dims = [],
         Items =
         [
-            new TypeInfo("Key", PoType.String),
-            new TypeInfo("Value", PoType.String),
+            new TypeInf("Key", PoType.String),
+            new TypeInf("Value", PoType.String),
         ]
     };
     public struct KeyStrVal
@@ -442,16 +442,16 @@ public class TestStructSerialize
         public string? Value;
     }
 
-    TypeInfo _keyValUnitType = new()
+    TypeInf _keyValUnitType = new()
     {
         Name = "KeyVal",
         Type = PoType.Struct,
         Dims = [],
         Items =
         [
-            new TypeInfo("Key", PoType.String),
-            new TypeInfo("Value", PoType.String),
-            new TypeInfo("Unit", PoType.String),
+            new TypeInf("Key", PoType.String),
+            new TypeInf("Value", PoType.String),
+            new TypeInf("Unit", PoType.String),
         ]
     };
     public struct KeyValUnit
