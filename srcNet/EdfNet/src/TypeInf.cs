@@ -33,11 +33,11 @@ public static class PoTypeExt
     {
         return p switch
         {
-            PoType.UInt8 or PoType.Int8 => 1,
+            PoType.UInt8 or PoType.Int8 or PoType.Char => 1,
             PoType.UInt16 or PoType.Int16 or PoType.Half => 2,
             PoType.UInt32 or PoType.Int32 or PoType.Single => 4,
             PoType.UInt64 or PoType.Int64 or PoType.Double => 8,
-            PoType.String or PoType.Char => 1,
+            PoType.String => 1,// minimum string length
             _ => 0,
         };
     }

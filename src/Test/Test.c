@@ -121,7 +121,7 @@ static int PackUnpack()
 		return err;
 	err = EdfOpenStream(dw, (Stream_t*)&memStream, "wb");
 	err = EdfWriteInfo(dw, &TestStructInf, &writed);
-	memStream.WPos = 0;
+	dw->Stream.Inst.Mem.WPos = 0;
 
 	TestStruct_t val1 = { "Key1", "Value1", { 11,22,33 } };
 	TestStruct_t val2 = { "Key2", "Value2", { 11,22,33 } };

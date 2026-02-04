@@ -10,16 +10,16 @@ public class TxtWriter : BaseBlockWriter
         : base(cfg)
     {
         _stream = stream;
-        _tw = new StructWriter(fn ?? Primitives.BinToStr)
-        {
-            SepBeginStruct = "{"u8.ToArray(),
-            SepEndStruct = "}"u8.ToArray(),
-            SepBeginArray = "["u8.ToArray(),
-            SepEndArray = "]"u8.ToArray(),
-            SepVar = ";"u8.ToArray(),
-            SepRecBegin = "\n= "u8.ToArray(),
-            SepRecEnd = ""u8.ToArray(),
-        };
+        //_tw = new StructWriter(fn ?? Primitives.BinToStr)
+        //{
+        //    SepBeginStruct = "{"u8.ToArray(),
+        //    SepEndStruct = "}"u8.ToArray(),
+        //    SepBeginArray = "["u8.ToArray(),
+        //    SepEndArray = "]"u8.ToArray(),
+        //    SepVar = ";"u8.ToArray(),
+        //    SepRecBegin = "\n= "u8.ToArray(),
+        //    SepRecEnd = ""u8.ToArray(),
+        //};
         Write(cfg);
     }
 

@@ -2,18 +2,19 @@ namespace NetEdf.src;
 
 public class BinWriter : BaseBlockWriter
 {
+    public ushort CurrentQty => _current.Qty;
+
+
     readonly Stream _bw;
     BinBlock _current;
 
-    readonly StructWriter _dw;
 
-    public BinWriter(Stream stream, Header cfg, StructWriter.WritePrimitivesFn fn)
-        : base(cfg)
+    public BinWriter(Stream stream, Header? cfg = default)
+        : base(cfg ?? Header.Default)
     {
-        _dw = new StructWriter(fn);
         _bw = stream;
         _current = new BinBlock(0, new byte[_cfg.Blocksize], 0);
-        Write(cfg);
+        Write(_cfg);
     }
     protected override void Dispose(bool disposing)
     {
@@ -24,7 +25,6 @@ public class BinWriter : BaseBlockWriter
     public override void Flush()
     {
         _current.Write(_bw);
-        _dw.Clear();
         _current.Clear();
     }
     public override void Write(Header h)
@@ -49,78 +49,118 @@ public class BinWriter : BaseBlockWriter
         _currDataType = t.Inf;
         Flush();
     }
+
+
+    int _skip = 0;
+    int _wqty = 0;
     public int Write(TypeInf t, object obj)
     {
-        Flush();
         _current.Type = BlockType.VarData;
-        var props = obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
-
-
-        return 1;
-    }
-    int WriteObj(TypeInf inf, Span<byte> dst, object obj, ref int skip, ref int wqty)
-    {
         int writed = 0;
-        /*
+        var wr = WriteObj(t, _current._data, obj, ref _skip, ref _wqty, ref writed);
+        if(0 < wr)
+        {
+            Flush();
+        }
+        _current.Qty += (ushort)writed;
+
+
+        return wr;
+    }
+    static int WriteObj(TypeInf inf, Span<byte> dst, object? obj, ref int skip, ref int wqty, ref int writed)
+    {
+        if (null == obj)
+            return 0;
+
         uint totalElement = 1;
         for (int i = 0; i < inf.Dims?.Length; i++)
             totalElement *= inf.Dims[i];
 
-        if (0 == skip && 1 < totalElement)
-            WriteSep(SepBeginArray, ref dst, ref writed);
-        for (int i = 0; i < totalElement; i++)
+        if (1 < totalElement)
         {
-            if (PoType.Struct == inf.Type)
+            if (0 != WriteSep(SepBeginArray, ref dst, ref writed))
+                return 1;
+            if (obj is not Array arr)
             {
-                if (inf.Items != null && 0 != inf.Items.Length)
-                {
-                    if (0 == skip)
-                        WriteSep(SepBeginStruct, ref dst, ref writed);
-                    foreach (var s in inf.Items)
-                    {
-                        var wr = WriteObj(s, ref src, ref dst, ref skip, ref wqty, ref readed, ref writed);
-                        if (0 != wr)
-                            return wr;
-                    }
-                    if (0 == skip)
-                        WriteSep(SepEndStruct, ref dst, ref writed);
-                }
+                var ret = WriteObjElement(inf, dst, obj, ref skip, ref wqty, ref writed);
+                if (0 != ret)
+                    return ret;
+                return -1;
             }
-            else
+            for (int i = 0; i < totalElement; i++)
             {
-                if (0 < skip)
-                {
-                    skip--;
-                    wqty++;
-                    continue;
-                }
-                int wr = _writePrimitives(inf.Type, src, dst, out int r, out int w);
-                if (0 == wr)
-                {
-                    wqty++;
-                    readed += r;
-                    writed += w;
-                    src = src.Slice(r);
-                    dst = dst.Slice(w);
-                    WriteSep(SepVar, ref dst, ref writed);
-                }
-                else
-                    return wr;
+                var ret = WriteObjElement(inf, dst, arr.GetValue(i), ref skip, ref wqty, ref writed);
+                if (0 != ret)
+                    return ret;
             }
+            if (0 != WriteSep(SepEndArray, ref dst, ref writed))
+                return 1;
         }
-        if (0 == skip && 1 < totalElement)
-            WriteSep(SepEndArray, ref dst, ref writed);
-        */
+        else
+        {
+            var ret = WriteObjElement(inf, dst, obj, ref skip, ref wqty, ref writed);
+            if (0 != ret)
+                return ret;
+        }
         return 0;
     }
-    public int WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int writed) => 0;
-    public byte[]? SepBeginStruct = null;
-    public byte[]? SepEndStruct = null;
-    public byte[]? SepBeginArray = null;
-    public byte[]? SepEndArray = null;
-    public byte[]? SepVar = null;
-    public byte[]? SepRecBegin = null;
-    public byte[]? SepRecEnd = null;
+
+    static int WriteObjElement(TypeInf inf, Span<byte> dst, object? obj, ref int skip, ref int wqty, ref int writed)
+    {
+        if (null == obj)
+            return 0;
+        if (PoType.Struct == inf.Type)
+        {
+            if (inf.Items != null && 0 != inf.Items.Length)
+            {
+                if (0 != WriteSep(SepBeginStruct, ref dst, ref writed))
+                    return 1;
+                var props = obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
+                for (int childIndex = 0; childIndex < inf.Items.Length; childIndex++)
+                {
+                    int w = 0;
+                    var wr = WriteObj(inf.Items[childIndex], dst, props[childIndex].GetValue(obj), ref skip, ref wqty, ref w);
+                    writed += w;
+                    if (0 != wr)
+                        return wr;
+                    dst = dst.Slice(w);
+                }
+                if (0 != WriteSep(SepEndStruct, ref dst, ref writed))
+                    return 1;
+            }
+        }
+        else
+        {
+            if (0 < skip)
+                skip--;
+            else
+            {
+                int w = 0;
+                int wr = Primitives.SrcToBin(inf.Type, obj, dst, ref w);
+                if (0 != wr)
+                    return wr;
+                wqty++;
+                writed += w;
+                dst = dst.Slice(w);
+            }
+            if (0 != WriteSep(SepVarEnd, ref dst, ref writed))
+                return 1;
+        }
+        return 0;
+    }
+
+
+
+
+
+    public static int WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int writed) => 0;
+    public static byte[]? SepBeginStruct = null;
+    public static byte[]? SepEndStruct = null;
+    public static byte[]? SepBeginArray = null;
+    public static byte[]? SepEndArray = null;
+    public static byte[]? SepVarEnd = null;
+    public static byte[]? SepRecBegin = null;
+    public static byte[]? SepRecEnd = null;
 
 
     public static long Write(Header h, Stream dst)
@@ -171,32 +211,8 @@ public class BinWriter : BaseBlockWriter
         Flush();
     }
 
-    public override void WriteVarData(ReadOnlySpan<byte> src)
+    public override void WriteVarData(ReadOnlySpan<byte> b)
     {
-        if (null != _currDataType && 0 < src.Length)
-        {
-            _current.Type = BlockType.VarData;
-            int ret, r, w;
-            int readed = 0;
-            int writed = 0;
-            Span<byte> dst = _current.EmptySpan;
-            do
-            {
-                ret = _dw.WriteMultipleValues(_currDataType, src, dst, out r, out w);
-                src = src.Slice(r);
-                dst = dst.Slice(w);
-                _current.Qty += (ushort)w;
-                readed += r;
-                writed += w;
-                if (0 < ret)
-                {
-                    _current.Write(_bw);
-                    _current.Clear();
-                    dst = _current.EmptySpan;
-                }
-            }
-            while (0 <= ret);
-        }
+        throw new NotImplementedException();
     }
-
 }
