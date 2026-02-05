@@ -1,6 +1,8 @@
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 namespace NetEdf.src;
 
-public class BinReader : IDisposable
+public class BinReader : BaseReader
 {
     public readonly Header Cfg;
     readonly BinaryReader _br;
@@ -16,10 +18,10 @@ public class BinReader : IDisposable
         //Span<byte> b = stackalloc byte[t.GetSizeOf()]; 
         _current = new BinBlock(0, new byte[256], 0);
 
+        Cfg = Header.Default;
         if (ReadBlock())
             Cfg = ReadHeader() ?? Header.Default;
-        else
-            Cfg = Header.Default;
+            
         _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
     }
 
@@ -30,12 +32,27 @@ public class BinReader : IDisposable
         {
             var seq = _br.ReadByte();
             var len = _br.ReadUInt16();
+
             if (0 < len)
             {
                 _current.Type = t;
                 _current.Seq = seq;
                 _current.Qty = len;
                 _br.Read(_current._data, 0, len);
+
+                if (Cfg.Flags.HasFlag(Options.UseCrc))
+                {
+                    ushort fileCrc = _br.ReadUInt16();
+                    ushort crc = ModbusCRC.Calc([(byte)_current.Type]);
+                    crc = ModbusCRC.Calc([_current.Seq], crc);
+                    crc = ModbusCRC.Calc(BitConverter.GetBytes(_current.Qty), crc);
+                    crc = ModbusCRC.Calc(_current.Data, crc);
+                    if (crc != fileCrc)
+                        throw new Exception($"Wrong CRC block {_current.Seq}");
+                }
+
+
+
                 Pos = 0;
                 return true;
             }
@@ -149,8 +166,10 @@ public class BinReader : IDisposable
         return r;
     }
 
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
+        if (!disposing)
+            return;
         _br.Dispose();
     }
 

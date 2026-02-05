@@ -4,6 +4,11 @@
 
 
 //-----------------------------------------------------------------------------
+static char* GetTestFilePath(char* filename)
+{
+	return filename;
+}
+//-----------------------------------------------------------------------------
 static size_t GetCString(const char* str, uint32_t arr_len, uint8_t* dst, size_t dst_len)
 {
 	if (NULL == str)
@@ -302,35 +307,38 @@ static int WriteSample(EdfWriter_t* dw)
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int WriteTest()
+static int Test_WriteSample()
 {
+	char* binFile = GetTestFilePath("t_write.bdf");
+	char* txtFile = GetTestFilePath("t_write.tdf");
+	char* txtConvFile = GetTestFilePath("t_writeConv.tdf");
 	EdfWriter_t w;
 	int err = 0;
 	// TEXT write
-	err = EdfOpen(&w, "t_write.tdf", "wt");
+	err = EdfOpen(&w, txtFile, "wt");
 	WriteSample(&w);
 	EdfClose(&w);
 	// test append
 	memset(&w, 0, sizeof(EdfWriter_t));
-	err = EdfOpen(&w, "t_write.tdf", "at");
+	err = EdfOpen(&w, txtFile, "at");
 	if (0 != err)
 		return err;
 	EdfWriteInfData(&w, 0, Int32, "Int32 Key", &((int32_t) { 0xb1b2b3b4 }));
 	EdfClose(&w);
 
 	// BINary write
-	err = EdfOpen(&w, "t_write.bdf", "wb");
+	err = EdfOpen(&w, binFile, "wb");
 	WriteSample(&w);
 	EdfClose(&w);
 	// test append
 	memset(&w, 0, sizeof(EdfWriter_t));
-	if ((err = EdfOpen(&w, "t_write.bdf", "ab")))
+	if ((err = EdfOpen(&w, binFile, "ab")))
 		return err;
 	EdfWriteInfData(&w, 0, Int32, "Int32 Key", &((int32_t) { 0xb1b2b3b4 }));
 	EdfClose(&w);
 
-	BinToText("t_write.bdf", "t_writeConv.tdf");
-	err = CompareFiles("t_write.tdf", "t_writeConv.tdf");
+	BinToText(binFile, txtConvFile);
+	err = CompareFiles(txtFile, txtConvFile);
 	if (err)
 		LOG_ERRF("err %d: t_write files not equal", err);
 	assert(0 == err);
@@ -360,23 +368,25 @@ static void WriteBigVar(EdfWriter_t* dw)
 
 	EdfFlushDataBlock(dw, &writed);
 }
-static void WriteTestBigVar()
+static void Test_WriteBigVar()
 {
+	char* binFile = GetTestFilePath("t_big.bdf");
+	char* txtFile = GetTestFilePath("t_big.tdf");
+	char* txtConvFile = GetTestFilePath("t_bigConv.tdf");
 	int err = 0;
-
 	EdfWriter_t bw;
-	err = EdfOpen(&bw, "t_big.bdf", "wb");
+	err = EdfOpen(&bw, binFile, "wb");
 	WriteBigVar(&bw);
 	EdfClose(&bw);
 
 	EdfWriter_t tw;
-	err = EdfOpen(&tw, "t_big.tdf", "wt");
+	err = EdfOpen(&tw, txtFile, "wt");
 	WriteBigVar(&tw);
 	EdfClose(&tw);
 
-	BinToText("t_big.bdf", "t_bigConv.tdf");
+	BinToText(binFile, txtConvFile);
+	err = CompareFiles(txtFile, txtConvFile);
 
-	err = CompareFiles("t_big.tdf", "t_bigConv.tdf");
 	if (err)
 		LOG_ERRF("err: t_big %d", err);
 	assert(0 == err);
@@ -426,10 +436,10 @@ static void MbCrc16accTest()
 int main()
 {
 	LOG_ERR();
-	WriteTest();
+	Test_WriteSample();
 	assert(0 == PackUnpack());
 	MbCrc16accTest();
-	WriteTestBigVar();
+	Test_WriteBigVar();
 	DatFormatTest();
 	TestMemStream();
 	return 0;

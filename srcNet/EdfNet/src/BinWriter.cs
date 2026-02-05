@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+
 namespace NetEdf.src;
 
 public class BinWriter : BaseWriter
@@ -7,7 +9,6 @@ public class BinWriter : BaseWriter
     private readonly BinBlock _current;
 
     private int _skip = 0;
-    private int _wqty = 0;
     public static int WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int writed) => 0;
     public const byte[]? SepBeginStruct = null;
     public const byte[]? SepEndStruct = null;
@@ -22,8 +23,8 @@ public class BinWriter : BaseWriter
         : base(cfg ?? Header.Default)
     {
         _bw = stream;
-        _current = new BinBlock(0, new byte[_cfg.Blocksize], 0);
-        Write(_cfg);
+        _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
+        Write(Cfg);
     }
     protected override void Dispose(bool disposing)
     {
@@ -69,14 +70,35 @@ public class BinWriter : BaseWriter
     public override int Write(TypeInf t, object obj)
     {
         _current.Type = BlockType.VarData;
-        var wr = WriteObj(t, _current._data, obj, ref _skip, ref _wqty, out var writed);
-        if (0 < wr)
+        Span<byte> dst = _current._data;
+        int wr = 0;
+        var prevskip = _skip;
+        do
         {
-            Flush();
+            int wqty = 0;
+            wr = WriteObj(t, dst, obj, ref _skip, ref wqty, out var writed);
+            _current.Qty += (ushort)writed;
+            if (0 > wr)
+            {
+                _skip = prevskip + wqty;
+            }
+            else if (0 < wr)
+            {
+                _skip = prevskip + wqty;
+                Flush();
+            }
+            else
+            {
+                if (0 != WriteSep(SepRecEnd, ref dst, ref writed))
+                {
+                    wr = 1;
+                    _skip = prevskip + wqty;
+                }
+                else
+                    _skip = 0;
+            }
         }
-        _current.Qty += (ushort)writed;
-
-
+        while (0 != wr);
         return wr;
     }
     private static int WriteObj(TypeInf inf, Span<byte> dst, object? obj, ref int skip, ref int wqty, out int writed)
@@ -101,7 +123,7 @@ public class BinWriter : BaseWriter
                 writed += w;
                 return -1;
             }
-            for (int i = 0; i < totalElement; i++)
+            for (int i = 0; i < totalElement && i < arr.Length; i++)
             {
                 var ret = WriteObjElement(inf, dst, arr.GetValue(i), ref skip, ref wqty, out var w);
                 if (0 != ret)
@@ -109,6 +131,8 @@ public class BinWriter : BaseWriter
                 writed += w;
                 dst = dst.Slice(w);
             }
+            if(arr.Length < totalElement)
+                return -1;
             if (0 != WriteSep(SepEndArray, ref dst, ref writed))
                 return 1;
         }

@@ -51,7 +51,7 @@ public class TypeInf : IEquatable<TypeInf>
     public TypeInf[]? Items;// { get; set; }
 
 
-    public TypeInf(PoType type, string? name, uint[]? dims = default, TypeInf[]? childs = default)
+    public TypeInf(PoType type, string? name = default, uint[]? dims = default, TypeInf[]? childs = default)
     {
         Name = name;
         Type = type;

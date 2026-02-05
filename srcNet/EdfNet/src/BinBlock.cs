@@ -34,9 +34,16 @@ public class BinBlock
             return 0;
 
         st.WriteByte((byte)Type);
-        st.WriteByte(Seq++);
+        st.WriteByte(Seq);
         st.Write(BitConverter.GetBytes((ushort)Qty));
         st.Write(Data);
+
+        ushort crc = ModbusCRC.Calc([(byte)Type]);
+        crc = ModbusCRC.Calc([Seq],crc);
+        crc = ModbusCRC.Calc(BitConverter.GetBytes(Qty), crc);
+        crc = ModbusCRC.Calc(Data, crc);
+        st.Write(BitConverter.GetBytes(crc));
+        Seq++;
         return Qty;
     }
 }

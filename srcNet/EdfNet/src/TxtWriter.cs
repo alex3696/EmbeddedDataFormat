@@ -5,8 +5,8 @@ public class TxtWriter : BaseWriter
     readonly Stream _stream;
     readonly byte[] _dstBuff = new byte[256];
 
-    public TxtWriter(Stream stream, Header cfg)
-        : base(cfg)
+    public TxtWriter(Stream stream, Header? cfg = null)
+        : base(cfg ?? Header.Default)
     {
         _stream = stream;
         //_tw = new StructWriter(fn ?? Primitives.BinToStr)
@@ -19,7 +19,7 @@ public class TxtWriter : BaseWriter
         //    SepRecBegin = "\n= "u8.ToArray(),
         //    SepRecEnd = ""u8.ToArray(),
         //};
-        Write(cfg);
+        Write(Cfg);
     }
 
     protected void Write(string str)
@@ -49,20 +49,20 @@ public class TxtWriter : BaseWriter
     }
     public override int Write(TypeInf t, object obj)
     {
-    /*
-        if (null != _currDataType && 0 < src.Length)
-        {
-            int wr, r, w;
-            do
+        /*
+            if (null != _currDataType && 0 < src.Length)
             {
-                Span<byte> dst = _dstBuff;
-                wr = _tw.WriteMultipleValues(_currDataType, src, dst, out r, out w);
-                src = src.Slice(r);
-                _stream.Write(_dstBuff.AsSpan(0, w));
+                int wr, r, w;
+                do
+                {
+                    Span<byte> dst = _dstBuff;
+                    wr = _tw.WriteMultipleValues(_currDataType, src, dst, out r, out w);
+                    src = src.Slice(r);
+                    _stream.Write(_dstBuff.AsSpan(0, w));
+                }
+                while (0 <= wr );
             }
-            while (0 <= wr );
-        }
-    */
+        */
         return 0;
     }
     public override void Flush()
