@@ -9,9 +9,21 @@ public static class Primitives
     {
         Span<byte> b = stackalloc byte[t.GetSizeOf()];
         int w = 0;
-        var err = SrcToBin(t, obj, b, ref w);
+        var err = TrySrcToBin(t, obj, b, ref w);
         if (0 == err)
             dst.Write(b.Slice(0, w));
+        return w;
+    }
+    public static int SrcToBin(PoType t, object obj, Span<byte> dst)
+    {
+        int w = 0;
+        var ret = TrySrcToBin(t, obj, dst, ref w);
+        switch (ret)
+        {
+            default: break;
+            case ErrDstBufOverflow: throw new OverflowException();
+            case ErrWrongType: throw new NotSupportedException($"{t}");
+        }
         return w;
     }
     /// <summary>
@@ -21,7 +33,7 @@ public static class Primitives
     /// <param name="obj"></param>
     /// <param name="dst"></param>
     /// <returns>error code, 0 when OK</returns>
-    public static int SrcToBin(PoType t, object obj, Span<byte> dst, ref int w)
+    public static int TrySrcToBin(PoType t, object obj, Span<byte> dst, ref int w)
     {
         w = t.GetSizeOf();
         if (dst.Length < w)

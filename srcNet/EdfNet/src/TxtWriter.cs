@@ -1,12 +1,11 @@
 namespace NetEdf.src;
 
-public class TxtWriter : BaseBlockWriter
+public class TxtWriter : BaseWriter
 {
     readonly Stream _stream;
-    readonly StructWriter _tw;
     readonly byte[] _dstBuff = new byte[256];
 
-    public TxtWriter(Stream stream, Header cfg, StructWriter.WritePrimitivesFn fn)
+    public TxtWriter(Stream stream, Header cfg)
         : base(cfg)
     {
         _stream = stream;
@@ -39,15 +38,18 @@ public class TxtWriter : BaseBlockWriter
         Write($"version={h.VersMajor}.{h.VersMinor} bs = {h.Blocksize} encoding={h.Encoding} flags={h.Flags} \n");
         Write($"// ? - struct @ - data // - comment");
     }
-    public override void WriteVarInfo(TypeInf t)
+    public override void Write(TypeRec t)
     {
+        /*
         Write($"\n\n? ");
         Write(TypeInf.ToString(t).TrimStart('\n'));
         _currDataType = t;
         _tw.Clear();
+        */
     }
-    public override void WriteVarData(ReadOnlySpan<byte> src)
+    public override int Write(TypeInf t, object obj)
     {
+    /*
         if (null != _currDataType && 0 < src.Length)
         {
             int wr, r, w;
@@ -58,12 +60,14 @@ public class TxtWriter : BaseBlockWriter
                 src = src.Slice(r);
                 _stream.Write(_dstBuff.AsSpan(0, w));
             }
-            while (0 <= wr /*&& 0 < src.Length*/);
+            while (0 <= wr );
         }
+    */
+        return 0;
     }
     public override void Flush()
     {
         _stream.Flush();
-        _tw.Clear();
+        //_tw.Clear();
     }
 }

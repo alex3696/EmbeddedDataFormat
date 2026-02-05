@@ -6,11 +6,10 @@ namespace NetEdf.src;
 // https://learn.microsoft.com/en-us/windows/win32/intl/code-page-identifiers
 
 [Flags]
-public enum Options : UInt32
+public enum Options : uint
 {
     Default = 0,
     UseCrc = 1,
-
     MaskUseCrc = 0xFE,
 };
 
@@ -46,26 +45,17 @@ public class Header : IEquatable<Header>
         throw new ArgumentException($"array is not Header");
     }
 
-    public byte[] ToBytes()
-    {
-        var b = new byte[16];
-        b[0] = VersMajor;
-        b[1] = VersMinor;
-        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(2, sizeof(UInt16)), Encoding);
-        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(4, sizeof(UInt16)), Blocksize);
-        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(6, sizeof(UInt32)), (UInt32)Flags);
-        return b;
-    }
-
     public bool Equals(Header? other)
     {
         if (null == other)
             return false;
-        byte[] x = this.ToBytes();
-        byte[] y = other.ToBytes();
-        return Enumerable.SequenceEqual(x, y);
+        if (VersMajor != other.VersMajor) return false;
+        if (VersMinor != other.VersMinor) return false;
+        if (Encoding != other.Encoding) return false;
+        if (Blocksize != other.Blocksize) return false;
+        if (Flags != other.Flags) return false;
+        return true;
     }
     public override bool Equals(object? obj) => obj is Header header && Equals(header);
-    public override int GetHashCode() => this.ToBytes().GetHashCode();
-
+    public override int GetHashCode() => throw new NotImplementedException();
 }

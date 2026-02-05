@@ -1,4 +1,4 @@
-namespace NetEdf.StoreTypes;
+namespace NetEdf.src;
 
 public class FpFloat
 {

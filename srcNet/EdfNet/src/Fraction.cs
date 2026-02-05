@@ -1,4 +1,4 @@
-namespace NetEdf.StoreTypes;
+namespace NetEdf.src;
 
 // Fractional Numbers
 // https://bob.cs.sonoma.edu/IntroCompOrg-x64/bookch14.html

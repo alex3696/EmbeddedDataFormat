@@ -1,4 +1,4 @@
-using NetEdf.StoreTypes;
+using NetEdf.src;
 
 namespace NetEdfTest;
 

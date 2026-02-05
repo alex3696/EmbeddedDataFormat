@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace NetEdf.StoreTypes;
+namespace NetEdf.src;
 
 // https://habr.com/ru/articles/350796/
 // https://github.com/protocolbuffers/protobuf/blob/main/csharp/src/Google.Protobuf/WritingPrimitives.cs

@@ -1,8 +1,5 @@
 using NetEdf;
-using NetEdf.Base;
 using NetEdf.src;
-using NetEdf.StoreTypes;
-using System.Text;
 namespace NetEdfTest;
 
 
@@ -41,23 +38,28 @@ public class TestStructSerialize
     static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
 
-
-
-    public partial class KeyValueStruct
+    class KeyValueStruct : IEquatable<KeyValueStruct>
     {
-        public string Key { get; set; }
-        public string Value { get; set; }
-        public byte[] Arr { get; set; }
+        public string? Key { get; set; }
+        public string? Value { get; set; }
+        public byte[]? Arr { get; set; }
+
+        public bool Equals(KeyValueStruct? other)
+        {
+            if (other is null)
+                return false;
+            if (!string.Equals(Key, other.Key))
+                return false;
+            if (!string.Equals(Value, other.Value))
+                return false;
+            if (!Arr.SequenceEqual(other.Arr))
+                return false;
+            return true;
+        }
     }
     [TestMethod]
     public void TestPackUnpack()
     {
-        KeyVal kvs = new() { Key = 0xFABC, Val = 0x1234, Test = "123", subVal=new SubVal() };
-        Span<byte> sa = stackalloc byte[1024];
-        kvs.SerializeBin(sa);
-        int bc = KeyVal.DeserializeBin(sa, out var okv);
-
-
         TypeRec TestStructInf = new()
         {
             Inf = new()
@@ -73,22 +75,24 @@ public class TestStructSerialize
                 ]
             }
         };
+        KeyValueStruct val1 = new() { Key = "Key1", Value = "Value1", Arr = [11, 12, 13] };
+        KeyValueStruct val2 = new() { Key = "Key2", Value = "Value2", Arr = [21, 22, 23] };
+        KeyValueStruct[] kvArr = [val1, val2];
+
         byte[] binBuf = new byte[1024];
         using (var memStream = new MemoryStream(binBuf))
         using (var bw = new BinWriter(memStream))
         {
-            bw.WriteInfo(TestStructInf);
-            KeyValueStruct val1 = new() { Key = "Key1", Value = "Value1", Arr = [11, 22, 33] };
-            KeyValueStruct val2 = new() { Key = "Key2", Value = "Value2", Arr = [11, 22, 33] };
-            bw.Write(TestStructInf.Inf, val1);
-            bw.Write(TestStructInf.Inf, val2);
+            bw.Write(TestStructInf);
+            bw.Write(TestStructInf.Inf, kvArr);
+            //bw.Write(TestStructInf.Inf, val1);
+            //bw.Write(TestStructInf.Inf, val2);
             Assert.AreEqual(30, bw.CurrentQty);
         }
         var mssrc = new MemoryStream(binBuf);
         byte[] buf = new byte[1024];
-        var mem = new MemoryStream(buf);
-
-        var reader = new BinReader(mssrc);
+        using var mem = new MemoryStream(buf);
+        using var reader = new BinReader(mssrc);
 
         //if (!reader.ReadBlock())
         //    Assert.Fail("there are no block");
@@ -100,10 +104,22 @@ public class TestStructSerialize
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
 
-        reader.TryRead(rec.Inf, out KeyValueStruct? data);
+        reader.TryRead(rec.Inf, out KeyValueStruct[]? data);
 
+        Assert.AreEqual(kvArr[0], data[0]);
+        Assert.AreEqual(kvArr[1], data[1]);
     }
 
+    [TestMethod]
+    public void TestSourceGenSerialize()
+    {
+        KeyVal kvs = new() { Key = 0xFABC, Val = 0x1234, Test = "123", subVal = new SubVal() };
+        Span<byte> sa = stackalloc byte[1024];
+        kvs.SerializeBin(sa);
+        int bc = KeyVal.DeserializeBin(sa, out var okv);
+
+
+    }
 
 
 

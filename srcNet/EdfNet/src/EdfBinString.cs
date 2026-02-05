@@ -1,4 +1,4 @@
-namespace NetEdf;
+namespace NetEdf.src;
 
 public static class EdfBinString
 {

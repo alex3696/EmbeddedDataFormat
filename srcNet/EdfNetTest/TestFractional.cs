@@ -1,4 +1,4 @@
-using NetEdf.StoreTypes;
+using NetEdf.src;
 using System;
 using System.Collections.Generic;
 using System.Text;

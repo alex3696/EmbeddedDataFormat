@@ -3,9 +3,8 @@ namespace NetEdf.src;
 public class BinReader : IDisposable
 {
     public readonly Header Cfg;
-    readonly byte[] _data;
     readonly BinaryReader _br;
-    private BinBlock _current;
+    private readonly BinBlock _current;
     public UInt16 EqQty;
     public byte Seq;
 
@@ -21,8 +20,6 @@ public class BinReader : IDisposable
             Cfg = ReadHeader() ?? Header.Default;
         else
             Cfg = Header.Default;
-        _data = new byte[Cfg.Blocksize];
-
         _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
     }
 
@@ -83,11 +80,15 @@ public class BinReader : IDisposable
 
         if (1 < totalElement)
         {
-            var arr = Array.CreateInstance(csType, totalElement);
+            if (!csType.IsArray)
+                throw new ArrayTypeMismatchException();
+            var elementType = csType.GetElementType();
+            ArgumentNullException.ThrowIfNull(elementType);
+            var arr = Array.CreateInstance(elementType, totalElement);
             ret = arr;
             for (int i = 0; i < totalElement; i++)
             {
-                var rv = ReadObjElement(t, src, csType, out var r, out var arr1);
+                var rv = ReadObjElement(t, src, elementType, out var r, out var arr1);
                 if (0 != rv)
                     return rv;
                 arr.SetValue(arr1, i);
@@ -118,7 +119,7 @@ public class BinReader : IDisposable
             foreach (var child in t.Items)
             {
                 var field = fields[fieldId++];
-                var rv = ReadBin(child, src, field.GetType(), out var r, out var childVal);
+                var rv = ReadBin(child, src, field.PropertyType, out var r, out var childVal);
                 if (0 < r && null != childVal)
                 {
                     field.SetValue(ret, childVal);
@@ -126,7 +127,6 @@ public class BinReader : IDisposable
                 readed += r;
                 src = src.Slice(r);
             }
-            return readed;
         }
         else
         {
@@ -146,7 +146,7 @@ public class BinReader : IDisposable
             ret = (T)Convert.ChangeType(result, typeof(T));
         else
             ret = default;
-        return readed;
+        return r;
     }
 
     public void Dispose()
