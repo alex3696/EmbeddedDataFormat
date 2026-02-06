@@ -213,6 +213,53 @@ public class TestStructSerialize
 
 
 
+    [TestMethod]
+    public void TestTypeInfEquality()
+    {
+        TypeInf inf1 = new()
+        {
+            Type = PoType.Struct,
+            Name = "KeyValue",
+            Dims = [2],
+            Items =
+            [
+                new (PoType.String, "Key"),
+                new (PoType.String, "Value"),
+                new (PoType.UInt8, "Test", [3]),
+            ]
+        };
+        TypeInf inf2 = new()
+        {
+            Type = PoType.Struct,
+            Name = "KeyValue",
+            Dims = [2],
+            Items =
+            [
+                new (PoType.String, "Key"),
+                new (PoType.String, "Value"),
+                new (PoType.UInt8, "Test", [3]),
+            ]
+        };
+        TypeInf inf3 = new()
+        {
+            Type = PoType.Struct,
+            Name = "KeyValue",
+            Dims = [2],
+            Items =
+            [
+                new (PoType.String, "Key2"),
+                new (PoType.String, "Value"),
+                new (PoType.UInt8, "Test", [3]),
+                new (PoType.String, "Key3"),
+            ]
+        };
+        TypeInf? nullInf = default; // null
+        Assert.AreEqual(nullInf, nullInf);
+        Assert.AreNotEqual<TypeInf?>(inf3, nullInf);
+        Assert.IsFalse(inf3.Equals(nullInf));
+        Assert.AreEqual(inf1, inf2);
+        Assert.AreNotEqual(inf1, inf3);
+    }
 
 
     [TestMethod]
