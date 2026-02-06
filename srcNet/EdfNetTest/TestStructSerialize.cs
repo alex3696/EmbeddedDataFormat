@@ -205,6 +205,26 @@ public class TestStructSerialize
 
 
 
+    [TestMethod]
+    public void TestPrimitiveDecomposer()
+    {
+        int val0 = 123;
+        var flaten0 = (new PrimitiveDecomposer(val0)).AsEnumerable().ToArray();
+        Assert.AreEqual(123, flaten0[0]);
+
+        var data = new
+        {
+            Id = 1,
+            Meta = new { Code = "A1", Active = true },
+            Tags = new[] { "tag1", "tag2" }
+        };
+        var flaten2 = (new PrimitiveDecomposer(data)).AsEnumerable().ToArray();
+        Assert.AreEqual(1, flaten2[0]);
+        Assert.AreEqual("A1", flaten2[1]);
+        Assert.IsTrue((bool?)flaten2[2]);
+        Assert.AreEqual("tag1", flaten2[3]);
+        Assert.AreEqual("tag2", flaten2[4]);
+    }
 
 
 
