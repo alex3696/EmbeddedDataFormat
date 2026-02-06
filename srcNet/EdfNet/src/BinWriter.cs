@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+using System.Collections;
 
 namespace NetEdf.src;
 
@@ -8,8 +8,9 @@ public class BinWriter : BaseWriter
     private readonly Stream _bw;
     private readonly BinBlock _current;
 
+
     private int _skip = 0;
-    public static int WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int writed) => 0;
+    public static EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int writed) => EdfErr.IsOk;
     public const byte[]? SepBeginStruct = null;
     public const byte[]? SepEndStruct = null;
     public const byte[]? SepBeginArray = null;
@@ -70,104 +71,101 @@ public class BinWriter : BaseWriter
     public override int Write(TypeInf t, object obj)
     {
         _current.Type = BlockType.VarData;
-        Span<byte> dst = _current._data;
-        int wr = 0;
-        var prevskip = _skip;
+        Span<byte> dst = _current._data.AsSpan(_current.Qty);
+        EdfErr err = EdfErr.IsOk;
         do
         {
+            int skip = _skip;
             int wqty = 0;
-            wr = WriteObj(t, dst, obj, ref _skip, ref wqty, out var writed);
+            int writed = 0;
+            err = WriteObj(t, dst, obj, ref skip, ref wqty, ref writed);
             _current.Qty += (ushort)writed;
-            if (0 > wr)
+            dst.Slice(writed);
+            switch (err)
             {
-                _skip = prevskip + wqty;
-            }
-            else if (0 < wr)
-            {
-                _skip = prevskip + wqty;
-                Flush();
-            }
-            else
-            {
-                if (0 != WriteSep(SepRecEnd, ref dst, ref writed))
-                {
-                    wr = 1;
-                    _skip = prevskip + wqty;
-                }
-                else
+                default:
+                case EdfErr.WrongType: return (int)err;
+                case EdfErr.SrcDataRequred:
+                    _skip += wqty;
+                    break;
+                case EdfErr.IsOk:
+                    if (EdfErr.IsOk != (err = WriteSep(SepRecEnd, ref dst, ref writed)))
+                        return (int)err;
                     _skip = 0;
+                    return (int)EdfErr.IsOk;
+                case EdfErr.DstBufOverflow:
+                    Flush();
+                    dst = _current._data;
+                    _skip += wqty;
+                    err = 0;
+                    break;
             }
         }
-        while (0 != wr);
-        return wr;
+        while (EdfErr.SrcDataRequred != err);
+        return (int)err;
     }
-    private static int WriteObj(TypeInf inf, Span<byte> dst, object? obj, ref int skip, ref int wqty, out int writed)
+    private static EdfErr WriteObj(TypeInf inf, Span<byte> dst, object? obj, ref int skip, ref int wqty, ref int writed)
     {
-        writed = 0;
+        EdfErr err = EdfErr.IsOk;
         if (null == obj)
-            return 0;
-
+            return EdfErr.SrcDataRequred;
         uint totalElement = 1;
         for (int i = 0; i < inf.Dims?.Length; i++)
             totalElement *= inf.Dims[i];
 
         if (1 < totalElement)
         {
-            if (0 != WriteSep(SepBeginArray, ref dst, ref writed))
-                return 1;
+            if (EdfErr.IsOk != (err = WriteSep(SepBeginArray, ref dst, ref writed)))
+                return err;
             if (obj is not Array arr)
             {
-                var ret = WriteObjElement(inf, dst, obj, ref skip, ref wqty, out var w);
-                if (0 != ret)
-                    return ret;
-                writed += w;
-                return -1;
+                if (EdfErr.IsOk != (err = WriteObjElement(inf, dst, obj, ref skip, ref wqty, ref writed)))
+                    return err;
+                return EdfErr.SrcDataRequred;
             }
             for (int i = 0; i < totalElement && i < arr.Length; i++)
             {
-                var ret = WriteObjElement(inf, dst, arr.GetValue(i), ref skip, ref wqty, out var w);
-                if (0 != ret)
-                    return ret;
-                writed += w;
-                dst = dst.Slice(w);
+                var w = writed;
+                if (EdfErr.IsOk != (err = WriteObjElement(inf, dst, arr.GetValue(i), ref skip, ref wqty, ref writed)))
+                    return err;
+                dst = dst.Slice(writed - w);
             }
-            if(arr.Length < totalElement)
-                return -1;
-            if (0 != WriteSep(SepEndArray, ref dst, ref writed))
-                return 1;
+            if (arr.Length < totalElement)
+                return EdfErr.SrcDataRequred;
+            if (EdfErr.IsOk != (err = WriteSep(SepEndArray, ref dst, ref writed)))
+                return err;
         }
         else
         {
-            var ret = WriteObjElement(inf, dst, obj, ref skip, ref wqty, out var w);
-            if (0 != ret)
-                return ret;
-            writed += w;
-            dst = dst.Slice(w);
+            var w = writed;
+            if (EdfErr.IsOk != (err = WriteObjElement(inf, dst, obj, ref skip, ref wqty, ref writed)))
+                return err;
+            //dst = dst.Slice(writed - w);
         }
-        return 0;
+        return err;
     }
-    private static int WriteObjElement(TypeInf inf, Span<byte> dst, object? obj, ref int skip, ref int wqty, out int writed)
+    private static EdfErr WriteObjElement(TypeInf inf, Span<byte> dst, object? obj, ref int skip, ref int wqty, ref int writed)
     {
-        writed = 0;
+        EdfErr err = EdfErr.IsOk;
         if (null == obj)
-            return 0;
+            return EdfErr.SrcDataRequred;
         if (PoType.Struct == inf.Type)
         {
             if (inf.Items != null && 0 != inf.Items.Length)
             {
-                if (0 != WriteSep(SepBeginStruct, ref dst, ref writed))
-                    return 1;
+                if (EdfErr.IsOk != (err = WriteSep(SepBeginStruct, ref dst, ref writed)))
+                    return err;
                 var props = obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
                 for (int childIndex = 0; childIndex < inf.Items.Length; childIndex++)
                 {
-                    var wr = WriteObj(inf.Items[childIndex], dst, props[childIndex].GetValue(obj), ref skip, ref wqty, out var w);
-                    writed += w;
-                    if (0 != wr)
-                        return wr;
-                    dst = dst.Slice(w);
+                    var w = writed;
+                    err = WriteObj(inf.Items[childIndex], dst, props[childIndex].GetValue(obj), ref skip, ref wqty, ref writed);
+                    if (EdfErr.IsOk != err)
+                        return err;
+                    dst = dst.Slice(writed - w);
                 }
-                if (0 != WriteSep(SepEndStruct, ref dst, ref writed))
-                    return 1;
+                if (EdfErr.IsOk != (err = WriteSep(SepEndStruct, ref dst, ref writed)))
+                    return err;
             }
         }
         else
@@ -176,18 +174,16 @@ public class BinWriter : BaseWriter
                 skip--;
             else
             {
-                int w = 0;
-                int wr = Primitives.TrySrcToBin(inf.Type, obj, dst, ref w);
-                if (0 != wr)
-                    return wr;
-                wqty++;
+                if (EdfErr.IsOk != (err = Primitives.TrySrcToBin(inf.Type, obj, dst, out var w)))
+                    return err;
                 writed += w;
+                wqty++;
                 dst = dst.Slice(w);
             }
-            if (0 != WriteSep(SepVarEnd, ref dst, ref writed))
-                return 1;
+            if (EdfErr.IsOk != (err = WriteSep(SepVarEnd, ref dst, ref writed)))
+                return err;
         }
-        return 0;
+        return err;
     }
     private static long Write(TypeInf inf, Stream dst)
     {

@@ -147,9 +147,9 @@ public class BinReader : BaseReader
         }
         else
         {
-            int rv = Primitives.BinToSrc(t.Type, src, ref readed, out ret);
-            if (0 != rv)
-                return rv;
+            EdfErr err;
+            if (0 != (err = Primitives.BinToSrc(t.Type, src, ref readed, out ret)))
+                return (int)err;
         }
         return 0;
     }

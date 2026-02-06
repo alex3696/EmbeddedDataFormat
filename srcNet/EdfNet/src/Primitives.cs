@@ -2,27 +2,39 @@ namespace NetEdf.src;
 
 public static class Primitives
 {
-    public const int ErrDstBufOverflow = 1;
-    public const int ErrWrongType = -2;
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="t"></param>
+    /// <param name="obj">source data object</param>
+    /// <param name="dst">>destination stream</param>
+    /// <returns>writed bytes count</returns>
+    /// <exception cref="OverflowException"></exception>
+    /// <exception cref="NotSupportedException"></exception>
     public static int SrcToBin(PoType t, object obj, Stream dst)
     {
         Span<byte> b = stackalloc byte[t.GetSizeOf()];
-        int w = 0;
-        var err = TrySrcToBin(t, obj, b, ref w);
-        if (0 == err)
-            dst.Write(b.Slice(0, w));
+        int w = SrcToBin(t, obj, b);
+        dst.Write(b.Slice(0, w));
         return w;
     }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="t"></param>
+    /// <param name="obj">source data object</param>
+    /// <param name="dst">destination memory buffer</param>
+    /// <returns>writed bytes count</returns>
+    /// <exception cref="OverflowException"></exception>
+    /// <exception cref="NotSupportedException"></exception>
     public static int SrcToBin(PoType t, object obj, Span<byte> dst)
     {
-        int w = 0;
-        var ret = TrySrcToBin(t, obj, dst, ref w);
+        var ret = TrySrcToBin(t, obj, dst, out var w);
         switch (ret)
         {
             default: break;
-            case ErrDstBufOverflow: throw new OverflowException();
-            case ErrWrongType: throw new NotSupportedException($"{t}");
+            case EdfErr.DstBufOverflow: throw new OverflowException();
+            case EdfErr.WrongType: throw new NotSupportedException($"{t}");
         }
         return w;
     }
@@ -33,15 +45,15 @@ public static class Primitives
     /// <param name="obj"></param>
     /// <param name="dst"></param>
     /// <returns>error code, 0 when OK</returns>
-    public static int TrySrcToBin(PoType t, object obj, Span<byte> dst, ref int w)
+    public static EdfErr TrySrcToBin(PoType t, object obj, Span<byte> dst, out int w)
     {
         w = t.GetSizeOf();
         if (dst.Length < w)
-            return ErrDstBufOverflow;
+            return EdfErr.DstBufOverflow;
         switch (t)
         {
             case PoType.Struct:
-            default: w = 0; return ErrWrongType;
+            default: w = 0; return EdfErr.WrongType;
             case PoType.Char:
             case PoType.UInt8: dst[0] = (byte)obj; break;
             case PoType.Int8: dst[0] = (byte)obj; break;
@@ -57,20 +69,20 @@ public static class Primitives
             case PoType.String:
                 int len = EdfBinString.WriteBin((string)obj, dst);
                 if (0 > len)
-                    return ErrDstBufOverflow;
+                    return EdfErr.DstBufOverflow;
                 w = len;
                 break;
         }
-        return 0;
+        return EdfErr.IsOk;
     }
-    public static int BinToSrc(PoType t, ReadOnlySpan<byte> src, ref int r, out object? obj)
+    public static EdfErr BinToSrc(PoType t, ReadOnlySpan<byte> src, ref int r, out object? obj)
     {
         r = t.GetSizeOf();
         obj = default;
         switch (t)
         {
             case PoType.Struct:
-            default: r = 0; return ErrWrongType;
+            default: r = 0; return EdfErr.WrongType;
             case PoType.Char:
             case PoType.UInt8: obj = MemoryMarshal.Read<byte>(src); break;
             case PoType.Int8: obj = MemoryMarshal.Read<sbyte>(src); break;
@@ -89,7 +101,7 @@ public static class Primitives
                     obj = str;
                 break;
         }
-        return 0;
+        return EdfErr.IsOk;
     }
 
 }

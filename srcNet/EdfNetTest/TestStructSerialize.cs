@@ -159,20 +159,21 @@ public class TestStructSerialize
 
     static int WriteBigVar(BaseWriter dw)
     {
-        uint arrLen = (uint)(dw.Cfg.Blocksize / sizeof(uint) * 2.5);
+        int arrLen = (int)(dw.Cfg.Blocksize / sizeof(uint) * 2.5);
         TypeRec rec = new()
         {
-            Inf = new() { Type = PoType.Int32, Name = "variable", Dims = [arrLen], },
+            Inf = new() { Type = PoType.Int32, Name = "variable", Dims = [(uint)arrLen], },
             Id = 0xF0F1F2F3
         };
         dw.Write(rec);
         int[] test = new int[arrLen];
         for (uint i = 0; i < arrLen; i++)
             test[i] = (int)i;
-        dw.Write(rec.Inf, test);//write all
-        dw.Write(rec.Inf, test.AsSpan(0, 15).ToArray());
-        dw.Write(rec.Inf, test.AsSpan(15, 149).ToArray());
-        dw.Write(rec.Inf, test.AsSpan(15 + 149).ToArray());
+        Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(rec.Inf, test));//write all
+        Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(rec.Inf, test.AsSpan(0, 15).ToArray()));
+        Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(rec.Inf, test.AsSpan(15, arrLen - 30).ToArray()));
+        //Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(rec.Inf, test.AsSpan(arrLen - 15).ToArray()));
+        dw.Write(rec.Inf, test.AsSpan(arrLen - 15).ToArray());
         return 0;
     }
     [TestMethod]
