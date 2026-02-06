@@ -172,8 +172,7 @@ public class TestStructSerialize
         Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(rec.Inf, test));//write all
         Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(rec.Inf, test.AsSpan(0, 15).ToArray()));
         Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(rec.Inf, test.AsSpan(15, arrLen - 30).ToArray()));
-        //Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(rec.Inf, test.AsSpan(arrLen - 15).ToArray()));
-        dw.Write(rec.Inf, test.AsSpan(arrLen - 15).ToArray());
+        Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(rec.Inf, test.AsSpan(arrLen - 15).ToArray()));
         return 0;
     }
     [TestMethod]
@@ -210,7 +209,7 @@ public class TestStructSerialize
     public void TestPrimitiveDecomposer()
     {
         int val0 = 123;
-        var flaten0 = (new PrimitiveDecomposer(val0)).AsEnumerable().ToArray();
+        var flaten0 = new PrimitiveDecomposer(val0).ToArray();
         Assert.AreEqual(123, flaten0[0]);
 
         var data = new
@@ -219,7 +218,7 @@ public class TestStructSerialize
             Meta = new { Code = "A1", Active = true },
             Tags = new[] { "tag1", "tag2" }
         };
-        var flaten2 = (new PrimitiveDecomposer(data)).AsEnumerable().ToArray();
+        var flaten2 = new PrimitiveDecomposer(data).ToArray();
         Assert.AreEqual(1, flaten2[0]);
         Assert.AreEqual("A1", flaten2[1]);
         Assert.IsTrue((bool?)flaten2[2]);

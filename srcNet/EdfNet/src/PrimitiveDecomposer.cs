@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace NetEdf.src;
 
-public class PrimitiveDecomposer : IEnumerable<object>
+public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
 {
     private readonly object _source;
 
