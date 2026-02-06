@@ -98,7 +98,15 @@ public class TypeInf : IEquatable<TypeInf>
     {
         if (null == y)
             return false;
-        return Enumerable.SequenceEqual(ToBytes(), y.ToBytes());
+        if (Type != y.Type)
+            return false;
+        if (Name != y.Name)
+            return false;
+        if (!Dims.SequenceEqual(y.Dims))
+            return false;
+        if (!Items.SequenceEqual(y.Items))
+            return false;
+        return true;
     }
     public override bool Equals(object? obj) => Equals(obj as TypeInf);
     public override int GetHashCode() => ToBytes().GetHashCode();
