@@ -6,7 +6,6 @@ public class BinWriter : BaseWriter
     private readonly Stream _bw;
     private readonly BinBlock _current;
 
-
     private int _skip = 0;
     private object? _currObj = null;
     public static EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int writed) => EdfErr.IsOk;
@@ -46,12 +45,11 @@ public class BinWriter : BaseWriter
         var sp = _current._data.AsSpan(0, 16);
         sp.Clear();
         using var ms = new MemoryStream(_current._data);
-        using var bs = new BinaryWriter(ms);
-        bs.Write(h.VersMajor);
-        bs.Write(h.VersMinor);
-        bs.Write(h.Encoding);
-        bs.Write(h.Blocksize);
-        bs.Write((UInt32)h.Flags);
+        Primitives.SrcToBin(ms, PoType.UInt8, h.VersMajor);
+        Primitives.SrcToBin(ms, PoType.UInt8, h.VersMinor);
+        Primitives.SrcToBin(ms, PoType.UInt16, h.Encoding);
+        Primitives.SrcToBin(ms, PoType.UInt16, h.Blocksize);
+        Primitives.SrcToBin(ms, PoType.UInt32, h.Flags);
         _current.Qty = (ushort)sp.Length;
         Flush();
     }
@@ -60,11 +58,12 @@ public class BinWriter : BaseWriter
         Flush();
         _current.Type = BlockType.VarInfo;
         using var ms = new MemoryStream(_current._data);
-        _current.Qty += (ushort)Primitives.SrcToBin(PoType.UInt32, t.Id, ms);
-        _current.Qty += (ushort)Write(t.Inf, ms);
-        _current.Qty += (ushort)Primitives.SrcToBin(PoType.String, t.Name ?? string.Empty, ms);
-        _current.Qty += (ushort)Primitives.SrcToBin(PoType.String, t.Desc ?? string.Empty, ms);
+        Primitives.SrcToBin(ms, PoType.UInt32, t.Id);
+        BinWriter.Write(ms, t.Inf);
+        Primitives.SrcToBin(ms, PoType.String, t.Name ?? string.Empty);
+        Primitives.SrcToBin(ms, PoType.String, t.Desc ?? string.Empty);
         _currDataType = t.Inf;
+        _current.Qty = (ushort)ms.Position;
         Flush();
     }
     public override int Write(TypeInf t, object obj)
@@ -171,7 +170,7 @@ public class BinWriter : BaseWriter
         }
         return err;
     }
-    private static long Write(TypeInf inf, Stream dst)
+    private static long Write(Stream dst, TypeInf inf)
     {
         var begin = dst.Position;
         var bw = new BinaryWriter(dst);
@@ -193,7 +192,7 @@ public class BinWriter : BaseWriter
             bw.Write((byte)inf.Items.Length);
             for (int i = 0; i < inf.Items.Length; i++)
             {
-                Write(inf.Items[i], dst);
+                Write(dst, inf.Items[i]);
             }
         }
         return dst.Position - begin;

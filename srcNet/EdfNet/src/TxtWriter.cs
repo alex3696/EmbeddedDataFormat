@@ -34,9 +34,8 @@ public class TxtWriter : BaseWriter
     }
     public override void Write(Header h)
     {
-        Write($"~ ");
-        Write($"version={h.VersMajor}.{h.VersMinor} bs = {h.Blocksize} encoding={h.Encoding} flags={h.Flags} \n");
-        Write($"// ? - struct @ - data // - comment");
+        Write($"<~ {{version={h.VersMajor}.{h.VersMinor}; bs = {h.Blocksize}; encoding={h.Encoding}; flags={h.Flags}; }} >\n");
+        //Write($"// ? - struct @ - data // - comment");
     }
     public override void Write(TypeRec t)
     {

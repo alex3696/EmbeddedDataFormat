@@ -74,26 +74,6 @@ public class TypeInf : IEquatable<TypeInf>
     {
     }
 
-    public uint ValueSize => GetValueSize();
-    public uint GetValueSize()
-    {
-        uint sz;
-        if (PoType.Struct == Type)
-        {
-            sz = 0;
-            for (int i = 0; i < Items.Length; i++)
-                sz += Items[i].GetValueSize();
-        }
-        else
-        {
-            sz = Type.GetSizeOf();
-        }
-        for (int i = 0; i < Dims.Length; i++)
-            sz *= Dims[i];
-        return sz;
-    }
-
-
     public bool Equals(TypeInf? y)
     {
         if (null == y)
