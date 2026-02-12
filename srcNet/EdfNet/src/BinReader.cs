@@ -1,5 +1,3 @@
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
 namespace NetEdf.src;
 
 public class BinReader : BaseReader
@@ -11,6 +9,7 @@ public class BinReader : BaseReader
     public byte Seq;
 
     public UInt16 Pos;
+    protected TypeInf? _currDataType;
 
     public BinReader(Stream stream, Header? header = default)
     {
@@ -21,7 +20,7 @@ public class BinReader : BaseReader
         Cfg = Header.Default;
         if (ReadBlock())
             Cfg = ReadHeader() ?? Header.Default;
-            
+
         _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
     }
 
@@ -50,9 +49,8 @@ public class BinReader : BaseReader
                     if (crc != fileCrc)
                         throw new Exception($"Wrong CRC block {_current.Seq}");
                 }
-
-
-
+                if (_current.Type != BlockType.VarData)
+                    _currDataType = ReadInfo()?.Inf;
                 Pos = 0;
                 return true;
             }
@@ -120,7 +118,6 @@ public class BinReader : BaseReader
                 return rv;
         }
         return 0;
-
     }
     static int ReadObjElement(TypeInf t, ReadOnlySpan<byte> src, Type csType, out int readed, out object? ret)
     {
@@ -155,12 +152,18 @@ public class BinReader : BaseReader
     }
 
 
-
-    public int TryRead<T>(TypeInf t, [NotNullWhen(true)] out T? ret)
+    int _readed = 0;
+    public int TryRead<T>([NotNullWhen(true)] out T? ret)
     {
-        int readed = ReadBin(t, _current._data, typeof(T), out var r, out var result);
+        ArgumentNullException.ThrowIfNull(_currDataType);
+        Span<byte> src = _current._data.AsSpan(_readed, _current.Qty - _readed);
+
+        _readed += ReadBin(_currDataType, _current._data, typeof(T), out var r, out var result);
         if (null != result)
+        {
             ret = (T)Convert.ChangeType(result, typeof(T));
+            _readed = 0;
+        }
         else
             ret = default;
         return r;

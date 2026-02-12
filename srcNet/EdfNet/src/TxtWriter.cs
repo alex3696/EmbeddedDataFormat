@@ -26,6 +26,7 @@ public class TxtWriter : BaseWriter
     }
     public override void Flush()
     {
+        BufFlush();
         _stream.Flush();
         //_tw.Clear();
     }
@@ -42,6 +43,8 @@ public class TxtWriter : BaseWriter
     {
         Write($"<~ {{version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags}; }} >\n");
         //Write($"// ? - struct @ - data // - comment");
+        _currDataType = null;
+        _blkQty = 0;
     }
     public override void Write(TypeRec t)
     {
@@ -90,6 +93,11 @@ public class TxtWriter : BaseWriter
             skip--;
             return EdfErr.IsOk;
         }
+        if (0 == src.Length)
+        {
+            wqty++;
+            return EdfErr.IsOk; 
+        }
         if (src.Length > dst.Length)
             return EdfErr.DstBufOverflow;
         src.CopyTo(dst);
@@ -136,8 +144,16 @@ public class TxtWriter : BaseWriter
                     _skip += wqty;
                     break;
                 case EdfErr.IsOk:
-                    _skip = 0;
-                    return (int)EdfErr.IsOk;
+                    throw new NotImplementedException();
+                    if (null == _currObj || !flatObj.MoveNext())
+                    {
+                        _skip = 0;
+                        return (int)EdfErr.IsOk;
+                    }
+                    _currObj = flatObj.Current;
+                    _skip += wqty;
+                    dst = _blkData;
+                    break;
                 case EdfErr.DstBufOverflow:
                     BufFlush();
                     dst = _blkData;
@@ -152,11 +168,8 @@ public class TxtWriter : BaseWriter
     private EdfErr WriteObj(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
-        if (0 == skip)
-        {
-            if (EdfErr.IsOk != (err = WriteSep(SepRecBegin, ref dst, ref skip, ref wqty, ref writed)))
-                return err;
-        }
+        if (EdfErr.IsOk != (err = WriteSep(SepRecBegin, ref dst, ref skip, ref wqty, ref writed)))
+            return err;
         uint totalElement = 1;
         for (int i = 0; i < inf.Dims?.Length; i++)
             totalElement *= inf.Dims[i];

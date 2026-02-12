@@ -68,8 +68,10 @@ public static class Primitives
     }
     public static EdfErr BinToSrc(PoType t, ReadOnlySpan<byte> src, ref int r, out object? obj)
     {
-        r = t.GetSizeOf();
         obj = default;
+        int len = t.GetSizeOf();
+        if (len > src.Length)
+            return EdfErr.SrcDataRequred;
         switch (t)
         {
             case PoType.Struct:
@@ -87,11 +89,12 @@ public static class Primitives
             case PoType.Single: obj = MemoryMarshal.Read<float>(src); break;
             case PoType.Double: obj = MemoryMarshal.Read<double>(src); break;
             case PoType.String:
-                r = EdfBinString.ReadBin(src, out string? str);
-                if (0 < r)
+                len = EdfBinString.ReadBin(src, out string? str);
+                if (0 < len)
                     obj = str;
                 break;
         }
+        r += len;
         return EdfErr.IsOk;
     }
     public static EdfErr TrySrcToEdf(Span<byte> dst, object obj, out int w)

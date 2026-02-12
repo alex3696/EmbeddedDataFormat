@@ -104,7 +104,7 @@ public class TestStructSerialize
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
 
-        reader.TryRead(rec.Inf, out KeyValueStruct[]? data);
+        reader.TryRead(out KeyValueStruct[]? data);
 
         Assert.AreEqual(kvArr[0], data[0]);
         Assert.AreEqual(kvArr[1], data[1]);
@@ -173,6 +173,7 @@ public class TestStructSerialize
         Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(test.AsSpan(0, 15).ToArray()));
         Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(test.AsSpan(15, arrLen - 30).ToArray()));
         Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(test.AsSpan(arrLen - 15).ToArray()));
+        dw.Flush();
         return 0;
     }
     [TestMethod]

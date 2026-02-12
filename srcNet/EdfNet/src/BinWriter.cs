@@ -91,8 +91,15 @@ public class BinWriter : BaseWriter
                 case EdfErr.IsOk:
                     if (EdfErr.IsOk != (err = WriteSep(SepRecEnd, ref dst, ref writed)))
                         return (int)err;
-                    _skip = 0;
-                    return (int)EdfErr.IsOk;
+                    if (null == _currObj && !flatObj.MoveNext())
+                    {
+                        _skip = 0;
+                        return (int)EdfErr.IsOk;
+                    }
+                    _currObj = flatObj.Current;
+                    _skip += wqty;
+                    dst = _current._data;
+                    break;
                 case EdfErr.DstBufOverflow:
                     Flush();
                     dst = _current._data;
