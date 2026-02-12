@@ -14,14 +14,19 @@ public static class Primitives
     public static int SrcToBin(this Stream dst, PoType t, object obj)
     {
         Span<byte> b = stackalloc byte[t.GetSizeOf()];
-        var ret = TrySrcToBin(t, obj, b, out var w);
+        var w = SrcToBin(b, t, obj);
+        dst.Write(b.Slice(0, w));
+        return w;
+    }
+    public static int SrcToBin(this Span<byte> dst, PoType t, object obj)
+    {
+        var ret = TrySrcToBin(t, obj, dst, out var w);
         switch (ret)
         {
             default: break;
             case EdfErr.DstBufOverflow: throw new OverflowException();
             case EdfErr.WrongType: throw new NotSupportedException($"{t}");
         }
-        dst.Write(b.Slice(0, w));
         return w;
     }
     /// <summary>
@@ -118,4 +123,43 @@ public static class Primitives
         }
         return EdfErr.IsOk;
     }
+
+    public static EdfErr TryFormat<T>(PoType t, T obj, Span<byte> dst, out int w)
+        where T : IUtf8SpanFormattable
+    {
+        if (obj.TryFormat(dst, out w, default, null))
+            return EdfErr.IsOk;
+        return EdfErr.DstBufOverflow;
+    }
+    public static EdfErr TrySrcToTxt(PoType t, object obj, Span<byte> dst, out int w)
+    {
+        switch (t)
+        {
+            case PoType.Struct:
+            default: w = 0; break;
+            case PoType.Char:
+            case PoType.UInt8: return TryFormat(t, (byte)obj, dst, out w);
+            case PoType.Int8: return TryFormat(t, (sbyte)obj, dst, out w);
+            case PoType.UInt16: return TryFormat(t, (ushort)obj, dst, out w);
+            case PoType.Int16: return TryFormat(t, (short)obj, dst, out w);
+            case PoType.UInt32: return TryFormat(t, (uint)obj, dst, out w);
+            case PoType.Int32: return TryFormat(t, (int)obj, dst, out w);
+            case PoType.UInt64: return TryFormat(t, (ulong)obj, dst, out w);
+            case PoType.Int64: return TryFormat(t, (long)obj, dst, out w);
+            case PoType.Half: return TryFormat(t, (Half)obj, dst, out w);
+            case PoType.Single: return TryFormat(t, (float)obj, dst, out w);
+            case PoType.Double: return TryFormat(t, (double)obj, dst, out w);
+            case PoType.String:
+                {
+                    Span<byte> buf = stackalloc byte[256];
+                    w = Encoding.UTF8.GetBytes((string)obj, buf);
+                    if (w > dst.Length)
+                        return EdfErr.DstBufOverflow;
+                    buf.Slice(0, w).CopyTo(dst);
+                    return EdfErr.DstBufOverflow;
+                }
+        }
+        return EdfErr.WrongType;
+    }
 }
+

@@ -66,8 +66,9 @@ public class BinWriter : BaseWriter
         _current.Qty = (ushort)ms.Position;
         Flush();
     }
-    public override int Write(TypeInf t, object obj)
+    public override int Write(object obj)
     {
+        ArgumentNullException.ThrowIfNull(_currDataType);
         IEnumerator<object> flatObj = new PrimitiveDecomposer(obj).GetEnumerator();
         _current.Type = BlockType.VarData;
         Span<byte> dst = _current._data.AsSpan(_current.Qty);
@@ -77,9 +78,9 @@ public class BinWriter : BaseWriter
             int skip = _skip;
             int wqty = 0;
             int writed = 0;
-            err = WriteObj(t, dst, flatObj, ref skip, ref wqty, ref writed);
+            err = WriteObj(_currDataType, dst, flatObj, ref skip, ref wqty, ref writed);
             _current.Qty += (ushort)writed;
-            dst.Slice(writed);
+            dst = dst.Slice(writed);
             switch (err)
             {
                 default:

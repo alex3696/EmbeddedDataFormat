@@ -84,7 +84,7 @@ public class TestStructSerialize
         using (var bw = new BinWriter(memStream))
         {
             bw.Write(TestStructInf);
-            bw.Write(TestStructInf.Inf, kvArr);
+            bw.Write(kvArr);
             //bw.Write(TestStructInf.Inf, val1);
             //bw.Write(TestStructInf.Inf, val2);
             Assert.AreEqual(30, bw.CurrentQty);
@@ -169,10 +169,10 @@ public class TestStructSerialize
         int[] test = new int[arrLen];
         for (uint i = 0; i < arrLen; i++)
             test[i] = (int)i;
-        Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(rec.Inf, test));//write all
-        Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(rec.Inf, test.AsSpan(0, 15).ToArray()));
-        Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(rec.Inf, test.AsSpan(15, arrLen - 30).ToArray()));
-        Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(rec.Inf, test.AsSpan(arrLen - 15).ToArray()));
+        Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(test));//write all
+        Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(test.AsSpan(0, 15).ToArray()));
+        Assert.AreEqual(EdfErr.SrcDataRequred, (EdfErr)dw.Write(test.AsSpan(15, arrLen - 30).ToArray()));
+        Assert.AreEqual(EdfErr.IsOk, (EdfErr)dw.Write(test.AsSpan(arrLen - 15).ToArray()));
         return 0;
     }
     [TestMethod]

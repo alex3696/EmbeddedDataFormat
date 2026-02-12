@@ -14,7 +14,7 @@ public abstract class BaseWriter : BaseDisposable
 
     public abstract void Write(Header v);
     public abstract void Write(TypeRec t);
-    public abstract int Write(TypeInf t, object obj);
+    public abstract int Write(object obj);
     public abstract void Flush();
 
 }
@@ -30,7 +30,7 @@ public static class BaseWriterExt
     {
         dw.Write(new TypeRec() { Id = id, Inf = new(pt), Name = name, });
         ArgumentNullException.ThrowIfNull(dw.CurrDataType);
-        dw.Write(dw.CurrDataType, d);
+        dw.Write(d);
     }
 }
 
