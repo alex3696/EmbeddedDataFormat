@@ -75,7 +75,7 @@ public class BinReader : BaseReader
             TypeRec rec = new()
             {
                 Id = BinaryPrimitives.ReadUInt32LittleEndian(_current._data),
-                Inf = TypeInf.Parse(_current.Data.Slice(sizeof(uint))),
+                Inf = Parse(_current.Data.Slice(sizeof(uint))),
             };
             return rec;
         }
@@ -145,8 +145,9 @@ public class BinReader : BaseReader
         else
         {
             EdfErr err;
-            if (0 != (err = Primitives.BinToSrc(t.Type, src, ref readed, out ret)))
+            if (0 != (err = Primitives.BinToSrc(t.Type, src, out var r, out ret)))
                 return (int)err;
+            readed += r;
         }
         return 0;
     }
@@ -176,4 +177,48 @@ public class BinReader : BaseReader
         _br.Dispose();
     }
 
+
+    public static TypeInf Parse(ReadOnlySpan<byte> b) => FromBytes(b, out _);
+    static TypeInf FromBytes(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
+    {
+        rest = b;
+        if (2 > rest.Length)
+            throw new ArgumentException($"array is too small {b.Length}");
+        if (!Enum.IsDefined(typeof(PoType), b[0]))
+            throw new ArgumentException("type mismatch");
+        // type
+        var type = (PoType)b[0];
+        rest = rest.Slice(1);
+        // dim
+        var dimsCount = rest[0];
+        rest = rest.Slice(1);
+        uint[]? dims = null;
+        if (0 < dimsCount)
+        {
+            dims = new uint[dimsCount];
+            for (int i = 0; i < dimsCount; i++)
+            {
+                dims[i] = BinaryPrimitives.ReadUInt32LittleEndian(rest);
+                rest = rest.Slice(sizeof(UInt32));
+            }
+        }
+        // name
+        byte bNameSize = rest[0];
+        rest = rest.Slice(1);
+        if (255 < bNameSize)
+            throw new ArgumentException("name len mismatch");
+        var name = Encoding.UTF8.GetString(rest.Slice(0, bNameSize));
+        rest = rest.Slice(bNameSize);
+        // childs
+        List<TypeInf>? childs = null;
+        if (PoType.Struct == type && 0 < rest.Length)
+        {
+            byte childsCount = rest[0];
+            rest = rest.Slice(1);
+            childs = new List<TypeInf>(childsCount);
+            for (int i = 0; i < childsCount; i++)
+                childs.Add(FromBytes(rest, out rest));
+        }
+        return new TypeInf(name, type, dims, childs?.ToArray());
+    }
 }
