@@ -30,30 +30,37 @@ public class BinToTxtConverter : BaseDisposable
     }
     public void Execute()
     {
-        while (_reader.ReadBlock())
+        try
         {
-            switch (_reader.GetBlockType())
+            while (_reader.ReadBlock())
             {
-                default: break;
-                case BlockType.Header:
-                    var header = _reader.ReadHeader();
-                    if (header != null)
-                        _writer.Write(header);
-                    break;
-                case BlockType.VarInfo:
-                    var rec = _reader.ReadInfo();
-                    if (rec != null)
-                        _writer.Write(rec);
-                    break;
-                case BlockType.VarData:
-                    var readed = _reader.TryRead(out object[]? arr);
-                    if (arr != null && 0 < arr.Length)
-                    {
-                        _writer.Write(arr);
-                    }
-                    break;
+                switch (_reader.GetBlockType())
+                {
+                    default: break;
+                    case BlockType.Header:
+                        var header = _reader.ReadHeader();
+                        if (header != null)
+                            _writer.Write(header);
+                        break;
+                    case BlockType.VarInfo:
+                        var rec = _reader.ReadInfo();
+                        if (rec != null)
+                            _writer.Write(rec);
+                        break;
+                    case BlockType.VarData:
+                        var readed = _reader.TryRead(out object[]? arr);
+                        if (arr != null && 0 < arr.Length)
+                        {
+                            _writer.Write(arr);
+                        }
+                        break;
+                }
             }
-            _writer.Flush();
         }
+        catch (EndOfStreamException ex)
+        {
+
+        }
+        _writer.Flush();
     }
 }

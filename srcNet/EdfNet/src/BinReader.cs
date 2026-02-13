@@ -82,10 +82,9 @@ public class BinReader : BaseReader
         return null;
     }
 
-    public static int ReadBin(TypeInf t, ReadOnlySpan<byte> src, Type csType, out int readed, out object? ret)
+    public static EdfErr ReadBin(TypeInf t, ReadOnlySpan<byte> src, Type csType, out int readed, out object? ret)
     {
-        if (!Enum.IsDefined(t.Type))
-            throw new ArgumentOutOfRangeException($"wrong PoType={t.Type}");
+        EdfErr err = EdfErr.IsOk;
         readed = 0;
         ret = default;
 
@@ -103,9 +102,8 @@ public class BinReader : BaseReader
             ret = arr;
             for (int i = 0; i < totalElement; i++)
             {
-                var rv = ReadObjElement(t, src, elementType, out var r, out var arr1);
-                if (0 != rv)
-                    return rv;
+                if (EdfErr.IsOk != (err = ReadObjElement(t, src, elementType, out var r, out var arr1)))
+                    return err;
                 arr.SetValue(arr1, i);
                 readed += r;
                 src = src.Slice(r);
@@ -113,14 +111,14 @@ public class BinReader : BaseReader
         }
         else
         {
-            var rv = ReadObjElement(t, src, csType, out readed, out ret);
-            if (0 != rv)
-                return rv;
+            if (EdfErr.IsOk != (err = ReadObjElement(t, src, csType, out readed, out ret)))
+                return err;
         }
-        return 0;
+        return err;
     }
-    static int ReadObjElement(TypeInf t, ReadOnlySpan<byte> src, Type csType, out int readed, out object? ret)
+    static EdfErr ReadObjElement(TypeInf t, ReadOnlySpan<byte> src, Type csType, out int readed, out object? ret)
     {
+        EdfErr err = EdfErr.IsOk;
         readed = 0;
         if (PoType.Struct == t.Type)
         {
@@ -133,8 +131,8 @@ public class BinReader : BaseReader
             foreach (var child in t.Items)
             {
                 var field = fields[fieldId++];
-                var rv = ReadBin(child, src, field.PropertyType, out var r, out var childVal);
-                if (0 < r && null != childVal)
+                err = ReadBin(child, src, field.PropertyType, out var r, out var childVal);
+                if (EdfErr.IsOk == err && 0 < r && null != childVal)
                 {
                     field.SetValue(ret, childVal);
                 }
@@ -144,30 +142,44 @@ public class BinReader : BaseReader
         }
         else
         {
-            EdfErr err;
             if (0 != (err = Primitives.BinToSrc(t.Type, src, out var r, out ret)))
-                return (int)err;
+                return err;
             readed += r;
         }
-        return 0;
+        return err;
     }
 
-
+    int _skip = 0;
     int _readed = 0;
-    public int TryRead<T>([NotNullWhen(true)] out T? ret)
+    public EdfErr TryRead<T>([NotNullWhen(true)] out T? ret)
     {
         ArgumentNullException.ThrowIfNull(_currDataType);
+        EdfErr err;
+        ret = default;
         Span<byte> src = _current._data.AsSpan(_readed, _current.Qty - _readed);
-
-        _readed += ReadBin(_currDataType, _current._data, typeof(T), out var r, out var result);
-        if (null != result)
+        do
         {
-            ret = (T)Convert.ChangeType(result, typeof(T));
-            _readed = 0;
+            int skip = _skip;
+            err = ReadBin(_currDataType, src, typeof(T), out var readed, out var result);
+            src = src.Slice(readed);
+            switch (err)
+            {
+                default:
+                case EdfErr.WrongType: return err;
+                case EdfErr.DstBufOverflow: return err;
+                case EdfErr.SrcDataRequred:
+                    if (!ReadBlock())
+                        return EdfErr.SrcDataRequred;
+                    _readed = 0;
+                    src = _current._data;
+                    break;
+                case EdfErr.IsOk:
+                    ret = (T?)Convert.ChangeType(result, typeof(T));
+                    _readed += readed;
+                    return err;
+            }
         }
-        else
-            ret = default;
-        return r;
+        while (true);
     }
 
     protected override void Dispose(bool disposing)

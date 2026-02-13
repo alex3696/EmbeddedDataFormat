@@ -144,7 +144,6 @@ public class TxtWriter : BaseWriter
                     _skip += wqty;
                     break;
                 case EdfErr.IsOk:
-                    throw new NotImplementedException();
                     if (null == _currObj || !flatObj.MoveNext())
                     {
                         _skip = 0;
