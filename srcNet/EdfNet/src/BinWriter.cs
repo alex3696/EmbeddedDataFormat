@@ -114,9 +114,7 @@ public class BinWriter : BaseWriter
     private EdfErr WriteObj(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
-        uint totalElement = 1;
-        for (int i = 0; i < inf.Dims?.Length; i++)
-            totalElement *= inf.Dims[i];
+        uint totalElement = inf.GetTotalElements();
 
         if (1 < totalElement)
             if (EdfErr.IsOk != (err = WriteSep(SepBeginArray, ref dst, ref writed)))
@@ -142,10 +140,10 @@ public class BinWriter : BaseWriter
             {
                 if (EdfErr.IsOk != (err = WriteSep(SepBeginStruct, ref dst, ref writed)))
                     return err;
-                for (int childIndex = 0; childIndex < inf.Items.Length; childIndex++)
+                foreach (var childInf in inf.Items)
                 {
                     var w = writed;
-                    err = WriteObj(inf.Items[childIndex], dst, flatObj, ref skip, ref wqty, ref writed);
+                    err = WriteObj(childInf, dst, flatObj, ref skip, ref wqty, ref writed);
                     if (EdfErr.IsOk != err)
                         return err;
                     dst = dst.Slice(writed - w);

@@ -1,5 +1,6 @@
 namespace NetEdf.src;
 
+[DebuggerDisplay("{DebugString(),nq}")]
 public class TypeInf : IEquatable<TypeInf>
 {
     public PoType Type;// { get; set; }
@@ -7,7 +8,30 @@ public class TypeInf : IEquatable<TypeInf>
     public uint[]? Dims;// { get; set; }
     public TypeInf[]? Items;// { get; set; }
 
-
+    protected static string GetOffset(int noffset)
+    {
+        string offset = "";
+        for (int i = 0; i < noffset; i++)
+            offset += "  ";
+        return offset;
+    }
+    public string DebugString(int noffset = 0)
+    {
+        string dims = string.Empty;
+        if (null != Dims && 0 < Dims.Length)
+            foreach (var d in Dims)
+                dims += $"[{d}]";
+        string childs = string.Empty;
+        if (PoType.Struct == Type && null != Items && 0 < Items.Length)
+        {
+            string offset = GetOffset(noffset);
+            childs += $"\n{offset}{{";
+            foreach (var it in Items)
+                childs += $"{offset}{it.DebugString(noffset + 1)};\n";
+            childs += $"\n{offset}}}";
+        }
+        return $"{Type} \"{Name}\"{dims}{childs}";
+    }
     public TypeInf(PoType type, string? name = default, uint[]? dims = default, TypeInf[]? childs = default)
     {
         Name = name;
@@ -30,123 +54,39 @@ public class TypeInf : IEquatable<TypeInf>
         : this(string.Empty, PoType.Int32)
     {
     }
-
     public bool Equals(TypeInf? y)
     {
-        if (null == y)
+        if (y is null)
             return false;
+        if (ReferenceEquals(this, y))
+            return true;
         if (Type != y.Type)
             return false;
         if (Name != y.Name)
             return false;
-        if (!Dims.SequenceEqual(y.Dims))
+        if (!(Dims ?? []).SequenceEqual(y.Dims ?? []))
             return false;
-        if (!Items.SequenceEqual(y.Items))
+        if (!(Items ?? []).SequenceEqual(y.Items ?? []))
             return false;
         return true;
     }
     public override bool Equals(object? obj) => Equals(obj as TypeInf);
-    public override int GetHashCode() => ToBytes().GetHashCode();
-
-    public byte[] ToBytes()
+    public override int GetHashCode()
     {
-        // type
-        var ret = new List<byte>(capacity: 256) { (byte)Type };
-        // dim
-        ret.Add((byte)Dims.Length);
-        for (int i = 0; i < Dims.Length; i++)
-        {
-            byte[] dst = new byte[sizeof(UInt32)];
-            BinaryPrimitives.WriteUInt32LittleEndian(dst, Dims[i]);
-            ret.AddRange(dst);
-        }
-        // name
-        byte[] bName = Encoding.UTF8.GetBytes(Name ?? string.Empty);
-        byte bNameSize = (byte)(255 < bName.Length ? 255 : bName.Length);
-        ret.Add(bNameSize);
-        ret.AddRange(bName.AsSpan(0, bNameSize).ToArray());
-        // childs
-        if (PoType.Struct == Type)
-        {
-            ret.Add((byte)Items.Length);
-            for (int i = 0; i < Items.Length; i++)
-                ret.AddRange(Items[i].ToBytes());
-        }
-        return [.. ret];
+        var hash = new HashCode();
+        hash.Add(Type);
+        hash.Add(Name);
+        if (Dims != null) foreach (var d in Dims) hash.Add(d);
+        if (Items != null) foreach (var i in Items) hash.Add(i);
+        return hash.ToHashCode();
     }
-    public static TypeInf Parse(ReadOnlySpan<byte> b) => FromBytes(b, out _);
-    static TypeInf FromBytes(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
+    public uint GetTotalElements()
     {
-        rest = b;
-        if (2 > rest.Length)
-            throw new ArgumentException($"array is too small {b.Length}");
-        if (!Enum.IsDefined(typeof(PoType), b[0]))
-            throw new ArgumentException("type mismatch");
-        // type
-        var type = (PoType)b[0];
-        rest = rest.Slice(1);
-        // dim
-        var dimsCount = rest[0];
-        rest = rest.Slice(1);
-        uint[]? dims = null;
-        if (0 < dimsCount)
-        {
-            dims = new uint[dimsCount];
-            for (int i = 0; i < dimsCount; i++)
-            {
-                dims[i] = BinaryPrimitives.ReadUInt32LittleEndian(rest);
-                rest = rest.Slice(sizeof(UInt32));
-            }
-        }
-        // name
-        byte bNameSize = rest[0];
-        rest = rest.Slice(1);
-        if (255 < bNameSize)
-            throw new ArgumentException("name len mismatch");
-        var name = Encoding.UTF8.GetString(rest.Slice(0, bNameSize));
-        rest = rest.Slice(bNameSize);
-        // childs
-        List<TypeInf>? childs = null;
-        if (PoType.Struct == type && 0 < rest.Length)
-        {
-            byte childsCount = rest[0];
-            rest = rest.Slice(1);
-            childs = new List<TypeInf>(childsCount);
-            for (int i = 0; i < childsCount; i++)
-                childs.Add(FromBytes(rest, out rest));
-        }
-        return new TypeInf(name, type, dims, childs?.ToArray());
+        uint totalElement = 1;
+        for (int i = 0; i < Dims?.Length; i++)
+            totalElement *= Dims[i];
+        return totalElement;
     }
 
-    public static string ToString(TypeInf s)
-    {
-        StringBuilder sb = new(capacity: 512);
-        ToString(s, sb, 0);
-        return sb.ToString(1, sb.Length - 1);
-    }
-    public static void ToString(TypeInf s, StringBuilder sb, int noffset)
-    {
-        string offset = GetOffset(noffset);
-
-        string dim = "";
-        foreach (var d in s.Dims)
-            dim += $"[{d}]";
-        sb.Append($"\n{offset}{s.Type}{dim} '{s.Name}'");
-        if (0 < s.Items.Length)
-        {
-            sb.Append($"\n{offset}{{");
-            foreach (var it in s.Items)
-                ToString(it, sb, noffset + 1);
-            sb.Append($"\n{offset}}}");
-        }
-        sb.Append(';');
-    }
-    public static string GetOffset(int noffset)
-    {
-        string offset = "";
-        for (int i = 0; i < noffset; i++)
-            offset += "  ";
-        return offset;
-    }
 
 }

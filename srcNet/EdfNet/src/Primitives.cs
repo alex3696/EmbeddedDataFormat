@@ -46,8 +46,8 @@ public static class Primitives
             case PoType.Struct:
             default: w = 0; return EdfErr.WrongType;
             case PoType.Char:
-            case PoType.UInt8: dst[0] = (byte)obj; break;
-            case PoType.Int8: dst[0] = (byte)obj; break;
+            case PoType.UInt8: MemoryMarshal.Write(dst, (byte)obj); break;
+            case PoType.Int8: MemoryMarshal.Write(dst, (sbyte)obj); break;
             case PoType.UInt16: MemoryMarshal.Write(dst, (ushort)obj); break;
             case PoType.Int16: MemoryMarshal.Write(dst, (short)obj); break;
             case PoType.UInt32: MemoryMarshal.Write(dst, (uint)obj); break;
@@ -66,11 +66,11 @@ public static class Primitives
         }
         return EdfErr.IsOk;
     }
-    public static EdfErr BinToSrc(PoType t, ReadOnlySpan<byte> src, ref int r, out object? obj)
+    public static EdfErr BinToSrc(PoType t, ReadOnlySpan<byte> src, out int r, out object? obj)
     {
         obj = default;
-        int len = t.GetSizeOf();
-        if (len > src.Length)
+        r = t.GetSizeOf();
+        if (r > src.Length)
             return EdfErr.SrcDataRequred;
         switch (t)
         {
@@ -89,12 +89,12 @@ public static class Primitives
             case PoType.Single: obj = MemoryMarshal.Read<float>(src); break;
             case PoType.Double: obj = MemoryMarshal.Read<double>(src); break;
             case PoType.String:
-                len = EdfBinString.ReadBin(src, out string? str);
-                if (0 < len)
-                    obj = str;
+                r = EdfBinString.ReadBin(src, out string? str);
+                if (0 >= r)
+                    return EdfErr.SrcDataRequred;
+                obj = str;
                 break;
         }
-        r += len;
         return EdfErr.IsOk;
     }
     public static EdfErr TrySrcToEdf(Span<byte> dst, object obj, out int w)

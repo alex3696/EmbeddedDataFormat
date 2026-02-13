@@ -69,7 +69,7 @@ public class TxtWriter : BaseWriter
                 Write($"[{d}]");
         }
         Write($" \"{t.Name}\"");
-        if (null != t.Items && 0 < t.Items.Length)
+        if (PoType.Struct==t.Type && null != t.Items && 0 < t.Items.Length)
         {
             Write($"\n{offset}{{");
             foreach (var it in t.Items)
@@ -170,9 +170,7 @@ public class TxtWriter : BaseWriter
         EdfErr err = EdfErr.IsOk;
         if (EdfErr.IsOk != (err = WriteSep(SepRecBegin, ref dst, ref skip, ref wqty, ref writed)))
             return err;
-        uint totalElement = 1;
-        for (int i = 0; i < inf.Dims?.Length; i++)
-            totalElement *= inf.Dims[i];
+        uint totalElement = inf.GetTotalElements();
 
         if (1 < totalElement)
             if (EdfErr.IsOk != (err = WriteSep(SepBeginArray, ref dst, ref skip, ref wqty, ref writed)))

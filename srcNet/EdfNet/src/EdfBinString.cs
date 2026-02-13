@@ -36,9 +36,19 @@ public static class EdfBinString
     }
     public static int ReadBin(ReadOnlySpan<byte> b, out string? str)
     {
-        if (byte.MaxValue == b[0])
-            throw new ArgumentException("BString overflow");
+        if (1 > b.Length)
+        {
+            str = null;
+            return -1;
+        }
         var len = b[0];
+        if (byte.MaxValue == len)
+            throw new ArgumentException("BString overflow");
+        if (len > b.Length)
+        {
+            str = null;
+            return -1;
+        }
         str = Encoding.UTF8.GetString(b.Slice(1, len));
         return 1 + len;
     }
