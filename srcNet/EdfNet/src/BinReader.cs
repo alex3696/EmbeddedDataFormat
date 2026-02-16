@@ -14,14 +14,14 @@ public class BinReader : BaseReader
     public BinReader(Stream stream, Header? header = default)
     {
         _br = new BinaryReader(stream);
-        //Span<byte> b = stackalloc byte[t.GetSizeOf()]; 
-        _current = new BinBlock(0, new byte[256], 0);
-
         Cfg = Header.Default;
-        if (ReadBlock())
-            Cfg = ReadHeader() ?? Header.Default;
-
         _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
+        if (ReadBlock() )
+        {
+            var newCfg = ReadHeader();
+            if( newCfg != null )
+                _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
+        }
     }
 
     public bool ReadBlock()

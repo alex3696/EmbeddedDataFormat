@@ -26,9 +26,9 @@ public class TxtWriter : BaseWriter
     }
     public override void Flush()
     {
-        BufFlush();
         _stream.Flush();
-        //_tw.Clear();
+        _st.Write(_blkData.AsSpan(0, _blkQty));
+        _blkQty = 0;
     }
     protected void Write(string? str) => _stream.Write(str);
     protected void Write(PoType p) => _stream.Write(p.ToString());
@@ -84,13 +84,10 @@ public class TxtWriter : BaseWriter
     }
 
 
-    BlockType _blkType;
-    ushort _blkQty;
-    readonly byte[] _blkData = new byte[256];
 
-    private int _skip = 0;
-    private object? _currObj = null;
-    public static EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
+    protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w)
+        => Primitives.TrySrcToTxt(t, obj, dst, out w);
+    protected override EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
     {
         if (0 < skip)
         {
@@ -110,138 +107,5 @@ public class TxtWriter : BaseWriter
         dst = dst.Slice(src.Length);
         return EdfErr.IsOk;
     }
-    private void BufFlush()
-    {
-        _stream.Flush();
-        _st.Write(_blkData.AsSpan(0, _blkQty));
-        _blkQty = 0;
-        //_tw.Clear();
-    }
-    public readonly byte[]? SepBeginStruct = null;
-    public readonly byte[]? SepEndStruct = null;
-    public readonly byte[]? SepBeginArray = null;
-    public readonly byte[]? SepEndArray = null;
-    public readonly byte[]? SepVarEnd = null;
-    public readonly byte[]? SepRecBegin = null;
-    public readonly byte[]? SepRecEnd = null;
 
-    public override EdfErr Write(object obj)
-    {
-        ArgumentNullException.ThrowIfNull(_currDataType);
-        IEnumerator<object> flatObj = new PrimitiveDecomposer(obj).GetEnumerator();
-        _blkType = BlockType.VarData;
-        Span<byte> dst = _blkData.AsSpan(_blkQty);
-        EdfErr err = EdfErr.IsOk;
-        do
-        {
-            int skip = _skip;
-            int wqty = 0;
-            int writed = 0;
-            err = WriteSingleValue(_currDataType, dst, flatObj, ref skip, ref wqty, ref writed);
-            _blkQty += (ushort)writed;
-            dst = dst.Slice(writed);
-            switch (err)
-            {
-                default:
-                case EdfErr.WrongType: return err;
-                case EdfErr.SrcDataRequred:
-                    _skip += wqty;
-                    break;
-                case EdfErr.IsOk:
-                    _skip = 0;
-                    if (null == _currObj && !flatObj.MoveNext())
-                    {
-                        return (int)EdfErr.IsOk;
-                    }
-                    _currObj = flatObj.Current;
-                    break;
-                case EdfErr.DstBufOverflow:
-                    BufFlush();
-                    dst = _blkData;
-                    _skip += wqty;
-                    err = EdfErr.IsOk;
-                    break;
-            }
-        }
-        while (EdfErr.SrcDataRequred != err);
-        return err;
-    }
-    private EdfErr WriteSingleValue(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
-    {
-        EdfErr err = EdfErr.IsOk;
-        if (EdfErr.IsOk != (err = WriteSep(SepRecBegin, ref dst, ref skip, ref wqty, ref writed)))
-            return err;
-        var w = writed;
-        if (EdfErr.IsOk != (err = WriteObj(inf, dst, flatObj, ref skip, ref wqty, ref writed)))
-            return err;
-        dst = dst.Slice(writed - w);
-        if (EdfErr.IsOk != (err = WriteSep(SepRecEnd, ref dst, ref skip, ref wqty, ref writed)))
-            return err;
-        return err;
-    }
-    private EdfErr WriteObj(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
-    {
-        EdfErr err = EdfErr.IsOk;
-        uint totalElement = inf.GetTotalElements();
-
-        if (1 < totalElement)
-            if (EdfErr.IsOk != (err = WriteSep(SepBeginArray, ref dst, ref skip, ref wqty, ref writed)))
-                return err;
-        for (int i = 0; i < totalElement; i++)
-        {
-            var w = writed;
-            if (EdfErr.IsOk != (err = WriteObjElement(inf, dst, flatObj, ref skip, ref wqty, ref writed)))
-                return err;
-            dst = dst.Slice(writed - w);
-        }
-        if (1 < totalElement)
-            if (EdfErr.IsOk != (err = WriteSep(SepEndArray, ref dst, ref skip, ref wqty, ref writed)))
-                return err;
-        return err;
-    }
-    private EdfErr WriteObjElement(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
-    {
-        EdfErr err = EdfErr.IsOk;
-        if (PoType.Struct == inf.Type)
-        {
-            if (inf.Childs != null && 0 != inf.Childs.Length)
-            {
-                if (EdfErr.IsOk != (err = WriteSep(SepBeginStruct, ref dst, ref skip, ref wqty, ref writed)))
-                    return err;
-                for (int childIndex = 0; childIndex < inf.Childs.Length; childIndex++)
-                {
-                    var w = writed;
-                    err = WriteObj(inf.Childs[childIndex], dst, flatObj, ref skip, ref wqty, ref writed);
-                    if (EdfErr.IsOk != err)
-                        return err;
-                    dst = dst.Slice(writed - w);
-                }
-                if (EdfErr.IsOk != (err = WriteSep(SepEndStruct, ref dst, ref skip, ref wqty, ref writed)))
-                    return err;
-            }
-        }
-        else
-        {
-            if (0 < skip)
-                skip--;
-            else
-            {
-                if (null == _currObj)
-                {
-                    if (!flatObj.MoveNext())
-                        return EdfErr.SrcDataRequred;
-                    _currObj = flatObj.Current;
-                }
-                if (EdfErr.IsOk != (err = Primitives.TrySrcToTxt(inf.Type, _currObj, dst, out var w)))
-                    return err;
-                _currObj = null;
-                writed += w;
-                wqty++;
-                dst = dst.Slice(w);
-            }
-            if (EdfErr.IsOk != (err = WriteSep(SepVarEnd, ref dst, ref skip, ref wqty, ref writed)))
-                return err;
-        }
-        return err;
-    }
 }

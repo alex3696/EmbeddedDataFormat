@@ -49,7 +49,7 @@ public class BinToTxtConverter : BaseDisposable
                         break;
                     case BlockType.VarData:
                         EdfErr err = TryReadPrimitives(out var arr, _reader.GetBlockData());
-                        if(0 < arr.Count)
+                        if (0 < arr.Count)
                         {
                             _writer.Write(arr);
                         }
