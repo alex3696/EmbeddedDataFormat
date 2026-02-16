@@ -40,17 +40,14 @@ public class BinWriter : BaseWriter
     {
         Flush();
         _currDataType = null;
-        //_current.Clear();
+        _current._data.AsSpan(0, 16).Clear();
         _current.Type = BlockType.Header;
-        var sp = _current._data.AsSpan(0, 16);
-        sp.Clear();
-        using var ms = new MemoryStream(_current._data);
-        Primitives.SrcToBin(ms, PoType.UInt8, h.VersMajor);
-        Primitives.SrcToBin(ms, PoType.UInt8, h.VersMinor);
-        Primitives.SrcToBin(ms, PoType.UInt16, h.Encoding);
-        Primitives.SrcToBin(ms, PoType.UInt16, h.Blocksize);
-        Primitives.SrcToBin(ms, PoType.UInt32, h.Flags);
-        _current.Qty = (ushort)sp.Length;
+        _current.Qty += (ushort)Primitives.SrcToBin(_current.EmptySpan, PoType.UInt8, h.VersMajor);
+        _current.Qty += (ushort)Primitives.SrcToBin(_current.EmptySpan, PoType.UInt8, h.VersMinor);
+        _current.Qty += (ushort)Primitives.SrcToBin(_current.EmptySpan, PoType.UInt16, h.Encoding);
+        _current.Qty += (ushort)Primitives.SrcToBin(_current.EmptySpan, PoType.UInt16, h.Blocksize);
+        _current.Qty += (ushort)Primitives.SrcToBin(_current.EmptySpan, PoType.UInt32, h.Flags);
+        _current.Qty = 16;
         Flush();
     }
     public override void Write(TypeRec t)
@@ -60,13 +57,13 @@ public class BinWriter : BaseWriter
         using var ms = new MemoryStream(_current._data);
         Primitives.SrcToBin(ms, PoType.UInt32, t.Id);
         BinWriter.Write(ms, t.Inf);
-        Primitives.SrcToBin(ms, PoType.String, t.Name ?? string.Empty);
-        Primitives.SrcToBin(ms, PoType.String, t.Desc ?? string.Empty);
+        _current.Qty += (ushort)ms.Position;
+        _current.Qty += (ushort)Primitives.SrcToBin(_current.EmptySpan, PoType.String, t.Name ?? string.Empty);
+        _current.Qty += (ushort)Primitives.SrcToBin(_current.EmptySpan, PoType.String, t.Desc ?? string.Empty);
         _currDataType = t.Inf;
-        _current.Qty = (ushort)ms.Position;
         Flush();
     }
-    public override int Write(object obj)
+    public override EdfErr Write(object obj)
     {
         ArgumentNullException.ThrowIfNull(_currDataType);
         IEnumerator<object> flatObj = new PrimitiveDecomposer(obj).GetEnumerator();
@@ -84,13 +81,13 @@ public class BinWriter : BaseWriter
             switch (err)
             {
                 default:
-                case EdfErr.WrongType: return (int)err;
+                case EdfErr.WrongType: return err;
                 case EdfErr.SrcDataRequred:
                     _skip += wqty;
                     break;
                 case EdfErr.IsOk:
                     if (EdfErr.IsOk != (err = WriteSep(SepRecEnd, ref dst, ref writed)))
-                        return (int)err;
+                        return err;
                     if (null == _currObj && !flatObj.MoveNext())
                     {
                         _skip = 0;
@@ -109,7 +106,7 @@ public class BinWriter : BaseWriter
             }
         }
         while (EdfErr.SrcDataRequred != err);
-        return (int)err;
+        return err;
     }
     private EdfErr WriteObj(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
@@ -136,11 +133,11 @@ public class BinWriter : BaseWriter
         EdfErr err = EdfErr.IsOk;
         if (PoType.Struct == inf.Type)
         {
-            if (inf.Items != null && 0 != inf.Items.Length)
+            if (inf.Childs != null && 0 != inf.Childs.Length)
             {
                 if (EdfErr.IsOk != (err = WriteSep(SepBeginStruct, ref dst, ref writed)))
                     return err;
-                foreach (var childInf in inf.Items)
+                foreach (var childInf in inf.Childs)
                 {
                     var w = writed;
                     err = WriteObj(childInf, dst, flatObj, ref skip, ref wqty, ref writed);
@@ -193,12 +190,12 @@ public class BinWriter : BaseWriter
         }
         EdfBinString.WriteBin(inf.Name, dst);
 
-        if (PoType.Struct == inf.Type && null != inf.Items && 0 < inf.Items.Length)
+        if (PoType.Struct == inf.Type && null != inf.Childs && 0 < inf.Childs.Length)
         {
-            bw.Write((byte)inf.Items.Length);
-            for (int i = 0; i < inf.Items.Length; i++)
+            bw.Write((byte)inf.Childs.Length);
+            for (int i = 0; i < inf.Childs.Length; i++)
             {
-                Write(dst, inf.Items[i]);
+                Write(dst, inf.Childs[i]);
             }
         }
         return dst.Position - begin;

@@ -130,7 +130,7 @@ public static class Primitives
                     if (w > dst.Length)
                         return EdfErr.DstBufOverflow;
                     buf.Slice(0, w).CopyTo(dst);
-                    return EdfErr.DstBufOverflow;
+                    return EdfErr.IsOk;
                 }
         }
         return EdfErr.WrongType;

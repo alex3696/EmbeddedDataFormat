@@ -69,14 +69,18 @@ public class TxtWriter : BaseWriter
                 Write($"[{d}]");
         }
         Write($" \"{t.Name}\"");
-        if (PoType.Struct==t.Type && null != t.Items && 0 < t.Items.Length)
+        if (PoType.Struct == t.Type && null != t.Childs && 0 < t.Childs.Length)
         {
             Write($"\n{offset}{{");
-            foreach (var it in t.Items)
+            foreach (var it in t.Childs)
+            {
+                Write($"\n");
                 ToString(it, noffset + 1);
+            }
             Write($"\n{offset}}}");
         }
-        Write(";");
+        else
+            Write(";");
     }
 
 
@@ -121,7 +125,7 @@ public class TxtWriter : BaseWriter
     public readonly byte[]? SepRecBegin = null;
     public readonly byte[]? SepRecEnd = null;
 
-    public override int Write(object obj)
+    public override EdfErr Write(object obj)
     {
         ArgumentNullException.ThrowIfNull(_currDataType);
         IEnumerator<object> flatObj = new PrimitiveDecomposer(obj).GetEnumerator();
@@ -139,7 +143,7 @@ public class TxtWriter : BaseWriter
             switch (err)
             {
                 default:
-                case EdfErr.WrongType: return (int)err;
+                case EdfErr.WrongType: return err;
                 case EdfErr.SrcDataRequred:
                     _skip += wqty;
                     break;
@@ -162,7 +166,7 @@ public class TxtWriter : BaseWriter
             }
         }
         while (EdfErr.SrcDataRequred != err);
-        return (int)err;
+        return err;
     }
     private EdfErr WriteObj(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
@@ -194,14 +198,14 @@ public class TxtWriter : BaseWriter
         EdfErr err = EdfErr.IsOk;
         if (PoType.Struct == inf.Type)
         {
-            if (inf.Items != null && 0 != inf.Items.Length)
+            if (inf.Childs != null && 0 != inf.Childs.Length)
             {
                 if (EdfErr.IsOk != (err = WriteSep(SepBeginStruct, ref dst, ref skip, ref wqty, ref writed)))
                     return err;
-                for (int childIndex = 0; childIndex < inf.Items.Length; childIndex++)
+                for (int childIndex = 0; childIndex < inf.Childs.Length; childIndex++)
                 {
                     var w = writed;
-                    err = WriteObj(inf.Items[childIndex], dst, flatObj, ref skip, ref wqty, ref writed);
+                    err = WriteObj(inf.Childs[childIndex], dst, flatObj, ref skip, ref wqty, ref writed);
                     if (EdfErr.IsOk != err)
                         return err;
                     dst = dst.Slice(writed - w);

@@ -6,7 +6,7 @@ public class TypeInf : IEquatable<TypeInf>
     public PoType Type;// { get; set; }
     public string? Name;// { get; set; }
     public uint[]? Dims;// { get; set; }
-    public TypeInf[]? Items;// { get; set; }
+    public TypeInf[]? Childs;// { get; set; }
 
     protected static string GetOffset(int noffset)
     {
@@ -22,11 +22,11 @@ public class TypeInf : IEquatable<TypeInf>
             foreach (var d in Dims)
                 dims += $"[{d}]";
         string childs = string.Empty;
-        if (PoType.Struct == Type && null != Items && 0 < Items.Length)
+        if (PoType.Struct == Type && null != Childs && 0 < Childs.Length)
         {
             string offset = GetOffset(noffset);
             childs += $"\n{offset}{{";
-            foreach (var it in Items)
+            foreach (var it in Childs)
                 childs += $"{offset}{it.DebugString(noffset + 1)};\n";
             childs += $"\n{offset}}}";
         }
@@ -37,14 +37,14 @@ public class TypeInf : IEquatable<TypeInf>
         Name = name;
         Type = type;
         Dims = dims ?? [];
-        Items = (PoType.Struct == type) ? (Items = childs ?? []) : [];
+        Childs = (PoType.Struct == type) ? (Childs = childs ?? []) : [];
     }
     public TypeInf(string? name, PoType type, uint[]? dims = default, TypeInf[]? childs = default)
     {
         Name = name;
         Type = type;
         Dims = dims ?? [];
-        Items = (PoType.Struct == type) ? (Items = childs ?? []) : [];
+        Childs = (PoType.Struct == type) ? (Childs = childs ?? []) : [];
     }
     public TypeInf(string? name, uint[]? dims = null, TypeInf[]? childs = null)
         : this(name, PoType.Struct, dims, childs)
@@ -66,7 +66,7 @@ public class TypeInf : IEquatable<TypeInf>
             return false;
         if (!(Dims ?? []).SequenceEqual(y.Dims ?? []))
             return false;
-        if (!(Items ?? []).SequenceEqual(y.Items ?? []))
+        if (!(Childs ?? []).SequenceEqual(y.Childs ?? []))
             return false;
         return true;
     }
@@ -77,7 +77,7 @@ public class TypeInf : IEquatable<TypeInf>
         hash.Add(Type);
         hash.Add(Name);
         if (Dims != null) foreach (var d in Dims) hash.Add(d);
-        if (Items != null) foreach (var i in Items) hash.Add(i);
+        if (Childs != null) foreach (var i in Childs) hash.Add(i);
         return hash.ToHashCode();
     }
     public uint GetTotalElements()

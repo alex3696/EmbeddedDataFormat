@@ -14,7 +14,7 @@ public abstract class BaseWriter : BaseDisposable
 
     public abstract void Write(Header v);
     public abstract void Write(TypeRec t);
-    public abstract int Write(object obj);
+    public abstract EdfErr Write(object obj);
     public abstract void Flush();
 
 }

@@ -67,7 +67,7 @@ public class TestStructSerialize
                 Type = PoType.Struct,
                 Name = "KeyValue",
                 Dims = [2],
-                Items =
+                Childs =
                 [
                     new (PoType.String, "Key"),
                     new (PoType.String, "Value"),
@@ -111,9 +111,35 @@ public class TestStructSerialize
     }
 
 
+
+    struct KeyValue
+    {
+        public string? Key { get; set; }
+        public string? Value { get; set; }
+    };
     static int WriteSample(BaseWriter dw)
     {
-        throw new NotImplementedException();
+        TypeRec keyValueType = new()
+        {
+            Id = 0,
+            Name = "VariableKV",
+            Desc = "comment",
+            Inf = new()
+            {
+                Type = PoType.Struct,
+                Name = "KeyValue",
+                Childs =
+                [
+                    new (PoType.String, "Key"),
+                    new (PoType.String, "Value"),
+                ]
+            }
+        };
+        dw.Write(keyValueType);
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(new KeyValue() { Key = "Key1", Value = "Value1" }));
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(new KeyValue() { Key = "Key2", Value = "Value2" }));
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(new KeyValue() { Key = "Key3", Value = "Value3" }));
+        dw.Flush();
         return 0;
     }
     [TestMethod]
@@ -242,7 +268,7 @@ public class TestStructSerialize
             Type = PoType.Struct,
             Name = "KeyValue",
             Dims = [2],
-            Items =
+            Childs =
             [
                 new (PoType.String, "Key"),
                 new (PoType.String, "Value"),
@@ -254,7 +280,7 @@ public class TestStructSerialize
             Type = PoType.Struct,
             Name = "KeyValue",
             Dims = [2],
-            Items =
+            Childs =
             [
                 new (PoType.String, "Key"),
                 new (PoType.String, "Value"),
@@ -266,7 +292,7 @@ public class TestStructSerialize
             Type = PoType.Struct,
             Name = "KeyValue",
             Dims = [2],
-            Items =
+            Childs =
             [
                 new (PoType.String, "Key2"),
                 new (PoType.String, "Value"),

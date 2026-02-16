@@ -133,7 +133,7 @@ int StreamWriteInfTxt(Stream_t* st, const TypeRec_t* t, size_t* writed)
 		return err;
 
 	if ((err = StreamWriteFmt(st, writed, "{%lu;\"%.255s\"", t->Id, t->Name ? t->Name : "")) ||
-		(t->Desc && (err = StreamWriteFmt(st, writed, ", \"%.255s\"", t->Desc))) ||
+		(t->Desc && (err = StreamWriteFmt(st, writed, ";\"%.255s\"", t->Desc))) ||
 		(err = StreamWrite(st, writed, "} ", 2)))
 		return err;
 

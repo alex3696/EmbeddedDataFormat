@@ -72,11 +72,20 @@ public class BinReader : BaseReader
     {
         if (_current.Type == BlockType.VarInfo)
         {
-            TypeRec rec = new()
-            {
-                Id = BinaryPrimitives.ReadUInt32LittleEndian(_current._data),
-                Inf = Parse(_current.Data.Slice(sizeof(uint))),
-            };
+            TypeRec rec = new();
+            EdfErr err;
+            if (EdfErr.IsOk != (err = Primitives.TryBinToSrc(PoType.UInt32, _current._data, out var r, out var retObj)))
+                return null;
+            rec.Inf = ParseInf(_current._data.AsSpan(r), out var rest);
+
+            if (EdfErr.IsOk != (err = Primitives.TryBinToSrc(PoType.String, rest, out r, out retObj)))
+                return null;
+            rec.Name = (string?)retObj;
+            rest = rest.Slice(r);
+            if (EdfErr.IsOk != (err = Primitives.TryBinToSrc(PoType.String, rest, out r, out retObj)))
+                return null;
+            rec.Desc = (string?)retObj;
+
             return rec;
         }
         return null;
@@ -122,12 +131,12 @@ public class BinReader : BaseReader
     static EdfErr ReadStruct(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
     {
         EdfErr err = EdfErr.IsOk;
-        if (null == t.Items || 0 == t.Items.Length)
+        if (null == t.Childs || 0 == t.Childs.Length)
             return EdfErr.IsOk;
         Type csType = ret.GetType();
         var fields = csType.GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
         int fieldId = 0;
-        foreach (var child in t.Items)
+        foreach (var child in t.Childs)
         {
             var r = readed;
             var field = fields[fieldId++];
@@ -189,12 +198,12 @@ public class BinReader : BaseReader
     {
         EdfErr err = EdfErr.IsOk;
         ret = default;
-        if (null == t.Items || 0 == t.Items.Length)
+        if (null == t.Childs || 0 == t.Childs.Length)
             return EdfErr.IsOk;
         ret = Activator.CreateInstance(csType);
         var fields = csType.GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
         int fieldId = 0;
-        foreach (var child in t.Items)
+        foreach (var child in t.Childs)
         {
             var r = readed;
             var field = fields[fieldId++];
@@ -271,8 +280,7 @@ public class BinReader : BaseReader
     }
 
 
-    public static TypeInf Parse(ReadOnlySpan<byte> b) => FromBytes(b, out _);
-    static TypeInf FromBytes(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
+    static TypeInf ParseInf(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
     {
         rest = b;
         if (2 > rest.Length)
@@ -310,7 +318,7 @@ public class BinReader : BaseReader
             rest = rest.Slice(1);
             childs = new List<TypeInf>(childsCount);
             for (int i = 0; i < childsCount; i++)
-                childs.Add(FromBytes(rest, out rest));
+                childs.Add(ParseInf(rest, out rest));
         }
         return new TypeInf(name, type, dims, childs?.ToArray());
     }
