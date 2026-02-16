@@ -3,13 +3,11 @@ namespace NetEdf.src;
 public class TxtWriter : BaseWriter
 {
     readonly Stream _st;
-    readonly TextWriter _stream;
 
     public TxtWriter(Stream stream, Header? cfg = null)
         : base(cfg ?? Header.Default)
     {
         _st = stream;
-        _stream = new StreamWriter(stream);
         SepBeginStruct = "{"u8.ToArray();
         SepEndStruct = "}"u8.ToArray();
         SepBeginArray = "["u8.ToArray();
@@ -22,16 +20,19 @@ public class TxtWriter : BaseWriter
     protected override void Dispose(bool disposing)
     {
         Flush();
+        _st.Flush();
         base.Dispose(disposing);
     }
     public override void Flush()
     {
-        _stream.Flush();
         _st.Write(_blkData.AsSpan(0, _blkQty));
         _blkQty = 0;
     }
-    protected void Write(string? str) => _stream.Write(str);
-    protected void Write(PoType p) => _stream.Write(p.ToString());
+    protected void Write(string? str)
+    {
+        if(!string.IsNullOrEmpty(str))
+            _st.Write(Encoding.UTF8.GetBytes(str));
+    }
     protected static string GetOffset(int noffset)
     {
         string offset = "";
@@ -62,7 +63,7 @@ public class TxtWriter : BaseWriter
     {
         string offset = GetOffset(noffset);
         Write(offset);
-        Write(t.Type);
+        Write(t.Type.ToString());
         if (null != t.Dims)
         {
             foreach (var d in t.Dims)
