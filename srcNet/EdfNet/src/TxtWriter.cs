@@ -100,7 +100,7 @@ public class TxtWriter : BaseWriter
         if (0 == src.Length)
         {
             wqty++;
-            return EdfErr.IsOk; 
+            return EdfErr.IsOk;
         }
         if (src.Length > dst.Length)
             return EdfErr.DstBufOverflow;
@@ -137,7 +137,7 @@ public class TxtWriter : BaseWriter
             int skip = _skip;
             int wqty = 0;
             int writed = 0;
-            err = WriteObj(_currDataType, dst, flatObj, ref skip, ref wqty, ref writed);
+            err = WriteSingleValue(_currDataType, dst, flatObj, ref skip, ref wqty, ref writed);
             _blkQty += (ushort)writed;
             dst = dst.Slice(writed);
             switch (err)
@@ -148,14 +148,12 @@ public class TxtWriter : BaseWriter
                     _skip += wqty;
                     break;
                 case EdfErr.IsOk:
-                    if (null == _currObj || !flatObj.MoveNext())
+                    _skip = 0;
+                    if (null == _currObj && !flatObj.MoveNext())
                     {
-                        _skip = 0;
                         return (int)EdfErr.IsOk;
                     }
                     _currObj = flatObj.Current;
-                    _skip += wqty;
-                    dst = _blkData;
                     break;
                 case EdfErr.DstBufOverflow:
                     BufFlush();
@@ -168,11 +166,22 @@ public class TxtWriter : BaseWriter
         while (EdfErr.SrcDataRequred != err);
         return err;
     }
-    private EdfErr WriteObj(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
+    private EdfErr WriteSingleValue(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
         if (EdfErr.IsOk != (err = WriteSep(SepRecBegin, ref dst, ref skip, ref wqty, ref writed)))
             return err;
+        var w = writed;
+        if (EdfErr.IsOk != (err = WriteObj(inf, dst, flatObj, ref skip, ref wqty, ref writed)))
+            return err;
+        dst = dst.Slice(writed - w);
+        if (EdfErr.IsOk != (err = WriteSep(SepRecEnd, ref dst, ref skip, ref wqty, ref writed)))
+            return err;
+        return err;
+    }
+    private EdfErr WriteObj(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
+    {
+        EdfErr err = EdfErr.IsOk;
         uint totalElement = inf.GetTotalElements();
 
         if (1 < totalElement)
@@ -188,9 +197,6 @@ public class TxtWriter : BaseWriter
         if (1 < totalElement)
             if (EdfErr.IsOk != (err = WriteSep(SepEndArray, ref dst, ref skip, ref wqty, ref writed)))
                 return err;
-
-        if (EdfErr.IsOk != (err = WriteSep(SepRecEnd, ref dst, ref skip, ref wqty, ref writed)))
-            return err;
         return err;
     }
     private EdfErr WriteObjElement(TypeInf inf, Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)

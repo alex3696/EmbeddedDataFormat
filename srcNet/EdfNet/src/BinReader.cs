@@ -76,6 +76,7 @@ public class BinReader : BaseReader
             EdfErr err;
             if (EdfErr.IsOk != (err = Primitives.TryBinToSrc(PoType.UInt32, _current._data, out var r, out var retObj)))
                 return null;
+            rec.Id = (uint)(retObj ?? 0);
             rec.Inf = ParseInf(_current._data.AsSpan(r), out var rest);
 
             if (EdfErr.IsOk != (err = Primitives.TryBinToSrc(PoType.String, rest, out r, out retObj)))
@@ -234,7 +235,7 @@ public class BinReader : BaseReader
     int _skip = 0;
     int _readed = 0;
     object? _ret;
-    public EdfErr TryRead<T>([NotNullWhen(true)] out T? ret)
+    public EdfErr TryRead<T>(out T? ret)
     {
         ArgumentNullException.ThrowIfNull(_currDataType);
         EdfErr err;

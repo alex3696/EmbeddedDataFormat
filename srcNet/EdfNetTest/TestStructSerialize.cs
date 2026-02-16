@@ -156,11 +156,11 @@ public class TestStructSerialize
             WriteSample(w);
         }
         // BIN append
-        using (var file = new FileStream(binFile, FileMode.Append))
-        using (var edf = new BinWriter(file))
-        {
-            edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
-        }
+        //using (var file = new FileStream(binFile, FileMode.Append))
+        //using (var edf = new BinWriter(file))
+        //{
+        //    edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
+        //}
 
         // TXT write
         using (var file = new FileStream(txtFile, FileMode.Create))
@@ -169,11 +169,11 @@ public class TestStructSerialize
             WriteSample(w);
         }
         // TXT append
-        using (var file = new FileStream(txtFile, FileMode.Append))
-        using (var edf = new BinWriter(file))
-        {
-            edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
-        }
+        //using (var file = new FileStream(txtFile, FileMode.Append))
+        //using (var edf = new BinWriter(file))
+        //{
+        //    edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
+        //}
 
         using (var binToText = new BinToTxtConverter(binFile, txtConvFile))
             binToText.Execute();

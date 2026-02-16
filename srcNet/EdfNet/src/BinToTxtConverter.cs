@@ -48,11 +48,10 @@ public class BinToTxtConverter : BaseDisposable
                             _writer.Write(rec);
                         break;
                     case BlockType.VarData:
-                        EdfErr err;
-                        while (EdfErr.IsOk == (err = _reader.TryRead(out object[]? arr)))
+                        EdfErr err = TryReadPrimitives(out var arr, _reader.GetBlockData());
+                        if(0 < arr.Count)
                         {
-                            if (arr != null && 0 < arr.Length)
-                                _writer.Write(arr);
+                            _writer.Write(arr);
                         }
                         break;
                 }
@@ -63,5 +62,39 @@ public class BinToTxtConverter : BaseDisposable
 
         }
         _writer.Flush();
+    }
+
+    int _skip = 0;
+    int _readed = 0;
+    EdfErr TryReadPrimitives(out List<object> ret, ReadOnlySpan<byte> src)
+    {
+        ret = [];
+        ArgumentNullException.ThrowIfNull(_writer.CurrDataType);
+        EdfErr err;
+        do
+        {
+            int qty = 0;
+            int skip = _skip;
+            int readed = 0;
+
+            err = PrimitiveListReader.ReadObjects(_writer.CurrDataType, src, ref skip, ref qty, ref readed, ret);
+            src = src.Slice(readed);
+            switch (err)
+            {
+                default:
+                case EdfErr.WrongType: return err;
+                case EdfErr.DstBufOverflow: return err;
+                case EdfErr.SrcDataRequred:
+                    _skip += qty;
+                    _readed = 0;
+                    break;
+                case EdfErr.IsOk:
+                    _readed += readed;
+                    _skip = 0;
+                    break;
+            }
+        }
+        while (err != EdfErr.SrcDataRequred);
+        return err;
     }
 }

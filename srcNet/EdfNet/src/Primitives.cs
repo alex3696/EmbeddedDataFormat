@@ -127,9 +127,12 @@ public static class Primitives
                 {
                     Span<byte> buf = stackalloc byte[256];
                     w = Encoding.UTF8.GetBytes((string)obj, buf);
-                    if (w > dst.Length)
+                    if (w > dst.Length + 2)
                         return EdfErr.DstBufOverflow;
-                    buf.Slice(0, w).CopyTo(dst);
+                    dst[0] = (byte)'"';
+                    buf.Slice(0, w).CopyTo(dst.Slice(1));
+                    dst[w + 1] = (byte)'"';
+                    w += 2;
                     return EdfErr.IsOk;
                 }
         }
