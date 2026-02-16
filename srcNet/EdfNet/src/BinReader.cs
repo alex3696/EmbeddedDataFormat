@@ -82,75 +82,149 @@ public class BinReader : BaseReader
         return null;
     }
 
-    public static EdfErr ReadBin(TypeInf t, ReadOnlySpan<byte> src, Type csType, out int readed, out object? ret)
+
+    public static EdfErr ReadObject(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
     {
-        EdfErr err = EdfErr.IsOk;
-        readed = 0;
-        ret = default;
-
-        uint totalElement = 1;
-        for (int i = 0; i < t.Dims?.Length; i++)
-            totalElement *= t.Dims[i];
-
+        uint totalElement = t.GetTotalElements();
         if (1 < totalElement)
-        {
-            if (!csType.IsArray)
-                throw new ArrayTypeMismatchException();
-            var elementType = csType.GetElementType();
-            ArgumentNullException.ThrowIfNull(elementType);
-            var arr = Array.CreateInstance(elementType, totalElement);
-            ret = arr;
-            for (int i = 0; i < totalElement; i++)
-            {
-                if (EdfErr.IsOk != (err = ReadObjElement(t, src, elementType, out var r, out var arr1)))
-                    return err;
-                arr.SetValue(arr1, i);
-                readed += r;
-                src = src.Slice(r);
-            }
-        }
-        else
-        {
-            if (EdfErr.IsOk != (err = ReadObjElement(t, src, csType, out readed, out ret)))
-                return err;
-        }
-        return err;
+            return ReadArray(t, src, totalElement, ref skip, ref qty, ref readed, ref ret);
+        return ReadElement(t, src, ref skip, ref qty, ref readed, ref ret);
     }
-    static EdfErr ReadObjElement(TypeInf t, ReadOnlySpan<byte> src, Type csType, out int readed, out object? ret)
+    public static EdfErr ReadElement(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
+    {
+        if (PoType.Struct == t.Type)
+            return ReadStruct(t, src, ref skip, ref qty, ref readed, ref ret);
+        return ReadPrimitive(t, src, ref skip, ref qty, ref readed, ref ret);
+    }
+    static EdfErr ReadArray(TypeInf t, ReadOnlySpan<byte> src, uint totalElement, ref int skip, ref int qty, ref int readed, ref object ret)
     {
         EdfErr err = EdfErr.IsOk;
-        readed = 0;
-        if (PoType.Struct == t.Type)
+        Type csType = ret.GetType();
+        if (!csType.IsArray)
+            throw new ArrayTypeMismatchException();
+        var elementType = csType.GetElementType();
+        ArgumentNullException.ThrowIfNull(elementType);
+        var arr = ret as Array;
+        ArgumentNullException.ThrowIfNull(arr);
+        for (int i = 0; i < totalElement; i++)
         {
-            ret = default;
-            if (null == t.Items)
-                return 0;
-            ret = Activator.CreateInstance(csType);
-            var fields = csType.GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
-            int fieldId = 0;
-            foreach (var child in t.Items)
-            {
-                var field = fields[fieldId++];
-                err = ReadBin(child, src, field.PropertyType, out var r, out var childVal);
-                if (EdfErr.IsOk == err && 0 < r && null != childVal)
-                {
-                    field.SetValue(ret, childVal);
-                }
-                readed += r;
-                src = src.Slice(r);
-            }
-        }
-        else
-        {
-            if (0 != (err = Primitives.BinToSrc(t.Type, src, out var r, out ret)))
+            var r = readed;
+            if (EdfErr.IsOk != (err = ReadElement(t, src, elementType, ref skip, ref qty, ref readed, out var arrItem)))
                 return err;
-            readed += r;
+            if (0 < readed)
+            {
+                arr.SetValue(arrItem, i);
+                src = src.Slice(readed - r);
+            }
         }
         return err;
     }
+    static EdfErr ReadStruct(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
+    {
+        EdfErr err = EdfErr.IsOk;
+        if (null == t.Items || 0 == t.Items.Length)
+            return EdfErr.IsOk;
+        Type csType = ret.GetType();
+        var fields = csType.GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
+        int fieldId = 0;
+        foreach (var child in t.Items)
+        {
+            var r = readed;
+            var field = fields[fieldId++];
+            if (EdfErr.IsOk != (err = ReadObject(child, src, field.PropertyType, ref skip, ref qty, ref readed, out var childVal)))
+                return err;
+            field.SetValue(ret, childVal);
+            src = src.Slice(readed - r);
+        }
+        return err;
+    }
+    static EdfErr ReadPrimitive(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
+    {
+        if (0 < skip)
+        {
+            skip--;
+            return EdfErr.IsOk;
+        }
+        EdfErr err = EdfErr.IsOk;
+        if (0 != (err = Primitives.TryBinToSrc(t.Type, src, out var r, out ret)))
+            return err;
+        readed += r;
+        qty++;
+        return err;
+    }
+
+    public static EdfErr ReadObject(TypeInf t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
+    {
+        uint totalElement = t.GetTotalElements();
+        if (1 < totalElement)
+            return ReadArray(t, src, csType, totalElement, ref skip, ref qty, ref readed, out ret);
+        return ReadElement(t, src, csType, ref skip, ref qty, ref readed, out ret);
+    }
+    public static EdfErr ReadElement(TypeInf t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
+    {
+        if (PoType.Struct == t.Type)
+            return ReadStruct(t, src, csType, ref skip, ref qty, ref readed, out ret);
+        return ReadPrimitive(t, src, csType, ref skip, ref qty, ref readed, out ret);
+    }
+    static EdfErr ReadArray(TypeInf t, ReadOnlySpan<byte> src, Type csType, uint totalElement, ref int skip, ref int qty, ref int readed, out object? ret)
+    {
+        EdfErr err = EdfErr.IsOk;
+        if (!csType.IsArray)
+            throw new ArrayTypeMismatchException();
+        var elementType = csType.GetElementType();
+        ArgumentNullException.ThrowIfNull(elementType);
+        var arr = Array.CreateInstance(elementType, totalElement);
+        ret = arr;
+        for (int i = 0; i < totalElement; i++)
+        {
+            var r = readed;
+            if (EdfErr.IsOk != (err = ReadElement(t, src, elementType, ref skip, ref qty, ref readed, out var arrItem)))
+                return err;
+            arr.SetValue(arrItem, i);
+            src = src.Slice(readed - r);
+        }
+        return err;
+    }
+    static EdfErr ReadStruct(TypeInf t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
+    {
+        EdfErr err = EdfErr.IsOk;
+        ret = default;
+        if (null == t.Items || 0 == t.Items.Length)
+            return EdfErr.IsOk;
+        ret = Activator.CreateInstance(csType);
+        var fields = csType.GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? [];
+        int fieldId = 0;
+        foreach (var child in t.Items)
+        {
+            var r = readed;
+            var field = fields[fieldId++];
+            if (EdfErr.IsOk != (err = ReadObject(child, src, field.PropertyType, ref skip, ref qty, ref readed, out var childVal)))
+                return err;
+            field.SetValue(ret, childVal);
+            src = src.Slice(readed - r);
+        }
+        return err;
+    }
+    static EdfErr ReadPrimitive(TypeInf t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
+    {
+        if (0 < skip)
+        {
+            skip--;
+            ret = null;
+            return EdfErr.IsOk;
+        }
+        EdfErr err = EdfErr.IsOk;
+        if (0 != (err = Primitives.TryBinToSrc(t.Type, src, out var r, out ret)))
+            return err;
+        readed += r;
+        qty++;
+        return err;
+    }
+
 
     int _skip = 0;
     int _readed = 0;
+    object? _ret;
     public EdfErr TryRead<T>([NotNullWhen(true)] out T? ret)
     {
         ArgumentNullException.ThrowIfNull(_currDataType);
@@ -159,8 +233,14 @@ public class BinReader : BaseReader
         Span<byte> src = _current._data.AsSpan(_readed, _current.Qty - _readed);
         do
         {
+            int qty = 0;
             int skip = _skip;
-            err = ReadBin(_currDataType, src, typeof(T), out var readed, out var result);
+            int readed = 0;
+
+            if (null != _ret)
+                err = ReadObject(_currDataType, src, ref skip, ref qty, ref readed, ref _ret);
+            else
+                err = ReadObject(_currDataType, src, typeof(T), ref skip, ref qty, ref readed, out _ret);
             src = src.Slice(readed);
             switch (err)
             {
@@ -168,18 +248,19 @@ public class BinReader : BaseReader
                 case EdfErr.WrongType: return err;
                 case EdfErr.DstBufOverflow: return err;
                 case EdfErr.SrcDataRequred:
-                    if (!ReadBlock())
-                        return EdfErr.SrcDataRequred;
+                    _skip += qty;
                     _readed = 0;
-                    src = _current._data;
                     break;
                 case EdfErr.IsOk:
-                    ret = (T?)Convert.ChangeType(result, typeof(T));
+                    ret = (T?)Convert.ChangeType(_ret, typeof(T));
                     _readed += readed;
+                    _skip = 0;
+                    _ret = null;
                     return err;
             }
         }
-        while (true);
+        while (err != EdfErr.SrcDataRequred);
+        return err;
     }
 
     protected override void Dispose(bool disposing)

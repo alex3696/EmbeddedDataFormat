@@ -48,10 +48,11 @@ public class BinToTxtConverter : BaseDisposable
                             _writer.Write(rec);
                         break;
                     case BlockType.VarData:
-                        var readed = _reader.TryRead(out object[]? arr);
-                        if (arr != null && 0 < arr.Length)
+                        EdfErr err;
+                        while (EdfErr.IsOk == (err = _reader.TryRead(out object[]? arr)))
                         {
-                            _writer.Write(arr);
+                            if (arr != null && 0 < arr.Length)
+                                _writer.Write(arr);
                         }
                         break;
                 }

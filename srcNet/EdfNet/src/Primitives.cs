@@ -66,7 +66,7 @@ public static class Primitives
         }
         return EdfErr.IsOk;
     }
-    public static EdfErr BinToSrc(PoType t, ReadOnlySpan<byte> src, out int r, out object? obj)
+    public static EdfErr TryBinToSrc(PoType t, ReadOnlySpan<byte> src, out int r, out object? obj)
     {
         obj = default;
         r = t.GetSizeOf();
@@ -93,35 +93,6 @@ public static class Primitives
                 if (0 >= r)
                     return EdfErr.SrcDataRequred;
                 obj = str;
-                break;
-        }
-        return EdfErr.IsOk;
-    }
-    public static EdfErr TrySrcToEdf(Span<byte> dst, object obj, out int w)
-    {
-        switch (obj)
-        {
-            default: w = 0; return EdfErr.WrongType;
-            case PoType pt: dst[0] = (byte)pt; w = 1; break;
-            case byte b: dst[0] = (byte)b; w = 1; break;
-            case sbyte sb: dst[0] = (byte)sb; w = 1; break;
-            case UInt16 u16: MemoryMarshal.Write(dst, u16); w = 2; break;
-            case Int16 i16: MemoryMarshal.Write(dst, i16); w = 2; break;
-            case UInt32 u32: MemoryMarshal.Write(dst, u32); w = 4; break;
-            case Int32 i32: MemoryMarshal.Write(dst, i32); w = 4; break;
-            case UInt64 u64: MemoryMarshal.Write(dst, u64); w = 8; break;
-            case Int64 i64: MemoryMarshal.Write(dst, i64); w = 8; break;
-            case Half h: MemoryMarshal.Write(dst, h); w = 2; break; ;
-            case Single f: MemoryMarshal.Write(dst, f); w = 4; break;
-            case Double d: MemoryMarshal.Write(dst, d); w = 1; break;
-            case String:
-                int len = EdfBinString.WriteBin((string)obj, dst);
-                if (0 > len)
-                {
-                    w = 0;
-                    return EdfErr.DstBufOverflow;
-                }
-                w = len;
                 break;
         }
         return EdfErr.IsOk;
