@@ -124,6 +124,22 @@ public class TestStructSerialize
         public string? Key { get; set; }
         public string? Value { get; set; }
     };
+    struct ComplexVariable
+    {
+        public long Time { get; set; }
+        public struct StateT
+        {
+            public sbyte Text { get; set; }
+            public struct PosT
+            {
+                public int x { get; set; }
+                public int y { get; set; }
+            };
+            public PosT Pos { get; set; }
+            public double[,] Temp { get; set; }
+        };
+        public StateT[] State { get; set; }
+    };
     static int WriteSample(BaseWriter dw)
     {
         TypeRec keyValueType = new()
@@ -192,8 +208,17 @@ public class TestStructSerialize
             ]
         };
         dw.Write(new TypeRec() { Inf = comlexVarInf });
-
-
+        var cv = new ComplexVariable()
+        {
+            Time = -123,
+            State =
+            [
+                new(){ Text = 1,Pos = new (){x=11,y=12 },Temp = new double[2,2]{ {1.1,1.2 },{1.3,1.4 } }  },
+                new(){ Text = 2,Pos = new (){x=21,y=22 },Temp = new double[2,2]{ {2.1,2.2 },{2.3,2.4 } }  },
+                new(){ Text = 3,Pos = new (){x=31,y=32 },Temp = new double[2,2]{ {3.1,3.2 },{3.3,3.4 } }  },
+            ]
+        };
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(cv));
         return 0;
     }
     [TestMethod]

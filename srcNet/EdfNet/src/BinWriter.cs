@@ -15,7 +15,8 @@ public class BinWriter : BaseWriter
         : base(cfg ?? Header.Default)
     {
         _bw = stream;
-        Write(Cfg);
+        if (0 == stream.Position)
+            Write(Cfg);
     }
     protected override void Dispose(bool disposing)
     {

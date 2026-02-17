@@ -15,7 +15,8 @@ public class TxtWriter : BaseWriter
         SepVarEnd = ";"u8.ToArray();
         SepRecBegin = "\n<= "u8.ToArray();
         SepRecEnd = ">"u8.ToArray();
-        Write(Cfg);
+        if(0 == stream.Position)
+            Write(Cfg);
     }
     protected override void Dispose(bool disposing)
     {
