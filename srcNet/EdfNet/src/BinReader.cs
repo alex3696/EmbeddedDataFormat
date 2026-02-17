@@ -16,45 +16,49 @@ public class BinReader : BaseReader
         _br = new BinaryReader(stream);
         Cfg = Header.Default;
         _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
-        if (ReadBlock() )
+        if (ReadBlock())
         {
             var newCfg = ReadHeader();
-            if( newCfg != null )
+            if (newCfg != null)
                 _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
         }
     }
 
     public bool ReadBlock()
     {
-        BlockType t = (BlockType)_br.ReadByte();
-        if (Enum.IsDefined(t))
+        BlockType t;
+        do
         {
-            var seq = _br.ReadByte();
-            var len = _br.ReadUInt16();
-
-            if (0 < len)
-            {
-                _current.Type = t;
-                _current.Seq = seq;
-                _current.Qty = len;
-                _br.Read(_current._data, 0, len);
-
-                if (Cfg.Flags.HasFlag(Options.UseCrc))
-                {
-                    ushort fileCrc = _br.ReadUInt16();
-                    ushort crc = ModbusCRC.Calc([(byte)_current.Type]);
-                    crc = ModbusCRC.Calc([_current.Seq], crc);
-                    crc = ModbusCRC.Calc(BitConverter.GetBytes(_current.Qty), crc);
-                    crc = ModbusCRC.Calc(_current.Data, crc);
-                    if (crc != fileCrc)
-                        throw new Exception($"Wrong CRC block {_current.Seq}");
-                }
-                if (_current.Type != BlockType.VarData)
-                    _currDataType = ReadInfo()?.Inf;
-                Pos = 0;
-                return true;
-            }
+            t = (BlockType)_br.ReadByte();
         }
+        while (!Enum.IsDefined(t));
+
+        var seq = _br.ReadByte();
+        var len = _br.ReadUInt16();
+
+        if (0 < len)
+        {
+            _current.Type = t;
+            _current.Seq = seq;
+            _current.Qty = len;
+            _br.Read(_current._data, 0, len);
+
+            if (Cfg.Flags.HasFlag(Options.UseCrc))
+            {
+                ushort fileCrc = _br.ReadUInt16();
+                ushort crc = ModbusCRC.Calc([(byte)_current.Type]);
+                crc = ModbusCRC.Calc([_current.Seq], crc);
+                crc = ModbusCRC.Calc(BitConverter.GetBytes(_current.Qty), crc);
+                crc = ModbusCRC.Calc(_current.Data, crc);
+                if (crc != fileCrc)
+                    throw new Exception($"Wrong CRC block {_current.Seq}");
+            }
+            if (_current.Type != BlockType.VarData)
+                _currDataType = ReadInfo()?.Inf;
+            Pos = 0;
+            return true;
+        }
+
         return false;
     }
     public BlockType GetBlockType() => _current.Type;
@@ -277,9 +281,7 @@ public class BinReader : BaseReader
     {
         if (!disposing)
             return;
-        _br.Dispose();
     }
-
 
     static TypeInf ParseInf(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
     {

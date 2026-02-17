@@ -227,7 +227,6 @@ public class TestStructSerialize
         string binFile = GetTestFilePath("t_write.bdf");
         string txtFile = GetTestFilePath("t_write.tdf");
         string txtConvFile = GetTestFilePath("t_writeConv.tdf");
-
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
         using (var w = new BinWriter(file))
@@ -235,12 +234,19 @@ public class TestStructSerialize
             WriteSample(w);
         }
         // BIN append
-        //using (var file = new FileStream(binFile, FileMode.Append))
-        //using (var edf = new BinWriter(file))
-        //{
-        //    edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
-        //}
-
+        using (var file = new FileStream(binFile, FileMode.Open))
+        {
+            Header cfg;
+            using (var edf = new BinReader(file))
+            {
+                cfg = edf.Cfg;
+            }
+            file.Seek(0, SeekOrigin.End);
+            using (var edf = new BinWriter(file, cfg))
+            {
+                edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
+            }
+        }
         // TXT write
         using (var file = new FileStream(txtFile, FileMode.Create))
         using (var w = new TxtWriter(file))
@@ -248,19 +254,16 @@ public class TestStructSerialize
             WriteSample(w);
         }
         // TXT append
-        //using (var file = new FileStream(txtFile, FileMode.Append))
-        //using (var edf = new BinWriter(file))
-        //{
-        //    edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
-        //}
-
+        using (var file = new FileStream(txtFile, FileMode.Append))
+        using (var edf = new TxtWriter(file))
+        {
+            edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
+        }
         using (var binToText = new BinToTxtConverter(binFile, txtConvFile))
             binToText.Execute();
-
         bool isEqual = FileUtils.FileCompare(txtFile, txtConvFile);
         Assert.IsTrue(isEqual);
     }
-
 
     static int WriteBigVar(BaseWriter dw)
     {
