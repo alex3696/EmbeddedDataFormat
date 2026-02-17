@@ -52,6 +52,7 @@ public class BinToTxtConverter : BaseDisposable
                         if (0 < arr.Count)
                         {
                             _writer.Write(arr);
+                            _writer.Flush();
                         }
                         break;
                 }

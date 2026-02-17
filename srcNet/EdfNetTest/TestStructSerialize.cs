@@ -139,7 +139,25 @@ public class TestStructSerialize
         Assert.AreEqual(EdfErr.IsOk, dw.Write(new KeyValue() { Key = "Key1", Value = "Value1" }));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(new KeyValue() { Key = "Key2", Value = "Value2" }));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(new KeyValue() { Key = "Key3", Value = "Value3" }));
-        dw.Flush();
+
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ", "String Value"));
+
+        TypeRec t = new() { Inf = new(PoType.Int32), Id = 0, Name = "weight variable" };
+        dw.Write(t);
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(unchecked((int)0xFFFFFFFF)));
+
+        TypeRec td = new() { Inf = new(PoType.Double), Id = 0, Name = "TestDouble" };
+        dw.Write(td);
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(1.1d));
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(2.1d));
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(3.1d));
+
+        TypeRec tchar = new() { Inf = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
+        dw.Write(tchar);
+        //Assert.AreEqual(EdfErr.IsOk, dw.Write("Char"));
+        //Assert.AreEqual(EdfErr.IsOk, dw.Write("Value"));
+        //Assert.AreEqual(EdfErr.IsOk, dw.Write("Array     Value"));
+
         return 0;
     }
     [TestMethod]

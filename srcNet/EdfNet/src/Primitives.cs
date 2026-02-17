@@ -107,7 +107,7 @@ public static class Primitives
     public static EdfErr TryFormat<T>(PoType t, T obj, Span<byte> dst, out int w)
         where T : IUtf8SpanFormattable
     {
-        if (obj.TryFormat(dst, out w, default, null))
+        if (obj.TryFormat(dst, out w, default, CultureInfo.InvariantCulture))
             return EdfErr.IsOk;
         return EdfErr.DstBufOverflow;
     }

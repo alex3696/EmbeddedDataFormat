@@ -42,6 +42,7 @@ public class TxtWriter : BaseWriter
     }
     public override void Write(Header h)
     {
+        Flush();
         Write($"<~ {{version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags}; }} >\n");
         //Write($"// ? - struct @ - data // - comment");
         _currDataType = null;
@@ -49,6 +50,7 @@ public class TxtWriter : BaseWriter
     }
     public override void Write(TypeRec t)
     {
+        Flush();
         Write($"\n\n<? {{");
         Write($"{t.Id};\"{t.Name}\"");
         if (!string.IsNullOrEmpty(t.Desc))
@@ -69,7 +71,8 @@ public class TxtWriter : BaseWriter
             foreach (var d in t.Dims)
                 Write($"[{d}]");
         }
-        Write($" \"{t.Name}\"");
+        if (!string.IsNullOrEmpty(t.Name))
+            Write($" \"{t.Name}\"");
         if (PoType.Struct == t.Type && null != t.Childs && 0 < t.Childs.Length)
         {
             Write($"\n{offset}{{");
