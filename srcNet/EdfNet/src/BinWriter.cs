@@ -4,6 +4,7 @@ public class BinWriter : BaseWriter
 {
     public ushort CurrentQty => _blkQty;
     private readonly Stream _bw;
+    protected byte _blkSeq;
 
     protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w)
         => Primitives.TrySrcToBin(t, obj, dst, out w);
@@ -22,17 +23,16 @@ public class BinWriter : BaseWriter
         _bw.Flush();
         base.Dispose(disposing);
     }
-
-    protected byte _blkSeq;
     private void WriteBlock(ReadOnlySpan<byte> data, BlockType blkType)
     {
+        var blkQty = (ushort)data.Length;
         _bw.WriteByte((byte)blkType);
         _bw.WriteByte(_blkSeq);
-        _bw.Write(BitConverter.GetBytes(_blkQty));
+        _bw.Write(BitConverter.GetBytes(blkQty));
         _bw.Write(data);
         ushort crc = ModbusCRC.Calc([(byte)blkType]);
         crc = ModbusCRC.Calc([_blkSeq], crc);
-        crc = ModbusCRC.Calc(BitConverter.GetBytes(_blkQty), crc);
+        crc = ModbusCRC.Calc(BitConverter.GetBytes(blkQty), crc);
         crc = ModbusCRC.Calc(data, crc);
         _bw.Write(BitConverter.GetBytes(crc));
         _blkSeq++;
@@ -48,54 +48,50 @@ public class BinWriter : BaseWriter
     {
         Flush();
         _currDataType = null;
-        _blkData.AsSpan(0, 16).Clear();
-        _blkQty += (ushort)Primitives.SrcToBin(_EmptySpan, PoType.UInt8, h.VersMajor);
-        _blkQty += (ushort)Primitives.SrcToBin(_EmptySpan, PoType.UInt8, h.VersMinor);
-        _blkQty += (ushort)Primitives.SrcToBin(_EmptySpan, PoType.UInt16, h.Encoding);
-        _blkQty += (ushort)Primitives.SrcToBin(_EmptySpan, PoType.UInt16, h.Blocksize);
-        _blkQty += (ushort)Primitives.SrcToBin(_EmptySpan, PoType.UInt32, h.Flags);
-        _blkQty = 16;
-        WriteBlock(_blkData.AsSpan(0, 16), BlockType.Header);
+        var dst = _blkData.AsSpan(0, 16);
+        dst.Clear();
+        dst.SrcToBinRef(PoType.UInt8, h.VersMajor);
+        dst.SrcToBinRef(PoType.UInt8, h.VersMinor);
+        dst.SrcToBinRef(PoType.UInt16, h.Encoding);
+        dst.SrcToBinRef(PoType.UInt16, h.Blocksize);
+        dst.SrcToBinRef(PoType.UInt32, h.Flags);
+        WriteBlock(_blkData.AsSpan(0, 16), BlockType.VarData);
     }
     public override void Write(TypeRec t)
     {
         Flush();
-        using var ms = new MemoryStream(_blkData);
-        Primitives.SrcToBin(ms, PoType.UInt32, t.Id);
-        BinWriter.Write(ms, t.Inf);
-        _blkQty += (ushort)ms.Position;
-        _blkQty += (ushort)Primitives.SrcToBin(_EmptySpan, PoType.String, t.Name ?? string.Empty);
-        _blkQty += (ushort)Primitives.SrcToBin(_EmptySpan, PoType.String, t.Desc ?? string.Empty);
+        var dst = _blkData.AsSpan();
+        dst.SrcToBinRef(PoType.UInt32, t.Id);
+        Write(ref dst, t.Inf);
+        dst.SrcToBinRef(PoType.String, t.Name ?? string.Empty);
+        dst.SrcToBinRef(PoType.String, t.Desc ?? string.Empty);
         _currDataType = t.Inf;
-        WriteBlock(_blkData.AsSpan(0, _blkQty), BlockType.VarInfo);
+        WriteBlock(_blkData.AsSpan(0, _blkData.Length - dst.Length), BlockType.VarInfo);
     }
-
-    private static long Write(Stream dst, TypeInf inf)
+    private static long Write(ref Span<byte> dst, TypeInf inf)
     {
-        var begin = dst.Position;
-        var bw = new BinaryWriter(dst);
-        bw.Write((byte)inf.Type);
+        var begin = dst.Length;
+        dst.SrcToBinRef(PoType.UInt8, inf.Type);
         if (null != inf.Dims && 0 < inf.Dims.Length)
         {
-            bw.Write((byte)inf.Dims.Length);
+            dst.SrcToBinRef(PoType.UInt8, (byte)inf.Dims.Length);
             for (int i = 0; i < inf.Dims.Length; i++)
-                bw.Write(inf.Dims[i]);
+                dst.SrcToBinRef(PoType.UInt32, inf.Dims[i]);
         }
         else
         {
-            bw.Write((byte)0);
+            dst.SrcToBinRef(PoType.UInt8, (byte)0);
         }
-        EdfBinString.WriteBin(inf.Name, dst);
+        dst.SrcToBinRef(PoType.String, inf.Name ?? string.Empty);
 
         if (PoType.Struct == inf.Type && null != inf.Childs && 0 < inf.Childs.Length)
         {
-            bw.Write((byte)inf.Childs.Length);
+            dst.SrcToBinRef(PoType.UInt8, (byte)inf.Childs.Length);
             for (int i = 0; i < inf.Childs.Length; i++)
             {
-                Write(dst, inf.Childs[i]);
+                Write(ref dst, inf.Childs[i]);
             }
         }
-        return dst.Position - begin;
+        return begin - dst.Length;
     }
-
 }

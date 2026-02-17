@@ -30,7 +30,7 @@ public class TxtWriter : BaseWriter
     }
     protected void Write(string? str)
     {
-        if(!string.IsNullOrEmpty(str))
+        if (!string.IsNullOrEmpty(str))
             _st.Write(Encoding.UTF8.GetBytes(str));
     }
     protected static string GetOffset(int noffset)
@@ -83,8 +83,6 @@ public class TxtWriter : BaseWriter
         else
             Write(";");
     }
-
-
 
     protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w)
         => Primitives.TrySrcToTxt(t, obj, dst, out w);

@@ -18,6 +18,12 @@ public static class Primitives
         dst.Write(b.Slice(0, w));
         return w;
     }
+    public static int SrcToBinRef(this ref Span<byte> dst, PoType t, object obj)
+    {
+        var w = SrcToBin(dst, t, obj);
+        dst = dst.Slice(w);
+        return w;
+    }
     public static int SrcToBin(this Span<byte> dst, PoType t, object obj)
     {
         var ret = TrySrcToBin(t, obj, dst, out var w);
