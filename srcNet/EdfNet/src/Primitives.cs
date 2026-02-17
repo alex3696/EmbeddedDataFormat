@@ -118,6 +118,15 @@ public static class Primitives
             case PoType.Struct:
             default: w = 0; break;
             case PoType.Char:
+                {
+                    w = 3;
+                    if (w > dst.Length)
+                        return EdfErr.DstBufOverflow;
+                    dst[0] = (byte)'\'';
+                    Encoding.UTF8.GetBytes([(char)(byte)obj], dst.Slice(1, 1));
+                    dst[2] = (byte)'\'';
+                }
+                return EdfErr.IsOk;
             case PoType.UInt8: return TryFormat(t, (byte)obj, dst, out w);
             case PoType.Int8: return TryFormat(t, (sbyte)obj, dst, out w);
             case PoType.UInt16: return TryFormat(t, (ushort)obj, dst, out w);

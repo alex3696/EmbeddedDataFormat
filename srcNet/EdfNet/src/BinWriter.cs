@@ -55,7 +55,7 @@ public class BinWriter : BaseWriter
         dst.SrcToBinRef(PoType.UInt16, h.Encoding);
         dst.SrcToBinRef(PoType.UInt16, h.Blocksize);
         dst.SrcToBinRef(PoType.UInt32, h.Flags);
-        WriteBlock(_blkData.AsSpan(0, 16), BlockType.VarData);
+        WriteBlock(_blkData.AsSpan(0, 16), BlockType.Header);
     }
     public override void Write(TypeRec t)
     {

@@ -1,5 +1,6 @@
 using NetEdf;
 using NetEdf.src;
+using System.Text;
 namespace NetEdfTest;
 
 
@@ -37,6 +38,12 @@ public class TestStructSerialize
     static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
     static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
+    static byte[] GetCString(string str, int len)
+    {
+        var ret = new byte[len];
+        Encoding.UTF8.GetBytes(str, ret.AsSpan());
+        return ret;
+    }
 
     class KeyValueStruct : IEquatable<KeyValueStruct>
     {
@@ -154,9 +161,38 @@ public class TestStructSerialize
 
         TypeRec tchar = new() { Inf = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
         dw.Write(tchar);
-        //Assert.AreEqual(EdfErr.IsOk, dw.Write("Char"));
-        //Assert.AreEqual(EdfErr.IsOk, dw.Write("Value"));
-        //Assert.AreEqual(EdfErr.IsOk, dw.Write("Array     Value"));
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Char", 20)));
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Value", 20)));
+        Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Array     Value", 20)));
+
+        TypeInf comlexVarInf = new()
+        {
+            Type = PoType.Struct,
+            Name = "ComplexVariable",
+            Childs =
+            [
+                new (PoType.Int64, "time"),
+                new ()
+                {
+                    Type = PoType.Struct, Name = "State", Dims = [3],
+                    Childs =
+                    [
+                        new (PoType.Int8, "text"),
+                        new(PoType.Struct,"Pos")
+                        {
+                            Childs =
+                            [
+                                new (PoType.Int32, "x"),
+                                new (PoType.Int32, "y"),
+                            ]
+                        },
+                        new (PoType.Double, "Temp", [2,2]),
+                    ]
+                }
+            ]
+        };
+        dw.Write(new TypeRec() { Inf = comlexVarInf });
+
 
         return 0;
     }
