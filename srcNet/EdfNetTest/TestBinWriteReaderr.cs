@@ -3,10 +3,15 @@ using NetEdf.src;
 namespace NetEdfTest;
 
 [TestClass]
-public class TestBinWriter
+public class TestBinWriteReaderr
 {
-    static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
-    static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
+    //Запись в бинарный
+    //Чтение из Бинарного
+    //Запись больших данных
+    //Чтение больших данных
+
+    
+    
 
     struct KeyValue
     {
@@ -42,6 +47,7 @@ public class TestBinWriter
             bw.Write(typeRec);
             bw.Write(kvMassive);
             Assert.AreEqual(22, bw.CurrentQty);
+           
         }
     }
 }
