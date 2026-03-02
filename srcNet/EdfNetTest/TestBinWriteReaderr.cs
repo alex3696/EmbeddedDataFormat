@@ -11,7 +11,8 @@ public class TestBinWriteReaderr
     //Чтение больших данных
 
     
-    
+    static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
+    static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
     struct KeyValue
     {
