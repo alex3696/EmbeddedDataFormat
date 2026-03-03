@@ -5,50 +5,97 @@ namespace NetEdfTest;
 [TestClass]
 public class TestBinWriteReaderr
 {
-    //Запись в бинарный
+
+    static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
+    static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
+
     //Чтение из Бинарного
     //Запись больших данных
     //Чтение больших данных
 
-    
-    static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
-    static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
-
-    struct KeyValue
+    public struct PlayerStats
     {
-        public int Key { get; set; }
-        public string Value { get; set; }
+        public string Name { get; set; }
+        public sbyte Health { get; set; }
+        public ushort Level { get; set; }
+
+        public byte SkillPoints { get; set; }
+        public uint CountAchievements { get; set; }
     }
 
+     //Запись в бинарный
     [TestMethod]
-    public void WriterTest()
+    public void WriterReaderTest()
     {
-        TypeRec typeRec = new()
+        TypeRec playerRec = new()
         {
             Inf = new()
             {
                 Type = PoType.Struct,
-                Name = "KeyValue",
-                Dims = [2],
+                Name = "PlayerInfo",
                 Childs =
                 [
-                    new (PoType.Int32, "Key"),
-                    new (PoType.String, "Value"),
+                    new (PoType.String, "Name"),
+                    new (PoType.Int8, "Healtg"),
+                    new (PoType.UInt16, "Level"),
+                    new (PoType.UInt8, "SkillPoints"),
+                    new (PoType.UInt32, "CountAchievements")
                 ]
             }
         };
 
-        KeyValue kv = new KeyValue { Key = 1, Value = "value1" };
-        KeyValue kv1 = new KeyValue { Key = 2, Value = "value2" };
-        KeyValue[] kvMassive = [kv, kv1];
-        byte[] binBuf = new byte[1024];
-        using (var memStream = new MemoryStream(binBuf)) 
-        using (var bw = new BinWriter(memStream))
+        PlayerStats ps = new()
         {
-            bw.Write(typeRec);
-            bw.Write(kvMassive);
-            Assert.AreEqual(22, bw.CurrentQty);
-           
+            Name = "Player",
+            Health = 100,
+            Level = 25,
+            SkillPoints = 2,
+            CountAchievements = 35
+        };
+
+        PlayerStats ps1 = new()
+        {
+            Name = "Player1",
+            Health = 52,
+            Level = 55,
+            SkillPoints = 0,
+            CountAchievements = 125
+        };
+
+        PlayerStats ps2 = new()
+        { 
+            Name = "Player2",
+            Health = 75,
+            Level = 44,
+            SkillPoints = 2,
+            CountAchievements = 120
+        };
+
+        PlayerStats[] psMassive = [ps1, ps2, ps];
+
+        byte[] binBuf = new byte[1024];
+        using (var memStream = new MemoryStream(binBuf))
+        {
+            using (var bw = new BinWriter(memStream))
+            {
+                bw.Write(playerRec);
+                Assert.AreEqual(EdfErr.IsOk, bw.Write(psMassive));
+                Assert.AreEqual(31, bw.CurrentQty);
+            }
         }
+
+    }
+
+    public struct h
+    {
+
+    }
+
+    [TestMethod]
+    public void WriterReaderFrowFileTest()
+    {
+        string binFile = GetTestFilePath("t_write.bdf");
+
+
     }
 }
