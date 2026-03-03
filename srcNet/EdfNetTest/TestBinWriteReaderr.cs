@@ -86,16 +86,47 @@ public class TestBinWriteReaderr
 
     }
 
-    public struct h
+    public struct ArmorSettings
     {
+        public ushort DefenseValue;      
+        public ushort MagicResistance;   
+        public Half Weight;         
+        public ushort Durability;    
+        public ushort MaxDurability;  
 
+        // Качество предмета: 1 - Обычное, 2 - Редкое 3 - Эпическое 4 - Легендарное
+        public byte RarityLevel;
     }
 
     [TestMethod]
     public void WriterReaderFrowFileTest()
     {
-        string binFile = GetTestFilePath("t_write.bdf");
+        string binFile = GetTestFilePath("ArmorSettings2.bdf");
 
-
+        TypeRec ArmorRec = new()
+        {
+            Inf = new()
+            {
+                Type = PoType.Struct,
+                Name = "ArmorSettings",
+                Childs =
+                [
+                    new (PoType.UInt16, "DefenseValue"),
+                    new (PoType.UInt16, "MagicResistance"),
+                    new (PoType.Half, "Weight"),
+                    new (PoType.UInt16, "Durability"),
+                    new (PoType.UInt16, "MaxDurability"),
+                    new (PoType.UInt8, "RarityLevel")
+                ]
+            }
+        };
+        
+        using (var file = new FileStream(binFile, FileMode.Create))
+        {
+            using (var bw = new BinWriter(file))
+            {
+                bw.Write(ArmorRec);
+            }
+        }
     }
 }
