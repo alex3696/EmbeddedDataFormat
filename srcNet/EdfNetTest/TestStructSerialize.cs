@@ -147,15 +147,15 @@ public class TestStructSerialize
             Id = 0,
             Name = "VariableKV",
             Desc = "comment",
-            Inf = new()
+            Inf = new TypeInf()
             {
                 Type = PoType.Struct,
                 Name = "KeyValue",
-                Childs =
-                [
-                    new (PoType.String, "Key"),
-                    new (PoType.String, "Value"),
-                ]
+                Childs = new TypeInf[]
+                {
+                    new TypeInf(PoType.String, "Key"),
+                    new TypeInf(PoType.String, "Value"),
+                }
             }
         };
         dw.Write(keyValueType);
@@ -310,10 +310,6 @@ public class TestStructSerialize
     }
 
 
-
-
-
-
     [TestMethod]
     public void TestPrimitiveDecomposer()
     {
@@ -334,13 +330,6 @@ public class TestStructSerialize
         Assert.AreEqual("tag1", flaten2[3]);
         Assert.AreEqual("tag2", flaten2[4]);
     }
-
-
-
-
-
-
-
 
     [TestMethod]
     public void TestTypeInfEquality()
