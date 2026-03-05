@@ -169,8 +169,8 @@ public class TestBinWriteReaderr
             using (var reader = new BinReader(file))
             {
                 
-
             }
+            file.Seek(0, SeekOrigin.End);
         }
         
     }
