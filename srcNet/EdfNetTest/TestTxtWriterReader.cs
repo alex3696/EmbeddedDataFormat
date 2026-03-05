@@ -21,9 +21,9 @@ public class TestTxtWriterReader
     [TestMethod]
     public void WriteHeaderAndTypeRecTest()
     {
-        string txtFile = GetTestFilePath("t_write.tdf");
+        string txtFile = GetTestFilePath("PlayerInfo.tdf");
 
-        Header header = new Header();
+        
         TypeRec playerRec = new()
         {
             Inf = new()
@@ -44,7 +44,6 @@ public class TestTxtWriterReader
         using (var file = new FileStream(txtFile, FileMode.Create))
         using (var writer = new TxtWriter(file))
         {
-            writer.Write(header);
             writer.Write(playerRec);
             Assert.AreEqual(EdfErr.IsOk, writer.Write(new PlayerStats()
             {Name = "Player",Health = 100,Level = 25,SkillPoints = 2,CountAchievements = 35}));
@@ -54,8 +53,4 @@ public class TestTxtWriterReader
         Assert.IsTrue(File.Exists(txtFile));
 
     }
-
-  
-
-  
 }
