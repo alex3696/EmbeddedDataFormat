@@ -1,4 +1,6 @@
 using NetEdf.src;
+using Newtonsoft.Json.Linq;
+using System.Reflection.PortableExecutable;
 
 namespace NetEdfTest;
 
@@ -9,21 +11,38 @@ public class TestBinWriteReaderr
     static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
     static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
-    //Чтение из Бинарного
+  
     //Запись больших данных
     //Чтение больших данных
 
-    public struct PlayerStats
+    class PlayerStats
     {
         public string Name { get; set; }
         public sbyte Health { get; set; }
         public ushort Level { get; set; }
-
         public byte SkillPoints { get; set; }
         public uint CountAchievements { get; set; }
+
+        public bool Equals(PlayerStats? other)
+        {
+            if (other is null)
+                return false;
+            if (!string.Equals(Name, other.Name))
+                return false;
+            if (!Equals(Health, other.Health))
+                return false;
+            if (!Equals(Level, other.Level))
+                return false;
+            if(!Equals(SkillPoints, other.SkillPoints))
+                return false;
+            if(!Equals(CountAchievements, other.CountAchievements))
+                return false;
+            return true;
+        }
+      
     }
 
-     //Запись в бинарный
+   
     [TestMethod]
     public void WriterReaderTest()
     {
@@ -33,6 +52,7 @@ public class TestBinWriteReaderr
             {
                 Type = PoType.Struct,
                 Name = "PlayerInfo",
+                Dims = [2],
                 Childs =
                 [
                     new (PoType.String, "Name"),
@@ -62,16 +82,7 @@ public class TestBinWriteReaderr
             CountAchievements = 125
         };
 
-        PlayerStats ps2 = new()
-        { 
-            Name = "Player2",
-            Health = 75,
-            Level = 44,
-            SkillPoints = 2,
-            CountAchievements = 120
-        };
-
-        PlayerStats[] psMassive = [ps1, ps2, ps];
+        PlayerStats[] psMassive = [ps, ps1];
 
         byte[] binBuf = new byte[1024];
         using (var memStream = new MemoryStream(binBuf))
@@ -84,6 +95,20 @@ public class TestBinWriteReaderr
             }
         }
 
+        var mssrc = new MemoryStream(binBuf);
+        using var reader = new BinReader(mssrc);
+
+        Assert.IsTrue(reader.ReadBlock());
+
+        var rec = reader.ReadInfo();
+        Assert.IsNotNull(rec);
+
+        Assert.IsTrue(reader.ReadBlock());
+
+        reader.TryRead(out PlayerStats[]? psData);
+
+        Assert.IsTrue(psMassive[0].Equals(psData[0]));
+        Assert.IsTrue(psMassive[1].Equals(psData[1]));
     }
 
     public struct ArmorSettings
@@ -92,16 +117,14 @@ public class TestBinWriteReaderr
         public ushort MagicResistance;   
         public Half Weight;         
         public ushort Durability;    
-        public ushort MaxDurability;  
-
-        // Качество предмета: 1 - Обычное, 2 - Редкое 3 - Эпическое 4 - Легендарное
+        public ushort MaxDurability;
         public byte RarityLevel;
     }
 
     [TestMethod]
     public void WriterReaderFrowFileTest()
     {
-        string binFile = GetTestFilePath("ArmorSettings2.bdf");
+        string binFile = GetTestFilePath("ArmorSettings.bdf");
 
         TypeRec ArmorRec = new()
         {
@@ -120,13 +143,36 @@ public class TestBinWriteReaderr
                 ]
             }
         };
-        
+
+        ArmorSettings armSet = new()
+        {
+            DefenseValue = 10,
+            MagicResistance = 10,
+            Weight = (Half)6.75,
+            Durability = 15,
+            MaxDurability = 30,
+            RarityLevel = 3
+        };
+
         using (var file = new FileStream(binFile, FileMode.Create))
         {
             using (var bw = new BinWriter(file))
             {
                 bw.Write(ArmorRec);
+                bw.Write(armSet);
             }
         }
+        Assert.IsTrue(File.Exists(binFile));
+
+        using (var file = new FileStream(binFile, FileMode.Open))
+        {
+            using (var reader = new BinReader(file))
+            {
+                
+
+            }
+        }
+        
     }
+                
 }
