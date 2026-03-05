@@ -97,8 +97,8 @@ public class TestStructSerialize
             Assert.AreEqual(30, bw.CurrentQty);
         }
         var mssrc = new MemoryStream(binBuf);
-        byte[] buf = new byte[1024];
-        using var mem = new MemoryStream(buf);
+        //byte[] buf = new byte[1024];
+        //using var mem = new MemoryStream(buf);
         using var reader = new BinReader(mssrc);
 
         //if (!reader.ReadBlock())
