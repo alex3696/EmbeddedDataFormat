@@ -45,7 +45,7 @@ public class TestStructSerialize
         return ret;
     }
 
-    class KeyValueStruct : IEquatable<KeyValueStruct>
+    public class KeyValueStruct : IEquatable<KeyValueStruct>
     {
         public string? Key { get; set; }
         public string? Value { get; set; }

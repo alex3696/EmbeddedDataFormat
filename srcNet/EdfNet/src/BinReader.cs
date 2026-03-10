@@ -96,7 +96,6 @@ public class BinReader : BaseReader
         return null;
     }
 
-
     public static EdfErr ReadObject(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
     {
         uint totalElement = t.GetTotalElements();
