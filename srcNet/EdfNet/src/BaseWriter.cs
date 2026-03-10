@@ -9,7 +9,7 @@ public abstract class BaseWriter : BaseDisposable
 
     public TypeInf? CurrDataType => _currDataType; 
 
-    public BaseWriter(Header header) // конструктор, принимает конфигурацию заголовка и инициализирует буфер для данны
+    public BaseWriter(Header header) // конструктор, принимает конфигурацию заголовка и инициализирует буфер для данных
     {
         Cfg = header;
         _blkData = new byte[Cfg.Blocksize];
@@ -27,7 +27,7 @@ public abstract class BaseWriter : BaseDisposable
     protected byte[]? SepRecEnd = null;
 
     protected ushort _blkQty; // количество байт в текущем блоке данных
-    protected readonly byte[] _blkData; // буфер для хранения данных текущего блока, размер которого определяется в заголовке
+    protected readonly byte[] _blkData; // буфер для хранения данных текущего блока
     protected Span<byte> _EmptySpan => _blkData.AsSpan(_blkQty); // пустой span для записи данных,
                                                                  // который начинается с текущей позиции в блоке данных и имеет длину,
                                                                  // равную оставшемуся месту в блоке
@@ -57,13 +57,13 @@ public abstract class BaseWriter : BaseDisposable
             int writed = 0; // количество байт, которые были записаны в текущей итерации
             err = WriteSingleValue(_currDataType, ref dst, flatObj, ref skip, ref wqty, ref writed); // попытка записать один элемент данных,
                                                                                                      // используя текущую схему данных
-            _blkQty += (ushort)writed;
+            _blkQty += (ushort)writed; // обновляем количество байт в текущем блоке данных, так как данные были записаны в буфер
             switch (err)
             {
                 default:
                 case EdfErr.WrongType: return err;
                 case EdfErr.SrcDataRequred: // если требуется больше данных для записи, то пропускаем уже записанные элементы и продолжаем попытку записи
-                    _skip += wqty;
+                    _skip += wqty; // пропускаем уже записанные элементы, так как они были записаны в буфер, и продолжаем попытку записи
                     break;
                 case EdfErr.IsOk:
                     _skip = 0;
@@ -81,7 +81,7 @@ public abstract class BaseWriter : BaseDisposable
                     break;
             }
         }
-        while (EdfErr.SrcDataRequred != err);
+        while (EdfErr.SrcDataRequred != err); // продолжаем попытку записи, пока не будет записано все данные, и не потребуется больше данных для записи
         return err;
     }
     // метод для записи одного элемента данных, принимает схему данных, буфер для записи,
@@ -101,13 +101,13 @@ public abstract class BaseWriter : BaseDisposable
     private EdfErr WriteObj(TypeInf inf, ref Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
-        uint totalElement = inf.GetTotalElements();
-        if (1 < totalElement)
+        uint totalElement = inf.GetTotalElements(); // получение общего количества элементов данных
+        if (1 < totalElement) // если количество элементов данных больше 1, то записываем разделитель начала массива
             if (EdfErr.IsOk != (err = WriteSep(SepBeginArray, ref dst, ref skip, ref wqty, ref writed)))
                 return err;
         for (int i = 0; i < totalElement; i++)
         {
-            if (EdfErr.IsOk != (err = WriteObjElement(inf, ref dst, flatObj, ref skip, ref wqty, ref writed)))
+            if (EdfErr.IsOk != (err = WriteObjElement(inf, ref dst, flatObj, ref skip, ref wqty, ref writed))) 
                 return err;
         }
         if (1 < totalElement)
@@ -115,7 +115,7 @@ public abstract class BaseWriter : BaseDisposable
                 return err;
         return err;
     }
-    // метод для записи элемента данных, принимает схему данных, буфер для записи,
+    // метод для записи элемента данных
     private EdfErr WriteObjElement(TypeInf inf, ref Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
@@ -142,11 +142,11 @@ public abstract class BaseWriter : BaseDisposable
                 skip--; // пропускаем элемент данных, так как он уже был записан в предыдущем блоке данных
             else
             {
-                if (null == _currObj)
+                if (null == _currObj) // если текущий объект данных null, то пытаемся получить следующий элемент данных из перечислителя
                 {
-                    if (!flatObj.MoveNext())
+                    if (!flatObj.MoveNext()) // если перечислитель не может перейти к следующему элементу, то требуется больше данных для записи
                         return EdfErr.SrcDataRequred;
-                    _currObj = flatObj.Current;
+                    _currObj = flatObj.Current; // обновляем текущий объект данных для следующей итерации
                 }
                 // пытаемся записать текущий элемент данных в буфер, используя схему данных для этого элемента
                 if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, _currObj, dst, out var w)))
