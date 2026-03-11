@@ -4,7 +4,7 @@ using System.ComponentModel;
 namespace NetEdfTest;
 
 [TestClass]
-public class TestTxtWriterReader
+public class TestTxtWriter
 {
     static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
     static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);

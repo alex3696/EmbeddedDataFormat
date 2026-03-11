@@ -77,7 +77,9 @@ public class TestBinWriteReaderr
         var mssrc = new MemoryStream(binBuf);
         using var reader = new BinReader(mssrc);
         Assert.IsTrue(reader.ReadBlock());
-             
+        var rec = reader.ReadInfo();
+        Assert.IsNotNull(rec);
+        Assert.IsTrue(playerRec.Inf.Equals(rec.Inf));
 
     }
 
