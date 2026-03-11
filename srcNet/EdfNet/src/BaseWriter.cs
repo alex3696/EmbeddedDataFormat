@@ -173,8 +173,10 @@ public abstract class BaseWriter : BaseDisposable
         return err;
     }
 }
+// расширение для класса BaseWriter, добавляет метод для записи данных с указанием схемы данных и имени элемента данных
 public static class BaseWriterExt
 {
+    // метод для записи данных, принимает идентификатор элемента данных, тип данных, имя элемента данных и объект данных для записи
     public static EdfErr WriteInfData(this BaseWriter dw, UInt32 id, PoType pt, string name, object d)
     {
         dw.Write(new TypeRec() { Id = id, Inf = new(pt), Name = name, });

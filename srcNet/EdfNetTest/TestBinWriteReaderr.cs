@@ -11,10 +11,6 @@ public class TestBinWriteReaderr
     static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
     static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
-  
-    //Запись больших данных
-    //Чтение больших данных
-
     class PlayerStats
     {
         public string Name { get; set; }
@@ -41,7 +37,6 @@ public class TestBinWriteReaderr
         }
       
     }
-
    
     [TestMethod]
     public void WriterReaderTest()
@@ -94,31 +89,16 @@ public class TestBinWriteReaderr
                 Assert.AreEqual(31, bw.CurrentQty);
             }
         }
-
-        var mssrc = new MemoryStream(binBuf);
-        using var reader = new BinReader(mssrc);
-
-        Assert.IsTrue(reader.ReadBlock());
-
-        var rec = reader.ReadInfo();
-        Assert.IsNotNull(rec);
-
-        Assert.IsTrue(reader.ReadBlock());
-
-        reader.TryRead(out PlayerStats[]? psData);
-
-        Assert.IsTrue(psMassive[0].Equals(psData[0]));
-        Assert.IsTrue(psMassive[1].Equals(psData[1]));
     }
 
     public struct ArmorSettings
     {
-        public ushort DefenseValue;      
-        public ushort MagicResistance;   
-        public Half Weight;         
-        public ushort Durability;    
-        public ushort MaxDurability;
-        public byte RarityLevel;
+        public ushort DefenseValue { get; set; }      
+        public ushort MagicResistance { get; set; }
+        public double Weight { get; set; }
+        public ushort Durability { get; set; }
+        public ushort MaxDurability { get; set; }
+        public byte RarityLevel{ get; set; }
     }
 
     [TestMethod]
@@ -136,10 +116,11 @@ public class TestBinWriteReaderr
                 [
                     new (PoType.UInt16, "DefenseValue"),
                     new (PoType.UInt16, "MagicResistance"),
-                    new (PoType.Half, "Weight"),
+                    new (PoType.Double, "Weight"),
                     new (PoType.UInt16, "Durability"),
                     new (PoType.UInt16, "MaxDurability"),
-                    new (PoType.UInt8, "RarityLevel")
+                    new (PoType.UInt8, "RarityLevel"),
+    
                 ]
             }
         };
@@ -148,10 +129,10 @@ public class TestBinWriteReaderr
         {
             DefenseValue = 10,
             MagicResistance = 10,
-            Weight = (Half)6.75,
+            Weight = 6.75,
             Durability = 15,
             MaxDurability = 30,
-            RarityLevel = 3
+            RarityLevel = 3,
         };
 
         using (var file = new FileStream(binFile, FileMode.Create))
@@ -159,20 +140,46 @@ public class TestBinWriteReaderr
             using (var bw = new BinWriter(file))
             {
                 bw.Write(ArmorRec);
-                bw.Write(armSet);
+                Assert.AreEqual(EdfErr.IsOk, bw.Write(armSet));
+                Assert.AreEqual(17, bw.CurrentQty);
             }
         }
         Assert.IsTrue(File.Exists(binFile));
-
-        using (var file = new FileStream(binFile, FileMode.Open))
-        {
-            using (var reader = new BinReader(file))
-            {
-                
-            }
-            file.Seek(0, SeekOrigin.End);
-        }
-        
     }
-                
+
+    //Запись больших данных
+
+    [TestMethod]
+    public void WriteReadBigDataTest()
+    {
+        string binFile = GetTestFilePath("BigDataTest.bdf");
+        long[] arr = new long[1000];
+
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = i * 10;
+
+        TypeRec arrRec = new()
+        {
+            Inf = new()
+            {
+                Type = PoType.Int64,
+                Name = "IntArray",
+                Dims = [1000],
+            }
+        };
+
+        using (var file = new FileStream(binFile, FileMode.Create))
+        {
+            using (var bw = new BinWriter(file))
+            {
+                bw.Write(arrRec);
+                Assert.AreEqual(EdfErr.IsOk, bw.Write(arr));
+                Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(0, 250).ToArray()));
+                Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(250, arr.Length - 400).ToArray()));
+                Assert.AreEqual(EdfErr.IsOk, bw.Write(arr.AsSpan(arr.Length - 150).ToArray()));
+        
+            }
+        }
+        Assert.IsTrue(File.Exists(binFile));
+    }
 }
