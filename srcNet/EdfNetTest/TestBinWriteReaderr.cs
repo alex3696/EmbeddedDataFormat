@@ -19,22 +19,6 @@ public class TestBinWriteReaderr
         public byte SkillPoints { get; set; }
         public uint CountAchievements { get; set; }
 
-        public bool Equals(PlayerStats? other)
-        {
-            if (other is null)
-                return false;
-            if (!string.Equals(Name, other.Name))
-                return false;
-            if (!Equals(Health, other.Health))
-                return false;
-            if (!Equals(Level, other.Level))
-                return false;
-            if(!Equals(SkillPoints, other.SkillPoints))
-                return false;
-            if(!Equals(CountAchievements, other.CountAchievements))
-                return false;
-            return true;
-        }
       
     }
    
@@ -89,6 +73,12 @@ public class TestBinWriteReaderr
                 Assert.AreEqual(31, bw.CurrentQty);
             }
         }
+
+        var mssrc = new MemoryStream(binBuf);
+        using var reader = new BinReader(mssrc);
+        Assert.IsTrue(reader.ReadBlock());
+             
+
     }
 
     public struct ArmorSettings
