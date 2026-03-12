@@ -1,5 +1,7 @@
 namespace NetEdf.src;
 
+// предназначен для чтения данных из бинарного формата,
+// который может содержать заголовок, информацию о типах данных и сами данные в виде блоков.
 public class BinReader : BaseReader
 {
     public readonly Header Cfg; // Заголовок
@@ -237,8 +239,7 @@ public class BinReader : BaseReader
             return EdfErr.IsOk;
         ret = Activator.CreateInstance(csType); // Создаем новый экземпляр типа данных в C#, который соответствует типу структуры,
                                                 // которую мы хотим прочитать из блока данных
-        var fields = csType.GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? []; // Получаем список публичных свойств экземпляра типа данных в C#, который соответствует полям структуры,
-                                                                                              // которую мы хотим прочитать из блока данных
+        var fields = csType.GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? []; // Получаем список свойств структуры
         int fieldId = 0; // Инициализируем счетчик для отслеживания текущего поля, которое мы читаем из структуры.
                          // Этот счетчик будет использоваться для доступа к соответствующему полю в списке fields
         foreach (var child in t.Childs) 
@@ -246,7 +247,6 @@ public class BinReader : BaseReader
             var r = readed; // Сохраняем текущее количество прочитанных байт в переменной r,
                             // чтобы мы могли вычислить, сколько байт было прочитано после попытки чтения поля структуры
             var field = fields[fieldId++]; // Получаем текущее поле из списка fields, используя счетчик fieldId,
-                                           // и затем увеличиваем счетчик на 1 для следующей итерации цикла
             if (EdfErr.IsOk != (err = ReadObject(child, src, field.PropertyType, ref skip, ref qty, ref readed, out var childVal)))
                 return err;
             field.SetValue(ret, childVal); // Если были прочитаны байты данных для текущего поля структуры,
@@ -276,14 +276,14 @@ public class BinReader : BaseReader
         return err;
     }
 
+    int _skip = 0; // Количество элементов данных, которые нужно пропустить перед чтением следующего элемента данных
+    int _readed = 0; // Количество байт данных, которые уже были прочитаны из текущего блока данных
+    object? _ret; // Промежуточное значение, которое может быть использовано для хранения прочитанных данных из блока данных
 
-    int _skip = 0;
-    int _readed = 0;
-    object? _ret;
     // Метод для чтения данных из блока данных, с указанием типа данных в C#, и сохранением результата в переменной ret, которая может быть null
     public EdfErr TryRead<T>(out T? ret)
     {
-        ArgumentNullException.ThrowIfNull(_currDataType); 
+        ArgumentNullException.ThrowIfNull(_currDataType); // Проверяем, что информация о типе данных для текущего блока данных
         EdfErr err;
         ret = default;
         Span<byte> src = _current._data.AsSpan(_readed, _current.Qty - _readed); // Получаем оставшуюся часть данных в текущем блоке данных,
@@ -295,7 +295,7 @@ public class BinReader : BaseReader
             int skip = _skip; // количество элементов которое нужно пропустить перед чтением
             int readed = 0; // количество прочитанных байт данных в текущей попытке чтения
 
-            if (null != _ret)
+            if (null != _ret) //?? 
                 err = ReadObject(_currDataType, src, ref skip, ref qty, ref readed, ref _ret); // Пытаемя прочитать данные из блока данных
             else
                 err = ReadObject(_currDataType, src, typeof(T), ref skip, ref qty, ref readed, out _ret); // Пытаемя прочитать данные из блока данных, с указанием типа данных в C#,
@@ -368,7 +368,7 @@ public class BinReader : BaseReader
             rest = rest.Slice(1); // Обновляем переменную rest, чтобы она указывала на оставшуюся часть массива байтов после чтения количества дочерних элементов. 
             childs = new List<TypeInf>(childsCount); // Выделяем список для хранения информации о дочерних элементах,
             for (int i = 0; i < childsCount; i++)
-                childs.Add(ParseInf(rest, out rest)); // Для каждого дочернего элемента, мы вызываем рекурсивно функцию ParseInf,
+                childs.Add(ParseInf(rest, out rest)); // Для каждого дочернего элемента, вызываем рекурсивно функцию ParseInf,
         }
         return new TypeInf(name, type, dims, childs?.ToArray()); // Возвращаем новый объект TypeInf
     }

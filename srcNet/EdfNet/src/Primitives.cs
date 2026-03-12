@@ -11,7 +11,7 @@ public static class Primitives
     /// <returns>writed bytes count</returns>
     /// <exception cref="OverflowException"></exception>
     /// <exception cref="NotSupportedException"></exception>
-    public static int SrcToBin(this Stream dst, PoType t, object obj)
+    public static int SrcToBin(this Stream dst, PoType t, object obj) // write primitive to stream
     {
         Span<byte> b = stackalloc byte[t.GetSizeOf()];
         var w = SrcToBin(b, t, obj);

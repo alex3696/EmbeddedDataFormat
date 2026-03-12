@@ -127,7 +127,7 @@ public abstract class BaseWriter : BaseDisposable
                     return err;
                 for (int childIndex = 0; childIndex < inf.Childs.Length; childIndex++)
                 {
-                    // рекурсивно записываем каждый элемент структуры, используя схему данных для каждого элемента
+                    // рекурсивно запи сываем каждый элемент структуры, используя схему данных для каждого элемента
                     err = WriteObj(inf.Childs[childIndex], ref dst, flatObj, ref skip, ref wqty, ref writed); 
                     if (EdfErr.IsOk != err)
                         return err;

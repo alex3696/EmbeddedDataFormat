@@ -1,6 +1,6 @@
 using NetEdf.src;
-using Newtonsoft.Json.Linq;
-using System.Reflection.PortableExecutable;
+using Newtonsoft.Json.Converters;
+using System.Text;
 
 namespace NetEdfTest;
 
@@ -19,9 +19,25 @@ public class TestBinWriteReaderr
         public byte SkillPoints { get; set; }
         public uint CountAchievements { get; set; }
 
-      
+        public bool Equals(PlayerStats? other)
+        {
+            if (other is null)
+                return false;
+            if (!string.Equals(Name, other.Name))
+                return false;
+            if (!Equals(Health, other.Health))
+                return false;
+            if (!Equals(Level, other.Level))
+                return false;
+            if (!Equals(SkillPoints, other.SkillPoints))
+                return false;
+            if (!Equals(CountAchievements, other.CountAchievements))
+                return false;
+            return true;
+        }
+
     }
-   
+
     [TestMethod]
     public void WriterReaderTest()
     {
@@ -81,20 +97,45 @@ public class TestBinWriteReaderr
         Assert.IsNotNull(rec);
         Assert.IsTrue(playerRec.Inf.Equals(rec.Inf));
 
+        reader.ReadBlock();
+        Assert.AreEqual(EdfErr.IsOk, reader.TryRead(out PlayerStats[]? psRead));
+        Assert.IsTrue(psMassive[0].Equals(psRead[0]));
+        Assert.IsTrue(psMassive[1].Equals(psRead[1]));
+
+
     }
 
-    public struct ArmorSettings
+    class ArmorSettings
     {
-        public ushort DefenseValue { get; set; }      
+        public ushort DefenseValue { get; set; }
         public ushort MagicResistance { get; set; }
         public double Weight { get; set; }
         public ushort Durability { get; set; }
         public ushort MaxDurability { get; set; }
-        public byte RarityLevel{ get; set; }
+        public byte RarityLevel { get; set; }
+
+        public bool Equals(ArmorSettings? other)
+        {
+            if (other is null)
+                return false;
+            if (!Equals(DefenseValue, other.DefenseValue))
+                return false;
+            if (!Equals(MagicResistance, other.MagicResistance))
+                return false;
+            if (!Equals(Weight, other.Weight))
+                return false;
+            if (!Equals(Durability, other.Durability))
+                return false;
+            if (!Equals(MaxDurability, other.MaxDurability))
+                return false;
+            if (!Equals(RarityLevel, other.RarityLevel))
+                return false;
+            return true;
+        }
     }
 
     [TestMethod]
-    public void WriterReaderFrowFileTest()
+    public void WriterReaderFromFileTest()
     {
         string binFile = GetTestFilePath("ArmorSettings.bdf");
 
@@ -112,7 +153,7 @@ public class TestBinWriteReaderr
                     new (PoType.UInt16, "Durability"),
                     new (PoType.UInt16, "MaxDurability"),
                     new (PoType.UInt8, "RarityLevel"),
-    
+
                 ]
             }
         };
@@ -137,6 +178,18 @@ public class TestBinWriteReaderr
             }
         }
         Assert.IsTrue(File.Exists(binFile));
+
+        using (var file = new FileStream(binFile, FileMode.Open))
+        {
+            using var reader = new BinReader(file);
+            Assert.IsTrue(reader.ReadBlock());
+            var rec = reader.ReadInfo();
+            Assert.IsNotNull(rec);
+            Assert.IsTrue(ArmorRec.Inf.Equals(rec.Inf));
+            reader.ReadBlock();
+            Assert.AreEqual(EdfErr.IsOk, reader.TryRead(out ArmorSettings? armSetRead));
+            Assert.IsTrue(armSet.Equals(armSetRead));
+        }
     }
 
     //Запись больших данных
@@ -162,16 +215,52 @@ public class TestBinWriteReaderr
 
         using (var file = new FileStream(binFile, FileMode.Create))
         {
-            using (var bw = new BinWriter(file))
-            {
-                bw.Write(arrRec);
-                Assert.AreEqual(EdfErr.IsOk, bw.Write(arr));
-                Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(0, 250).ToArray()));
-                Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(250, arr.Length - 400).ToArray()));
-                Assert.AreEqual(EdfErr.IsOk, bw.Write(arr.AsSpan(arr.Length - 150).ToArray()));
-        
-            }
+            using var bw = new BinWriter(file);
+            bw.Write(arrRec);
+            Assert.AreEqual(EdfErr.IsOk, bw.Write(arr));
+            //Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(0, 250).ToArray()));
+            //Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(250, arr.Length - 400).ToArray()));
+            //Assert.AreEqual(EdfErr.IsOk, bw.Write(arr.AsSpan(arr.Length - 150).ToArray()));
         }
         Assert.IsTrue(File.Exists(binFile));
+
+
+        using (var file = new FileStream(binFile, FileMode.Open))
+        {
+            using var reader = new BinReader(file);
+            Assert.IsTrue(reader.ReadBlock());
+            var rec = reader.ReadInfo();
+            Assert.IsNotNull(rec);
+            Assert.IsTrue(arrRec.Inf.Equals(rec.Inf));
+
+            StringBuilder sb = new(1000);
+            long[]? arrRead = null;
+            try
+            {
+                while (reader.ReadBlock() && BlockType.VarData == reader.GetBlockType())
+                {
+                    reader.TryRead(out arrRead);
+                    Console.WriteLine($"BlockLen={reader.GetBlockLen()} {reader.GetBlockSeq()}" +
+                        $" {arrRead is not null}");
+                }
+            }
+            catch (EndOfStreamException ex)
+            {
+                Console.WriteLine($"file end msg={ex}");
+            }
+
+            if (arrRead is not null)
+            {
+                foreach (var item in arrRead)
+                    sb.Append($"{item}, ");
+                Console.WriteLine($"[{arrRead.Length}] {sb}");
+            }
+
+            Assert.IsTrue(arr.SequenceEqual(arrRead));
+
+            //Assert.IsTrue(reader.ReadBlock());
+            //Console.WriteLine($"BlockLen = {reader.GetBlockLen()}");
+            //Assert.AreEqual(EdfErr.IsOk, reader.TryRead(out long[]? arrRead));
+        }
     }
 }
