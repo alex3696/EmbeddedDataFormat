@@ -2,6 +2,7 @@ using System.Collections;
 
 namespace NetEdf.src;
 
+// Класс для рекурсивного разложения сложных объектов на "примитивные" составляющие (строки, числа, даты и т.д.)
 public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
 {
     private readonly object _source;
@@ -10,10 +11,11 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
     {
         _source = source;
     }
-
+    // Реализуем IEnumerable для удобства перебора примитивов
     public IEnumerator<object> GetEnumerator() => Decompose(_source).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator(); // явная реализация для IEnumerable
 
+    // Рекурсивный метод для разложения объекта на примитивы
     private IEnumerable<object> Decompose(object obj)
     {
         if (obj == null) yield break;

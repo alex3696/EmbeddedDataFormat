@@ -42,6 +42,7 @@ public static class Primitives
     /// <param name="obj"></param>
     /// <param name="dst"></param>
     /// <returns>error code, 0 when OK</returns>
+    // Конвертировать примитив в бинарный вид
     public static EdfErr TrySrcToBin(PoType t, object obj, Span<byte> dst, out int w)
     {
         w = t.GetSizeOf();
@@ -72,6 +73,7 @@ public static class Primitives
         }
         return EdfErr.IsOk;
     }
+    // Конвертировать бинарные данные в примитив
     public static EdfErr TryBinToSrc(PoType t, ReadOnlySpan<byte> src, out int r, out object? obj)
     {
         obj = default;
@@ -103,7 +105,7 @@ public static class Primitives
         }
         return EdfErr.IsOk;
     }
-
+    //Попытаться отформатировать примитив в текстовый вид
     public static EdfErr TryFormat<T>(PoType t, T obj, Span<byte> dst, out int w)
         where T : IUtf8SpanFormattable
     {
@@ -111,6 +113,7 @@ public static class Primitives
             return EdfErr.IsOk;
         return EdfErr.DstBufOverflow;
     }
+    // Конвертировать примитив в текстовый вид
     public static EdfErr TrySrcToTxt(PoType t, object obj, Span<byte> dst, out int w)
     {
         switch (t)

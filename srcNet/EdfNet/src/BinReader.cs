@@ -283,7 +283,7 @@ public class BinReader : BaseReader
     // Метод для чтения данных из блока данных, с указанием типа данных в C#, и сохранением результата в переменной ret, которая может быть null
     public EdfErr TryRead<T>(out T? ret)
     {
-        ArgumentNullException.ThrowIfNull(_currDataType); // Проверяем, что информация о типе данных для текущего блока данных
+        ArgumentNullException.ThrowIfNull(_currDataType); // Проверяем, что информация о типе данных для текущего блока данных не равна null
         EdfErr err;
         ret = default;
         Span<byte> src = _current._data.AsSpan(_readed, _current.Qty - _readed); // Получаем оставшуюся часть данных в текущем блоке данных,

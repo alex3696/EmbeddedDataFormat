@@ -38,6 +38,7 @@ public class TestBinWriteReaderr
 
     }
 
+    // Запись и чтение структуры данных в память с помощью BinWriter и BinReader, а также проверка на корректность записанных и прочитанных данных.
     [TestMethod]
     public void WriterReaderTest()
     {
@@ -134,6 +135,7 @@ public class TestBinWriteReaderr
         }
     }
 
+    // Запись и чтение структуры данных в файл с помощью BinWriter и BinReader, а также проверка на корректность записанных и прочитанных данных.
     [TestMethod]
     public void WriterReaderFromFileTest()
     {
@@ -192,12 +194,13 @@ public class TestBinWriteReaderr
         }
     }
 
-    //Запись больших данных
+    //Запись и чтение большого массива данных с проверкой на частичную запись при превышении размера блока данных.
 
     [TestMethod]
     public void WriteReadBigDataTest()
     {
         string binFile = GetTestFilePath("BigDataTest.bdf");
+        string binPathWriteFile = GetTestFilePath("BigDataPathWriteTest.bdf");
         long[] arr = new long[1000];
 
         for (int i = 0; i < arr.Length; i++)
@@ -218,12 +221,19 @@ public class TestBinWriteReaderr
             using var bw = new BinWriter(file);
             bw.Write(arrRec);
             Assert.AreEqual(EdfErr.IsOk, bw.Write(arr));
-            //Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(0, 250).ToArray()));
-            //Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(250, arr.Length - 400).ToArray()));
-            //Assert.AreEqual(EdfErr.IsOk, bw.Write(arr.AsSpan(arr.Length - 150).ToArray()));
         }
         Assert.IsTrue(File.Exists(binFile));
 
+        using (var file = new FileStream(binPathWriteFile, FileMode.Create))
+        {
+            using var bw = new BinWriter(file);
+            bw.Write(arrRec);
+            Assert.AreEqual(EdfErr.IsOk, bw.Write(arr));
+            Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(0, 250).ToArray()));
+            Assert.AreEqual(EdfErr.SrcDataRequred, bw.Write(arr.AsSpan(250, arr.Length - 400).ToArray()));
+            Assert.AreEqual(EdfErr.IsOk, bw.Write(arr.AsSpan(arr.Length - 150).ToArray()));
+        }
+        Assert.IsTrue(File.Exists(binPathWriteFile));
 
         using (var file = new FileStream(binFile, FileMode.Open))
         {
@@ -257,10 +267,6 @@ public class TestBinWriteReaderr
             }
 
             Assert.IsTrue(arr.SequenceEqual(arrRead));
-
-            //Assert.IsTrue(reader.ReadBlock());
-            //Console.WriteLine($"BlockLen = {reader.GetBlockLen()}");
-            //Assert.AreEqual(EdfErr.IsOk, reader.TryRead(out long[]? arrRead));
         }
     }
 }
