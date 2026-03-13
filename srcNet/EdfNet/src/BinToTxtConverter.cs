@@ -28,7 +28,7 @@ public class BinToTxtConverter : BaseDisposable
             _dstFile.Dispose();
         }
     }
-    public void Execute()
+    public void Execute() // основной метод для выполнения конвертации
     {
         try
         {

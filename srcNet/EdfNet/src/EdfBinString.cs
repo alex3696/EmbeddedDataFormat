@@ -6,7 +6,7 @@ public static class EdfBinString
     public static int SizeOf(string? str)
     {
         if (string.IsNullOrEmpty(str))
-            return 1;
+            return 1; // Если строка пустая или null, то для хранения строки в бинарном формате требуется 1 байт
         return (byte)int.Min(0xFE, Encoding.UTF8.GetByteCount(str));
     }
     // Запись строки в бинарном формате в поток. Возвращает количество записанных байт или -1 в случае ошибки.
@@ -31,7 +31,7 @@ public static class EdfBinString
             return 1;
         }
         var len = (byte)int.Min(0xFE, Encoding.UTF8.GetByteCount(str)); // Вычисляем количество байт, необходимых для хранения строки, ограничивая его 0xFE
-        if (len > dst.Length) // Если буфер недостаточно велик для хранения строки, возвращаем -1
+        if (len > dst.Length) // Если буфер недостаточно велик для хранения строки
             return dst.Length - len;
         Encoding.UTF8.GetBytes(str, dst.Slice(1, len)); // Записываем строку в буфер, начиная со второго байта
         dst[0] = len; // Записываем количество байт, необходимых для хранения строки, в первый байт
