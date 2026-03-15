@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace NetEdf.src;
 
-// Класс для рекурсивного разложения сложных объектов на "примитивные" составляющие (строки, числа, даты и т.д.)
+// Класс для рекурсивного разложения сложных объектов на "примитивные" составляющие (строки, числа, и т.д.)
 public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
 {
     private readonly object _source;
