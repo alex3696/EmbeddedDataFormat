@@ -1,5 +1,6 @@
 using NetEdf.src;
 using System.ComponentModel;
+using System.Net.WebSockets;
 
 namespace NetEdfTest;
 
@@ -17,12 +18,11 @@ public class TestTxtWriter
         public byte SkillPoints { get; set; }
         public uint CountAchievements { get; set; }
     }
-
+    //запись маленьких данных в текстовый файл
     [TestMethod]
     public void WriteHeaderAndTypeRecTest()
     {
         string txtFile = GetTestFilePath("PlayerInfo.tdf");
-
         
         TypeRec playerRec = new()
         {
@@ -52,5 +52,46 @@ public class TestTxtWriter
         }
         Assert.IsTrue(File.Exists(txtFile));
 
+    }
+
+
+    //запись больших данных в текстовый файл
+    [TestMethod]
+    public void WriteBigDataTest()
+    {
+        string txtFile = GetTestFilePath("BigData.tdf");
+        string txtPathWriteFile = GetTestFilePath("BigPathWriteData.tdf");
+
+        TypeRec bigData = new()
+        {
+            Inf = new()
+            {
+                Type = PoType.Int64,
+                Name = "BigNumbers",
+                Dims = [1000]
+            }
+        };
+        long[] bigNums = new long[1000];
+
+        for(int i = 0; i < bigNums.Length; ++i)
+            bigNums[i] = i * 10;
+
+        using (var file = new FileStream(txtFile, FileMode.Create))
+        using (var writer = new TxtWriter(file))
+        {
+            writer.Write(bigData);
+            Assert.AreEqual(EdfErr.IsOk, writer.Write(bigNums));
+        }
+        Assert.IsTrue(File.Exists(txtFile));
+
+        using (var file = new FileStream(txtPathWriteFile, FileMode.Create))
+        using (var writer = new TxtWriter(file))
+        {
+            writer.Write(bigData);
+            Assert.AreEqual(EdfErr.SrcDataRequred, writer.Write(bigNums.AsSpan(0, 150).ToArray()));
+            Assert.AreEqual(EdfErr.SrcDataRequred, writer.Write(bigNums.AsSpan(150, bigNums.Length - 500).ToArray()));
+            Assert.AreEqual(EdfErr.IsOk, writer.Write(bigNums.AsSpan(bigNums.Length - 350).ToArray()));
+        }
+        Assert.IsTrue(File.Exists(txtPathWriteFile));
     }
 }

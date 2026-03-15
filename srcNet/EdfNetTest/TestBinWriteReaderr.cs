@@ -105,7 +105,7 @@ public class TestBinWriteReaderr
 
 
     }
-
+    
     class ArmorSettings
     {
         public ushort DefenseValue { get; set; }
