@@ -15,7 +15,7 @@ public class CsvWriter : TxtWriter
         SepBeginArray = null;
         SepEndArray = null;
         SepVarEnd = ";"u8.ToArray();
-        SepRecBegin = null;
+        SepRecBegin = "\n"u8.ToArray();
         SepRecEnd = null;
         if (0 == stream.Position)
             Write(Cfg);
@@ -24,7 +24,7 @@ public class CsvWriter : TxtWriter
     {
         Flush();
         Write($"version;blocksize;encoding;flags;\n" +
-            $"{h.VersMajor}.{h.VersMinor};{h.Blocksize};{h.Encoding};{(uint)h.Flags};\n\n");
+            $"{h.VersMajor}.{h.VersMinor};{h.Blocksize};{h.Encoding};{(uint)h.Flags};");
         _currDataType = null;
         _blkQty = 0;
 
@@ -32,21 +32,44 @@ public class CsvWriter : TxtWriter
     public override void Write(TypeRec t)
     {
         Flush();
-
+        Write("\n");
+        Write($"Id;Name;Desc;\n");
+        Write($"{t.Id};{t.Name};{t.Desc};\n");
         ToString(t.Inf);
 
         _currDataType = t.Inf;
         _blkQty = 0;
-        Write("\n");
+        
     }
+
     protected void ToString(TypeInf t)
     {
         if (PoType.Struct == t.Type && null != t.Childs && 0 < t.Childs.Length)
         {
-            foreach (var it in t.Childs)
+            if (t.Dims != null)
             {
-                ToString(it);
+                if (t.Dims.Length != 0)
+                {
+                    foreach (var d in t.Dims)
+                    {
+                        for (int i = 0; i < d; ++i)
+                        {
+                            foreach (var it in t.Childs)
+                            {
+                                ToString(it);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var it in t.Childs)
+                    {
+                        ToString(it);
+                    }
+                }
             }
+           
         }
         else
         {
@@ -83,5 +106,6 @@ public class CsvWriter : TxtWriter
 
             }
         }
+       
     }
 }

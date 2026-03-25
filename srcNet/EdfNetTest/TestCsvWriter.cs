@@ -1,4 +1,5 @@
 using NetEdf.src;
+using System.Text;
 using static NetEdfTest.TestStructSerialize;
 
 namespace NetEdfTest;
@@ -9,7 +10,19 @@ public class TestCsvWriter
     static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
     static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
+    static byte[] GetCString(string str, int len)
+    {
+        var ret = new byte[len];
+        Encoding.UTF8.GetBytes(str, ret.AsSpan());
+        return ret;
+    }
 
+
+    struct KeyValue
+    {
+        public string? Key { get; set; }
+        public string? Value { get; set; }
+    };
     struct ComplexVariable
     {
         public long Time { get; set; }
@@ -104,21 +117,56 @@ public class TestCsvWriter
                 }
             }
         };
+        
+        int[] test = new int[100];
+        for (uint i = 0; i < 100; i++)
+            test[i] = (int)i;
+
         TypeRec rec = new()
         {
             Inf = new() { Type = PoType.Int32, Name = "variable" },
             Id = 0xF0F1F2F3
         };
 
+        TypeRec tchar = new() { Inf = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
+
+        TypeRec t = new() { Inf = new(PoType.Int32), Id = 0, Name = "weight variable" };
+
+        TypeRec td = new() { Inf = new(PoType.Double), Id = 0, Name = "TestDouble" };
+
         using (var file = new FileStream(csvFile, FileMode.Create))
         {
             using (var wr = new CsvWriter(file))
             {
-               // wr.Write(TestStructInf);
+                wr.Write(TestStructInf);
+                wr.Write(kvArr);
+
                 wr.Write(new TypeRec() { Inf = comlexVarInf });
-                //wr.Write(keyValueType);
-                //wr.Write(rec);
                 wr.Write(cv);
+                wr.Write(cv);
+                wr.Write(cv);
+                wr.Write(cv);
+
+                wr.Write(keyValueType);
+                wr.Write(new KeyValue() { Key = "Key1", Value = "Value1" });
+                wr.Write(new KeyValue() { Key = "Key2", Value = "Value2" });
+                wr.Write(new KeyValue() { Key = "Key3", Value = "Value3" });
+
+                wr.Write(rec);
+                Assert.AreEqual(EdfErr.IsOk, (EdfErr)wr.Write(test));
+
+                wr.Write(tchar);
+                Assert.AreEqual(EdfErr.IsOk, wr.Write(GetCString("Char", 20)));
+                Assert.AreEqual(EdfErr.IsOk, wr.Write(GetCString("Value", 20)));
+                Assert.AreEqual(EdfErr.IsOk, wr.Write(GetCString("Array     Value", 20)));
+
+                wr.Write(t);
+                Assert.AreEqual(EdfErr.IsOk, wr.Write(unchecked((int)0xFFFFFFFF)));
+
+                wr.Write(td);
+                Assert.AreEqual(EdfErr.IsOk, wr.Write(1.1d));
+                Assert.AreEqual(EdfErr.IsOk, wr.Write(2.1d));
+                Assert.AreEqual(EdfErr.IsOk, wr.Write(3.1d));
             }
         }
         Assert.IsTrue(File.Exists(csvFile));
