@@ -253,6 +253,9 @@ uint32_t GetTypeCSize(const TypeInfo_t* t)
 				sz += GetTypeCSize(&t->Childs.Item[i]);
 		}
 		break;
+	case String:
+		sz = sizeof(char*);
+		break;
 	default:
 		sz = GetSizeOf(t->Type);
 		break;

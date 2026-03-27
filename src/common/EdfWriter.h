@@ -18,7 +18,6 @@ int EdfWriteSep(const char* const src,
 	size_t* skip, size_t* wqty,
 	size_t* writed);
 //-----------------------------------------------------------------------------
-/*
 typedef struct EdfBlock
 {
 	uint8_t Type;
@@ -26,8 +25,7 @@ typedef struct EdfBlock
 	uint16_t Len;
 	uint8_t Data[BLOCK_SIZE];
 	uint16_t Crc;
-};
-*/
+} EdfBlock_t;
 
 typedef struct EdfWriter
 {
@@ -42,6 +40,7 @@ typedef struct EdfWriter
 	uint8_t BlkSeq;
 	uint16_t DatLen;
 	uint8_t Block[BLOCK_SIZE];
+	uint16_t Crc;
 
 	size_t BufLen;
 	uint8_t Buf[BLOCK_SIZE];

@@ -2,25 +2,16 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
-typedef struct EdfBlock
-{
-	uint8_t Type;
-	uint8_t Seq;
-	uint16_t Len;
-	uint8_t* Data;
-} EdfBlock_t;
-//-----------------------------------------------------------------------------
 static int EdfWriteBlockBin(Stream_t* st, const EdfHeader_t* cfg, const EdfBlock_t* blk, size_t* writed)
 {
 	int err = 0;
-	if ((err = StreamWrite(st, NULL, blk, 4 + blk->Len)))
-		return err;
 	if (cfg->Flags & UseCrc)
 	{
-		uint16_t crc = MbCrc16(blk, 4 + blk->Len);
-		if ((err = StreamWrite(st, NULL, &crc, sizeof(uint16_t))))
-			return err;
+		uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + 4 + blk->Len);
+		*blkCrc = MbCrc16(blk, 4 + blk->Len);
 	}
+	if ((err = StreamWrite(st, NULL, blk, 4 + blk->Len + 2)))
+		return err;
 	*writed = blk->Len;
 	return 0;
 }
@@ -96,7 +87,7 @@ static int EdfWriteInfoBin(EdfWriter_t* dw, const TypeRec_t* t, size_t* writed)
 		(err = StreamWriteInfBin((Stream_t*)&ms, t, &w)))
 		return err;
 	dw->DatLen = (uint16_t)w;// (uint16_t)ms.WPos;
-	if ((EdfWriteBlockBin(&dw->Stream, &dw->h, (EdfBlock_t*)&dw->BlkType, writed)))
+	if ((err = EdfWriteBlockBin(&dw->Stream, &dw->h, (EdfBlock_t*)&dw->BlkType, writed)))
 		return err;
 	return 0;
 }
@@ -251,17 +242,22 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	return err;
 }
 //-----------------------------------------------------------------------------
-int EdfOpen(EdfWriter_t* f, const char* file, const char* mode)
+int EdfOpen(EdfWriter_t* edf, const char* file, const char* mode)
+{
+	return EdfOpenWithFs(edf, file, mode, FileStreamOpen);
+}
+//-----------------------------------------------------------------------------
+int EdfOpenWithFs(EdfWriter_t* edf, const char* file, const char* mode, FileStreamOpenFn fnOpen)
 {
 	if (2 > strnlength(mode, 2))
 		return -1;
 	int err = 0;
 	if (0 == strncmp("wb", mode, 2) || 0 == strncmp("ab", mode, 2))
 	{
-		err = FileStreamOpen((FileStream_t*)&f->Stream, file, mode);
+		err = (*fnOpen)((FileStream_t*)&edf->Stream, file, mode);
 		if (err)
 			return -1;
-		return EdfOpenStream(f, &f->Stream, mode);
+		return EdfOpenStream(edf, &edf->Stream, mode);
 	}
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2))
 	{
@@ -272,17 +268,17 @@ int EdfOpen(EdfWriter_t* f, const char* file, const char* mode)
 			filemode = "ab";
 		else
 			return -1;
-		err = FileStreamOpen((FileStream_t*)&f->Stream, file, filemode);
+		err = (*fnOpen)((FileStream_t*)&edf->Stream, file, filemode);
 		if (err)
 			return -1;
-		return EdfOpenStream(f, &f->Stream, mode);
+		return EdfOpenStream(edf, &edf->Stream, mode);
 	}
 	else if (0 == strncmp("rb", mode, 2))
 	{
-		err = FileStreamOpen((FileStream_t*)&f->Stream, file, "rb");
+		err = (*fnOpen)((FileStream_t*)&edf->Stream, file, "rb");
 		if (err)
 			return -1;
-		return EdfOpenStream(f, &f->Stream, mode);
+		return EdfOpenStream(edf, &edf->Stream, mode);
 	}
 	else if (0 == strncmp("rt", mode, 2))
 	{
@@ -339,23 +335,23 @@ int EdfWriteInfRecData(EdfWriter_t* dw, const TypeRec_t* ir, const void* d, size
 int EdfWriteInfData0(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d)
 {
 	const void* data = String == pt ? &d : d;
-	return EdfWriteInfRecData(dw, &(TypeRec_t){{ pt }, id, name, desc}, data, GetSizeOf(pt));
+	TypeRec_t rec = { { pt }, id, name, desc };
+	return EdfWriteInfRecData(dw, &rec, data, GetTypeCSize(&rec.Inf));
 }
 //-----------------------------------------------------------------------------
 int EdfWriteInfData(EdfWriter_t* dw, uint32_t id, PoType pt, char* name, const void* d)
 {
 	const void* data = String == pt ? &d : d;
-	return EdfWriteInfRecData(dw, &(TypeRec_t){{ pt }, id, name}, data, GetSizeOf(pt));
+	TypeRec_t rec = { { pt }, id, name };
+	return EdfWriteInfRecData(dw, &rec, data, GetTypeCSize(&rec.Inf));
 }
 //-----------------------------------------------------------------------------
 int EdfWriteInfDataString(EdfWriter_t* dw, uint32_t id, char* name, void* str, size_t len)
 {
 	int err;
 	size_t writed = 0;
-	if ((err = EdfWriteInfo(dw, &((const TypeRec_t)
-	{
-		.Id = id, .Inf = (TypeInfo_t){ .Type = String, }, .Name = name
-	}), &writed)))
+	TypeRec_t rec = { .Id = id, .Inf = (TypeInfo_t){.Type = String, }, .Name = name };
+	if ((err = EdfWriteInfo(dw, &rec, &writed)))
 		return err;
 	if (NULL == str)
 		return 0;
@@ -370,6 +366,6 @@ int EdfWriteInfDataString(EdfWriter_t* dw, uint32_t id, char* name, void* str, s
 	}
 	else
 		data = str;
-	return EdfWriteDataBlock(dw, &data, GetSizeOf(String));
+	return EdfWriteDataBlock(dw, &data, GetTypeCSize(&rec.Inf));
 }
 //-----------------------------------------------------------------------------

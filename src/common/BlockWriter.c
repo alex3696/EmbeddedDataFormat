@@ -2,43 +2,71 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
+// 
+int EdfWritePrimitive(EdfWriter_t* dw, PoType pot,
+	const uint8_t** ppsrc, size_t* srcLen,
+	uint8_t** ppdst, size_t* dstLen,
+	size_t* skip, size_t* wqty,
+	size_t* readed, size_t* writed)
+{
+	if (0 < (*skip))
+	{
+		(*skip)--;
+		return ERR_NO;
+	}
+	int err = 0;
+	size_t r = 0, w = 0;
+	if ((err = (*dw->WritePrimitive)(pot, *ppsrc, *srcLen, *ppdst, *dstLen, &r, &w)))
+	{
+		if (ERR_DST_SHORT != err)
+			return err;
+		dw->DatLen += (uint16_t)(*writed);
+		if ((err = EdfFlushDataBlock(dw, &w)))
+			return err;
+		*writed = 0;
+		*dstLen = sizeof(dw->Block);
+		*ppdst = dw->Block;
+		if ((err = (*dw->WritePrimitive)(pot, *ppsrc, *srcLen, *ppdst, *dstLen, &r, &w)))
+			return err;
+	}
+	(*wqty)++;
+	*readed += r;
+	*writed += w;
+	*ppsrc += r; *srcLen -= r;
+	*ppdst += w; *dstLen -= w;
+	return err;
+}
+//-----------------------------------------------------------------------------
 static int WriteData(const TypeInfo_t* t,
-	const uint8_t* src, size_t srcLen,
-	uint8_t* dst, size_t dstLen,
+	const uint8_t** ppsrc, size_t *srcLen,
+	uint8_t** ppdst, size_t *dstLen,
 	size_t* skip, size_t* wqty,
 	size_t* readed, size_t* writed,
 	EdfWriter_t* dw)
 {
+	int err = 0;
 	size_t totalElement = 1;
 	for (size_t i = 0; i < t->Dims.Count; i++)
 		totalElement *= t->Dims.Item[i];
 	if (Char == t->Type)
 	{
-		if (srcLen < totalElement)
+		if (*srcLen < totalElement)
 			return -1;
-		if (dstLen < totalElement)
+		if (*dstLen < totalElement)
 			return 1;
 		if (totalElement <= *skip)
 			*skip -= totalElement;
-		{
-			size_t r = 0, w = 0;
-			int wr = (*dw->WritePrimitive)(t->Type, src, totalElement, dst, dstLen, &r, &w);
-			if (wr)
-				return wr;
-			*wqty += totalElement;
-			*readed += r;
-			*writed += w;
-			src += r; srcLen -= r;
-			dst += w; dstLen -= w;
-		}
-		if ((EdfWriteSep(dw->SepVarEnd, &dst, &dstLen, skip, wqty, writed)))
-			return 1;
+		size_t charLen = totalElement;
+		if ((err = EdfWritePrimitive(dw, t->Type, ppsrc, &charLen, ppdst, dstLen, skip, wqty, readed, writed)))
+			return err;
+		if ((err = (EdfWriteSep(dw->SepVarEnd, ppdst, dstLen, skip, wqty, writed))))
+			return err;
 		return 0;
 	}
 	if (1 < totalElement)
 	{
-		if ((EdfWriteSep(dw->BeginArray, &dst, &dstLen, skip, wqty, writed)))
-			return 1;
+		if ((err = EdfWriteSep(dw->BeginArray, ppdst, dstLen, skip, wqty, writed)))
+			return err;
 	}
 	for (size_t i = 0; i < totalElement; i++)
 	{
@@ -46,88 +74,48 @@ static int WriteData(const TypeInfo_t* t,
 		{
 			if (t->Childs.Count)
 			{
-				if ((EdfWriteSep(dw->BeginStruct, &dst, &dstLen, skip, wqty, writed)))
-					return 1;
+				if ((err = EdfWriteSep(dw->BeginStruct, ppdst, dstLen, skip, wqty, writed)))
+					return err;
 				for (size_t j = 0; j < t->Childs.Count; j++)
 				{
 					const TypeInfo_t* s = &t->Childs.Item[j];
-					size_t r = 0, w = 0;
-					int wr = WriteData(s, src, srcLen, dst, dstLen, skip, wqty, &r, &w, dw);
-					*readed += r;
-					*writed += w;
-					if (0 != wr)
-						return wr;
-					src += r; srcLen -= r;
-					dst += w; dstLen -= w;
+					if ((err = WriteData(s, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed, dw)))
+						return err;
 				}
-				if ((EdfWriteSep(dw->EndStruct, &dst, &dstLen, skip, wqty, writed)))
-					return 1;
+				if ((err = EdfWriteSep(dw->EndStruct, ppdst, dstLen, skip, wqty, writed)))
+					return err;
 			}
 		}
 		else
 		{
-			if (0 < (*skip))
-				(*skip)--;
-			else
-			{
-				size_t r = 0, w = 0;
-				int wr = (*dw->WritePrimitive)(t->Type, src, srcLen, dst, dstLen, &r, &w);
-				if (wr)
-					return wr;
-				(*wqty)++;
-				*readed += r;
-				*writed += w;
-				src += r; srcLen -= r;
-				dst += w; dstLen -= w;
-			}
-			if ((EdfWriteSep(dw->SepVarEnd, &dst, &dstLen, skip, wqty, writed)))
-				return 1;
+			if ((err = EdfWritePrimitive(dw, t->Type, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
+				return err;
+			if ((err = (EdfWriteSep(dw->SepVarEnd, ppdst, dstLen, skip, wqty, writed))))
+				return err;
 		}
 	}
 	if (1 < totalElement)
 	{
-		if ((EdfWriteSep(dw->EndArray, &dst, &dstLen, skip, wqty, writed)))
-			return 1;
+		if ((err = (EdfWriteSep(dw->EndArray, ppdst, dstLen, skip, wqty, writed))))
+			return err;
 	}
-	return 0;
+	return err;
 }
 //-----------------------------------------------------------------------------
-static int WriteSingleValue(
-	const uint8_t* src, size_t srcLen,
-	uint8_t* dst, size_t dstLen,
-	size_t* skip,
-	size_t* readed, size_t* writed,
-	EdfWriter_t* dw)
+static int WriteSingleValue(EdfWriter_t* dw,
+	const uint8_t** src, size_t* srcLen,
+	uint8_t** dst, size_t* dstLen,
+	size_t* skip, size_t* wqty,
+	size_t* readed, size_t* writed)
 {
-	size_t prevskip = *skip;
-	size_t wqty = 0;
-	*readed = *writed = 0;
-	if (0 == srcLen)
-		return -1;
-	if ((EdfWriteSep(dw->RecBegin, &dst, &dstLen, skip, &wqty, writed)))
-		return 1;
-	size_t w = 0;
-	int wr = WriteData(&dw->t->Inf, src, srcLen, dst, dstLen, skip, &wqty, readed, &w, dw);
-	dst += w; dstLen -= w; *writed += w;
-	if (0 > wr)
-	{
-		*skip = prevskip + wqty;
-	}
-	else if (0 < wr)
-	{
-		*skip = prevskip + wqty;
-	}
-	else
-	{
-		if ((EdfWriteSep(dw->RecEnd, &dst, &dstLen, skip, &wqty, writed)))
-		{
-			wr = 1;
-			*skip = prevskip + wqty;
-		}
-		else
-			*skip = 0;
-	}
-	return wr;
+	int err;
+	if (ERR_NO != (err = EdfWriteSep(dw->RecBegin, dst, dstLen, skip, wqty, writed)))
+		return err;
+	if (ERR_NO != (err = WriteData(&dw->t->Inf, src, srcLen, dst, dstLen, skip, wqty, readed, writed, dw)))
+		return err;
+	if (ERR_NO != (err = EdfWriteSep(dw->RecEnd, dst, dstLen, skip, wqty, writed)))
+		return err;
+	return err;
 }
 //-----------------------------------------------------------------------------
 int EdfWriteDataBlock(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
@@ -139,7 +127,6 @@ int EdfWriteDataBlock(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 	size_t dstLen = sizeof(dw->Block) - dw->DatLen;
 	uint8_t* dst = dw->Block + dw->DatLen;
 
-	size_t r = 0, w = 0;
 	int wr;
 	do
 	{
@@ -164,7 +151,9 @@ int EdfWriteDataBlock(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 			srcLen = xsrcLen;
 		}
 
-		wr = WriteSingleValue(src, srcLen, dst, dstLen, &dw->Skip, &r, &w, dw);
+		size_t skip = dw->Skip;
+		size_t r = 0, w = 0, wqty = 0;
+		wr = WriteSingleValue(dw, &src, &srcLen, &dst, &dstLen, &skip, &wqty, &r, &w);
 
 		if (dw->BufLen)
 		{
@@ -191,28 +180,35 @@ int EdfWriteDataBlock(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 			srcLen = xsrcLen;
 		}
 
-
-		dst += w; dstLen -= w;
 		dw->DatLen += (uint16_t)w;
-		if (0 < wr || 0 == dstLen)
+		switch (wr)
 		{
-			w = 0;
-			int err = EdfFlushDataBlock(dw, &w);
-			if (err)
-				return err;
+		default:
+		case ERR_WRONG_TYPE: return ERR_WRONG_TYPE;
+		case ERR_SRC_SHORT:
+			dw->Skip += wqty;
+			break;
+		case ERR_NO:
+			dw->Skip = 0;
+			if (0 == xsrcLen)
+				return ERR_NO;
+			break;
+		case ERR_DST_SHORT:
+			if (ERR_NO != (wr == EdfFlushDataBlock(dw, &w)))
+				return wr;
+			dstLen = sizeof(dw->Block);
+			dst = dw->Block;
+			dw->Skip += wqty;
 			wr = 0;
-			dst -= w;
-			dstLen += w;
+			break;
 		}
-	} while (0 == wr && 0 < srcLen);
+	} while (ERR_SRC_SHORT != wr && 0 < srcLen);
 
-	if (0 > wr && 0 < srcLen)
+	if (ERR_SRC_SHORT == wr && 0 < srcLen)
 	{
 		dw->BufLen = srcLen;
 		memcpy(dw->Buf, src, dw->BufLen);
 	}
-
-
 	return wr;
 }
 //-----------------------------------------------------------------------------
@@ -254,14 +250,14 @@ int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** p
 		if (0 <= ++(*skip))
 			if ((err = StreamReadString(src, mem, (char**)ti)))
 				return err;
-		ti += itemCLen;
+		ti += itemCLen; // проверить
 	}
 	break;
 	default:
 		if (0 <= ++(*skip))
 			if ((err = StreamRead(src, NULL, ti, itemCLen)))
 				return -1;
-		ti += itemCLen;
+		ti += itemCLen; // проверить
 		break;
 	}//switch
 	return 0;

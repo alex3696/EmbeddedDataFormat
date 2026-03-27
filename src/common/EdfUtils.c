@@ -18,18 +18,18 @@ size_t strnlength(const char* s, size_t n)
 	return found ? (size_t)(found - s) : n;
 }
 //-----------------------------------------------------------------------------
-int minStack = INTPTR_MAX;
-int maxStack = INTPTR_MIN;
+size_t minStack = INTPTR_MAX;
+size_t maxStack = INTPTR_MIN;
 
 int CallStackSize() 
 {
 	int var = 0;
-	int esp = (int)(&var);
+	size_t esp = (size_t)(&var);
 	var++;
 
-	minStack = MIN(minStack, (int)esp);
-	maxStack = MAX(maxStack, (int)esp);
+	minStack = MIN(minStack, esp);
+	maxStack = MAX(maxStack, esp);
 
-	printf("CURR=%d MIN=%d MAX=%d DIFF=%d\n", esp, minStack, maxStack, maxStack - minStack);
+	printf("CURR=%zd MIN=%zd MAX=%zd DIFF=%zd\n", esp, minStack, maxStack, maxStack - minStack);
 	return 0;
 }

@@ -48,7 +48,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 
 	//EdfWriteInfData(&dw, 0, String, "Comment", "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
 	const TypeRec_t typeInf = { FileTypeIdType, FILETYPEID };
-	EdfWriteInfRecData(&dw, &typeInf, &(FileTypeId_t){ dat.FileType, 1}, sizeof(FileTypeId_t));
+	EdfWriteInfRecData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
 	const TypeRec_t beginDtInf = { DateTimeType, BEGINDATETIME, "BeginDateTime" };
 	const DateTime_t beginDtDat =

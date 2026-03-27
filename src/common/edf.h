@@ -19,6 +19,7 @@ extern "C" {
 // Открыть поток для чтения (до)записи, поток может быть файловым или память
 int EdfOpenStream(EdfWriter_t* w, Stream_t* stream, const char* mode);
 // Открыть файл для чтения (до)записи, внутри обращается к EdfOpenStream
+int EdfOpenWithFs(EdfWriter_t* w, const char* file, const char* mode, FileStreamOpenFn fnOpen);
 int EdfOpen(EdfWriter_t* w, const char* file, const char* mode);
 // освобождает фнутренние буферы и закрывает файли или поток, 
 int EdfClose(EdfWriter_t* dw);

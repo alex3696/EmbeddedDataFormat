@@ -54,6 +54,7 @@ size_t strnlength(const char* s, size_t n);
 #define ERR_NO 0
 #define ERR_SRC_SHORT -1
 #define ERR_DST_SHORT 1
+#define ERR_WRONG_TYPE 2
 
 #define ERR_FN_NOT_EXIST -2
 

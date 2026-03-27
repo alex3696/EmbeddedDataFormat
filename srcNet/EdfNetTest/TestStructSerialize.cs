@@ -63,6 +63,10 @@ public class TestStructSerialize
                 return false;
             return true;
         }
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as KeyValueStruct);
+        }
     }
     [TestMethod]
     public void TestPackUnpack()

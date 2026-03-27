@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+<!--
+	<PublishTrimmed>true</PublishTrimmed>
+	<TrimMode>partial</TrimMode>
+-->	  
+	<PublishAot>true</PublishAot>
+	
+	
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EdfNet\NetEdf.csproj" />
+  </ItemGroup>
+
+</Project>

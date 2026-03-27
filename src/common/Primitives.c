@@ -8,7 +8,7 @@ typedef int (*WriteStringFn)(const uint8_t* src, size_t srcLen, uint8_t* dst, si
 static int WriteStringCBinToStr(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
 	size_t* r, size_t* w)
 {
-	*r = GetSizeOf(String);
+	*r = sizeof(char*);
 	if (srcLen < *r)
 		return -1;
 	// print text without buf
@@ -65,7 +65,7 @@ static int WriteStringBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst, 
 static int WriteStringCBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
 	size_t* r, size_t* w)
 {
-	*r = GetSizeOf(String);
+	*r = sizeof(char*);
 	if (srcLen < *r)
 		return -1;
 	const char* str = *(char**)src;
@@ -99,7 +99,7 @@ static int AnyBinToBin(PoType t,
 	size_t* r, size_t* w,
 	WriteStringFn WriteString)
 {
-	*r = *w = GetSizeOf(t);
+	*r = *w = GetSizeOf(t);// переопределится для строки
 	if (srcLen < *r)
 		return -1;
 	if (dstLen < *w)
@@ -157,7 +157,7 @@ static int AnyBinToStr(PoType t,
 	size_t* r, size_t* w,
 	WriteStringFn WriteString)
 {
-	*r = GetSizeOf(t);
+	*r = GetSizeOf(t);// переопределится для строки
 	if (srcLen < *r)
 	{
 		*w = 0;

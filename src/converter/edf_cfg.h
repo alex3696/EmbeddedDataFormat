@@ -7,7 +7,11 @@ extern "C" {
 #endif
 //-----------------------------------------------------------------------------
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 256
+	#ifdef _MSC_VER
+		#define BLOCK_SIZE 512
+	#elif
+		#define BLOCK_SIZE 256
+	#endif
 #endif
 
 //#define LOG_ERR

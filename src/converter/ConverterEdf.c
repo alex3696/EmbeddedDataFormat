@@ -69,7 +69,7 @@ int BinToText(const char* src, const char* dst)
 			}
 			else
 			{
-				err = 0;
+				//err = 0;
 				//return err;// ignore wrong or too big info block
 			}
 		}

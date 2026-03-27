@@ -69,6 +69,7 @@ typedef struct FileStream
 
 int FileStreamOpen(FileStream_t* w, const char* file, const char* mode);
 
+typedef int(*FileStreamOpenFn)(FileStream_t* w, const char* file, const char* mode);
 //-----------------------------------------------------------------------------
 //Memory Stream
 

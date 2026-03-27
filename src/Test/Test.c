@@ -359,12 +359,12 @@ static void WriteBigVar(EdfWriter_t* dw)
 	uint32_t test[1000] = { 0 };
 	for (uint32_t i = 0; i < arrLen; i++)
 		test[i] = i;
-	EdfWriteDataBlock(dw, test, sizeof(uint32_t) * arrLen);
+	assert(ERR_NO == EdfWriteDataBlock(dw, test, sizeof(uint32_t) * arrLen));
 
 	uint8_t* test2 = (uint8_t*)test;
-	EdfWriteDataBlock(dw, test2, 15);
-	EdfWriteDataBlock(dw, test2 + 15, 149);
-	EdfWriteDataBlock(dw, test2 + 15 + 149, (sizeof(uint32_t) * arrLen) - 15 - 149);
+	assert(ERR_SRC_SHORT == EdfWriteDataBlock(dw, test2, 15));
+	assert(ERR_SRC_SHORT == EdfWriteDataBlock(dw, test2 + 15, 149));
+	assert(ERR_NO == EdfWriteDataBlock(dw, test2 + 15 + 149, (sizeof(uint32_t) * arrLen) - 15 - 149));
 
 	EdfFlushDataBlock(dw, &writed);
 }
