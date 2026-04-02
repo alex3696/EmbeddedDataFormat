@@ -1,4 +1,5 @@
 using NetEdf.src;
+using Newtonsoft.Json.Linq;
 using System.Buffers.Binary;
 
 namespace NetEdfTest;
@@ -195,6 +196,27 @@ public class TestPrimitives
         Assert.AreEqual(obj, value);
 
     }
+    public void TryToTxtChar(PoType type, object obj, Span<byte> expected) 
+    {
+        Span<byte> dst = new byte[40];
+
+        var actual = Primitives.TrySrcToTxt(type, obj, dst, out int w);
+
+        Assert.AreEqual(EdfErr.IsOk, actual);
+        Assert.AreEqual(expected.Length, w);
+        Assert.IsTrue(dst.Slice(0, w).SequenceEqual(expected));
+    }
+
+    public void TryTxtToSrcChar(PoType type, object obj, Span<byte> expected)
+    {
+        Span<byte> dst = new byte[40];
+
+        var actual = Primitives.TryTxtToSrc(type, expected, out int r , out object value);
+
+        Assert.AreEqual(EdfErr.IsOk, actual);
+        Assert.AreEqual(EdfErr.IsOk, actual);
+        Assert.AreEqual(obj, value);
+    }
     [TestMethod]
     public void TestTrySrcToTxt_Char() // сделать текстовый
     {
@@ -203,7 +225,9 @@ public class TestPrimitives
         byte[] arr = new byte[10];
         BinaryPrimitives.WriteUInt16LittleEndian(arr, ch);
 
-        SrcToTextToSrc(PoType.Char, arr[0], [0x27, arr[0], 0x27]);
+        TryToTxtChar(PoType.Char, arr[0], [0x27, arr[0], 0x27]);
+
+        TryTxtToSrcChar(PoType.Char, 'A', [0x27, arr[0], 0x27]);
     }
 
     [TestMethod]

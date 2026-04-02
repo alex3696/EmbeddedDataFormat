@@ -176,9 +176,8 @@ public static class Primitives
             case PoType.Struct:
             default: r = 0; return EdfErr.WrongType;
             case PoType.Char:
-                string ch = Encoding.UTF8.GetString(src);
-                string res = ch.TrimStart('\'').TrimEnd('\'');
-                char sym = Convert.ToChar(res);
+                string ch = Encoding.UTF8.GetString(src).TrimStart('\'').TrimEnd('\'');
+                char sym = Convert.ToChar(ch);
                 obj = sym;
                 break;
             case PoType.Int8: obj = TryParse<sbyte>(t, src); break;
