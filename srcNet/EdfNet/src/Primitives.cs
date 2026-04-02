@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace NetEdf.src;
 
 public static class Primitives
@@ -155,6 +157,50 @@ public static class Primitives
                 }
         }
         return EdfErr.WrongType;
+    }
+
+    public static T TryParse<T>(PoType t, ReadOnlySpan<byte> src)
+        where T : IUtf8SpanParsable<T>
+    {
+        if (T.TryParse(src, CultureInfo.InvariantCulture, out T? obj))
+            return obj;
+        return default;
+    }
+
+    public static EdfErr TryTxtToSrc(PoType t, ReadOnlySpan<byte> src, out int r, out object obj)
+    {
+        obj = default;
+        r = t.GetSizeOf();
+        switch (t)
+        {
+            case PoType.Struct:
+            default: r = 0; return EdfErr.WrongType;
+            case PoType.Char:
+                string ch = Encoding.UTF8.GetString(src);
+                string res = ch.TrimStart('\'').TrimEnd('\'');
+                char sym = Convert.ToChar(res);
+                obj = sym;
+                break;
+            case PoType.Int8: obj = TryParse<sbyte>(t, src); break;
+            case PoType.UInt8: obj = TryParse<byte>(t, src); break;
+            case PoType.Int16: obj = TryParse<short>(t, src); break;
+            case PoType.UInt16: obj = TryParse<ushort>(t, src); break;
+            case PoType.Int32: obj = TryParse<int>(t, src); break;
+            case PoType.UInt32: obj = TryParse<uint>(t, src); break;
+            case PoType.Int64: obj = TryParse<long>(t, src); break;
+            case PoType.UInt64: obj = TryParse<ulong>(t, src); break;
+            case PoType.Half: obj = TryParse<Half>(t, src); break;
+            case PoType.Single: obj = TryParse<float>(t, src); break;
+            case PoType.Double: obj = TryParse<double>(t, src); break;
+            case PoType.String:
+                Regex regex = new Regex(@"^\""[\w\s]*\""");
+                string str = Encoding.UTF8.GetString(src);
+                string result = regex.Match(str).ToString();
+                result = result.TrimStart('"').TrimEnd('"');
+                obj = result;
+                break;
+        }
+        return EdfErr.IsOk;
     }
 }
 
