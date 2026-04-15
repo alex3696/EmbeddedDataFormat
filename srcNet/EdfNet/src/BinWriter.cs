@@ -6,6 +6,9 @@ public class BinWriter : BaseWriter
     private readonly Stream _bw; // поток для записи
     protected byte _blkSeq; // номер текущего блока
 
+    public delegate ushort CalcFunc(ReadOnlySpan<byte> buf, UInt16 crc = 0xFFFF);
+    public CalcFunc Calc = ModbusCRC.Calc;
+
     // метод для преобразования данных в бинарный формат
     protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w) 
         => Primitives.TrySrcToBin(t, obj, dst, out w); 
@@ -37,10 +40,10 @@ public class BinWriter : BaseWriter
         _bw.WriteByte(_blkSeq); // записываем номер блока
         _bw.Write(BitConverter.GetBytes(blkQty)); // записываем количество байт в блоке
         _bw.Write(data); // записываем данные блока
-        ushort crc = ModbusCRC.Calc([(byte)blkType]); // вычисляем контрольную сумму
-        crc = ModbusCRC.Calc([_blkSeq], crc); // обновляем контрольную сумму с учетом номера блока
-        crc = ModbusCRC.Calc(BitConverter.GetBytes(blkQty), crc); // обновляем контрольную сумму с учетом количества байт
-        crc = ModbusCRC.Calc(data, crc); // обновляем контрольную сумму с учетом данных блока
+        ushort crc = Calc([(byte)blkType]); // вычисляем контрольную сумму
+        crc = Calc([_blkSeq], crc); // обновляем контрольную сумму с учетом номера блока
+        crc = Calc(BitConverter.GetBytes(blkQty), crc); // обновляем контрольную сумму с учетом количества байт
+        crc = Calc(data, crc); // обновляем контрольную сумму с учетом данных блока
         _bw.Write(BitConverter.GetBytes(crc)); // записываем контрольную сумму
         _blkSeq++; // увеличиваем номер блока для следующей записи
         _blkQty = 0; // сбрасываем количество байт в текущем блоке

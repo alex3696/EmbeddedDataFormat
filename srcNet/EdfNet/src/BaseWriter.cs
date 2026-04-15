@@ -7,7 +7,7 @@ public abstract class BaseWriter : BaseDisposable
     public readonly Header Cfg;
     protected TypeInf? _currDataType; // текущая схема данных, которая должна быть записана в блок данных.
 
-    public TypeInf? CurrDataType => _currDataType; 
+    public TypeInf? CurrDataType => _currDataType;
 
     public BaseWriter(Header header) // конструктор, принимает конфигурацию заголовка и инициализирует буфер для данных
     {
@@ -16,7 +16,7 @@ public abstract class BaseWriter : BaseDisposable
     }
     //protected override void Dispose(bool disposing) => base.Dispose(disposing);
 
-    protected abstract EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w); 
+    protected abstract EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w);
     protected abstract EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed);
     protected byte[]? SepBeginStruct = null;
     protected byte[]? SepEndStruct = null;
@@ -41,13 +41,17 @@ public abstract class BaseWriter : BaseDisposable
     public abstract void Write(TypeRec t);
     public abstract void Flush();
 
+    public delegate IEnumerator<object> CreateEnumeratorFunc(object obj);
+    public CreateEnumeratorFunc CreateEnumerator = (obj) => new PrimitiveDecomposer(obj).GetEnumerator();
+
     // метод для записи данных, принимает объект данных и записывает его в блок данных,
     // используя текущую схему данных.
     public virtual EdfErr Write(object obj)
     {
         ArgumentNullException.ThrowIfNull(_currDataType); // проверка, что текущая схема данных не null
-        IEnumerator<object> flatObj = new PrimitiveDecomposer(obj).GetEnumerator(); // создание перечислителя для
-                                                                                    // разложения объекта на примитивные элементы
+        IEnumerator<object> flatObj = CreateEnumerator(obj); // создание перечислителя для
+
+        // разложения объекта на примитивные элементы
         Span<byte> dst = _blkData.AsSpan(_blkQty); // создание буфера с размером, равным оставшемуся месту в блоке данных
         EdfErr err;
         do
@@ -91,7 +95,7 @@ public abstract class BaseWriter : BaseDisposable
         EdfErr err;
         if (EdfErr.IsOk != (err = WriteSep(SepRecBegin, ref dst, ref skip, ref wqty, ref writed)))
             return err;
-        if (EdfErr.IsOk != (err = WriteObj(inf, ref dst, flatObj, ref skip, ref wqty, ref writed))) 
+        if (EdfErr.IsOk != (err = WriteObj(inf, ref dst, flatObj, ref skip, ref wqty, ref writed)))
             return err;
         if (EdfErr.IsOk != (err = WriteSep(SepRecEnd, ref dst, ref skip, ref wqty, ref writed)))
             return err;
@@ -107,7 +111,7 @@ public abstract class BaseWriter : BaseDisposable
                 return err;
         for (int i = 0; i < totalElement; i++)
         {
-            if (EdfErr.IsOk != (err = WriteObjElement(inf, ref dst, flatObj, ref skip, ref wqty, ref writed))) 
+            if (EdfErr.IsOk != (err = WriteObjElement(inf, ref dst, flatObj, ref skip, ref wqty, ref writed)))
                 return err;
         }
         if (1 < totalElement)
@@ -128,7 +132,7 @@ public abstract class BaseWriter : BaseDisposable
                 for (int childIndex = 0; childIndex < inf.Childs.Length; childIndex++)
                 {
                     // рекурсивно запи сываем каждый элемент структуры, используя схему данных для каждого элемента
-                    err = WriteObj(inf.Childs[childIndex], ref dst, flatObj, ref skip, ref wqty, ref writed); 
+                    err = WriteObj(inf.Childs[childIndex], ref dst, flatObj, ref skip, ref wqty, ref writed);
                     if (EdfErr.IsOk != err)
                         return err;
                 }
@@ -155,7 +159,7 @@ public abstract class BaseWriter : BaseDisposable
                         return err;
                     _blkQty += (ushort)writed; // обновляем количество байт в текущем блоке данных, так как данные были записаны в буфер до переполнения
                     Flush(); // записываем текущий блок данных, так как произошла ошибка переполнения буфера
-                    _blkQty = 0; 
+                    _blkQty = 0;
                     writed = 0;
                     dst = _blkData; // сбрасываем буфер для записи нового блока данных
                     if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, _currObj, dst, out w)))
