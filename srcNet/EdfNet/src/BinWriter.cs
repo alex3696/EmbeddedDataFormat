@@ -4,6 +4,12 @@ public class BinWriter : BaseWriter
 {
     public ushort CurrentQty => _blkQty;
     private readonly Stream _bw;
+
+    public byte Seq
+    {
+        get => _blkSeq;
+        set => _blkSeq = value;
+    }
     protected byte _blkSeq;
 
     protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w)

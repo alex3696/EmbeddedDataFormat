@@ -233,7 +233,7 @@ public class TestStructSerialize
         string txtConvFile = GetTestFilePath("t_writeConv.tdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
-        using (var w = new BinWriter(file))
+        using (var w = new BinWriter(file, new Header() { Blocksize = 512 }))
         {
             WriteSample(w);
         }
@@ -241,13 +241,26 @@ public class TestStructSerialize
         using (var file = new FileStream(binFile, FileMode.Open))
         {
             Header cfg;
+            byte seq = 0;
             using (var edf = new BinReader(file))
             {
+
                 cfg = edf.Cfg;
+                try
+                {
+                    while (edf.ReadBlock())
+                        seq = edf.GetBlockSeq();
+                }
+                catch (EndOfStreamException ex)
+                {
+
+                }
             }
             file.Seek(0, SeekOrigin.End);
             using (var edf = new BinWriter(file, cfg))
             {
+                seq++;
+                edf.Seq = seq;
                 edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
             }
         }
