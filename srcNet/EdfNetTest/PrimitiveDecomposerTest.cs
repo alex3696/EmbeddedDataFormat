@@ -1,6 +1,44 @@
+using NetEdf;
 using NetEdf.src;
 
 namespace NetEdfTest;
+
+
+[DecomposeGenerator]
+public partial class MyPos1
+{
+    public UInt32 X { get; set; }
+    public UInt32 Y { get; set; }
+    public UInt32 Z { get; set; }
+}
+
+
+[DecomposeGenerator]
+partial class KeyValue
+{
+    public string? Key { get; set; }
+    public string? Value { get; set; }
+};
+
+//[DecomposeGenerator]
+partial class ComplexVariable1
+{
+    public long Time { get; set; }
+
+    public class StateT
+    {
+        public sbyte Text { get; set; }
+
+        public class PosT
+        {
+            public int x { get; set; }
+            public int y { get; set; }
+        };
+        public PosT Pos { get; set; }
+        public double[,] Temp { get; set; }
+    };
+    public StateT[] State { get; set; }
+};
 
 [TestClass]
 public class PrimitiveDecomposerTest
@@ -47,5 +85,29 @@ public class PrimitiveDecomposerTest
         Assert.AreEqual(25, decomposer[2]);
         Assert.AreEqual(2, decomposer[3]);
         Assert.AreEqual(35, decomposer[4]);
+    }
+
+    [TestMethod]
+    public void DecomposeGenTest()
+    {
+        MyPos1 data = new() { X = 1, Y = 2, Z = 3 };
+        var mypos = new MyPos1();
+        var flatObj = mypos.Decompose(data).ToArray();
+        Assert.AreEqual(flatObj[0], (uint)1);
+        Assert.AreEqual(flatObj[1], (uint)2);
+        Assert.AreEqual(flatObj[2], (uint)3);
+
+        //ComplexVariable1 complex = new();
+        //var cv = new ComplexVariable1()
+        //{
+        //    Time = -123,
+        //    State =
+        //    [
+        //        new(){ Text = 1,Pos = new (){x=11,y=12 },Temp = new double[2,2]{ {1.1,1.2 },{1.3,1.4 } }  },
+        //        new(){ Text = 2,Pos = new (){x=21,y=22 },Temp = new double[2,2]{ {2.1,2.2 },{2.3,2.4 } }  },
+        //        new(){ Text = 3,Pos = new (){x=31,y=32 },Temp = new double[2,2]{ {3.1,3.2 },{3.3,3.4 } }  },
+        //    ]
+        //};
+        //var dec = new PrimitiveDecomposer(cv).ToArray();
     }
 }

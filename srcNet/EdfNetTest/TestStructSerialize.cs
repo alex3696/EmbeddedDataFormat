@@ -383,7 +383,6 @@ public class TestStructSerialize
         Assert.AreNotEqual(inf1, inf3);
     }
 
-
     [TestMethod]
     public void TestSourceGenSerialize()
     {
@@ -391,12 +390,7 @@ public class TestStructSerialize
         Span<byte> sa = stackalloc byte[1024];
         kvs.SerializeBin(sa);
         int bc = KeyVal.DeserializeBin(sa, out var okv);
-
-
+        Assert.AreEqual(22, bc);
     }
-
-
-
-
 }
 
