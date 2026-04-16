@@ -58,43 +58,6 @@ public class DecomposeGenerator : IIncrementalGenerator
         return null;
     }
 
-    public static string CodeGenetator(string strOrCls, string?
-        namespaceName, ImmutableArray<IPropertySymbol> properties, INamedTypeSymbol classSymbol)
-    {
-        SourceProductionContext context = new SourceProductionContext();
-        var source = $@"
-using System;
-using System.Text;
-using System.Collections;
-using NetEdf;
-
-{namespaceName}
-
-partial {strOrCls} {classSymbol.Name}
-{{
-    
-    public int GetSize()
-    {{
-        int size = 0;
-{GenerateSizeCalc(properties)}
-        return size;
-    }}
-
-    public object[] Decompose(object obj)
-    {{
-        var data = obj as {classSymbol.Name};
-        int size = GetSize();
-        int index = 0;
-        object[] flatObj = new object[size];
-{GenerateDecomposer(properties)}
-        return flatObj;
-    }}
-}}";
-        return source;
-       
-    }
-
-
 
     private static void Execute(SourceProductionContext context, INamedTypeSymbol classSymbol)
     {
@@ -105,19 +68,65 @@ partial {strOrCls} {classSymbol.Name}
             //.OfType<IFieldSymbol>()
             .Where(p => !p.IsReadOnly && p.DeclaredAccessibility == Accessibility.Public)
             .ToImmutableArray();
-        if(!IsNested(classSymbol))
+        var source = $@"
+using System;
+using System.Text;
+using System.Collections;
+using NetEdf;
+
+{namespaceName}";
+
+        var methodSource = $@"
+            public int GetSize() => {properties.Length};
+            public object[] Decompose(object obj)
+            {{
+                var data = ({classSymbol.Name})obj;
+                int size = GetSize();
+                int index = 0;
+                object[] flatObj = new object[size];
+        {GenerateDecomposer(properties)}
+                return flatObj;
+            }}";
+        if (!IsNested(classSymbol))
         {
-            var source = CodeGenetator(strOrCls, namespaceName, properties, classSymbol);
-            context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));
+            var classSource = $@"
+            {source} 
+            partial {strOrCls} {classSymbol.Name}
+            {{
+                {methodSource}
+            }}";
+
+            context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(classSource, Encoding.UTF8));
         }
         else
         {
+            var usings = $@"{source}";
+            var classSource = $@"
+            partial {strOrCls} {classSymbol.Name}
+            {{
+            {methodSource}
+            }}";
 
+            var nested = classSymbol.ContainingType;
+            while (nested != null)
+            {
+                var typeNested = nested.IsValueType ? "struct" : "class";
+                classSource = @$"
+                partial {typeNested} {nested.Name}
+                {{
+                    {classSource}
+                }}
+                ";
+                nested = nested.ContainingType;
+            }
+
+            var finalSourse = @$"{usings} {classSource}";
+            context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(finalSourse, Encoding.UTF8));
         }
-     
 
-        //context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));
-    }
+
+            //context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));
+        }
 
     private static string GenerateSizeCalc(ImmutableArray<IPropertySymbol> props)
     {
@@ -138,6 +147,7 @@ partial {strOrCls} {classSymbol.Name}
     private static void GeneratePropertyWrite(IPropertySymbol prop, StringBuilder sb)
     {
         string pname = $"{prop.Name}";
+
         switch (prop.Type.SpecialType)
         {
             default: break;
@@ -155,7 +165,7 @@ partial {strOrCls} {classSymbol.Name}
                 sb.AppendLine($" index += 1;");
                 return;
             case SpecialType.System_Int16:
-                sb.Append($"{Tab(2)},flatObj[index] = (short)data.{pname};");
+                sb.Append($"{Tab(2)}flatObj[index] = (short)data.{pname};");
                 sb.AppendLine($" index += 1;");
                 return;
             case SpecialType.System_UInt32:
@@ -185,6 +195,9 @@ partial {strOrCls} {classSymbol.Name}
             case SpecialType.System_String:
                 sb.AppendLine($"{Tab(2)} flatObj[index] = data.{pname}; index += 1;");
                 return;
+            case SpecialType.System_Array:
+                return;
+
         }
     }
     private static bool IsNested(INamedTypeSymbol classSymbol)

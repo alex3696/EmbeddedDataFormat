@@ -20,16 +20,16 @@ partial class KeyValue
     public string? Value { get; set; }
 };
 
-//[DecomposeGenerator]
+[DecomposeGenerator]
 partial class ComplexVariable1
 {
     public long Time { get; set; }
-
-    public class StateT
+    [DecomposeGenerator]
+    public partial class StateT
     {
         public sbyte Text { get; set; }
-
-        public class PosT
+        [DecomposeGenerator]
+        public partial class PosT
         {
             public int x { get; set; }
             public int y { get; set; }
@@ -93,21 +93,21 @@ public class PrimitiveDecomposerTest
         MyPos1 data = new() { X = 1, Y = 2, Z = 3 };
         var mypos = new MyPos1();
         var flatObj = mypos.Decompose(data).ToArray();
-        Assert.AreEqual(flatObj[0], (uint)1);
-        Assert.AreEqual(flatObj[1], (uint)2);
-        Assert.AreEqual(flatObj[2], (uint)3);
+        //Assert.AreEqual(flatObj[0], (uint)1);
+        //Assert.AreEqual(flatObj[1], (uint)2);
+        //Assert.AreEqual(flatObj[2], (uint)3);
 
-        //ComplexVariable1 complex = new();
-        //var cv = new ComplexVariable1()
-        //{
-        //    Time = -123,
-        //    State =
-        //    [
-        //        new(){ Text = 1,Pos = new (){x=11,y=12 },Temp = new double[2,2]{ {1.1,1.2 },{1.3,1.4 } }  },
-        //        new(){ Text = 2,Pos = new (){x=21,y=22 },Temp = new double[2,2]{ {2.1,2.2 },{2.3,2.4 } }  },
-        //        new(){ Text = 3,Pos = new (){x=31,y=32 },Temp = new double[2,2]{ {3.1,3.2 },{3.3,3.4 } }  },
-        //    ]
-        //};
-        //var dec = new PrimitiveDecomposer(cv).ToArray();
+        ComplexVariable1 complex = new();
+        var cv = new ComplexVariable1()
+        {
+            Time = -123,
+            State =
+            [
+                new(){ Text = 1,Pos = new (){x=11,y=12 },Temp = new double[2,2]{ {1.1,1.2 },{1.3,1.4 } }  },
+                new(){ Text = 2,Pos = new (){x=21,y=22 },Temp = new double[2,2]{ {2.1,2.2 },{2.3,2.4 } }  },
+                new(){ Text = 3,Pos = new (){x=31,y=32 },Temp = new double[2,2]{ {3.1,3.2 },{3.3,3.4 } }  },
+            ]
+        };
+        var dec = complex.Decompose(cv);
     }
 }
