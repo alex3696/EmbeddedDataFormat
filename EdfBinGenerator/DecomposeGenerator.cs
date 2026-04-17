@@ -1,10 +1,11 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using System.Collections.Immutable;
-using System.Text;
-using System.Linq;
 using System;
+using System.Buffers;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
 
 namespace EdfBinGenerator;
 
@@ -74,39 +75,28 @@ using System.Text;
 using System.Collections;
 using NetEdf;
 
-{namespaceName}";
+{namespaceName}
 
-        var methodSource = $@"
-            public int GetSize() => {properties.Length};
-            public object[] Decompose(object obj)
-            {{
-                var data = ({classSymbol.Name})obj;
-                int size = GetSize();
-                int index = 0;
-                object[] flatObj = new object[size];
-        {GenerateDecomposer(properties)}
-                return flatObj;
-            }}";
-        if (!IsNested(classSymbol))
-        {
-            var classSource = $@"
-            {source} 
-            partial {strOrCls} {classSymbol.Name}
-            {{
-                {methodSource}
-            }}";
+";
 
-            context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(classSource, Encoding.UTF8));
-        }
-        else
-        {
+    var methodSource = $@"
+    public int GetSize() => {properties.Length};
+
+    public object[] Decompose(object obj)
+    {{
+        var data = ({classSymbol.Name})obj;
+        int size = GetSize();
+        int index = 0;
+        object[] flatObj = new object[256];
+    {GenerateDecomposer(properties)}
+        return flatObj;
+    }}";
             var usings = $@"{source}";
             var classSource = $@"
-            partial {strOrCls} {classSymbol.Name}
-            {{
-            {methodSource}
-            }}";
-
+partial {strOrCls} {classSymbol.Name}
+{{
+    {methodSource}
+}}";
             var nested = classSymbol.ContainingType;
             while (nested != null)
             {
@@ -122,21 +112,12 @@ using NetEdf;
 
             var finalSourse = @$"{usings} {classSource}";
             context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(finalSourse, Encoding.UTF8));
-        }
+    //    }
 
 
             //context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));
         }
 
-    private static string GenerateSizeCalc(ImmutableArray<IPropertySymbol> props)
-    {
-        var sb = new StringBuilder();
-        int i = 0;
-        foreach (var prop in props)
-            i++;
-        sb.Append($"{Tab(2)}size += {i};");
-        return sb.ToString();
-    }
     private static string GenerateDecomposer(ImmutableArray<IPropertySymbol> props)
     {
         var sb = new StringBuilder();
@@ -144,78 +125,77 @@ using NetEdf;
             GeneratePropertyWrite(prop, sb);
         return sb.ToString();
     }
-    private static void GeneratePropertyWrite(IPropertySymbol prop, StringBuilder sb)
+    private static bool GetTypeProp(SpecialType type)
     {
-        string pname = $"{prop.Name}";
-
-        switch (prop.Type.SpecialType)
+        switch (type)
         {
             default: break;
             case SpecialType.System_Byte:
-                //sb.Append($"{Tab(2)}dest[offset] = {pname};");
-                sb.Append($"{Tab(2)}flatObj[index] = (byte)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_SByte:
-                sb.Append($"{Tab(2)}flatObj[index] = (sbyte)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_UInt16:
-                sb.Append($"{Tab(2)}flatObj[index] = (ushort)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_Int16:
-                sb.Append($"{Tab(2)}flatObj[index] = (short)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_UInt32:
-                sb.Append($"{Tab(2)}flatObj[index] = (uint)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_Int32:
-                sb.Append($"{Tab(2)}flatObj[index] = (int)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_UInt64:
-                sb.Append($"{Tab(2)}flatObj[index] = (ulong)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_Int64:
-                sb.Append($"{Tab(2)}flatObj[index] = (long)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_Single:
-                sb.Append($"{Tab(2)}flatObj[index] = (Single)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_Double:
-                sb.Append($"{Tab(2)}flatObj[index] = (Double)data.{pname};");
-                sb.AppendLine($" index += 1;");
-                return;
             case SpecialType.System_String:
-                sb.AppendLine($"{Tab(2)} flatObj[index] = data.{pname}; index += 1;");
-                return;
-            case SpecialType.System_Array:
-                return;
-
-        }
-    }
-    private static bool IsNested(INamedTypeSymbol classSymbol)
-    {
-        var nested = classSymbol.ContainingType;
-        if(nested is not null)
             return true;
+        }
         return false;
     }
-    //private static string GenerateForNested(INamedTypeSymbol classSymbol)
-    //{
-    //    StringBuilder sb = new();
-    //    var nested = classSymbol.ContainingType;
-    //    while (nested != null)
-    //    {
-    //        string strOrCls = nested.IsValueType ? "struct" : "class";
-    //        sb.Append($"public partial {strOrCls} {nested.Name}");
-    //    }
-    //    
-    //}
+    private static void GeneratePropertyWrite(IPropertySymbol prop, StringBuilder sb)
+    {
+        string pname = $"{prop.Name}";
+        if (prop.Type is IArrayTypeSymbol array)
+        {
+            var elementProp = array.ElementType.GetMembers().OfType<IPropertySymbol>()
+                .Where(p => !p.IsStatic && p.DeclaredAccessibility == Accessibility.Public); 
+            sb.AppendLine($"{Tab(2)}foreach(var item in data.{pname})");
+            sb.AppendLine($"{Tab(2)}{{");
+
+            foreach (var pr in elementProp)
+            {
+                if (GetTypeProp(pr.Type.SpecialType))
+                {
+                    sb.AppendLine($"{Tab(3)}flatObj[index] = item.{pr.Name}; index++;");
+                }
+                else if(pr.Type is IArrayTypeSymbol nestedArr)
+                {
+                    sb.AppendLine($"{Tab(3)}foreach(var subitem in item.{pr.Name})");
+                    sb.AppendLine($"{Tab(3)}{{");
+                    sb.AppendLine($"{Tab(4)}flatObj[index] = subitem; index++;");
+                    sb.AppendLine($"{Tab(3)}}}");
+                }
+                else
+                {
+                    var nestedProperties = pr.Type.GetMembers().OfType<IPropertySymbol>()
+                        .Where(p => !p.IsStatic) ;
+                    foreach (var nested in nestedProperties)
+                    {
+                        if (GetTypeProp(nested.Type.SpecialType))
+                            sb.AppendLine($"{Tab(3)}flatObj[index] = item.{pr.Name}.{nested.Name}; index++;");
+                    }
+                }
+            }
+            sb.AppendLine($"{Tab(2)}}}");
+        }
+        else
+        {
+            if (GetTypeProp(prop.Type.SpecialType))
+            {
+                sb.AppendLine($"{Tab(2)}flatObj[index] = data.{pname}; index++;");
+            }
+            else
+            {
+                var properties = prop.Type.GetMembers().OfType<IPropertySymbol>().
+                    Where(p => !p.IsStatic && p.DeclaredAccessibility == Accessibility.Public); ;
+                foreach (var property in properties)
+                {
+                    sb.AppendLine($"flatObj[index] = data.{pname}.{property.Name}; index++;");
+                }
+            }
+        }
+    }
 }
