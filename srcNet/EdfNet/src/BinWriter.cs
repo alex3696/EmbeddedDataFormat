@@ -2,9 +2,21 @@ namespace NetEdf.src;
 
 public class BinWriter : BaseWriter
 {
+<<<<<<< HEAD
     public ushort CurrentQty => _blkQty; // количество байт в текущем блоке
     private readonly Stream _bw; // поток для записи
     protected byte _blkSeq; // номер текущего блока
+=======
+    public ushort CurrentQty => _blkQty;
+    private readonly Stream _bw;
+
+    public byte Seq
+    {
+        get => _blkSeq;
+        set => _blkSeq = value;
+    }
+    protected byte _blkSeq;
+>>>>>>> eb15cae043e8a75103e8d6e86b8ccd44c1d1ec08
 
     public delegate ushort CalcFunc(ReadOnlySpan<byte> buf, UInt16 crc = 0xFFFF);
     public CalcFunc Calc = ModbusCRC.Calc;

@@ -105,8 +105,54 @@ public abstract class BaseWriter : BaseDisposable
     private EdfErr WriteObj(TypeInf inf, ref Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
+<<<<<<< HEAD
         uint totalElement = inf.GetTotalElements(); // получение общего количества элементов данных
         if (1 < totalElement) // если количество элементов данных больше 1, то записываем разделитель начала массива
+=======
+        uint totalElement = inf.GetTotalElements();
+
+        if (PoType.Char == inf.Type)
+        {
+            if (0 < skip)
+            {
+                skip--;
+                return EdfErr.IsOk;
+            }
+            var charArr = new byte[totalElement];
+            for (int i = 0; i < totalElement; ++i)
+            {
+                if (null == _currObj)
+                {
+                    if (!flatObj.MoveNext())
+                        return EdfErr.WrongType;
+                    _currObj = flatObj.Current;
+                }
+                charArr[i] = (byte)_currObj;
+                _currObj = null;
+            }
+            if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, charArr, dst, out var w)))
+            {
+                if (EdfErr.DstBufOverflow != err)
+                    return err;
+                _blkQty += (ushort)writed;
+                Flush();
+                _blkQty = 0;
+                writed = 0;
+                dst = _blkData;
+                if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, charArr, dst, out w)))
+                    return err;
+            }
+            writed += w;
+            wqty++;
+            dst = dst.Slice(w);
+
+            if (EdfErr.IsOk != (err = WriteSep(SepVarEnd, ref dst, ref skip, ref wqty, ref writed)))
+                return err;
+            return err;
+        }
+
+        if (1 < totalElement)
+>>>>>>> eb15cae043e8a75103e8d6e86b8ccd44c1d1ec08
             if (EdfErr.IsOk != (err = WriteSep(SepBeginArray, ref dst, ref skip, ref wqty, ref writed)))
                 return err;
         for (int i = 0; i < totalElement; i++)
@@ -119,7 +165,42 @@ public abstract class BaseWriter : BaseDisposable
                 return err;
         return err;
     }
+<<<<<<< HEAD
     // метод для записи элемента данных
+=======
+    private EdfErr WritePrimitive(TypeInf inf, ref Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
+    {
+        EdfErr err = EdfErr.IsOk;
+        if (0 < skip)
+            skip--;
+        else
+        {
+            if (null == _currObj)
+            {
+                if (!flatObj.MoveNext())
+                    return EdfErr.SrcDataRequred;
+                _currObj = flatObj.Current;
+            }
+            if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, _currObj, dst, out var w)))
+            {
+                if (EdfErr.DstBufOverflow != err)
+                    return err;
+                _blkQty += (ushort)writed;
+                Flush();
+                _blkQty = 0;
+                writed = 0;
+                dst = _blkData;
+                if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, _currObj, dst, out w)))
+                    return err;
+            }
+            _currObj = null;
+            writed += w;
+            wqty++;
+            dst = dst.Slice(w);
+        }
+        return err;
+    }
+>>>>>>> eb15cae043e8a75103e8d6e86b8ccd44c1d1ec08
     private EdfErr WriteObjElement(TypeInf inf, ref Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
@@ -142,6 +223,7 @@ public abstract class BaseWriter : BaseDisposable
         }
         else
         {
+<<<<<<< HEAD
             if (0 < skip) // если нужно пропустить элементы, то уменьшаем счетчик пропуска и продолжаем без записи данных
                 skip--; // пропускаем элемент данных, так как он уже был записан в предыдущем блоке данных
             else
@@ -171,6 +253,10 @@ public abstract class BaseWriter : BaseDisposable
                 dst = dst.Slice(w); // обновляем буфер для записи, сдвигая его на количество байт,
                                     // которые были записаны, чтобы следующая запись данных происходила в правильной позиции в буфере
             }
+=======
+            if (EdfErr.IsOk != (err = WritePrimitive(inf, ref dst, flatObj, ref skip, ref wqty, ref writed)))
+                return err;
+>>>>>>> eb15cae043e8a75103e8d6e86b8ccd44c1d1ec08
             if (EdfErr.IsOk != (err = WriteSep(SepVarEnd, ref dst, ref skip, ref wqty, ref writed)))
                 return err;
         }
