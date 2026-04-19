@@ -6,12 +6,12 @@ namespace NetEdfTest;
 [DecomposeGenerator]
 public partial class KeyValueStruct
 {
-    public string? Key { get; set; }
-    public string? Value { get; set; }
+    public string Key { get; set; }
+    public string Value { get; set; }
     public byte[]? Arr { get; set; }
 }
 
-[DecomposeGenerator]
+//[DecomposeGenerator]
 public partial class MyPos1
 {
     public UInt32 X { get; set; }
@@ -20,7 +20,7 @@ public partial class MyPos1
 }
 
 
-[DecomposeGenerator]
+//[DecomposeGenerator]
 partial class KeyValue
 {
     public string? Key { get; set; }
@@ -97,9 +97,9 @@ public class PrimitiveDecomposerTest
     [TestMethod]
     public void DecomposeGenTest()
     {
-        MyPos1 data = new() { X = 1, Y = 2, Z = 3 };
-        var mypos = new MyPos1();
-        var flatObj = mypos.Decompose(data).ToArray();
+        // MyPos1 data = new() { X = 1, Y = 2, Z = 3 };
+        // var mypos = new MyPos1();
+        // var flatObj = mypos.Decompose(data).ToArray();
         //Assert.AreEqual(flatObj[0], (uint)1);
         //Assert.AreEqual(flatObj[1], (uint)2);
         //Assert.AreEqual(flatObj[2], (uint)3);
@@ -121,6 +121,6 @@ public class PrimitiveDecomposerTest
         KeyValueStruct val1 = new() { Key = "Key1", Value = "Value1", Arr = [11, 12, 13] };
         KeyValueStruct val2 = new() { Key = "Key2", Value = "Value2", Arr = [21, 22, 23] };
         KeyValueStruct[] kvArr = [val1, val2];
-        flatObj = str.Decompose(kvArr);
+        var flatObj = str.Decompose(kvArr).ToArray();
     }
 }

@@ -62,6 +62,10 @@ public class DecomposeGenerator : IIncrementalGenerator
 
     private static void Execute(SourceProductionContext context, INamedTypeSymbol classSymbol)
     {
+        // if (!System.Diagnostics.Debugger.IsAttached)
+        // {
+        //     System.Diagnostics.Debugger.Launch();
+        // }
         string strOrCls = classSymbol.IsValueType ? "struct" : "class";
         var namespaceName = classSymbol.ContainingNamespace.IsGlobalNamespace ? "" : $"namespace {classSymbol.ContainingNamespace.ToDisplayString()};";
         var properties = classSymbol.GetMembers()
@@ -88,7 +92,18 @@ using NetEdf;
         int size = GetSize();
         int index = 0;
         object[] flatObj = new object[256];
-    {GenerateDecomposer(properties)}
+        {GenerateDecomposer(properties)}
+        return flatObj;
+    }}
+
+    public object[] Decompose(IEnumerable<{classSymbol.Name}> obj)
+    {{
+        int index = 0;
+        object[] flatObj = new object[256];
+        foreach(var data in obj)
+        {{
+{GenerateDecomposer(properties)}
+        }}
         return flatObj;
     }}";
             var usings = $@"{source}";
@@ -112,19 +127,16 @@ partial {strOrCls} {classSymbol.Name}
 
             var finalSourse = @$"{usings} {classSource}";
             context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(finalSourse, Encoding.UTF8));
-    //    }
-
-
-            //context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));
         }
 
     private static string GenerateDecomposer(ImmutableArray<IPropertySymbol> props)
     {
         var sb = new StringBuilder();
         foreach (var prop in props)
-            GeneratePropertyWrite(prop, sb);
+            GeneratePropertyWrite(prop.Type, sb, $"data.{prop.Name}");
         return sb.ToString();
     }
+
     private static bool GetTypeProp(SpecialType type)
     {
         switch (type)
@@ -145,56 +157,27 @@ partial {strOrCls} {classSymbol.Name}
         }
         return false;
     }
-    private static void GeneratePropertyWrite(IPropertySymbol prop, StringBuilder sb)
+    private static void GeneratePropertyWrite(ITypeSymbol prop, StringBuilder sb, string pname, byte indent = 1)
     {
-        string pname = $"{prop.Name}";
-        if (prop.Type is IArrayTypeSymbol array)
+        if (GetTypeProp(prop.SpecialType))
         {
-            var elementProp = array.ElementType.GetMembers().OfType<IPropertySymbol>()
-                .Where(p => !p.IsStatic && p.DeclaredAccessibility == Accessibility.Public); 
-            sb.AppendLine($"{Tab(2)}foreach(var item in data.{pname})");
-            sb.AppendLine($"{Tab(2)}{{");
-
-            foreach (var pr in elementProp)
-            {
-                if (GetTypeProp(pr.Type.SpecialType))
-                {
-                    sb.AppendLine($"{Tab(3)}flatObj[index] = item.{pr.Name}; index++;");
-                }
-                else if(pr.Type is IArrayTypeSymbol nestedArr)
-                {
-                    sb.AppendLine($"{Tab(3)}foreach(var subitem in item.{pr.Name})");
-                    sb.AppendLine($"{Tab(3)}{{");
-                    sb.AppendLine($"{Tab(4)}flatObj[index] = subitem; index++;");
-                    sb.AppendLine($"{Tab(3)}}}");
-                }
-                else
-                {
-                    var nestedProperties = pr.Type.GetMembers().OfType<IPropertySymbol>()
-                        .Where(p => !p.IsStatic) ;
-                    foreach (var nested in nestedProperties)
-                    {
-                        if (GetTypeProp(nested.Type.SpecialType))
-                            sb.AppendLine($"{Tab(3)}flatObj[index] = item.{pr.Name}.{nested.Name}; index++;");
-                    }
-                }
-            }
-            sb.AppendLine($"{Tab(2)}}}");
+            sb.AppendLine($"{Tab(indent)}flatObj[index] = {pname}; index++;");
+        }
+        else if (prop is IArrayTypeSymbol array)
+        {
+            string counter = $"item{indent}";
+            sb.AppendLine($"{Tab(indent)}foreach(var {counter} in {pname})");
+            sb.AppendLine($"{Tab(indent)}{{");
+            GeneratePropertyWrite(array.ElementType, sb, counter, (byte)(indent+1));
+            sb.AppendLine($"{Tab(indent)}}}");
         }
         else
         {
-            if (GetTypeProp(prop.Type.SpecialType))
+            var properties = prop.GetMembers().OfType<IPropertySymbol>().
+                Where(p => !p.IsStatic && p.DeclaredAccessibility == Accessibility.Public);
+            foreach (var property in properties)
             {
-                sb.AppendLine($"{Tab(2)}flatObj[index] = data.{pname}; index++;");
-            }
-            else
-            {
-                var properties = prop.Type.GetMembers().OfType<IPropertySymbol>().
-                    Where(p => !p.IsStatic && p.DeclaredAccessibility == Accessibility.Public); ;
-                foreach (var property in properties)
-                {
-                    sb.AppendLine($"flatObj[index] = data.{pname}.{property.Name}; index++;");
-                }
+                GeneratePropertyWrite(property.Type, sb, $"{pname}.{property.Name}", indent);
             }
         }
     }
