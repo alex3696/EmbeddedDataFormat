@@ -2,16 +2,23 @@ namespace NetEdf.src;
 
 public class BinWriter : BaseWriter
 {
-    public ushort CurrentQty => _blkQty; // количество байт в текущем блоке
-    private readonly Stream _bw; // поток для записи
-    protected byte _blkSeq; // номер текущего блока
+
+    public ushort CurrentQty => _blkQty;
+    private readonly Stream _bw;
+
+    public byte Seq
+    {
+        get => _blkSeq;
+        set => _blkSeq = value;
+    }
+    protected byte _blkSeq;
 
     public delegate ushort CalcFunc(ReadOnlySpan<byte> buf, UInt16 crc = 0xFFFF);
     public CalcFunc Calc = ModbusCRC.Calc;
 
     // метод для преобразования данных в бинарный формат
-    protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w) 
-        => Primitives.TrySrcToBin(t, obj, dst, out w); 
+    protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w)
+        => Primitives.TrySrcToBin(t, obj, dst, out w);
     protected override EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
         => EdfErr.IsOk;
 
@@ -28,14 +35,14 @@ public class BinWriter : BaseWriter
     {
         Flush(); // записываем все оставшиеся данные в блоке
         _bw.Flush(); // очищаем буфер потока
-        base.Dispose(disposing); 
+        base.Dispose(disposing);
     }
 
     // метод для записи блока данных, принимает данные и тип блока,
     // формирует заголовок блока, вычисляет контрольную сумму и записывает все в поток
     private void WriteBlock(ReadOnlySpan<byte> data, BlockType blkType)
     {
-        var blkQty = (ushort)data.Length; 
+        var blkQty = (ushort)data.Length;
         _bw.WriteByte((byte)blkType); // записываем тип блока
         _bw.WriteByte(_blkSeq); // записываем номер блока
         _bw.Write(BitConverter.GetBytes(blkQty)); // записываем количество байт в блоке
@@ -48,7 +55,7 @@ public class BinWriter : BaseWriter
         _blkSeq++; // увеличиваем номер блока для следующей записи
         _blkQty = 0; // сбрасываем количество байт в текущем блоке
     }
-    
+
     public override void Flush()
     {
         // если текущий блок данных не пустой, то записываем его в поток
@@ -63,7 +70,7 @@ public class BinWriter : BaseWriter
         _currDataType = null; // сбрасываем текущий тип данных, так как мы записываем новый заголовок
         var dst = _blkData.AsSpan(0, 16); // выделяем 16 байт для заголовка
         dst.Clear(); // очищаем выделенный буфер
-        dst.SrcToBinRef(PoType.UInt8, h.VersMajor); 
+        dst.SrcToBinRef(PoType.UInt8, h.VersMajor);
         dst.SrcToBinRef(PoType.UInt8, h.VersMinor);
         dst.SrcToBinRef(PoType.UInt16, h.Encoding);
         dst.SrcToBinRef(PoType.UInt16, h.Blocksize);
@@ -78,7 +85,7 @@ public class BinWriter : BaseWriter
         var dst = _blkData.AsSpan(); // выделяем весь буфер для описания типа данных
         dst.SrcToBinRef(PoType.UInt32, t.Id); // записываем идентификатор типа данных
         Write(ref dst, t.Inf); // записываем описание типа данных
-        dst.SrcToBinRef(PoType.String, t.Name ?? string.Empty); 
+        dst.SrcToBinRef(PoType.String, t.Name ?? string.Empty);
         dst.SrcToBinRef(PoType.String, t.Desc ?? string.Empty);
         _currDataType = t.Inf;
         WriteBlock(_blkData.AsSpan(0, _blkData.Length - dst.Length), BlockType.VarInfo);

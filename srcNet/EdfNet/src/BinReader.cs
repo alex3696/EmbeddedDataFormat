@@ -327,7 +327,6 @@ public class BinReader : BaseReader
     {
         if (!disposing)
             return;
-        _br.Dispose();
     }
 
     // Метод для парсинга информации о типе данных из блока данных
