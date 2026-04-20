@@ -105,10 +105,6 @@ public abstract class BaseWriter : BaseDisposable
     private EdfErr WriteObj(TypeInf inf, ref Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
-<<<<<<< HEAD
-        uint totalElement = inf.GetTotalElements(); // получение общего количества элементов данных
-        if (1 < totalElement) // если количество элементов данных больше 1, то записываем разделитель начала массива
-=======
         uint totalElement = inf.GetTotalElements();
 
         if (PoType.Char == inf.Type)
@@ -152,7 +148,6 @@ public abstract class BaseWriter : BaseDisposable
         }
 
         if (1 < totalElement)
->>>>>>> eb15cae043e8a75103e8d6e86b8ccd44c1d1ec08
             if (EdfErr.IsOk != (err = WriteSep(SepBeginArray, ref dst, ref skip, ref wqty, ref writed)))
                 return err;
         for (int i = 0; i < totalElement; i++)
@@ -165,9 +160,7 @@ public abstract class BaseWriter : BaseDisposable
                 return err;
         return err;
     }
-<<<<<<< HEAD
     // метод для записи элемента данных
-=======
     private EdfErr WritePrimitive(TypeInf inf, ref Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
@@ -200,7 +193,6 @@ public abstract class BaseWriter : BaseDisposable
         }
         return err;
     }
->>>>>>> eb15cae043e8a75103e8d6e86b8ccd44c1d1ec08
     private EdfErr WriteObjElement(TypeInf inf, ref Span<byte> dst, IEnumerator<object> flatObj, ref int skip, ref int wqty, ref int writed)
     {
         EdfErr err = EdfErr.IsOk;
@@ -223,40 +215,8 @@ public abstract class BaseWriter : BaseDisposable
         }
         else
         {
-<<<<<<< HEAD
-            if (0 < skip) // если нужно пропустить элементы, то уменьшаем счетчик пропуска и продолжаем без записи данных
-                skip--; // пропускаем элемент данных, так как он уже был записан в предыдущем блоке данных
-            else
-            {
-                if (null == _currObj) // если текущий объект данных null, то пытаемся получить следующий элемент данных из перечислителя
-                {
-                    if (!flatObj.MoveNext()) // если перечислитель не может перейти к следующему элементу, то требуется больше данных для записи
-                        return EdfErr.SrcDataRequred;
-                    _currObj = flatObj.Current; // обновляем текущий объект данных для следующей итерации
-                }
-                // пытаемся записать текущий элемент данных в буфер, используя схему данных для этого элемента
-                if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, _currObj, dst, out var w)))
-                {
-                    if (EdfErr.DstBufOverflow != err)
-                        return err;
-                    _blkQty += (ushort)writed; // обновляем количество байт в текущем блоке данных, так как данные были записаны в буфер до переполнения
-                    Flush(); // записываем текущий блок данных, так как произошла ошибка переполнения буфера
-                    _blkQty = 0;
-                    writed = 0;
-                    dst = _blkData; // сбрасываем буфер для записи нового блока данных
-                    if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, _currObj, dst, out w)))
-                        return err;
-                }
-                _currObj = null; // сбрасываем текущий объект данных, так как он был успешно записан в буфер
-                writed += w;
-                wqty++;
-                dst = dst.Slice(w); // обновляем буфер для записи, сдвигая его на количество байт,
-                                    // которые были записаны, чтобы следующая запись данных происходила в правильной позиции в буфере
-            }
-=======
             if (EdfErr.IsOk != (err = WritePrimitive(inf, ref dst, flatObj, ref skip, ref wqty, ref writed)))
                 return err;
->>>>>>> eb15cae043e8a75103e8d6e86b8ccd44c1d1ec08
             if (EdfErr.IsOk != (err = WriteSep(SepVarEnd, ref dst, ref skip, ref wqty, ref writed)))
                 return err;
         }
