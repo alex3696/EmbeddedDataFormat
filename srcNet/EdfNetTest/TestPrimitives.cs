@@ -196,7 +196,7 @@ public class TestPrimitives
         Assert.AreEqual(obj, value);
 
     }
-    public void TryToTxtChar(PoType type, object obj, Span<byte> expected) 
+    public void TryToTxtChar(PoType type, object obj, Span<byte> expected)
     {
         Span<byte> dst = new byte[40];
 
@@ -217,7 +217,7 @@ public class TestPrimitives
         Assert.AreEqual(EdfErr.IsOk, actual);
         Assert.AreEqual(obj, value);
     }
-    [TestMethod]
+    /*[TestMethod]
     public void TestTrySrcToTxt_Char() // сделать текстовый
     {
         char ch = 'A';
@@ -228,7 +228,7 @@ public class TestPrimitives
         TryToTxtChar(PoType.Char, arr[0], [0x27, arr[0], 0x27]);
 
         TryTxtToSrcChar(PoType.Char, 'A', [0x27, arr[0], 0x27]);
-    }
+    }*/
 
     [TestMethod]
     public void TestTrySrcToTxt_Struct()

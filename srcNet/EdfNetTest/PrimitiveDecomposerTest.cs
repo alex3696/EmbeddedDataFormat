@@ -98,13 +98,11 @@ public class PrimitiveDecomposerTest
     public void DecomposeGenTest()
     {
         // MyPos1 data = new() { X = 1, Y = 2, Z = 3 };
-        // var mypos = new MyPos1();
-        // var flatObj = mypos.Decompose(data).ToArray();
+        // var flatObj = data.Decompose(data).ToArray();
         //Assert.AreEqual(flatObj[0], (uint)1);
         //Assert.AreEqual(flatObj[1], (uint)2);
         //Assert.AreEqual(flatObj[2], (uint)3);
 
-        ComplexVariable1 complex = new();
         var cv = new ComplexVariable1()
         {
             Time = -123,
@@ -115,12 +113,10 @@ public class PrimitiveDecomposerTest
                 new(){ Text = 3,Pos = new (){x=31,y=32 },Temp = new double[2,2]{ {3.1,3.2 },{3.3,3.4 } }  },
             ]
         };
-        var dec = complex.Decompose(cv);
-
-        KeyValueStruct str = new KeyValueStruct();
+        var dec = cv.Decompose();
         KeyValueStruct val1 = new() { Key = "Key1", Value = "Value1", Arr = [11, 12, 13] };
         KeyValueStruct val2 = new() { Key = "Key2", Value = "Value2", Arr = [21, 22, 23] };
         KeyValueStruct[] kvArr = [val1, val2];
-        var flatObj = str.Decompose(kvArr).ToArray();
+        var flatObj = val1.Decompose().ToArray();
     }
 }
