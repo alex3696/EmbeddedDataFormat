@@ -11,6 +11,12 @@ public partial class KeyValueStruct
     public byte[]? Arr { get; set; }
 }
 
+[DecomposeGenerator]
+public partial class KeyValueStructArr
+{
+    public KeyValueStruct[] kvArr { get; set; }
+}
+
 //[DecomposeGenerator]
 public partial class MyPos1
 {
@@ -114,9 +120,10 @@ public class PrimitiveDecomposerTest
             ]
         };
         var dec = cv.Decompose();
+        
         KeyValueStruct val1 = new() { Key = "Key1", Value = "Value1", Arr = [11, 12, 13] };
         KeyValueStruct val2 = new() { Key = "Key2", Value = "Value2", Arr = [21, 22, 23] };
-        KeyValueStruct[] kvArr = [val1, val2];
-        var flatObj = val1.Decompose().ToArray();
+        KeyValueStructArr kvArr = new(){kvArr = [val1, val2]};
+        var flatObj = kvArr.Decompose().ToArray();
     }
 }
