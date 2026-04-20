@@ -38,7 +38,7 @@ public class DecomposeGenerator : IIncrementalGenerator
             $@"using System;
             namespace NetEdf;
             [AttributeUsage(AttributeTargets.Class|AttributeTargets.Struct)]
-            internal class {DecomposeAttribute} : Attribute {{ }}"));
+            public class {DecomposeAttribute} : Attribute {{ }}"));
     }
 
     private static INamedTypeSymbol? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
@@ -58,8 +58,6 @@ public class DecomposeGenerator : IIncrementalGenerator
         }
         return null;
     }
-
-
     private static void Execute(SourceProductionContext context, INamedTypeSymbol classSymbol)
     {
         // if (!System.Diagnostics.Debugger.IsAttached)
@@ -83,29 +81,13 @@ using NetEdf;
 
 ";
 
-    var methodSource = $@"
-    public int GetSize() => {properties.Length};
+        var methodSource = $@"
 
-    public object[] Decompose(object obj)
+    public IEnumerable<object> Decompose()
     {{
-        var data = ({classSymbol.Name})obj;
-        int size = GetSize();
-        int index = 0;
-        object[] flatObj = new object[256];
         {GenerateDecomposer(properties)}
-        return flatObj;
     }}
-
-    public object[] Decompose(IEnumerable<{classSymbol.Name}> obj)
-    {{
-        int index = 0;
-        object[] flatObj = new object[256];
-        foreach(var data in obj)
-        {{
-{GenerateDecomposer(properties)}
-        }}
-        return flatObj;
-    }}";
+";
             var usings = $@"{source}";
             var classSource = $@"
 partial {strOrCls} {classSymbol.Name}
@@ -127,13 +109,13 @@ partial {strOrCls} {classSymbol.Name}
 
             var finalSourse = @$"{usings} {classSource}";
             context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(finalSourse, Encoding.UTF8));
-        }
+    }
 
     private static string GenerateDecomposer(ImmutableArray<IPropertySymbol> props)
     {
         var sb = new StringBuilder();
         foreach (var prop in props)
-            GeneratePropertyWrite(prop.Type, sb, $"data.{prop.Name}");
+            GeneratePropertyWrite(prop.Type, sb, $"{prop.Name}");
         return sb.ToString();
     }
 
@@ -161,7 +143,7 @@ partial {strOrCls} {classSymbol.Name}
     {
         if (GetTypeProp(prop.SpecialType))
         {
-            sb.AppendLine($"{Tab(indent)}flatObj[index] = {pname}; index++;");
+            sb.AppendLine($"{Tab(indent)}yield return {pname};");
         }
         else if (prop is IArrayTypeSymbol array)
         {
