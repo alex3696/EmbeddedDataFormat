@@ -17,7 +17,7 @@ public partial class KeyValueStructArr
     public KeyValueStruct[] kvArr { get; set; }
 }
 
-//[DecomposeGenerator]
+[DecomposeGenerator]
 public partial class MyPos1
 {
     public UInt32 X { get; set; }
@@ -103,11 +103,11 @@ public class PrimitiveDecomposerTest
     [TestMethod]
     public void DecomposeGenTest()
     {
-        // MyPos1 data = new() { X = 1, Y = 2, Z = 3 };
-        // var flatObj = data.Decompose(data).ToArray();
-        //Assert.AreEqual(flatObj[0], (uint)1);
-        //Assert.AreEqual(flatObj[1], (uint)2);
-        //Assert.AreEqual(flatObj[2], (uint)3);
+        MyPos1 data = new() { X = 1, Y = 2, Z = 3 };
+        var flatObj = data.Decompose().ToArray();
+        Assert.AreEqual((uint)1, flatObj[0]);
+        Assert.AreEqual((uint)2, flatObj[1]);
+        Assert.AreEqual((uint)3, flatObj[2]);
 
         var cv = new ComplexVariable1()
         {
@@ -120,10 +120,10 @@ public class PrimitiveDecomposerTest
             ]
         };
         var dec = cv.Decompose();
-        
+
         KeyValueStruct val1 = new() { Key = "Key1", Value = "Value1", Arr = [11, 12, 13] };
         KeyValueStruct val2 = new() { Key = "Key2", Value = "Value2", Arr = [21, 22, 23] };
         KeyValueStructArr kvArr = new(){kvArr = [val1, val2]};
-        var flatObj = kvArr.Decompose().ToArray();
+        flatObj = kvArr.Decompose().ToArray();
     }
 }
