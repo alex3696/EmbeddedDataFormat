@@ -13,7 +13,7 @@ static int WriteStringCBinToStr(const uint8_t* src, size_t srcLen, uint8_t* dst,
 		return ERR_SRC_SHORT;
 	// print text without buf
 	const char* str = *(char**)src;
-	size_t len = (NULL == str) ? 0 : strnlength(str, 0xFE);
+	size_t len = (NULL == str) ? 0 : strnlength(str, MAX_STR_LEN);
 	if (dstLen < len + 2)
 		return ERR_DST_SHORT;
 	*w = 2 + len;
@@ -69,7 +69,7 @@ static int WriteStringCBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst,
 	if (srcLen < *r)
 		return ERR_SRC_SHORT;
 	const char* str = *(char**)src;
-	size_t len = (NULL == str) ? 0 : strnlength(str, 0xFE) + 1;
+	size_t len = (NULL == str) ? 0 : strnlength(str, MAX_STR_LEN) + 1;
 	if (0 < len && '\0' == str[len - 1])// remove ending '\0'
 		len--;
 	if (dstLen < len + 1)
@@ -249,7 +249,7 @@ int BinToStr(PoType t,
 int StreamWriteString(Stream_t* s, const char* str, size_t* writed)
 {
 	int err = 0;
-	size_t len = str ? strnlength(str, 255) : 0;
+	size_t len = str ? strnlength(str, MAX_STR_LEN) : 0;
 	if ((err = StreamWrite(s, writed, &len, 1)) ||
 		(err = StreamWrite(s, writed, str, len)))
 		return err;

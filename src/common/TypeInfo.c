@@ -97,7 +97,7 @@ static int StreamWriteInfoTxt(Stream_t* s, const TypeInfo_t* t, int noffset, siz
 				return err;
 	}
 	// NAME
-	if (t->Name && 0 < strnlength(t->Name, 255))
+	if (t->Name && 0 < strnlength(t->Name, MAX_STR_LEN))
 		if ((err = StreamWriteFmt(s, writed, " \"%.255s\"", t->Name)))
 			return err;
 	// CHILDS
@@ -290,8 +290,8 @@ int IsVar(const TypeRec_t* r, int32_t varId, const char* varName)
 		return 1;
 	if (!r->Name || !varName)
 		return 0;
-	size_t rLen = strnlength(r->Name, 256);
-	size_t nameLen = strnlength(varName, 256);
+	size_t rLen = strnlength(r->Name, MAX_STR_LEN);
+	size_t nameLen = strnlength(varName, MAX_STR_LEN);
 	if (rLen != nameLen)
 		return 0;
 	return 0 == memcmp(r->Name, varName, nameLen);

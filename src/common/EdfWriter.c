@@ -353,8 +353,8 @@ int EdfWriteInfDataString(EdfWriter_t* dw, uint32_t id, char* name, void* str, s
 	if (NULL == str)
 		return 0;
 	void* data = NULL;
-	uint8_t strBuf[256] = { 0 };
-	const size_t dataLen = strnlength(str, 0xFE);
+	uint8_t strBuf[MAX_STR_LEN+1] = { 0 };
+	const size_t dataLen = strnlength(str, MAX_STR_LEN);
 	if (dataLen > len)
 	{
 		memcpy(strBuf, str, len);
