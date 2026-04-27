@@ -69,9 +69,7 @@ static int WriteStringCBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst,
 	if (srcLen < *r)
 		return ERR_SRC_SHORT;
 	const char* str = *(char**)src;
-	size_t len = (NULL == str) ? 0 : strnlength(str, MAX_STR_LEN) + 1;
-	if (0 < len && '\0' == str[len - 1])// remove ending '\0'
-		len--;
+	size_t len = (NULL == str) ? 0 : strnlength(str, MAX_STR_LEN);
 	if (dstLen < len + 1)
 		return ERR_DST_SHORT;
 	(*dst) = (uint8_t)len;

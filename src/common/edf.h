@@ -41,7 +41,6 @@ int EdfReadBlock(EdfWriter_t* dr);
 int EdfWriteInfRecData(EdfWriter_t* dw, const TypeRec_t* ir, const void* d, size_t len);
 int EdfWriteInfData0(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d);
 int EdfWriteInfData(EdfWriter_t* dw, uint32_t id, PoType, char* name, const void* data);
-int EdfWriteInfDataString(EdfWriter_t* dw, uint32_t id, char* name, void* data, size_t maxLen);
 //-----------------------------------------------------------------------------
 #ifdef __cplusplus
 }
