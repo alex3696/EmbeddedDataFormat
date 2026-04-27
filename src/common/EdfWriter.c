@@ -4,12 +4,10 @@
 //-----------------------------------------------------------------------------
 static int EdfWriteBlockBin(Stream_t* st, const EdfHeader_t* cfg, const EdfBlock_t* blk, size_t* writed)
 {
+	UNUSED(cfg);
 	int err = 0;
-	if (cfg->Flags & UseCrc)
-	{
-		uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + 4 + blk->Len);
-		*blkCrc = MbCrc16(blk, 4 + blk->Len);
-	}
+	uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + 4 + blk->Len);
+	*blkCrc = MbCrc16(blk, 4 + blk->Len);
 	if ((err = StreamWrite(st, NULL, blk, 4 + blk->Len + 2)))
 		return err;
 	*writed = blk->Len;

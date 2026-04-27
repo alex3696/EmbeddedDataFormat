@@ -194,7 +194,7 @@ int EdfWriteDataBlock(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 				return ERR_NO;
 			break;
 		case ERR_DST_SHORT:
-			if (ERR_NO != (wr == EdfFlushDataBlock(dw, &w)))
+			if ((wr == EdfFlushDataBlock(dw, &w)))
 				return wr;
 			dstLen = sizeof(dw->Block);
 			dst = dw->Block;
@@ -216,7 +216,7 @@ int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** p
 	int* skip)
 {
 	if (!IsPoType(t->Type))
-		return -2;
+		return ERR_WRONG_TYPE;
 
 	size_t itemCLen = GetTypeCSize(t);
 	int err = 0;
@@ -296,15 +296,13 @@ int EdfReadBlock(EdfWriter_t* dw)
 	if (btHeader == dw->BlkType)
 		memcpy(&dw->h, &dw->Block, sizeof(EdfHeader_t));
 
-	if (dw->h.Flags & UseCrc)
-	{
-		uint16_t crcData = MbCrc16(&dw->BlkType, 4 + dw->DatLen);
-		uint16_t crcFile = 0;
-		if ((err = StreamRead(&dw->Stream, &readed, &crcFile, sizeof(uint16_t))))
-			return err;
-		if (crcData != crcFile)
-			return ERR_BLK_WRONG_CRC;
-	}
+	uint16_t crcData = MbCrc16(&dw->BlkType, 4 + dw->DatLen);
+	uint16_t crcFile = 0;
+	if ((err = StreamRead(&dw->Stream, &readed, &crcFile, sizeof(uint16_t))))
+		return err;
+	if (crcData != crcFile)
+		return ERR_BLK_WRONG_CRC;
+
 	dw->BlkSeq++;
 	return 0;
 

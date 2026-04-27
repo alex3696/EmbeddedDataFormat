@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 EdfHeader_t MakeHeaderDefault(void)
 {
-	EdfHeader_t h = { 1,0, 65001,BLOCK_SIZE, Default | UseCrc };
+	EdfHeader_t h = { 1,0, 65001,BLOCK_SIZE, Default };
 	return h;
 }
 //-----------------------------------------------------------------------------

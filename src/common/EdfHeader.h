@@ -8,7 +8,6 @@
 typedef enum Options
 {
 	Default = 0,
-	UseCrc = 1,
 } Options_t;
 
 typedef struct EdfHeader
