@@ -17,7 +17,7 @@ static int MemStreamWriteImpl(void* stream, size_t* writed, void const* data, si
 	size_t rempty = s->RPos;
 	size_t wempty = s->Size - s->WPos;
 	if (len > rempty + wempty)
-		return EOF;
+		return ERR_DST_SHORT;
 	if (len > wempty)
 		MemStreamMove(s);
 	memcpy(&s->Buffer[s->WPos], data, len);
@@ -33,13 +33,13 @@ static int MemStreamWriteFormatImpl(void* stream, size_t* writed, const char* fo
 	MemStreamMove(s);
 	size_t bufFreeLen = s->Size - s->WPos;
 	if (0 == bufFreeLen)
-		return EOF;
+		return ERR_DST_SHORT;
 	va_list arglist;
 	va_start(arglist, format);
 	size_t ret = vsnprintf((char*)&s->Buffer[s->WPos], bufFreeLen - 1, format, arglist);
 	va_end(arglist);
 	if (bufFreeLen < ret)
-		return EOF;
+		return ERR_DST_SHORT;
 	s->WPos += ret;
 	if (writed)
 		*writed += ret;
@@ -50,7 +50,7 @@ static int MemStreamReadImpl(void* stream, size_t* readed, void* dst, size_t len
 {
 	MemStream_t* s = (MemStream_t*)stream;
 	if (len > s->WPos - s->RPos)
-		return EOF;
+		return ERR_DST_SHORT;
 	memcpy(dst, &s->Buffer[s->RPos], len);
 	s->RPos += len;
 	if (readed)
@@ -70,14 +70,14 @@ int MemAlloc(MemStream_t* s, size_t len, void** pptr)
 	if (0 == len)
 	{
 		*pptr = NULL;
-		return 0;
+		return ERR_NO;
 	}
 	if (len > s->Size - s->WPos)
-		return (size_t)-1;
+		return ERR_DST_SHORT;
 	*pptr = &s->Buffer[s->WPos];
 	memset(&s->Buffer[s->WPos], 0, len);
 	s->WPos += len;
-	return 0;
+	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
 size_t StreamLen(const MemStream_t* s)
@@ -93,9 +93,9 @@ size_t StreamEmptyLen(const MemStream_t* s)
 int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len)
 {
 	if (StreamLen(src) < len)
-		return -1;
+		return ERR_SRC_SHORT;
 	if (StreamEmptyLen(dst) < len)
-		return 1;
+		return ERR_DST_SHORT;
 	MemStreamMove(dst);
 	memcpy(&dst->Buffer[dst->WPos], &src->Buffer[src->RPos], len);
 	dst->WPos += len;
@@ -147,5 +147,5 @@ int MemStreamOpen(MemStream_t* s, uint8_t* buf, size_t size, size_t datalen, con
 		s->WPos = size;
 		return 0;
 	}
-	return -1;
+	return ERR_WRONG_PARAMETERS;
 }

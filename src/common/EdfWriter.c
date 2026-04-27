@@ -137,7 +137,7 @@ static int SeekEnd(EdfWriter_t* f)
 		{
 		default: break;
 		case btHeader:
-			if (16 == f->DatLen)
+			if (HEADER_SIZE == f->DatLen)
 			{
 				err = MakeHeaderFromBytes(f->Block, f->DatLen, &f->h);
 			}
@@ -157,7 +157,7 @@ static int SeekEnd(EdfWriter_t* f)
 			break;
 		}
 	}//while
-	if (EOF == err)
+	if (ERR_EOF == err)
 		err = 0;
 	return err;
 }
@@ -165,7 +165,7 @@ static int SeekEnd(EdfWriter_t* f)
 int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 {
 	if (2 > strnlength(mode, 2))
-		return -1;
+		return ERR_WRONG_PARAMETERS;
 	int err = 0;
 	f->t = NULL;
 	memset(&f->h, 0, sizeof(EdfHeader_t));
@@ -237,7 +237,7 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	}
 	if (0 == strncmp("rt", mode, 2))
 	{
-		err = -1;
+		err = ERR_WRONG_PARAMETERS;
 	}
 	return err;
 }
@@ -250,13 +250,12 @@ int EdfOpen(EdfWriter_t* edf, const char* file, const char* mode)
 int EdfOpenWithFs(EdfWriter_t* edf, const char* file, const char* mode, FileStreamOpenFn fnOpen)
 {
 	if (2 > strnlength(mode, 2))
-		return -1;
+		return ERR_WRONG_PARAMETERS;
 	int err = 0;
 	if (0 == strncmp("wb", mode, 2) || 0 == strncmp("ab", mode, 2))
 	{
-		err = (*fnOpen)((FileStream_t*)&edf->Stream, file, mode);
-		if (err)
-			return -1;
+		if ((err = (*fnOpen)((FileStream_t*)&edf->Stream, file, mode)))
+			return err;
 		return EdfOpenStream(edf, &edf->Stream, mode);
 	}
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2))
@@ -267,24 +266,22 @@ int EdfOpenWithFs(EdfWriter_t* edf, const char* file, const char* mode, FileStre
 		else if (0 == strncmp("at", mode, 2))
 			filemode = "ab";
 		else
-			return -1;
-		err = (*fnOpen)((FileStream_t*)&edf->Stream, file, filemode);
-		if (err)
-			return -1;
+			return ERR_WRONG_PARAMETERS;
+		if ((err = (*fnOpen)((FileStream_t*)&edf->Stream, file, filemode)))
+			return err;
 		return EdfOpenStream(edf, &edf->Stream, mode);
 	}
 	else if (0 == strncmp("rb", mode, 2))
 	{
-		err = (*fnOpen)((FileStream_t*)&edf->Stream, file, "rb");
-		if (err)
-			return -1;
+		if ((err = (*fnOpen)((FileStream_t*)&edf->Stream, file, "rb")))
+			return err;
 		return EdfOpenStream(edf, &edf->Stream, mode);
 	}
 	else if (0 == strncmp("rt", mode, 2))
 	{
-		return -1;
+		return ERR_WRONG_PARAMETERS;
 	}
-	return -1;
+	return ERR_WRONG_PARAMETERS;
 }
 //-----------------------------------------------------------------------------
 int EdfClose(EdfWriter_t* dw)
@@ -313,7 +310,7 @@ int EdfWriteSep(const char* const src,
 		return 0;
 	}
 	if (srcLen > *dstSize)
-		return 1;
+		return ERR_DST_SHORT;
 	(*wqty)++;
 	memcpy(*dst, src, srcLen);
 	(*dstSize) -= srcLen;

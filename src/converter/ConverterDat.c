@@ -19,7 +19,7 @@ int DatToEdf(const char* src, const char* edf, char mode)
 
 	SPSK_FILE_V1_1 dat;
 	if (1 != fread(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
-		return -1;
+		return ERR_FREAD;
 
 	char* edfMode = NULL;
 	if ('t' == mode)
@@ -27,7 +27,7 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	else if ('b' == mode)
 		edfMode = "wb";
 	else
-		return -1;
+		return ERR_WRONG_PARAMETERS;
 
 	EdfWriter_t dw;
 	size_t writed = 0;
@@ -248,7 +248,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 					{
 						dat.crc = MbCrc16(&dat, sizeof(SPSK_FILE_V1_1));
 						if (1 != fwrite(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
-							return -1;
+							return ERR_FWRITE;
 					}
 					uint8_t* pblock = br.Block;
 
@@ -263,7 +263,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 						{
 							precord = recordBegin;
 							if (1 != fwrite(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
-								return -1;
+								return ERR_FWRITE;
 						}
 					}//while (0 < br.DatLen)
 				}

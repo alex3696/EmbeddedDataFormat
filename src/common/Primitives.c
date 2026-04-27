@@ -10,12 +10,12 @@ static int WriteStringCBinToStr(const uint8_t* src, size_t srcLen, uint8_t* dst,
 {
 	*r = sizeof(char*);
 	if (srcLen < *r)
-		return -1;
+		return ERR_SRC_SHORT;
 	// print text without buf
 	const char* str = *(char**)src;
 	size_t len = (NULL == str) ? 0 : strnlength(str, 0xFE);
 	if (dstLen < len + 2)
-		return 1;
+		return ERR_DST_SHORT;
 	*w = 2 + len;
 	*dst++ = '"';
 	memcpy(dst, str, len);
@@ -30,14 +30,14 @@ static int WriteStringBinToStr(const uint8_t* src, size_t srcLen, uint8_t* dst, 
 	*r = *w = 0;
 	size_t sLen = src[0];
 	if (srcLen < 1 + sLen)
-		return -1;
+		return ERR_SRC_SHORT;
 	*r = 1 + sLen;
 	const char* found = memchr(&src[1], '\0', sLen);
 	size_t pos = found - (char*)(&src[1]);
 	if (pos < sLen)
 		sLen = pos;
 	if (dstLen < sLen + 2)
-		return 1;
+		return ERR_DST_SHORT;
 	*dst++ = '"';
 	memcpy(dst, src + 1, sLen);
 	dst += sLen;
@@ -54,9 +54,9 @@ static int WriteStringBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst, 
 	*r = *w = 0;
 	blength += sLen;
 	if (srcLen < blength)
-		return -1;
+		return ERR_SRC_SHORT;
 	if (dstLen < blength)
-		return 1;
+		return ERR_DST_SHORT;
 	memcpy(dst, src, blength);
 	*r = *w = blength;
 	return 0;
@@ -67,13 +67,13 @@ static int WriteStringCBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst,
 {
 	*r = sizeof(char*);
 	if (srcLen < *r)
-		return -1;
+		return ERR_SRC_SHORT;
 	const char* str = *(char**)src;
 	size_t len = (NULL == str) ? 0 : strnlength(str, 0xFE) + 1;
 	if (0 < len && '\0' == str[len - 1])// remove ending '\0'
 		len--;
 	if (dstLen < len + 1)
-		return 1;
+		return ERR_DST_SHORT;
 	(*dst) = (uint8_t)len;
 	dst++;
 	memcpy(dst, str, len);
@@ -101,13 +101,13 @@ static int AnyBinToBin(PoType t,
 {
 	*r = *w = GetSizeOf(t);// переопределится для строки
 	if (srcLen < *r)
-		return -1;
+		return ERR_SRC_SHORT;
 	if (dstLen < *w)
-		return 1;
+		return ERR_DST_SHORT;
 	switch (t)
 	{
 	case Struct:
-	default: *r = *w = 0; return -2;
+	default: *r = *w = 0; return ERR_WRONG_TYPE;
 	case Int8:
 	case UInt8:
 	case UInt16:
@@ -125,7 +125,7 @@ static int AnyBinToBin(PoType t,
 		if (dstLen < srcLen)
 		{
 			*r = *w = 0;
-			return 1;
+			return ERR_DST_SHORT;
 		}
 		*r = *w = srcLen;
 		memcpy(dst, src, srcLen);
@@ -161,65 +161,65 @@ static int AnyBinToStr(PoType t,
 	if (srcLen < *r)
 	{
 		*w = 0;
-		return -1;
+		return ERR_SRC_SHORT;
 	}
 	if (dstLen < 1)
 	{
 		*w = 0;
-		return 1;
+		return ERR_DST_SHORT;
 	}
 	switch (t)
 	{
 	case Struct:
-	default: *r = *w = 0; return -2;
+	default: *r = *w = 0; return ERR_WRONG_TYPE;
 	case Int8:
 		*w = xprint(dst, dstLen, "%d", (int8_t)src[0]);
-		return (dstLen < *w);
+		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case UInt8:
 		*w = xprint(dst, dstLen, "%u", (uint8_t)src[0]);
-		return (dstLen < *w);
+		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Int16:
 		*w = xprint(dst, dstLen, "%d", *((int16_t*)src));
-		return (dstLen < *w);
+		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case UInt16:
 		*w = xprint(dst, dstLen, "%u", *((uint16_t*)src));
-		return (dstLen < *w);
+		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Int32:
 		*w = xprint(dst, dstLen, "%d", *((int32_t*)src));
-		return (dstLen < *w);
+		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case UInt32:
 		*w = xprint(dst, dstLen, "%lu", *((uint32_t*)src));
-		return (dstLen < *w);
+		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Int64:
 	{
 		int64_t alignedVal;
 		memcpy(&alignedVal, src, sizeof(alignedVal));
 		*w = xprint(dst, dstLen, "%lld", alignedVal);
 	}
-	return (dstLen < *w);
+	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case UInt64:
 	{
 		uint64_t alignedVal;
 		memcpy(&alignedVal, src, sizeof(alignedVal));
 		*w = xprint(dst, dstLen, "%llu", alignedVal);
 	}
-	return (dstLen < *w);
+	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Half:
 		//*w = sprintf_s(dst, dstLen, "%g", *((uint16_t*)src));
 		return 0;
 	case Single:
-		*w = xprint(dst, dstLen, "%g", *((float*)src));
-		return (dstLen < *w);
+		*w = xprint(dst, dstLen, "%.8g", *((float*)src));
+		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Double:
 	{
 		double alignedVal;
 		memcpy(&alignedVal, src, sizeof(alignedVal));
 		*w = xprint(dst, dstLen, "%.16g", alignedVal);
 	}
-	return (dstLen < *w);
+	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Char:
 		if (dstLen < (*w) + 2)
-			return 1;
+			return ERR_DST_SHORT;
 		*r = srcLen;
 		*w = srcLen + 2;
 		dst[0] = '"';

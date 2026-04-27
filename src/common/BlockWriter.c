@@ -51,9 +51,9 @@ static int WriteData(const TypeInfo_t* t,
 	if (Char == t->Type)
 	{
 		if (*srcLen < totalElement)
-			return -1;
+			return ERR_SRC_SHORT;
 		if (*dstLen < totalElement)
-			return 1;
+			return ERR_DST_SHORT;
 		if (totalElement <= *skip)
 			*skip -= totalElement;
 		size_t charLen = totalElement;
@@ -226,7 +226,7 @@ int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** p
 	else
 	{
 		if ((err = MemAlloc(mem, itemCLen, (void**)&ti)))
-			return 1;
+			return err;
 		*presult = ti;
 	}
 
@@ -256,7 +256,7 @@ int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** p
 	default:
 		if (0 <= ++(*skip))
 			if ((err = StreamRead(src, NULL, ti, itemCLen)))
-				return -1;
+				return ERR_SRC_SHORT;
 		ti += itemCLen; // проверить
 		break;
 	}//switch

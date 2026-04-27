@@ -27,7 +27,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 
 	DYN_FILE_V2_0 dat;
 	if (1 != fread(&dat, sizeof(DYN_FILE_V2_0), 1, f))
-		return -1;
+		return ERR_FREAD;
 
 	EdfWriter_t dw;
 	size_t writed = 0;
@@ -37,7 +37,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 	else if ('b' == mode)
 		err = EdfOpen(&dw, edf, "wb");
 	else
-		err = -1;
+		err = ERR_WRONG_PARAMETERS;
 	if (err)
 		return err;
 
@@ -337,7 +337,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 	dat.crc = MbCrc16(&dat, sizeof(DYN_FILE_V2_0) - 2);
 
 	if (1 != fwrite(&dat, sizeof(DYN_FILE_V2_0), 1, f))
-		return -1;
+		return ERR_FWRITE;
 
 	fclose(f);
 	EdfClose(&br);

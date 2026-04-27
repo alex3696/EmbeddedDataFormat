@@ -51,18 +51,24 @@ void Log_ErrF(const char* const fmt, ...);
 
 size_t strnlength(const char* s, size_t n);
 
+#define ERR_EOF -1
 #define ERR_NO 0
-#define ERR_SRC_SHORT -1
-#define ERR_DST_SHORT 1
-#define ERR_WRONG_TYPE 2
 
-#define ERR_FN_NOT_EXIST -2
+// error codes do not overlap with errno
 
-#define ERR_BLK_WRONG_TYPE -20
-#define ERR_BLK_WRONG_SEQ -21
-#define ERR_BLK_WRONG_SIZE -22
-#define ERR_BLK_WRONG_CRC -23
+#define ERR_BASE 1000
+#define ERR_SRC_SHORT			ERR_BASE+1
+#define ERR_DST_SHORT			ERR_BASE+2
+#define ERR_WRONG_TYPE			ERR_BASE+3
+#define ERR_WRONG_PARAMETERS	ERR_BASE+4
+#define ERR_FREAD				ERR_BASE+5
+#define ERR_FWRITE				ERR_BASE+6
+#define ERR_FN_NOT_EXIST		ERR_BASE+7
 
-
+#define ERR_BLK ERR_BASE+100
+#define ERR_BLK_WRONG_TYPE		ERR_BLK+20
+#define ERR_BLK_WRONG_SEQ		ERR_BLK+21
+#define ERR_BLK_WRONG_SIZE		ERR_BLK+22
+#define ERR_BLK_WRONG_CRC		ERR_BLK+23
 
 #endif //PCH_H
