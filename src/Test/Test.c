@@ -116,7 +116,8 @@ static int PackUnpack()
 	};
 
 #pragma pack(pop)
-	int skip = 0;
+	size_t primReaded = 0;
+	size_t skip = 0;
 	EdfWriter_t w = { 0 };
 	EdfWriter_t* dw = &w;
 
@@ -128,8 +129,8 @@ static int PackUnpack()
 	err = EdfWriteInfo(dw, &TestStructInf, &writed);
 	dw->Stream.Inst.Mem.WPos = 0;
 
-	TestStruct_t val1 = { "Key1", "Value1", { 11,22,33 } };
-	TestStruct_t val2 = { "Key2", "Value2", { 11,22,33 } };
+	TestStruct_t val1 = { "Key1", "Value1", { 11,12,13 } };
+	TestStruct_t val2 = { "Key2", "Value2", { 21,22,23 } };
 	EdfWriteDataBlock(dw, &val1, sizeof(TestStruct_t));
 	EdfWriteDataBlock(dw, &val2, sizeof(TestStruct_t));
 	EdfClose(dw);
@@ -143,17 +144,18 @@ static int PackUnpack()
 		return err;
 
 	TestStruct_t* kv = NULL;
-	if ((err = EdfReadBin(&TestStructInf.Inf, &mssrc, &mem, &kv, &skip)))
+	if ((err = EdfReadBin(&TestStructInf.Inf, &mssrc, &mem, &kv, &skip, &primReaded)))
 		return err;
+
+	if (!kv || 10 != primReaded)
+		return 1;
 
 	if (0 != strcmp(val1.Key, kv->Key)
 		|| 0 != strcmp(val1.Value, kv->Value)
 		|| 0 != memcmp(&val1.Arr, &kv->Arr, FIELD_SIZEOF(TestStruct_t, Arr)))
 		return 1;
 
-	if ((err = EdfReadBin(&TestStructInf.Inf, &mssrc, &mem, &kv, &skip)))
-		return err;
-
+	kv++;
 	if (0 != strcmp(val2.Key, kv->Key)
 		|| 0 != strcmp(val2.Value, kv->Value)
 		|| 0 != memcmp(&val2.Arr, &kv->Arr, FIELD_SIZEOF(TestStruct_t, Arr)))

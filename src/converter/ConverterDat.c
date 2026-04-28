@@ -134,7 +134,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	uint8_t* const recordBegin = precord;
 	uint8_t* const recordEnd = recordBegin + data_len;
 
-	int skip = 0;
+	size_t skip = 0;
 	uint8_t bDst[3 * 256 + 8] = { 0 };
 	MemStream_t msDst = { 0 };
 	if ((err = MemStreamOpen(&msDst, bDst, sizeof(bDst), 0, "w")))
@@ -195,7 +195,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case POSITION:
 				{
 					Position_t* p = NULL;
-					if ((err = EdfReadBin(&PositionType, &src, &msDst, &p, &skip)))
+					if ((err = EdfReadBin(&PositionType, &src, &msDst, &p, &skip, NULL)))
 						return err;
 
 					unsigned long ulVal = strtoul(p->Field, NULL, 10);
@@ -224,7 +224,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case DEVICEINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip)))
+					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.SensType = (uint16_t)dvc->SwId;
 					dat.SensVer = (uint16_t)dvc->SwModel;
@@ -234,7 +234,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case REGINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip)))
+					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.RegType = (uint16_t)dvc->SwId;
 					dat.RegVer = (uint16_t)dvc->SwModel;

@@ -32,8 +32,8 @@ int EdfWriteDataBlock(EdfWriter_t* dw, const void* src, size_t srcLen);
 // закрывает и скидывает текущий блок на диск  
 int EdfFlushDataBlock(EdfWriter_t* dw, size_t* writed);
 // Чтение данных используя схему 
-int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, 
-	void** presult, int* skip);
+int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+	size_t* resultPrimOffset, size_t* primReaded);
 // чтение блока
 int EdfReadBlock(EdfWriter_t* dr);
 

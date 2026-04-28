@@ -36,7 +36,7 @@ typedef struct TypeRec
 
 int IsVar(const TypeRec_t* r, int32_t varId, const char* varName);
 int IsVarName(const TypeRec_t* r, const char* varName);
-size_t GetTotalElements(Dims_t* dims);
+size_t GetTotalElements(const Dims_t* const dims);
 
 
 uint32_t GetTypeCSize(const TypeInfo_t* t);
