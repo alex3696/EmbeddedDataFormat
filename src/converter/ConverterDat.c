@@ -161,9 +161,11 @@ int EdfToDat(const char* edfFile, const char* datFile)
 		case btVarInfo:
 		{
 			br.t = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &br.t);
+			TypeRec_t* typeRec = NULL;
+			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
 			if (!err)
 			{
+				br.t = typeRec;
 				writed = 0;
 			}
 			else

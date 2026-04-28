@@ -1,6 +1,8 @@
 #ifndef PCH_H
 #define PCH_H
 
+#pragma warning(disable : 5045)
+
 #ifdef __cplusplus
 #include <cstdint>
 #include <cstdio>
@@ -19,7 +21,9 @@
 
 #include "edf_cfg.h"
 
-int CallStackSize();
+
+
+int CallStackSize(void);
 
 uint16_t MbCrc16acc(const void* d, size_t len, uint16_t crc);
 #define MbCrc16(data,len) MbCrc16acc((data),(len),0xFFFF)

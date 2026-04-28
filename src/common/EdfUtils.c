@@ -21,7 +21,7 @@ size_t strnlength(const char* s, size_t n)
 size_t minStack = (size_t)INTPTR_MAX;
 size_t maxStack = (size_t)INTPTR_MIN;
 
-int CallStackSize() 
+int CallStackSize(void)
 {
 	int var = 0;
 	size_t esp = (size_t)(&var);

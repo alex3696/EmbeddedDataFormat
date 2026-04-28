@@ -63,6 +63,9 @@
     <ClCompile Include="..\common\MbCrc.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\BinReader.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\_pch.h">

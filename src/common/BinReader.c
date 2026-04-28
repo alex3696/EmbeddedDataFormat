@@ -7,7 +7,7 @@ static int ReadPrimitive(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem
 {
 	if (0 < (*resultPrimOffset))
 	{
-		resultPrimOffset--;
+		(*resultPrimOffset)--;
 		return ERR_NO;
 	}
 	int err = ERR_NO;
