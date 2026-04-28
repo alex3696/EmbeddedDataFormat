@@ -329,15 +329,13 @@ int EdfWriteInfRecData(EdfWriter_t* dw, const TypeRec_t* ir, const void* d, size
 //-----------------------------------------------------------------------------
 int EdfWriteInfData0(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d)
 {
-	const void* data = String == pt ? &d : d;
 	TypeRec_t rec = { { pt }, id, name, desc };
-	return EdfWriteInfRecData(dw, &rec, data, GetTypeCSize(&rec.Inf));
+	return EdfWriteInfRecData(dw, &rec, d, GetTypeCSize(&rec.Inf));
 }
 //-----------------------------------------------------------------------------
 int EdfWriteInfData(EdfWriter_t* dw, uint32_t id, PoType pt, char* name, const void* d)
 {
-	const void* data = String == pt ? &d : d;
 	TypeRec_t rec = { { pt }, id, name };
-	return EdfWriteInfRecData(dw, &rec, data, GetTypeCSize(&rec.Inf));
+	return EdfWriteInfRecData(dw, &rec, d, GetTypeCSize(&rec.Inf));
 }
 //-----------------------------------------------------------------------------

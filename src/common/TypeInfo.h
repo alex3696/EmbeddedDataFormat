@@ -22,7 +22,7 @@ typedef struct TypeInfo
 	//uint16_t TypeId; // UserTypeId
 } TypeInfo_t;
 
-typedef struct
+typedef struct TypeRec
 {
 	TypeInfo_t Inf; // var type
 	int32_t Id; // var id

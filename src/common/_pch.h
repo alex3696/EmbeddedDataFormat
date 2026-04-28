@@ -51,6 +51,8 @@ void Log_ErrF(const char* const fmt, ...);
 
 size_t strnlength(const char* s, size_t n);
 
+#define EDF_CONSTSTR(val) &(const char*){val}
+
 #define ERR_EOF -1
 #define ERR_NO 0
 

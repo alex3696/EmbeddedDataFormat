@@ -203,7 +203,10 @@ static int WriteSample(EdfWriter_t* dw)
 	EdfWriteDataBlock(dw, &((KeyValue_t) { "Key2", "Value2" }), sizeof(KeyValue_t));
 	EdfWriteDataBlock(dw, &((KeyValue_t) { "Key3", "Value3" }), sizeof(KeyValue_t));
 
-	EdfWriteInfData(dw, 0, String, "тестовый ключ", "String Value");
+	// пример записи строки
+	const char* strVal = "Value 1"; EdfWriteInfData(dw, 0, String, "тестовый ключ 1", &strVal);
+	EdfWriteInfData(dw, 0, String, "тестовый ключ 2", &(const char*){"Value 2"});
+	EdfWriteInfData(dw, 0, String, "тестовый ключ 3", EDF_CONSTSTR("Value 3"));
 
 	TypeRec_t t = { { Int32 }, 0, "weight variable" };
 	err = EdfWriteInfo(dw, &t, &writed);
