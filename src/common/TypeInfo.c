@@ -301,3 +301,12 @@ int IsVarName(const TypeRec_t* r, const char* varName)
 {
 	return IsVar(r, 0, varName);
 }
+//-----------------------------------------------------------------------------
+size_t GetTotalElements(Dims_t* dim)
+{
+	size_t totalElement = 1;
+	if (dim && dim->Count && dim->Item)
+		for (size_t i = 0; i < dim->Count; i++)
+			totalElement *= dim->Item[i];
+	return totalElement;
+}

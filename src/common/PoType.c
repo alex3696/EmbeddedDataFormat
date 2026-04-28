@@ -29,6 +29,11 @@ uint8_t GetSizeOf(enum PoType p)
 	}
 }
 //-----------------------------------------------------------------------------
+uint8_t IsPrimitive(PoType p)
+{
+	return Struct < p && String >= p;
+}
+//-----------------------------------------------------------------------------
 uint8_t IsPoType(PoType p)
 {
 	return Struct <= p && String >= p;

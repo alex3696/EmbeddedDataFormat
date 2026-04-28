@@ -45,9 +45,7 @@ static int WriteData(const TypeInfo_t* t,
 	EdfWriter_t* dw)
 {
 	int err = 0;
-	size_t totalElement = 1;
-	for (size_t i = 0; i < t->Dims.Count; i++)
-		totalElement *= t->Dims.Item[i];
+	size_t totalElement = GetTotalElements(&t->Dims);
 	if (Char == t->Type)
 	{
 		if (*srcLen < totalElement)
