@@ -1,7 +1,9 @@
 #ifndef PCH_H
 #define PCH_H
 
+#ifdef _MSC_VER
 #pragma warning(disable : 5045)
+#endif
 
 #ifdef __cplusplus
 #include <cstdint>
