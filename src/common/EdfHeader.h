@@ -6,7 +6,6 @@
 typedef enum Options
 {
 	Default = 0,
-	UseCrc = 1,
 } Options_t;
 
 typedef struct EdfHeader
@@ -15,7 +14,7 @@ typedef struct EdfHeader
 	uint8_t VersMinor;
 	uint16_t Encoding;
 	uint16_t Blocksize;
-	Options_t Flags;
+	uint32_t Flags; //Options_t
 } EdfHeader_t;
 
 EdfHeader_t MakeHeaderDefault(void);

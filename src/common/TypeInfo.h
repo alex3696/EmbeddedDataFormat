@@ -5,24 +5,28 @@
 #include "PoType.h"
 #include "EdfStream.h"
 
+typedef struct
+{
+	uint8_t Count;
+	uint32_t* Item;
+} Dims_t;
+
+typedef struct
+{
+	uint8_t Count;
+	struct TypeInfo* Item;
+} Childs_t;
+
 typedef struct TypeInfo
 {
 	uint8_t Type; /// PoType 
 	char* Name;
-	struct
-	{
-		uint8_t Count;
-		uint32_t* Item;
-	} Dims;
-	struct
-	{
-		uint8_t Count;
-		struct TypeInfo* Item;
-	} Childs;
+	Dims_t Dims;
+	Childs_t Childs;
 	//uint16_t TypeId; // UserTypeId
 } TypeInfo_t;
 
-typedef struct
+typedef struct TypeRec
 {
 	TypeInfo_t Inf; // var type
 	int32_t Id; // var id
@@ -32,6 +36,8 @@ typedef struct
 
 int IsVar(const TypeRec_t* r, int32_t varId, const char* varName);
 int IsVarName(const TypeRec_t* r, const char* varName);
+size_t GetTotalElements(const Dims_t* const dims);
+
 
 uint32_t GetTypeCSize(const TypeInfo_t* t);
 int8_t HasDynamicFields(const TypeInfo_t* t);

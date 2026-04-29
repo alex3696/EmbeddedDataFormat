@@ -19,7 +19,7 @@ int DatToEdf(const char* src, const char* edf, char mode)
 
 	SPSK_FILE_V1_1 dat;
 	if (1 != fread(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
-		return -1;
+		return ERR_FREAD;
 
 	char* edfMode = NULL;
 	if ('t' == mode)
@@ -27,7 +27,7 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	else if ('b' == mode)
 		edfMode = "wb";
 	else
-		return -1;
+		return ERR_WRONG_PARAMETERS;
 
 	EdfWriter_t dw;
 	size_t writed = 0;
@@ -134,7 +134,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	uint8_t* const recordBegin = precord;
 	uint8_t* const recordEnd = recordBegin + data_len;
 
-	int skip = 0;
+	size_t skip = 0;
 	uint8_t bDst[3 * 256 + 8] = { 0 };
 	MemStream_t msDst = { 0 };
 	if ((err = MemStreamOpen(&msDst, bDst, sizeof(bDst), 0, "w")))
@@ -161,9 +161,11 @@ int EdfToDat(const char* edfFile, const char* datFile)
 		case btVarInfo:
 		{
 			br.t = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &br.t);
+			TypeRec_t* typeRec = NULL;
+			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
 			if (!err)
 			{
+				br.t = typeRec;
 				writed = 0;
 			}
 			else
@@ -195,7 +197,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case POSITION:
 				{
 					Position_t* p = NULL;
-					if ((err = EdfReadBin(&PositionType, &src, &msDst, &p, &skip)))
+					if ((err = EdfReadBin(&PositionType, &src, &msDst, &p, &skip, NULL)))
 						return err;
 
 					unsigned long ulVal = strtoul(p->Field, NULL, 10);
@@ -224,7 +226,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case DEVICEINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip)))
+					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.SensType = (uint16_t)dvc->SwId;
 					dat.SensVer = (uint16_t)dvc->SwModel;
@@ -234,7 +236,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case REGINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip)))
+					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.RegType = (uint16_t)dvc->SwId;
 					dat.RegVer = (uint16_t)dvc->SwModel;
@@ -248,7 +250,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 					{
 						dat.crc = MbCrc16(&dat, sizeof(SPSK_FILE_V1_1));
 						if (1 != fwrite(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
-							return -1;
+							return ERR_FWRITE;
 					}
 					uint8_t* pblock = br.Block;
 
@@ -263,7 +265,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 						{
 							precord = recordBegin;
 							if (1 != fwrite(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
-								return -1;
+								return ERR_FWRITE;
 						}
 					}//while (0 < br.DatLen)
 				}

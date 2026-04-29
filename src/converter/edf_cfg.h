@@ -6,10 +6,11 @@
 extern "C" {
 #endif
 //-----------------------------------------------------------------------------
+
 #ifndef BLOCK_SIZE
 	#ifdef _MSC_VER
 		#define BLOCK_SIZE 512
-	#elif
+	#else
 		#define BLOCK_SIZE 256
 	#endif
 #endif

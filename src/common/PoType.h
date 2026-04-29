@@ -54,6 +54,7 @@ typedef enum PoType
 } PoType;
 
 uint8_t GetSizeOf(enum PoType p);
+uint8_t IsPrimitive(PoType p);
 uint8_t IsPoType(PoType p);
 
 typedef enum BlockType

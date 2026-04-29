@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\BinReader.c" />
     <ClCompile Include="..\common\BlockWriter.c" />
     <ClCompile Include="..\common\EdfHeader.c" />
     <ClCompile Include="..\common\EdfUtils.c" />

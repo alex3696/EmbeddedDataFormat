@@ -116,7 +116,8 @@ static int PackUnpack()
 	};
 
 #pragma pack(pop)
-	int skip = 0;
+	size_t primReaded = 0;
+	size_t skip = 0;
 	EdfWriter_t w = { 0 };
 	EdfWriter_t* dw = &w;
 
@@ -128,8 +129,8 @@ static int PackUnpack()
 	err = EdfWriteInfo(dw, &TestStructInf, &writed);
 	dw->Stream.Inst.Mem.WPos = 0;
 
-	TestStruct_t val1 = { "Key1", "Value1", { 11,22,33 } };
-	TestStruct_t val2 = { "Key2", "Value2", { 11,22,33 } };
+	TestStruct_t val1 = { "Key1", "Value1", { 11,12,13 } };
+	TestStruct_t val2 = { "Key2", "Value2", { 21,22,23 } };
 	EdfWriteDataBlock(dw, &val1, sizeof(TestStruct_t));
 	EdfWriteDataBlock(dw, &val2, sizeof(TestStruct_t));
 	EdfClose(dw);
@@ -143,17 +144,18 @@ static int PackUnpack()
 		return err;
 
 	TestStruct_t* kv = NULL;
-	if ((err = EdfReadBin(&TestStructInf.Inf, &mssrc, &mem, &kv, &skip)))
+	if ((err = EdfReadBin(&TestStructInf.Inf, &mssrc, &mem, &kv, &skip, &primReaded)))
 		return err;
+
+	if (!kv || 10 != primReaded)
+		return 1;
 
 	if (0 != strcmp(val1.Key, kv->Key)
 		|| 0 != strcmp(val1.Value, kv->Value)
 		|| 0 != memcmp(&val1.Arr, &kv->Arr, FIELD_SIZEOF(TestStruct_t, Arr)))
 		return 1;
 
-	if ((err = EdfReadBin(&TestStructInf.Inf, &mssrc, &mem, &kv, &skip)))
-		return err;
-
+	kv++;
 	if (0 != strcmp(val2.Key, kv->Key)
 		|| 0 != strcmp(val2.Value, kv->Value)
 		|| 0 != memcmp(&val2.Arr, &kv->Arr, FIELD_SIZEOF(TestStruct_t, Arr)))
@@ -203,7 +205,25 @@ static int WriteSample(EdfWriter_t* dw)
 	EdfWriteDataBlock(dw, &((KeyValue_t) { "Key2", "Value2" }), sizeof(KeyValue_t));
 	EdfWriteDataBlock(dw, &((KeyValue_t) { "Key3", "Value3" }), sizeof(KeyValue_t));
 
-	EdfWriteInfData(dw, 0, String, "тестовый ключ", "String Value");
+	// пример записи строки
+	const char* strVal = "Value 1"; EdfWriteInfData(dw, 0, String, "тестовый ключ 1", &strVal);
+	EdfWriteInfData(dw, 0, String, "тестовый ключ 2", &(const char*){"Value 2"});
+	EdfWriteInfData(dw, 0, String, "тестовый ключ 3", EDF_CONSTSTR("Value 3"));
+
+	// тест нулевой строки
+	EdfWriteInfData(dw, 0, String, "test NULL string", EDF_CONSTSTR(""));
+	// тест строки длиннее 255 - должна быть обрезана на 255 символов
+	const char chBegin = '0'; const char chEnd = '9';
+	char ch = chBegin;
+	char tctArr260[260];
+	for (size_t i = 0; i < 260; i++)
+	{
+		tctArr260[i] = ch;
+		ch++;
+		if(chEnd <ch)
+			ch = chBegin;
+	}
+	EdfWriteInfData(dw, 0, String, "test 260 string", EDF_CONSTSTR(tctArr260));
 
 	TypeRec_t t = { { Int32 }, 0, "weight variable" };
 	err = EdfWriteInfo(dw, &t, &writed);

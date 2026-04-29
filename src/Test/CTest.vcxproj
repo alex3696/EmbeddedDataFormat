@@ -165,6 +165,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\BinReader.c" />
     <ClCompile Include="..\common\EdfUtils.c" />
     <ClCompile Include="..\common\KeyValue.c" />
     <ClCompile Include="..\common\MbCrc.c" />
