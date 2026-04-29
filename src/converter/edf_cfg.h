@@ -6,9 +6,6 @@
 extern "C" {
 #endif
 //-----------------------------------------------------------------------------
-#define MIN_BLOCK_SIZE 256
-#define MAX_BLOCK_SIZE 4096
-#define MAX_STR_LEN 255
 
 #ifndef BLOCK_SIZE
 	#ifdef _MSC_VER

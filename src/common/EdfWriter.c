@@ -135,7 +135,7 @@ static int SeekEnd(EdfWriter_t* f)
 		{
 		default: break;
 		case btHeader:
-			if (HEADER_SIZE == f->DatLen)
+			if (EDF_HEADER_SIZE == f->DatLen)
 			{
 				err = MakeHeaderFromBytes(f->Block, f->DatLen, &f->h);
 			}

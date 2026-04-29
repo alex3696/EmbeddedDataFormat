@@ -3,8 +3,6 @@
 
 #include "_pch.h"
 
-#define HEADER_SIZE 16
-
 typedef enum Options
 {
 	Default = 0,
