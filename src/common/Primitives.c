@@ -216,7 +216,7 @@ static int AnyBinToStr(PoType t,
 	}
 	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Char:
-		if (dstLen < (*w) + 2)
+		if (dstLen < srcLen + 2)
 			return ERR_DST_SHORT;
 		*r = srcLen;
 		*w = srcLen + 2;

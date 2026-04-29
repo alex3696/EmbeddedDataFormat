@@ -210,6 +210,21 @@ static int WriteSample(EdfWriter_t* dw)
 	EdfWriteInfData(dw, 0, String, "тестовый ключ 2", &(const char*){"Value 2"});
 	EdfWriteInfData(dw, 0, String, "тестовый ключ 3", EDF_CONSTSTR("Value 3"));
 
+	// тест нулевой строки
+	EdfWriteInfData(dw, 0, String, "test NULL string", EDF_CONSTSTR(""));
+	// тест строки длиннее 255 - должна быть обрезана на 255 символов
+	const char chBegin = '0'; const char chEnd = '9';
+	char ch = chBegin;
+	char tctArr260[260];
+	for (size_t i = 0; i < 260; i++)
+	{
+		tctArr260[i] = ch;
+		ch++;
+		if(chEnd <ch)
+			ch = chBegin;
+	}
+	EdfWriteInfData(dw, 0, String, "test 260 string", EDF_CONSTSTR(tctArr260));
+
 	TypeRec_t t = { { Int32 }, 0, "weight variable" };
 	err = EdfWriteInfo(dw, &t, &writed);
 	uint8_t test[100] = { 0 };
