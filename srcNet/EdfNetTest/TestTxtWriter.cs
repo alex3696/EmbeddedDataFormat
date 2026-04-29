@@ -20,10 +20,10 @@ public class TestTxtWriter
     }
     //запись маленьких данных в текстовый файл
     [TestMethod]
-    public void WriteHeaderAndTypeRecTest()
+    public void WriteReadTest()
     {
         string txtFile = GetTestFilePath("PlayerInfo.tdf");
-        
+
         TypeRec playerRec = new()
         {
             Inf = new()
@@ -51,7 +51,11 @@ public class TestTxtWriter
             {Name = "Player1",Health = 52,  Level = 55, SkillPoints = 0,CountAchievements = 125}));
         }
         Assert.IsTrue(File.Exists(txtFile));
-
+        using (var file = new FileStream(txtFile, FileMode.Open))
+        using (var reader = new TextRead(file))
+        {
+            reader.ReadInfo();
+        }
     }
 
 

@@ -380,11 +380,4 @@ public class TestPrimitives
     }
 
 
-    //[TestMethod]
-    //public void TryTxtToSrcTest()
-    //{
-    //    var actual = Primitives.TryTxtToSrc(PoType.Int8, [0x31, 0x32, 0x33], out int r, out object? obj);
-    //    Assert.AreEqual((byte)123, obj);
-    //    Assert.AreEqual(EdfErr.IsOk, actual);
-    //}
 }
