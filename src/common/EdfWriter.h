@@ -10,8 +10,8 @@
 typedef struct EdfWriter EdfWriter_t;
 
 typedef int (*FlushDataFn)(EdfWriter_t* w, size_t* writed);
-typedef int (*WriteHeaderFn)(EdfWriter_t* w, const EdfHeader_t* h, size_t* writed);
-typedef int (*WriteInfoFn)(EdfWriter_t* w, const TypeRec_t* t, size_t* writed);
+typedef int (*WriteHeaderFn)(EdfWriter_t* w, const EdfConfig_t* h, size_t* writed);
+typedef int (*WriteInfoFn)(EdfWriter_t* w, const EdfInf_t* t, size_t* writed);
 
 int EdfWriteSep(const char* const src,
 	uint8_t** dst, size_t* dstSize,
@@ -29,8 +29,8 @@ typedef struct EdfBlock
 
 typedef struct EdfWriter
 {
-	EdfHeader_t Cfg;
-	const TypeRec_t* TypePtr;
+	EdfConfig_t Cfg;
+	const EdfInf_t* TypePtr;
 	Stream_t Stream;
 	size_t Skip;
 

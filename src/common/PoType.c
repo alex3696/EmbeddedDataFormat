@@ -39,7 +39,7 @@ uint8_t IsPoType(PoType p)
 	return Struct <= p && String >= p;
 }
 //-----------------------------------------------------------------------------
-uint8_t IsBlockType(BlockType t)
+uint8_t IsBlockType(EdfBlockType t)
 {
-	return btHeader == t || btVarInfo == t || btVarData == t;
+	return btConfig == t || btInf == t || btData == t;
 }

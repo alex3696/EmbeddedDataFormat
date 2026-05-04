@@ -57,13 +57,13 @@ uint8_t GetSizeOf(enum PoType p);
 uint8_t IsPrimitive(PoType p);
 uint8_t IsPoType(PoType p);
 
-typedef enum BlockType
+typedef enum EdfBlockType
 {
-	btHeader = 126, //0xB0, ~
-	btVarInfo = 63, //0x3f, ?
-	btVarData = 61, //0x3d, =
-} BlockType;
+	btConfig = 126, //0xB0, ~
+	btInf = 63, //0x3f, ?
+	btData = 61, //0x3d, =
+} EdfBlockType;
 
-uint8_t IsBlockType(BlockType t);
+uint8_t IsBlockType(EdfBlockType t);
 
 #endif

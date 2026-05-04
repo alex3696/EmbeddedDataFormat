@@ -2,7 +2,7 @@
 #include "TypeInfo.h"
 
 //-----------------------------------------------------------------------------
-static int StreamWriteInfoBin(Stream_t* s, const TypeInfo_t* t, size_t* writed)
+static int StreamWriteInfoBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 {
 	int err = 0;
 	// TYPE
@@ -36,10 +36,10 @@ static int StreamWriteInfoBin(Stream_t* s, const TypeInfo_t* t, size_t* writed)
 	return err;
 }
 //-----------------------------------------------------------------------------
-int StreamWriteInfBin(Stream_t* st, const TypeRec_t* t, size_t* writed)
+int StreamWriteInfBin(Stream_t* st, const EdfInf_t* t, size_t* writed)
 {
 	int err = 0;
-	if ((err = StreamWrite(st, writed, &t->Id, FIELD_SIZEOF(TypeRec_t, Id))))
+	if ((err = StreamWrite(st, writed, &t->Id, FIELD_SIZEOF(EdfInf_t, Id))))
 		return err;
 	if ((err = StreamWriteInfoBin(st, &t->Inf, writed)))
 		return err;
@@ -82,7 +82,7 @@ static int StreamPrintType(Stream_t* s, PoType po, size_t* writed)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int StreamWriteInfoTxt(Stream_t* s, const TypeInfo_t* t, int noffset, size_t* writed)
+static int StreamWriteInfoTxt(Stream_t* s, const EdfType_t* t, int noffset, size_t* writed)
 {
 	int err = 0;
 	// TYPE
@@ -126,7 +126,7 @@ static int StreamWriteInfoTxt(Stream_t* s, const TypeInfo_t* t, int noffset, siz
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int StreamWriteInfTxt(Stream_t* st, const TypeRec_t* t, size_t* writed)
+int StreamWriteInfTxt(Stream_t* st, const EdfInf_t* t, size_t* writed)
 {
 	int err = 0;
 	if ((err = StreamWrite(st, writed, "\n\n<? ", 5)))
@@ -146,16 +146,16 @@ int StreamWriteInfTxt(Stream_t* st, const TypeRec_t* t, size_t* writed)
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int StreamBinToCBin(MemStream_t* src, MemStream_t* mem, TypeInfo_t** t)
+static int StreamBinToCBin(MemStream_t* src, MemStream_t* mem, EdfType_t** t)
 {
 	int err = 0;
 	size_t readed = 0;
 
-	TypeInfo_t* ti = NULL;
+	EdfType_t* ti = NULL;
 	if (*t)
 		ti = *t;
 	else
-		if ((err = MemAlloc(mem, sizeof(TypeInfo_t), (void**)&ti)))
+		if ((err = MemAlloc(mem, sizeof(EdfType_t), (void**)&ti)))
 			return err;
 
 	if ((err = StreamRead(src, &readed, &ti->Type, 1)))
@@ -188,12 +188,12 @@ static int StreamBinToCBin(MemStream_t* src, MemStream_t* mem, TypeInfo_t** t)
 		if (ti->Childs.Count)
 		{
 			// allocate array
-			const size_t childsSize = sizeof(TypeInfo_t) * ti->Childs.Count;
+			const size_t childsSize = sizeof(EdfType_t) * ti->Childs.Count;
 			if ((err = MemAlloc(mem, childsSize, (void**)&ti->Childs.Item)))
 				return err;
 			for (uint8_t i = 0; i < ti->Childs.Count; i++)
 			{
-				TypeInfo_t* ch = &ti->Childs.Item[i];
+				EdfType_t* ch = &ti->Childs.Item[i];
 				if ((err = StreamBinToCBin(src, mem, &ch)))
 					return err;
 			}
@@ -205,7 +205,7 @@ static int StreamBinToCBin(MemStream_t* src, MemStream_t* mem, TypeInfo_t** t)
 //-----------------------------------------------------------------------------
 int StreamWriteBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	uint8_t* dst, size_t dstLen, size_t* writed,
-	TypeRec_t** t)
+	EdfInf_t** t)
 {
 	int err = 0;
 	MemStream_t mssrc = { 0 };
@@ -215,16 +215,16 @@ int StreamWriteBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	if ((err = MemStreamOutOpen(&msdst, dst, dstLen)))
 		return err;
 
-	TypeRec_t* tr = NULL;
+	EdfInf_t* tr = NULL;
 	if (*t)
 		tr = *t;
 	else
-		if ((err = MemAlloc(&msdst, sizeof(TypeRec_t), (void**)&tr)))
+		if ((err = MemAlloc(&msdst, sizeof(EdfInf_t), (void**)&tr)))
 			return err;
 
-	if ((err = StreamRead(&mssrc, readed, &tr->Id, FIELD_SIZEOF(TypeRec_t, Id))))
+	if ((err = StreamRead(&mssrc, readed, &tr->Id, FIELD_SIZEOF(EdfInf_t, Id))))
 		return err;
-	if ((err = StreamBinToCBin(&mssrc, &msdst, &(TypeInfo_t*){&tr->Inf})))
+	if ((err = StreamBinToCBin(&mssrc, &msdst, &(EdfType_t*){&tr->Inf})))
 		return err;
 	if ((err = StreamReadString(&mssrc, &msdst, &tr->Name)))
 		return err;
@@ -240,7 +240,7 @@ int StreamWriteBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	return err;
 }
 //-----------------------------------------------------------------------------
-uint32_t GetTypeCSize(const TypeInfo_t* t)
+uint32_t GetTypeCSize(const EdfType_t* t)
 {
 	uint32_t sz = 0;
 
@@ -266,7 +266,7 @@ uint32_t GetTypeCSize(const TypeInfo_t* t)
 	return sz;
 }
 //-----------------------------------------------------------------------------
-int8_t HasDynamicFields(const TypeInfo_t* t)
+int8_t HasDynamicFields(const EdfType_t* t)
 {
 	switch (t->Type)
 	{
@@ -284,7 +284,7 @@ int8_t HasDynamicFields(const TypeInfo_t* t)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int IsVar(const TypeRec_t* r, int32_t varId, const char* varName)
+int IsVar(const EdfInf_t* r, int32_t varId, const char* varName)
 {
 	if (varId && r->Id == varId)
 		return 1;
@@ -297,7 +297,7 @@ int IsVar(const TypeRec_t* r, int32_t varId, const char* varName)
 	return 0 == memcmp(r->Name, varName, nameLen);
 }
 //-----------------------------------------------------------------------------
-int IsVarName(const TypeRec_t* r, const char* varName)
+int IsVarName(const EdfInf_t* r, const char* varName)
 {
 	return IsVar(r, 0, varName);
 }

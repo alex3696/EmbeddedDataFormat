@@ -15,11 +15,11 @@ typedef struct EdfHeader
 	uint16_t Encoding;
 	uint16_t Blocksize;
 	uint32_t Flags; //Options_t
-} EdfHeader_t;
+} EdfConfig_t;
 
-EdfHeader_t MakeHeaderDefault(void);
-int MakeHeaderFromBytes(const uint8_t* b, size_t srcSize, EdfHeader_t* h);
-size_t HeaderToBytes(const EdfHeader_t* h, uint8_t* b);
+EdfConfig_t MakeHeaderDefault(void);
+int MakeHeaderFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h);
+size_t HeaderToBytes(const EdfConfig_t* h, uint8_t* b);
 
 
 #endif

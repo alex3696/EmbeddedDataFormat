@@ -18,7 +18,7 @@
 - Макс. длина строки: 255 байт (обрезается без предупреждения)
 - Размер блока: 256-4096 байт (задаётся в заголовке)
 
-## 2. Структура блока
+## 2. Структура блока (EdfBlock_t)
 | Поле | Размер | Описание |
 |------|------  |----------|
 | Type | 1 | Тип блока (см. раздел 3) |
@@ -29,18 +29,18 @@
 
 **Примечание**: В текстовом режиме поле CRC отсутствует, блок завершается символом `>`.
 
-## 3. Типы блоков
+## 3. Типы блоков (EdfBlockType)
 
 | Тип | Значение | Символ | Текстовый вид | Назначение |
 |-----|----------|--------|---------------|------------|
-| Заголовок | 126 (0x7E) | `~` | `<~ ... >` | Заголовок файла |
+| Конфиг | 126 (0x7E) | `~` | `<~ ... >` | Конфиг файла |
 | Схема | 63 (0x3F) | `?` | `<? ... >` | Описание типа данных |
 | Данные | 61 (0x3D) | `=` | `<= ... >` | Данные переменной |
 
-## 4. Заголовок файла
+## 4. Конфиг файла
 
 ```c
-typedef struct EdfHeader {
+typedef struct EdfConfig_t {
     uint8_t VersMajor;      // 1
     uint8_t VersMinor;      // 0
     uint16_t Encoding;      // 65001 = UTF-8
@@ -49,7 +49,7 @@ typedef struct EdfHeader {
 } EdfHeader_t;
 ```
 В бинарном формате занимает 16 байт, остальные байты блока (до Blocksize) заполняются нулями
-Заголовок всегда находится в первом блоке файла
+Конфиг всегда находится в первом блоке файла
 
 ## 5. Схема данных
 
@@ -76,16 +76,16 @@ typedef struct EdfHeader {
 Пустые элементы в конце дополняются '\0'.
 - String — динамическая строка, в бинарном виде имеет префикс длины (1 байт).
 
-## 5.2 Бинарный формат TypeRec
+## 5.2 Бинарный формат EdfInf_t
 
 | Поле | Размер | Описание |
 |------|--------|----------|
 | Id | 4 | Идентификатор переменной (0-65535) |
-| TypeInfo | переменный | Рекурсивное описание типа (см. раздел 5.3) |
+| EdfType_t | переменный | Рекурсивное описание типа (см. раздел 5.3) |
 | Name | переменный | Имя переменной (String, см. раздел 6) |
 | Desc | переменный | Описание переменной (String, опционально) |
 
-## 5.3 Бинарный формат TypeInfo
+## 5.3 Бинарный формат EdfType_t
 
 | Поле | Размер | Описание |
 |------|--------|----------|
@@ -94,14 +94,14 @@ typedef struct EdfHeader {
 | Dims | DimsCount × 4 | Размеры каждого измерения (uint32_t, little-endian) |
 | Name | переменный | Имя типа (String, см. раздел 6) |
 | ChildsCount | 1 | Количество дочерних полей (только если Type == Struct) |
-| Childs | переменный | Элементы структуры (массив TypeInfo, только если ChildsCount > 0) |
+| Childs | переменный | Элементы структуры (массив EdfType_t, только если ChildsCount > 0) |
 
 Примечания:
 - ChildsCount присутствует только если Type == Struct и ChildsCount > 0
 - Поля структуры располагаются последовательно в том же порядке, что и в Childs
 
 ## 5.4 Текстовый формат схемы
-## 5.4 Заголовок файла
+## 5.4 Конфиг файла
 Текстовый вид:
 ```
 <~ {version=1.0; bs=512; encoding=65001; flags=0; } >
@@ -109,8 +109,8 @@ typedef struct EdfHeader {
 
 где значения в [] необязательные
 ```
-<? {TypeRec.Id, TypeRec.Name[, TypeRec.Desc]}
-   TypeInfo.Type [TypeInfo.Name] [ [TypeInfo.Dims.Item[0]...[TypeInfo.Dims.Item[TypeInfo.Dims.Count]]
+<? {EdfInf.Id, EdfInf.Name[, EdfInf.Desc]}
+   EdfType_t.Type [EdfType_t.Name] [ [EdfType_t.Dims.Item[0]...[EdfType_t.Dims.Item[EdfType_t.Dims.Count]]
    [{ тут поля структуры рекурсивно, если тип Struct }]
    >
 ```
@@ -209,7 +209,7 @@ typedef struct EdfHeader {
 
 ## 7. Чтение множественных схем
 При чтении EDF файла схема десериализуется во внутреннее представление с использованием линейного аллокатора.
-При чтении EDF файла с несколькими блоками `btVarInfo` необходимо:
+При чтении EDF файла с несколькими блоками `btInf` необходимо:
 
 1. Сбрасывать позицию записи в буфере (`mem.WPos = 0`)
 2. Обнулять указатель на схему (`br.t = NULL`)
@@ -222,7 +222,7 @@ MemStream_t msDst = {0};
 MemStreamOutOpen(&msDst, buffer, buffer_size);
 
 while (!EdfReadBlock(&br)) {
-    if (br.BlkType == btVarInfo) {
+    if (br.Blk.Type == btInf) {
         msDst.WPos = 0;     // ← сброс позиции
         br.t = NULL;        // ← сброс указателя
         StreamWriteBinToCBin(br.Block, br.DatLen, NULL,
@@ -241,10 +241,10 @@ int EdfOpen(EdfWriter_t* edf, const char* file, const char* mode);
 int EdfClose(EdfWriter_t* dw);
 
 // Запись
-int EdfWriteHeader(EdfWriter_t* dw, const EdfHeader_t* h, size_t* writed);
-int EdfWriteInfo(EdfWriter_t* dw, const TypeRec_t* t, size_t* writed);
-int EdfWriteDataBlock(EdfWriter_t* dw, const void* src, size_t srcLen);
-int EdfFlushDataBlock(EdfWriter_t* dw, size_t* writed);
+int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed);
+int EdfWriteInf(EdfWriter_t* dw, const EdfInf_t* t, size_t* writed);
+int EdfWriteData(EdfWriter_t* dw, const void* src, size_t srcLen);
+int EdfFlushData(EdfWriter_t* dw, size_t* writed);
 
 // Чтение
 int EdfReadBlock(EdfWriter_t* dr);
@@ -252,6 +252,7 @@ int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem,
                void** presult, size_t* resultPrimOffset, size_t* primReaded);
 
 // Утилиты
-int EdfWriteInfData(EdfWriter_t* dw, uint32_t id, PoType pt, 
-                    char* name, const void* data);
+//shortcut: запись схемы + данных
+int EdfWriteInfData(EdfWriter_t* dw, const EdfInf_t* ir, const void* d, size_t len);
+int EdfWritePrimitiveInfData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d);
 ```

@@ -2,7 +2,7 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
-static int ReadPrimitive(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadPrimitive(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	if (0 < (*resultPrimOffset))
@@ -35,7 +35,7 @@ static int ReadPrimitive(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int ReadStruct(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadStruct(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	int err = 0;
@@ -53,7 +53,7 @@ static int ReadStruct(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, v
 
 	for (size_t j = 0; j < t->Childs.Count; j++)
 	{
-		const TypeInfo_t* s = &t->Childs.Item[j];
+		const EdfType_t* s = &t->Childs.Item[j];
 		size_t childCLen = GetTypeCSize(s);
 		if ((err = EdfReadBin(s, src, mem, (void**)&ti, resultPrimOffset, primReaded)))
 			return err;
@@ -62,7 +62,7 @@ static int ReadStruct(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, v
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int ReadElement(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadElement(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	if (Struct == t->Type)
@@ -70,7 +70,7 @@ static int ReadElement(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, 
 	return ReadPrimitive(t, src, mem, presult, resultPrimOffset, primReaded);
 }
 //-----------------------------------------------------------------------------
-static int ReadArray(const TypeInfo_t* t, MemStream_t* src, size_t totalElement, MemStream_t* mem, void** presult,
+static int ReadArray(const EdfType_t* t, MemStream_t* src, size_t totalElement, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	int err = 0;
@@ -96,7 +96,7 @@ static int ReadArray(const TypeInfo_t* t, MemStream_t* src, size_t totalElement,
 	return err;
 }
 //-----------------------------------------------------------------------------
-int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+int EdfReadBin(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	size_t totalElement = GetTotalElements(&t->Dims);
@@ -143,7 +143,7 @@ int EdfReadBlock(EdfWriter_t* dw)
 		return ERR_BLK_WRONG_CRC;
 
 	// try read cfg
-	if (btHeader == dw->Blk.Type)
+	if (btConfig == dw->Blk.Type)
 	{
 		if ((err = MakeHeaderFromBytes(dw->Blk.Data, dw->Blk.Len, &dw->Cfg)))
 			return err;

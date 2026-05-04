@@ -135,19 +135,19 @@ static const char FileDescEcho[] = "SIAM COMPLEX ECHOGRAM V2.0";
 static const char FileDescMt[] = "OMEGA SAMT DATA V1.1";
 
 //-----------------------------------------------------------------------------
-static const TypeInfo_t FileDescriptionType =
+static const EdfType_t FileDescriptionType =
 {
 	.Type = Char, .Name = "FileDescription",
 	.Dims = { 1, (uint32_t[]) { FIELD_SIZEOF(DYN_FILE_V2_0, FileDescription) } }
 };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-static const TypeInfo_t FileTypeIdType =
+static const EdfType_t FileTypeIdType =
 {
 	.Type = Struct, .Name = "FileTypeId", .Dims = { 0, NULL }, .Childs =
 	{
 		.Count = 2,
-		.Item = (TypeInfo_t[])
+		.Item = (EdfType_t[])
 		{
 			{ Int16, "Type" },
 			{ Int16, "Version" },
@@ -162,12 +162,12 @@ typedef struct
 } FileTypeId_t;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-static const TypeInfo_t DateTimeType =
+static const EdfType_t DateTimeType =
 {
 	.Type = Struct, .Name = "DateTime", .Dims = { 0, NULL }, .Childs =
 	{
 		.Count = 8,
-		.Item = (TypeInfo_t[])
+		.Item = (EdfType_t[])
 		{
 			{ Int16, "Year" },
 			{ UInt8, "Month" },
@@ -193,12 +193,12 @@ typedef struct
 	int8_t Tz;
 } DateTime_t;
 //-----------------------------------------------------------------------------
-static const TypeInfo_t DeviceInfoType =
+static const EdfType_t DeviceInfoType =
 {
 	.Type = Struct, .Name = "DeviceInfo", .Dims = { 0, NULL }, .Childs =
 	{
 		.Count = 6,
-		.Item = (TypeInfo_t[])
+		.Item = (EdfType_t[])
 		{
 			{ UInt16, "SwId" },
 			{ UInt16, "SwModel" },
@@ -221,12 +221,12 @@ typedef struct
 } DeviceInfo_t;
 
 //-----------------------------------------------------------------------------
-static const TypeInfo_t PositionType =
+static const EdfType_t PositionType =
 {
 	.Type = Struct, .Name = "Position", .Dims = { 0, NULL }, .Childs =
 	{
 		.Count = 6,
-		.Item = (TypeInfo_t[])
+		.Item = (EdfType_t[])
 		{
 			{ String, "Field" },
 			{ String, "Cluster" },
@@ -248,12 +248,12 @@ typedef struct
 	double Latitude;
 } Position_t;
 //-----------------------------------------------------------------------------
-static const TypeInfo_t OmegaDataType =
+static const EdfType_t OmegaDataType =
 {
 	.Type = Struct, .Name = "OMEGA_DATA_V1_1", .Dims = { 0, NULL }, .Childs =
 	{
 		.Count = 4,
-		.Item = (TypeInfo_t[])
+		.Item = (EdfType_t[])
 		{
 			{ UInt32, "Time" },
 			{ Int32, "Press" },
