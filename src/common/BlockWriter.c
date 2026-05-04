@@ -20,12 +20,12 @@ static int WritePrimitive(EdfWriter_t* dw, PoType pot,
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
-		dw->DatLen += (uint16_t)(*writed);
+		dw->Blk.Len += (uint16_t)(*writed);
 		if ((err = EdfFlushDataBlock(dw, &w)))
 			return err;
 		*writed = 0;
-		*dstLen = sizeof(dw->Block);
-		*ppdst = dw->Block;
+		*dstLen = sizeof(dw->Blk.Data);
+		*ppdst = dw->Blk.Data;
 		if ((err = (*dw->WritePrimitive)(pot, *ppsrc, *srcLen, *ppdst, *dstLen, &r, &w)))
 			return err;
 	}
@@ -122,8 +122,8 @@ int EdfWriteDataBlock(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 	const uint8_t* src = xsrc;
 	size_t srcLen = xsrcLen;
 
-	size_t dstLen = sizeof(dw->Block) - dw->DatLen;
-	uint8_t* dst = dw->Block + dw->DatLen;
+	size_t dstLen = sizeof(dw->Blk.Data) - dw->Blk.Len;
+	uint8_t* dst = dw->Blk.Data + dw->Blk.Len;
 
 	int wr;
 	do
@@ -178,7 +178,7 @@ int EdfWriteDataBlock(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 			srcLen = xsrcLen;
 		}
 
-		dw->DatLen += (uint16_t)w;
+		dw->Blk.Len += (uint16_t)w;
 		switch (wr)
 		{
 		default:
@@ -194,8 +194,8 @@ int EdfWriteDataBlock(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 		case ERR_DST_SHORT:
 			if ((wr == EdfFlushDataBlock(dw, &w)))
 				return wr;
-			dstLen = sizeof(dw->Block);
-			dst = dw->Block;
+			dstLen = sizeof(dw->Blk.Data);
+			dst = dw->Blk.Data;
 			dw->Skip += wqty;
 			wr = 0;
 			break;

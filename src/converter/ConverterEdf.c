@@ -46,7 +46,7 @@ int BinToText(const char* src, const char* dst)
 
 	while (!(err = EdfReadBlock(&br)))
 	{
-		switch (br.BlkType)
+		switch (br.Blk.Type)
 		{
 		default: break;
 		case btHeader:
@@ -56,7 +56,7 @@ int BinToText(const char* src, const char* dst)
 		case btVarInfo:
 		{
 			tw.TypePtr = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.TypePtr);
+			err = StreamWriteBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.TypePtr);
 			if (!err)
 			{
 				writed = 0;
@@ -71,7 +71,7 @@ int BinToText(const char* src, const char* dst)
 		break;
 		case btVarData:
 		{
-			EdfWriteDataBlock(&tw, &br.Block, br.DatLen);
+			EdfWriteDataBlock(&tw, &br.Blk.Data, br.Blk.Len);
 			//EdfFlushDataBlock(&tw, &writed);
 		}
 		break;

@@ -112,47 +112,47 @@ int EdfReadBlock(EdfWriter_t* dw)
 	int err = 0;
 	size_t readed = 0;
 
-	dw->BlkType = 0;
-	dw->DatLen = 0;
+	dw->Blk.Type = 0;
+	dw->Blk.Len = 0;
 	// read Block Type
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->BlkType, 1)))
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Type, 1)))
 		return err;
-	if (!IsBlockType(dw->BlkType))
+	if (!IsBlockType(dw->Blk.Type))
 		return ERR_BLK_WRONG_TYPE;
 	// read Block Sequence
 	uint8_t blockseq;
 	if ((err = StreamRead(&dw->Stream, &readed, &blockseq, 1)))
 		return err;
-	if (blockseq != dw->BlkSeq)
+	if (blockseq != dw->Blk.Seq)
 		return ERR_BLK_WRONG_SEQ;
 	// read Block Length
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->DatLen, 2)))
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Len, 2)))
 		return err;
-	if (4096 < dw->DatLen || BLOCK_SIZE < dw->DatLen)
+	if (MAX_BLOCK_SIZE < dw->Blk.Len || BLOCK_SIZE < dw->Blk.Len)
 		return ERR_BLK_WRONG_SIZE;
 	// read Block Content
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->Block, dw->DatLen)))
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Data, dw->Blk.Len)))
 		return err;
 	// read Block CRC
 	uint16_t crcFile = 0;
 	if ((err = StreamRead(&dw->Stream, &readed, &crcFile, sizeof(uint16_t))))
 		return err;
 	// calculate Block CRC
-	uint16_t crcData = MbCrc16(&dw->BlkType, 4 + dw->DatLen);
+	uint16_t crcData = MbCrc16(&dw->Blk.Type, 4 + dw->Blk.Len);
 	if (crcData != crcFile)
 		return ERR_BLK_WRONG_CRC;
 
 	// try read cfg
-	if (btHeader == dw->BlkType)
+	if (btHeader == dw->Blk.Type)
 	{
-		if ((err = MakeHeaderFromBytes(dw->Block, dw->DatLen, &dw->Cfg)))
+		if ((err = MakeHeaderFromBytes(dw->Blk.Data, dw->Blk.Len, &dw->Cfg)))
 			return err;
 		if (dw->Cfg.Blocksize < BLOCK_SIZE)
 			return ERR_BLOCK_SIZE_LARGE;
-		dw->BlkSeq = 0;
+		dw->Blk.Seq = 0;
 	}
 
-	dw->BlkSeq++;
+	dw->Blk.Seq++;
 	return 0;
 
 }

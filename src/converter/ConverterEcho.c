@@ -215,17 +215,17 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 	while (!(err = EdfReadBlock(&br)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamInOpen(&src, br.Block, br.DatLen)))
+		if ((err = MemStreamInOpen(&src, br.Blk.Data, br.Blk.Len)))
 			return err;
 
-		switch (br.BlkType)
+		switch (br.Blk.Type)
 		{
 		default: break;
 		case btHeader:
-			if (16 == br.DatLen)
+			if (16 == br.Blk.Len)
 			{
 				//EdfHeader_t h = { 0 };
-				//err = MakeHeaderFromBytes(br.Block, br.DatLen, &h);
+				//err = MakeHeaderFromBytes(br.Blk.Data, br.Blk.Len, &h);
 				//if (!err)
 				//	err = EdfWriteHeader(&tw, &h, &writed);
 			}
@@ -235,7 +235,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 			skip = 0;
 			msDst.WPos = 0;
 			br.TypePtr = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &br.TypePtr);
+			err = StreamWriteBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &br.TypePtr);
 			if (!err)
 			{
 				writed = 0;
@@ -255,12 +255,12 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)br.Block)->Type)
+					if (dat.FileType != ((FileTypeId_t*)br.Blk.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t* t = (DateTime_t*)br.Block;
+					DateTime_t* t = (DateTime_t*)br.Blk.Data;
 					dat.Id.Time.Year = (uint8_t)(t->Year - 2000);
 					dat.Id.Time.Month = t->Month;
 					dat.Id.Time.Day = t->Day;
@@ -319,33 +319,33 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				}//switch
 			}//if (br.TypePtr->Id)
 			else if (IsVarName(br.TypePtr, "Oper"))
-				dat.Id.Oper = *((uint16_t*)br.Block);
+				dat.Id.Oper = *((uint16_t*)br.Blk.Data);
 			else if (IsVarName(br.TypePtr, "Discrete"))
-				discrete = *((double*)br.Block);
+				discrete = *((double*)br.Blk.Data);
 			else if (IsVarName(br.TypePtr, "Reflections"))
-				dat.Reflections = PackReflections(*((uint16_t*)br.Block));
+				dat.Reflections = PackReflections(*((uint16_t*)br.Blk.Data));
 			else if (IsVarName(br.TypePtr, "Level"))
-				dat.Level = PackLevel(*((double*)br.Block), discrete);
+				dat.Level = PackLevel(*((double*)br.Blk.Data), discrete);
 			else if (IsVarName(br.TypePtr, "Pressure"))
-				dat.Pressure = (int16_t)round(*((double*)br.Block) * 10);
+				dat.Pressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
 			else if (IsVarName(br.TypePtr, "Table"))
-				dat.Table = *((uint16_t*)br.Block);
+				dat.Table = *((uint16_t*)br.Blk.Data);
 			else if (IsVarName(br.TypePtr, "Speed"))
-				dat.Speed = (uint16_t)round(*((float*)br.Block) * 10);
+				dat.Speed = (uint16_t)round(*((float*)br.Blk.Data) * 10);
 			else if (IsVarName(br.TypePtr, "BufPressure"))
-				dat.BufPressure = (int16_t)round(*((double*)br.Block) * 10);
+				dat.BufPressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
 			else if (IsVarName(br.TypePtr, "LinePressure"))
-				dat.LinePressure = (int16_t)round(*((double*)br.Block) * 10);
+				dat.LinePressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
 			else if (IsVarName(br.TypePtr, "Current"))
-				dat.Current = *((uint16_t*)br.Block);
+				dat.Current = *((uint16_t*)br.Blk.Data);
 			else if (IsVarName(br.TypePtr, "IdleHour"))
-				dat.IdleHour = *((uint8_t*)br.Block);
+				dat.IdleHour = *((uint8_t*)br.Blk.Data);
 			else if (IsVarName(br.TypePtr, "IdleMin"))
-				dat.IdleMin = *((uint8_t*)br.Block);
+				dat.IdleMin = *((uint8_t*)br.Blk.Data);
 			else if (IsVarName(br.TypePtr, "Acc"))
-				dat.Acc = (int16_t)round(*((float*)br.Block) * 10);
+				dat.Acc = (int16_t)round(*((float*)br.Blk.Data) * 10);
 			else if (IsVarName(br.TypePtr, "Temp"))
-				dat.Temp = (int16_t)round(*((float*)br.Block) * 10);
+				dat.Temp = (int16_t)round(*((float*)br.Blk.Data) * 10);
 
 			else if (IsVarName(br.TypePtr, "EchoChart"))
 			{
@@ -366,7 +366,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 			}//else
 		}//case btVarData:
 		break;
-		}//switch (br.BlkType)
+		}//switch (br.Blk.Type)
 		if (0 != err)
 		{
 			LOG_ERR();
