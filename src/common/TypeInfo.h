@@ -2,7 +2,6 @@
 #define TYPEINFO_H
 
 #include "_pch.h"
-#include "PoType.h"
 #include "EdfStream.h"
 
 typedef struct
@@ -23,15 +22,14 @@ typedef struct EdfType
 	char* Name;
 	Dims_t Dims;
 	Childs_t Childs;
-	//uint16_t TypeId; // UserTypeId
 } EdfType_t;
 
 typedef struct EdfInf
 {
-	EdfType_t Inf; // var type
 	int32_t Id; // var id
 	char* Name; // var name
 	char* Desc; // var description
+	EdfType_t Inf; // var type
 } EdfInf_t;
 
 int IsVar(const EdfInf_t* r, int32_t varId, const char* varName);

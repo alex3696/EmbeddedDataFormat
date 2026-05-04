@@ -41,11 +41,11 @@ int StreamWriteInfBin(Stream_t* st, const EdfInf_t* t, size_t* writed)
 	int err = 0;
 	if ((err = StreamWrite(st, writed, &t->Id, FIELD_SIZEOF(EdfInf_t, Id))))
 		return err;
-	if ((err = StreamWriteInfoBin(st, &t->Inf, writed)))
-		return err;
 	if ((err = StreamWriteString(st, t->Name, writed)))
 		return err;
 	if ((err = StreamWriteString(st, t->Desc, writed)))
+		return err;
+	if ((err = StreamWriteInfoBin(st, &t->Inf, writed)))
 		return err;
 	return err;
 }
@@ -224,11 +224,11 @@ int StreamWriteBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 
 	if ((err = StreamRead(&mssrc, readed, &tr->Id, FIELD_SIZEOF(EdfInf_t, Id))))
 		return err;
-	if ((err = StreamBinToCBin(&mssrc, &msdst, &(EdfType_t*){&tr->Inf})))
-		return err;
 	if ((err = StreamReadString(&mssrc, &msdst, &tr->Name)))
 		return err;
 	if ((err = StreamReadString(&mssrc, &msdst, &tr->Desc)))
+		return err;
+	if ((err = StreamBinToCBin(&mssrc, &msdst, &(EdfType_t*){&tr->Inf})))
 		return err;
 
 	if (readed)

@@ -324,7 +324,7 @@ int EdfWriteInfData(EdfWriter_t* dw, const EdfInf_t* ir, const void* d, size_t l
 //-----------------------------------------------------------------------------
 int EdfWritePrimitiveInfData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d)
 {
-	EdfInf_t rec = { { pt }, id, name, desc };
+	EdfInf_t rec = { id, name, desc, { pt } };
 	return EdfWriteInfData(dw, &rec, d, GetTypeCSize(&rec.Inf));
 }
 //-----------------------------------------------------------------------------

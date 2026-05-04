@@ -183,7 +183,7 @@ static int WriteSample(EdfWriter_t* dw)
 	} KeyValue_t;
 	EdfInf_t keyValueType =
 	{
-		0, .Name = "VariableKV", .Desc = "comment",
+		.Id = 0, .Name = "VariableKV", .Desc = "comment",
 		.Inf =
 		{
 			.Type = Struct, .Name = "KeyValue", .Dims = {0, NULL},
@@ -226,14 +226,14 @@ static int WriteSample(EdfWriter_t* dw)
 	}
 	EdfWritePrimitiveInfData(dw, String, 0, "test 260 string", NULL, EDF_CONSTSTR(tctArr260));
 
-	EdfInf_t t = { { Int32 }, 0, "weight variable" };
+	EdfInf_t t = { 0, "weight variable", NULL, { Int32 } };
 	err = EdfWriteInf(dw, &t, &writed);
 	uint8_t test[100] = { 0 };
 	(*(int32_t*)test) = (int32_t)(0xFFFFFFFF);
 	EdfWriteData(dw, test, 4);
 	EdfFlushData(dw, &writed);
 
-	EdfInf_t td = { { Double }, 0, "TestDouble" };
+	EdfInf_t td = { 0, "TestDouble", NULL, { Double } };
 	err = EdfWriteInf(dw, &td, &writed);
 	double dd = 1.1;
 	EdfWriteData(dw, &dd, sizeof(double));
@@ -242,7 +242,7 @@ static int WriteSample(EdfWriter_t* dw)
 	dd = 3.1;
 	EdfWriteData(dw, &dd, sizeof(double));
 
-	EdfInf_t tchar = { {.Type = Char, .Dims = { 1, (uint32_t[]) { 20 } } }, 0, "Char Text" };
+	EdfInf_t tchar = { .Id=0, .Name="Char Text", .Desc=NULL, .Inf={.Type = Char, .Dims = { 1, (uint32_t[]) { 20 } } } };
 	err = EdfWriteInf(dw, &tchar, &writed);
 	size_t len = 0;
 	len += GetCString("Char", 20, test + len, sizeof(test));
@@ -250,7 +250,7 @@ static int WriteSample(EdfWriter_t* dw)
 	len += GetCString("Array     Value", 20, test + len, sizeof(test) - len);
 	EdfWriteData(dw, test, len);
 
-	EdfType_t comlexVarInf =
+	EdfType_t comlexVarType =
 	{
 		.Type = Struct, .Name = "ComplexVariable", .Dims = {0, NULL},
 		.Childs =
@@ -297,7 +297,7 @@ static int WriteSample(EdfWriter_t* dw)
 			}
 		}
 	};
-	err = EdfWriteInf(dw, &(EdfInf_t){comlexVarInf}, & writed);
+	err = EdfWriteInf(dw, &(EdfInf_t){.Inf=comlexVarType}, & writed);
 #pragma pack(push,1)
 	struct ComplexVariable
 	{
@@ -374,7 +374,7 @@ static void WriteBigVar(EdfWriter_t* dw)
 	err = EdfWriteConfig(dw, &h, &writed);
 
 	size_t arrLen = (size_t)(BLOCK_SIZE / sizeof(uint32_t) * 2.5);
-	EdfInf_t t = { {.Type = Int32, .Name = "variable", .Dims = { 1, (uint32_t[]) { arrLen }} }, 0xF0F1F2F3 };
+	EdfInf_t t = { 0xF0F1F2F3 , NULL, NULL, {.Type = Int32, .Name = "variable", .Dims = { 1, (uint32_t[]) { arrLen }} } };
 	err = EdfWriteInf(dw, &t, &writed);
 
 	uint32_t test[1000] = { 0 };

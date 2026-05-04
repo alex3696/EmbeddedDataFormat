@@ -47,10 +47,10 @@ int DynToEdf(const char* src, const char* edf, char mode)
 		return err;
 
 	//EdfWritePrimitiveInfData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
-	const EdfInf_t typeInf = { FileTypeIdType, FILETYPEID };
+	const EdfInf_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
 	EdfWriteInfData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
-	const EdfInf_t beginDtInf = { DateTimeType, BEGINDATETIME, "BeginDateTime" };
+	const EdfInf_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType};
 	const DateTime_t beginDtDat =
 	{
 		dat.Id.Time.Year + 2000, dat.Id.Time.Month, dat.Id.Time.Day,
@@ -66,11 +66,11 @@ int DynToEdf(const char* src, const char* edf, char mode)
 	memcpy(cluster, dat.Id.Cluster, strnlength(dat.Id.Cluster, FIELD_SIZEOF(RESEARCH_ID_V2_0, Cluster)));
 	memcpy(well, dat.Id.Well, strnlength(dat.Id.Well, FIELD_SIZEOF(RESEARCH_ID_V2_0, Well)));
 	snprintf(shop, sizeof(shop) - 1, "%d", dat.Id.Shop);
-	const EdfInf_t posInf = { PositionType, POSITION, "Position" };
+	const EdfInf_t posInf = { POSITION, "Position" , NULL, PositionType };
 	const Position_t posDat = { .Field = field, .Cluster = cluster, .Well = well, .Shop = shop, };
 	EdfWriteInfData(&dw, &posInf, &posDat, sizeof(Position_t));
 
-	const EdfInf_t devInf = { DeviceInfoType, DEVICEINFO, "DevInfo", "прибор" };
+	const EdfInf_t devInf = { DEVICEINFO, "DevInfo", "прибор", DeviceInfoType};
 	const DeviceInfo_t devDat =
 	{
 		.SwId = dat.Id.DeviceType, .SwModel = 0, .SwRevision = 0,
@@ -78,7 +78,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 	};
 	EdfWriteInfData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
 
-	const EdfInf_t regInf = { DeviceInfoType, REGINFO, "RegInfo", "регистратор" };
+	const EdfInf_t regInf = { REGINFO, "RegInfo", "регистратор", DeviceInfoType };
 	const DeviceInfo_t regDat =
 	{
 		.SwId = dat.Id.RegType, .SwModel = 0, .SwRevision = 0,
@@ -109,7 +109,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 	EdfWritePrimitiveInfData(&dw, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
 	EdfWritePrimitiveInfData(&dw, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
 
-	const EdfInf_t chartsInf = { ChartNInf, 0, "DynamogrammChartInfo" };
+	const EdfInf_t chartsInf = { 0, "DynamogrammChartInfo", NULL, ChartNInf};
 	const ChartN_t chartsDat[] =
 	{
 		{ "Position", "m", "", "перемещение" },
@@ -117,7 +117,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 	};
 	EdfWriteInfData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
 
-	EdfWriteInf(&dw, &(const EdfInf_t){ Point2DInf, 0, "DynChart"}, & writed);
+	EdfWriteInf(&dw, &(const EdfInf_t){ 0, "DynChart", NULL, Point2DInf}, & writed);
 	struct PointXY p = { 0,0 };
 	for (size_t i = 0; i < 1000; i++)
 	{

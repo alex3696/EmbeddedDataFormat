@@ -39,10 +39,10 @@ int DatToEdf(const char* src, const char* edf, char mode)
 		return err;
 
 	//EdfWritePrimitiveInfData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
-	const EdfInf_t typeInf = { FileTypeIdType, FILETYPEID };
+	const EdfInf_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
 	EdfWriteInfData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
-	const EdfInf_t beginDtInf = { DateTimeType, BEGINDATETIME, "BeginDateTime" };
+	const EdfInf_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
 	const DateTime_t beginDtDat = { dat.Year + 2000, dat.Month, dat.Day, };
 	EdfWriteInfData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
 
@@ -54,14 +54,14 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	memcpy(cluster, dat.Id.Cluster, strnlength(dat.Id.Cluster, FIELD_SIZEOF(FILES_RESEARCH_ID_V1_0, Cluster)));
 	memcpy(well, dat.Id.Well, strnlength(dat.Id.Well, FIELD_SIZEOF(FILES_RESEARCH_ID_V1_0, Well)));
 	snprintf(shop, sizeof(shop) - 1, "%d", dat.Id.Shop);
-	const EdfInf_t posInf = { PositionType, POSITION, "Position" };
+	const EdfInf_t posInf = { POSITION, "Position", NULL, PositionType };
 	const Position_t posDat = { .Field = field, .Cluster = cluster, .Well = well, .Shop = shop, };
 	EdfWriteInfData(&dw, &posInf, &posDat, sizeof(Position_t));
 
 	EdfWritePrimitiveInfData(&dw, UInt16, 0, "PlaceId", "место установки", &dat.Id.PlaceId);
 	EdfWritePrimitiveInfData(&dw, Int32, 0, "Depth", "глубина установки", &dat.Id.Depth);
 
-	const EdfInf_t devInf = { DeviceInfoType, DEVICEINFO, "DevInfo", "скважный прибор" };
+	const EdfInf_t devInf = { DEVICEINFO, "DevInfo", "скважный прибор", DeviceInfoType };
 	const DeviceInfo_t devDat =
 	{
 		.SwId = dat.SensType, .SwModel = dat.SensVer, .SwRevision = 0,
@@ -69,7 +69,7 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	};
 	EdfWriteInfData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
 
-	const EdfInf_t regInf = { DeviceInfoType, REGINFO, "RegInfo", "наземный регистратор" };
+	const EdfInf_t regInf = { REGINFO, "RegInfo", "наземный регистратор", DeviceInfoType };
 	const DeviceInfo_t regDat =
 	{
 		.SwId = dat.RegType, .SwModel = dat.RegVer, .SwRevision = 0,
@@ -77,7 +77,7 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	};
 	EdfWriteInfData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
 
-	const EdfInf_t chartsInf = { ChartNInf, 0, "ChartInfo" };
+	const EdfInf_t chartsInf = { 0, "ChartInfo", NULL, ChartNInf };
 	const ChartN_t chartsDat[] =
 	{
 		{ "Time", "мс", "", "время измерения от начала дня" },
@@ -87,7 +87,7 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	};
 	EdfWriteInfData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
 
-	if ((err = EdfWriteInf(&dw, &(EdfInf_t){OmegaDataType, OMEGADATA}, & writed)))
+	if ((err = EdfWriteInf(&dw, &(EdfInf_t){OMEGADATA, NULL, NULL, OmegaDataType}, & writed)))
 		return err;
 
 	OMEGA_DATA_V1_1 record;
