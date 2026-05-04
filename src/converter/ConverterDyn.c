@@ -280,7 +280,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				dat.MaxWeight = (uint16_t)(*(uint32_t*)br.Block / dat.LoadStep);
 			else if (IsVarName(br.TypePtr, "MinWeight"))
 				dat.MinWeight = (uint16_t)(*(uint32_t*)br.Block / dat.LoadStep);
-			else if (IsVarName(br.t, "TopWeight"))
+			else if (IsVarName(br.TypePtr, "TopWeight"))
 				dat.TopWeight = (uint16_t)(*(uint32_t*)br.Block / dat.LoadStep);
 			else if (IsVarName(br.TypePtr, "BotWeight"))
 				dat.BotWeight = (uint16_t)(*(uint32_t*)br.Block / dat.LoadStep);
