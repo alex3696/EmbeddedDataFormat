@@ -50,22 +50,17 @@ int BinToText(const char* src, const char* dst)
 		{
 		default: break;
 		case btHeader:
-			if (16 == br.DatLen)
-			{
-				EdfHeader_t h = { 0 };
-				err = MakeHeaderFromBytes(br.Block, br.DatLen, &h);
-				if (!err)
-					err = EdfWriteHeader(&tw, &h, &writed);
-			}
+			if ((err = EdfWriteHeader(&tw, &br.Cfg, &writed)))
+				return err;
 			break;
 		case btVarInfo:
 		{
-			tw.t = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.t);
+			tw.TypePtr = NULL;
+			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.TypePtr);
 			if (!err)
 			{
 				writed = 0;
-				err = EdfWriteInfo(&tw, tw.t, &writed);
+				err = EdfWriteInfo(&tw, tw.TypePtr, &writed);
 			}
 			else
 			{

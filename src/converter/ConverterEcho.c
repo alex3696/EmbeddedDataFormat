@@ -234,8 +234,8 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 		{
 			skip = 0;
 			msDst.WPos = 0;
-			br.t = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &br.t);
+			br.TypePtr = NULL;
+			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &br.TypePtr);
 			if (!err)
 			{
 				writed = 0;
@@ -249,9 +249,9 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 		break;
 		case btVarData:
 		{
-			if (br.t->Id)
+			if (br.TypePtr->Id)
 			{
-				switch (br.t->Id)
+				switch (br.TypePtr->Id)
 				{
 				default: break;
 				case FILETYPEID:
@@ -317,37 +317,37 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				}
 				break;
 				}//switch
-			}//if (br.t->Id)
-			else if (IsVarName(br.t, "Oper"))
+			}//if (br.TypePtr->Id)
+			else if (IsVarName(br.TypePtr, "Oper"))
 				dat.Id.Oper = *((uint16_t*)br.Block);
-			else if (IsVarName(br.t, "Discrete"))
+			else if (IsVarName(br.TypePtr, "Discrete"))
 				discrete = *((double*)br.Block);
-			else if (IsVarName(br.t, "Reflections"))
+			else if (IsVarName(br.TypePtr, "Reflections"))
 				dat.Reflections = PackReflections(*((uint16_t*)br.Block));
-			else if (IsVarName(br.t, "Level"))
+			else if (IsVarName(br.TypePtr, "Level"))
 				dat.Level = PackLevel(*((double*)br.Block), discrete);
-			else if (IsVarName(br.t, "Pressure"))
+			else if (IsVarName(br.TypePtr, "Pressure"))
 				dat.Pressure = (int16_t)round(*((double*)br.Block) * 10);
-			else if (IsVarName(br.t, "Table"))
+			else if (IsVarName(br.TypePtr, "Table"))
 				dat.Table = *((uint16_t*)br.Block);
-			else if (IsVarName(br.t, "Speed"))
+			else if (IsVarName(br.TypePtr, "Speed"))
 				dat.Speed = (uint16_t)round(*((float*)br.Block) * 10);
-			else if (IsVarName(br.t, "BufPressure"))
+			else if (IsVarName(br.TypePtr, "BufPressure"))
 				dat.BufPressure = (int16_t)round(*((double*)br.Block) * 10);
-			else if (IsVarName(br.t, "LinePressure"))
+			else if (IsVarName(br.TypePtr, "LinePressure"))
 				dat.LinePressure = (int16_t)round(*((double*)br.Block) * 10);
-			else if (IsVarName(br.t, "Current"))
+			else if (IsVarName(br.TypePtr, "Current"))
 				dat.Current = *((uint16_t*)br.Block);
-			else if (IsVarName(br.t, "IdleHour"))
+			else if (IsVarName(br.TypePtr, "IdleHour"))
 				dat.IdleHour = *((uint8_t*)br.Block);
-			else if (IsVarName(br.t, "IdleMin"))
+			else if (IsVarName(br.TypePtr, "IdleMin"))
 				dat.IdleMin = *((uint8_t*)br.Block);
-			else if (IsVarName(br.t, "Acc"))
+			else if (IsVarName(br.TypePtr, "Acc"))
 				dat.Acc = (int16_t)round(*((float*)br.Block) * 10);
-			else if (IsVarName(br.t, "Temp"))
+			else if (IsVarName(br.TypePtr, "Temp"))
 				dat.Temp = (int16_t)round(*((float*)br.Block) * 10);
 
-			else if (IsVarName(br.t, "EchoChart"))
+			else if (IsVarName(br.TypePtr, "EchoChart"))
 			{
 				PointXY_t* s = NULL;
 				while (!(err = EdfReadBin(&Point2DInf, &src, &msDst, &s, &skip, NULL))

@@ -83,5 +83,6 @@ size_t strnlength(const char* s, size_t n);
 #define ERR_BLK_WRONG_SEQ		ERR_BLK+21
 #define ERR_BLK_WRONG_SIZE		ERR_BLK+22
 #define ERR_BLK_WRONG_CRC		ERR_BLK+23
+#define ERR_BLOCK_SIZE_LARGE    ERR_BLK+24
 
 #endif //PCH_H

@@ -179,8 +179,8 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 		{
 			skip = 0;
 			msDst.WPos = 0;
-			br.t = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &br.t);
+			br.TypePtr = NULL;
+			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &br.TypePtr);
 			if (!err)
 			{
 				writed = 0;
@@ -194,9 +194,9 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 		break;
 		case btVarData:
 		{
-			if (br.t->Id)
+			if (br.TypePtr->Id)
 			{
-				switch (br.t->Id)
+				switch (br.TypePtr->Id)
 				{
 				default: break;
 				case FILETYPEID:
@@ -263,49 +263,49 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				break;
 
 				}//switch
-			}//if (br.t->Id)
-			else if (IsVarName(br.t, "Oper"))
+			}//if (br.TypePtr->Id)
+			else if (IsVarName(br.TypePtr, "Oper"))
 				dat.Id.Oper = *((uint16_t*)br.Block);
-			else if (IsVarName(br.t, "TravelStep"))
+			else if (IsVarName(br.TypePtr, "TravelStep"))
 				dat.TravelStep = *(uint16_t*)br.Block;
-			else if (IsVarName(br.t, "LoadStep"))
+			else if (IsVarName(br.TypePtr, "LoadStep"))
 				dat.LoadStep = *(uint16_t*)br.Block;
-			else if (IsVarName(br.t, "TimeStep"))
+			else if (IsVarName(br.TypePtr, "TimeStep"))
 				dat.TimeStep = *(uint16_t*)br.Block;
-			else if (IsVarName(br.t, "Rod"))
+			else if (IsVarName(br.TypePtr, "Rod"))
 				dat.Rod = (uint16_t)(*(float*)br.Block * 10);
-			else if (IsVarName(br.t, "Aperture"))
+			else if (IsVarName(br.TypePtr, "Aperture"))
 				dat.Aperture = (*(uint16_t*)br.Block);
-			else if (IsVarName(br.t, "MaxWeight"))
+			else if (IsVarName(br.TypePtr, "MaxWeight"))
 				dat.MaxWeight = (uint16_t)(*(uint32_t*)br.Block / dat.LoadStep);
-			else if (IsVarName(br.t, "MinWeight"))
+			else if (IsVarName(br.TypePtr, "MinWeight"))
 				dat.MinWeight = (uint16_t)(*(uint32_t*)br.Block / dat.LoadStep);
 			else if (IsVarName(br.t, "TopWeight"))
 				dat.TopWeight = (uint16_t)(*(uint32_t*)br.Block / dat.LoadStep);
-			else if (IsVarName(br.t, "BotWeight"))
+			else if (IsVarName(br.TypePtr, "BotWeight"))
 				dat.BotWeight = (uint16_t)(*(uint32_t*)br.Block / dat.LoadStep);
-			else if (IsVarName(br.t, "Travel"))
+			else if (IsVarName(br.TypePtr, "Travel"))
 				dat.Travel = (uint16_t)(*(double*)br.Block * 10.0 / dat.TravelStep);
-			else if (IsVarName(br.t, "BeginPos"))
+			else if (IsVarName(br.TypePtr, "BeginPos"))
 				dat.BeginPos = (uint16_t)(*(double*)br.Block * 10.0 / dat.TravelStep);
-			else if (IsVarName(br.t, "Period"))
+			else if (IsVarName(br.TypePtr, "Period"))
 				dat.Period = (uint16_t)(*(uint32_t*)br.Block / dat.TimeStep);
-			else if (IsVarName(br.t, "Cycles"))
+			else if (IsVarName(br.TypePtr, "Cycles"))
 				dat.Cycles = *(uint16_t*)br.Block;
-			else if (IsVarName(br.t, "BeginPos"))
+			else if (IsVarName(br.TypePtr, "BeginPos"))
 				dat.Pressure = (uint16_t)(*(double*)br.Block * 10.0);
-			else if (IsVarName(br.t, "BeginPos"))
+			else if (IsVarName(br.TypePtr, "BeginPos"))
 				dat.BufPressure = (uint16_t)(*(double*)br.Block * 10.0);
-			else if (IsVarName(br.t, "BeginPos"))
+			else if (IsVarName(br.TypePtr, "BeginPos"))
 				dat.LinePressure = (uint16_t)(*(double*)br.Block * 10.0);
-			else if (IsVarName(br.t, "PumpType"))
+			else if (IsVarName(br.TypePtr, "PumpType"))
 				dat.PumpType = *(uint16_t*)br.Block;
-			else if (IsVarName(br.t, "Acc"))
+			else if (IsVarName(br.TypePtr, "Acc"))
 				dat.Acc = (uint16_t)(*(float*)br.Block * 10);
-			else if (IsVarName(br.t, "Temp"))
+			else if (IsVarName(br.TypePtr, "Temp"))
 				dat.Temp = (uint16_t)(*(float*)br.Block * 10);
 
-			else if (IsVarName(br.t, "DynChart"))
+			else if (IsVarName(br.TypePtr, "DynChart"))
 			{
 				PointXY_t* s = NULL;
 				while (!(err = EdfReadBin(&Point2DInf, &src, &msDst, &s, &skip, NULL))

@@ -22,7 +22,7 @@ int EdfWriteHeader(EdfWriter_t* dw, const EdfHeader_t* h, size_t* writed)
 	if (!dw->WriteHeader || !h)
 		return ERR_FN_NOT_EXIST;
 	dw->BlkSeq = 0;
-	dw->h = *h;
+	dw->Cfg = *h;
 	int err = (*dw->WriteHeader)(dw, h, writed);
 	if (err)
 	{
@@ -66,9 +66,9 @@ int EdfWriteInfo(EdfWriter_t* dw, const TypeRec_t* t, size_t* writed)
 		LOG_ERR();
 		return err;
 	}
-	dw->t = t;
-	//dw->TypeFlag |= HasDynamicFields(&t->Inf);
-	//dw->TypeLen = GetTypeCSize(&t->Inf);
+	dw->TypePtr = t;
+	//dw->TypeFlag |= HasDynamicFields(&TypePtr->Inf);
+	//dw->TypeLen = GetTypeCSize(&TypePtr->Inf);
 	dw->BlkSeq++;
 	dw->DatLen = 0;
 	dw->BufLen = 0;
@@ -85,7 +85,7 @@ static int EdfWriteInfoBin(EdfWriter_t* dw, const TypeRec_t* t, size_t* writed)
 		(err = StreamWriteInfBin((Stream_t*)&ms, t, &w)))
 		return err;
 	dw->DatLen = (uint16_t)w;// (uint16_t)ms.WPos;
-	if ((err = EdfWriteBlockBin(&dw->Stream, &dw->h, (EdfBlock_t*)&dw->BlkType, writed)))
+	if ((err = EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->BlkType, writed)))
 		return err;
 	return 0;
 }
@@ -115,7 +115,7 @@ int EdfFlushDataBlock(EdfWriter_t* dw, size_t* writed)
 static int StreamWriteBlockDataBin(EdfWriter_t* dw, size_t* writed)
 {
 	dw->BlkType = (uint8_t)btVarData;
-	return EdfWriteBlockBin(&dw->Stream, &dw->h, (EdfBlock_t*)&dw->BlkType, writed);
+	return EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->BlkType, writed);
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataTxt(EdfWriter_t* dw, size_t* writed)
@@ -134,12 +134,7 @@ static int SeekEnd(EdfWriter_t* f)
 		switch (f->BlkType)
 		{
 		default: break;
-		case btHeader:
-			if (EDF_HEADER_SIZE == f->DatLen)
-			{
-				err = MakeHeaderFromBytes(f->Block, f->DatLen, &f->h);
-			}
-			break;
+		case btHeader: break;
 		case btVarInfo:
 		{
 		}
@@ -165,8 +160,8 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	if (2 > strnlength(mode, 2))
 		return ERR_WRONG_PARAMETERS;
 	int err = 0;
-	f->t = NULL;
-	memset(&f->h, 0, sizeof(EdfHeader_t));
+	f->TypePtr = NULL;
+	f->Cfg = MakeHeaderDefault();
 	if (0 == strncmp("wb", mode, 2) || 0 == strncmp("ab", mode, 2))
 	{
 		f->Stream = *stream;

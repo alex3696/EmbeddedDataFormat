@@ -114,35 +114,43 @@ int EdfReadBlock(EdfWriter_t* dw)
 
 	dw->BlkType = 0;
 	dw->DatLen = 0;
-
+	// read Block Type
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->BlkType, 1)))
 		return err;
 	if (!IsBlockType(dw->BlkType))
 		return ERR_BLK_WRONG_TYPE;
-
+	// read Block Sequence
 	uint8_t blockseq;
 	if ((err = StreamRead(&dw->Stream, &readed, &blockseq, 1)))
 		return err;
 	if (blockseq != dw->BlkSeq)
 		return ERR_BLK_WRONG_SEQ;
-
+	// read Block Length
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->DatLen, 2)))
 		return err;
 	if (4096 < dw->DatLen || BLOCK_SIZE < dw->DatLen)
 		return ERR_BLK_WRONG_SIZE;
-
+	// read Block Content
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->Block, dw->DatLen)))
 		return err;
-
-	if (btHeader == dw->BlkType)
-		memcpy(&dw->h, &dw->Block, sizeof(EdfHeader_t));
-
-	uint16_t crcData = MbCrc16(&dw->BlkType, 4 + dw->DatLen);
+	// read Block CRC
 	uint16_t crcFile = 0;
 	if ((err = StreamRead(&dw->Stream, &readed, &crcFile, sizeof(uint16_t))))
 		return err;
+	// calculate Block CRC
+	uint16_t crcData = MbCrc16(&dw->BlkType, 4 + dw->DatLen);
 	if (crcData != crcFile)
 		return ERR_BLK_WRONG_CRC;
+
+	// try read cfg
+	if (btHeader == dw->BlkType)
+	{
+		if ((err = MakeHeaderFromBytes(dw->Block, dw->DatLen, &dw->Cfg)))
+			return err;
+		if (dw->Cfg.Blocksize < BLOCK_SIZE)
+			return ERR_BLOCK_SIZE_LARGE;
+		dw->BlkSeq = 0;
+	}
 
 	dw->BlkSeq++;
 	return 0;

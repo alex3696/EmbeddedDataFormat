@@ -29,10 +29,8 @@ typedef struct EdfBlock
 
 typedef struct EdfWriter
 {
-	EdfHeader_t h;
-	const TypeRec_t* t;
-	//uint8_t TypeFlag;
-	//uint16_t TypeLen;
+	EdfHeader_t Cfg;
+	const TypeRec_t* TypePtr;
 	Stream_t Stream;
 	size_t Skip;
 
