@@ -45,7 +45,7 @@ int StreamWriteInfBin(Stream_t* st, const EdfInf_t* t, size_t* writed)
 		return err;
 	if ((err = StreamWriteString(st, t->Desc, writed)))
 		return err;
-	if ((err = StreamWriteInfoBin(st, &t->Inf, writed)))
+	if ((err = StreamWriteInfoBin(st, &t->Type, writed)))
 		return err;
 	return err;
 }
@@ -137,7 +137,7 @@ int StreamWriteInfTxt(Stream_t* st, const EdfInf_t* t, size_t* writed)
 		(err = StreamWrite(st, writed, "} ", 2)))
 		return err;
 
-	if ((err = StreamWriteInfoTxt(st, &t->Inf, 0, writed)))
+	if ((err = StreamWriteInfoTxt(st, &t->Type, 0, writed)))
 		return err;
 
 	if ((err = StreamWrite(st, writed, ">", 1)))
@@ -228,7 +228,7 @@ int StreamWriteBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 		return err;
 	if ((err = StreamReadString(&mssrc, &msdst, &tr->Desc)))
 		return err;
-	if ((err = StreamBinToCBin(&mssrc, &msdst, &(EdfType_t*){&tr->Inf})))
+	if ((err = StreamBinToCBin(&mssrc, &msdst, &(EdfType_t*){&tr->Type})))
 		return err;
 
 	if (readed)

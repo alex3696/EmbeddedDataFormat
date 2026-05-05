@@ -13,7 +13,7 @@ static size_t GetCString(const char* str, uint32_t arr_len, uint8_t* dst, size_t
 {
 	if (NULL == str)
 		return 0;
-	size_t len = strnlength(str, 0xFE) + 1;
+	size_t len = strnlength(str, MAX_STR_LEN);
 	if (0 == len || len > dst_len)
 		return 0;
 	memcpy(dst, str, len);
@@ -87,7 +87,7 @@ static int PackUnpack()
 	} TestStruct_t;
 	EdfInf_t TestStructInf =
 	{
-		.Inf =
+		.Type =
 		{
 			.Type = Struct,
 			.Name = "KeyValue",
@@ -144,7 +144,7 @@ static int PackUnpack()
 		return err;
 
 	TestStruct_t* kv = NULL;
-	if ((err = EdfReadBin(&TestStructInf.Inf, &mssrc, &mem, &kv, &skip, &primReaded)))
+	if ((err = EdfReadBin(&TestStructInf.Type, &mssrc, &mem, &kv, &skip, &primReaded)))
 		return err;
 
 	if (!kv || 10 != primReaded)
@@ -176,7 +176,7 @@ static int CharArrayWriteRead()
 	EdfInf_t charStructInf =
 	{
 		.Id = 0, .Name = "Char10Test", .Desc = NULL,
-		.Inf =
+		.Type =
 		{
 			.Type = Struct, .Dims = {0, NULL},
 			.Childs =
@@ -209,12 +209,14 @@ static int CharArrayWriteRead()
 	err = EdfWriteInf(&w, &charStructInf, &writed);
 	if(ERR_SRC_SHORT != EdfWriteData(&w, &(uint8_t){8}, sizeof(uint8_t)))
 		return ERR_BASE;
-	len = GetCString("Char", 10, test, sizeof(test));
+	len = GetCString("Char", 10, test, 10);
 	if(ERR_SRC_SHORT != EdfWriteData(&w, test, len))
 		return ERR_BASE;
 	if(ERR_NO != EdfWriteData(&w, &(uint16_t){16}, sizeof(uint16_t)))
 		return ERR_BASE;
-	if ((err = EdfWriteData(&w, &(Char10Test_t){7, { "CharChar12" }, 15}, sizeof(Char10Test_t))))
+	Char10Test_t item2 = { 7, {0}, 15 };
+	memcpy(item2.Arr, "CharChar12", 10);
+	if ((err = EdfWriteData(&w, &item2, sizeof(Char10Test_t))))
 		return err;
 	EdfClose(&w);
 	//StreamClose((Stream_t*)&memStream); // переписывает буфер нулями
@@ -233,7 +235,7 @@ static int CharArrayWriteRead()
 		return err;
 	if ((err = EdfReadBlock(&w))) // read Inf
 		return err;
-	if ((err = StreamWriteBinToCBin(w.Blk.Data, w.Blk.Len, NULL, w.Buf, sizeof(w.Buf), NULL, &w.TypePtr)))
+	if ((err = StreamWriteBinToCBin(w.Blk.Data, w.Blk.Len, NULL, w.Buf, sizeof(w.Buf), NULL, &w.InfPtr)))
 		return err;
 	if ((err = EdfReadBlock(&w))) // read Data
 		return err;
@@ -243,7 +245,7 @@ static int CharArrayWriteRead()
 	if ((err = MemStreamInOpen(&blkStream, w.Blk.Data, w.Blk.Len)))
 		return err;
 	// читаем данные используя Inf структуру считанную в блоке Inf
-	if ((err = EdfReadBin(&w.TypePtr->Inf, &blkStream, &mem, &item, &resultPrimOffset, &primReaded)))
+	if ((err = EdfReadBin(&w.InfPtr->Type, &blkStream, &mem, &item, &resultPrimOffset, &primReaded)))
 		return err;
 	if (8 != item->Val1)
 		return ERR_BASE;
@@ -252,13 +254,9 @@ static int CharArrayWriteRead()
 	if (0 != memcmp(item->Arr, test, 10))
 		return ERR_BASE;
 	// читаем данные используя Inf структуру определённую коде
-	if ((err = EdfReadBin(&charStructInf.Inf, &blkStream, &mem, &item, &resultPrimOffset, &primReaded)))
+	if ((err = EdfReadBin(&charStructInf.Type, &blkStream, &mem, &item, &resultPrimOffset, &primReaded)))
 		return err;
-	if (7 != item->Val1)
-		return ERR_BASE;
-	if (15 != item->Val2)
-		return ERR_BASE;
-	if (0 != memcmp(item->Arr, (char*){ "CharChar12" }, 10))
+	if (0 != memcmp(item, &item2, sizeof(Char10Test_t)))
 		return ERR_BASE;
 	EdfClose(&w);
 	//StreamClose(&memStream);
@@ -282,7 +280,7 @@ static int WriteSample(EdfWriter_t* dw)
 	EdfInf_t keyValueType =
 	{
 		.Id = 0, .Name = "VariableKV", .Desc = "comment",
-		.Inf =
+		.Type =
 		{
 			.Type = Struct, .Name = "KeyValue", .Dims = {0, NULL},
 			.Childs =
@@ -340,7 +338,7 @@ static int WriteSample(EdfWriter_t* dw)
 	dd = 3.1;
 	EdfWriteData(dw, &dd, sizeof(double));
 
-	EdfInf_t tchar = { .Id=0, .Name="Char Text", .Desc=NULL, .Inf={.Type = Char, .Dims = { 1, (uint32_t[]) { 20 } } } };
+	EdfInf_t tchar = { .Id=0, .Name="Char Text", .Desc=NULL, .Type={.Type = Char, .Dims = { 1, (uint32_t[]) { 20 } } } };
 	err = EdfWriteInf(dw, &tchar, &writed);
 	size_t len = 0;
 	len += GetCString("Char", 20, test + len, sizeof(test));
@@ -363,7 +361,7 @@ static int WriteSample(EdfWriter_t* dw)
 		}
 	};
 	writed = 0;
-	err = EdfWriteInf(dw, &(EdfInf_t){.Inf = comlexChar}, &writed);
+	err = EdfWriteInf(dw, &(EdfInf_t){.Type = comlexChar}, &writed);
 	assert(ERR_SRC_SHORT == EdfWriteData(dw, &(uint8_t){8}, sizeof(uint8_t)));
 	len = GetCString("Char", 10, test, sizeof(test));
 	assert(ERR_SRC_SHORT == EdfWriteData(dw, test, len));
@@ -416,7 +414,7 @@ static int WriteSample(EdfWriter_t* dw)
 			}
 		}
 	};
-	err = EdfWriteInf(dw, &(EdfInf_t){.Inf=comlexVarType}, & writed);
+	err = EdfWriteInf(dw, &(EdfInf_t){.Type=comlexVarType}, & writed);
 #pragma pack(push,1)
 	struct ComplexVariable
 	{

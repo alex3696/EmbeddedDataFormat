@@ -30,7 +30,7 @@ typedef struct EdfBlock
 typedef struct EdfWriter
 {
 	EdfConfig_t Cfg;
-	const EdfInf_t* TypePtr;
+	const EdfInf_t* InfPtr;
 	Stream_t Stream;
 	size_t Skip;
 

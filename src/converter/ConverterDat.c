@@ -160,12 +160,12 @@ int EdfToDat(const char* edfFile, const char* datFile)
 			break;
 		case btInf:
 		{
-			br.TypePtr = NULL;
+			br.InfPtr = NULL;
 			EdfInf_t* typeRec = NULL;
 			err = StreamWriteBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
 			if (!err)
 			{
-				br.TypePtr = typeRec;
+				br.InfPtr = typeRec;
 				writed = 0;
 			}
 			else
@@ -177,9 +177,9 @@ int EdfToDat(const char* edfFile, const char* datFile)
 		break;
 		case btData:
 		{
-			if (br.TypePtr->Id)
+			if (br.InfPtr->Id)
 			{
-				switch (br.TypePtr->Id)
+				switch (br.InfPtr->Id)
 				{
 				default: break;
 				case FILETYPEID:
@@ -274,11 +274,11 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				}//switch
 
 			}
-			else if (IsVarName(br.TypePtr, "Shop"))
+			else if (IsVarName(br.InfPtr, "Shop"))
 				dat.Id.Shop = *((uint16_t*)br.Blk.Data);
-			else if (IsVarName(br.TypePtr, "PlaceId"))
+			else if (IsVarName(br.InfPtr, "PlaceId"))
 				dat.Id.PlaceId = *((uint16_t*)br.Blk.Data);
-			else if (IsVarName(br.TypePtr, "Depth"))
+			else if (IsVarName(br.InfPtr, "Depth"))
 				dat.Id.Depth = *((int32_t*)br.Blk.Data);
 
 		}//case btData:

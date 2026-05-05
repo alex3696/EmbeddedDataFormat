@@ -55,12 +55,12 @@ int BinToText(const char* src, const char* dst)
 			break;
 		case btInf:
 		{
-			tw.TypePtr = NULL;
-			err = StreamWriteBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.TypePtr);
+			tw.InfPtr = NULL;
+			err = StreamWriteBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.InfPtr);
 			if (!err)
 			{
 				writed = 0;
-				err = EdfWriteInf(&tw, tw.TypePtr, &writed);
+				err = EdfWriteInf(&tw, tw.InfPtr, &writed);
 			}
 			else
 			{

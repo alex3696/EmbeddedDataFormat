@@ -66,9 +66,9 @@ int EdfWriteInf(EdfWriter_t* dw, const EdfInf_t* t, size_t* writed)
 		LOG_ERR();
 		return err;
 	}
-	dw->TypePtr = t;
-	//dw->TypeFlag |= HasDynamicFields(&TypePtr->Inf);
-	//dw->TypeLen = GetTypeCSize(&TypePtr->Inf);
+	dw->InfPtr = t;
+	//dw->TypeFlag |= HasDynamicFields(&InfPtr->Type);
+	//dw->TypeLen = GetTypeCSize(&InfPtr->Type);
 	dw->Blk.Seq++;
 	dw->Blk.Len = 0;
 	dw->BufLen = 0;
@@ -160,7 +160,7 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	if (2 > strnlength(mode, 2))
 		return ERR_WRONG_PARAMETERS;
 	int err = 0;
-	f->TypePtr = NULL;
+	f->InfPtr = NULL;
 	f->Cfg = MakeHeaderDefault();
 	if (0 == strncmp("wb", mode, 2) || 0 == strncmp("ab", mode, 2))
 	{
@@ -325,6 +325,6 @@ int EdfWriteInfData(EdfWriter_t* dw, const EdfInf_t* ir, const void* d, size_t l
 int EdfWritePrimitiveInfData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d)
 {
 	EdfInf_t rec = { id, name, desc, { pt } };
-	return EdfWriteInfData(dw, &rec, d, GetTypeCSize(&rec.Inf));
+	return EdfWriteInfData(dw, &rec, d, GetTypeCSize(&rec.Type));
 }
 //-----------------------------------------------------------------------------

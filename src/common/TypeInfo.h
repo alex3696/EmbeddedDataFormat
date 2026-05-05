@@ -24,12 +24,12 @@ typedef struct EdfType
 	Childs_t Childs;
 } EdfType_t;
 
-typedef struct EdfInf
+typedef struct
 {
 	int32_t Id; // var id
 	char* Name; // var name
 	char* Desc; // var description
-	EdfType_t Inf; // var type
+	EdfType_t Type; // var type
 } EdfInf_t;
 
 int IsVar(const EdfInf_t* r, int32_t varId, const char* varName);
