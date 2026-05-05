@@ -216,13 +216,14 @@ static int AnyBinToStr(PoType t,
 	}
 	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Char:
-		if (dstLen < srcLen + 2)
+		size_t actual_len = strnlength((const char*)src, srcLen);
+		if (dstLen < actual_len + 2)
 			return ERR_DST_SHORT;
 		*r = srcLen;
-		*w = srcLen + 2;
+		*w = actual_len + 2;
 		dst[0] = '"';
-		memcpy(dst + 1, src, srcLen);
-		dst[srcLen + 2 - 1] = '"';
+		memcpy(dst + 1, src, actual_len);
+		dst[actual_len + 2 - 1] = '"';
 		return 0;
 	case String: return (*WriteString)(src, srcLen, dst, dstLen, r, w);
 	}//switch (t)
