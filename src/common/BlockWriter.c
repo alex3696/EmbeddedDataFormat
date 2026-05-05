@@ -3,7 +3,7 @@
 
 //-----------------------------------------------------------------------------
 // 
-static int WritePrimitive(EdfWriter_t* dw, PoType pot,
+static int WriteOnePrimitive(EdfWriter_t* dw, const EdfType_t* t,
 	const uint8_t** ppsrc, size_t* srcLen,
 	uint8_t** ppdst, size_t* dstLen,
 	size_t* skip, size_t* wqty,
@@ -16,7 +16,20 @@ static int WritePrimitive(EdfWriter_t* dw, PoType pot,
 	}
 	int err = 0;
 	size_t r = 0, w = 0;
-	if ((err = (*dw->WritePrimitive)(pot, *ppsrc, *srcLen, *ppdst, *dstLen, &r, &w)))
+	size_t charLen;
+	if (Char == t->Type)
+	{
+		charLen = GetTotalElements(&t->Dims);
+		if (charLen == 0)
+			return ERR_WRONG_TYPE;
+		if (charLen > *srcLen)
+			return ERR_SRC_SHORT;
+	}
+	else
+	{
+		charLen = *srcLen;
+	}
+	if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
@@ -26,7 +39,7 @@ static int WritePrimitive(EdfWriter_t* dw, PoType pot,
 		*writed = 0;
 		*dstLen = sizeof(dw->Blk.Data);
 		*ppdst = dw->Blk.Data;
-		if ((err = (*dw->WritePrimitive)(pot, *ppsrc, *srcLen, *ppdst, *dstLen, &r, &w)))
+		if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
 			return err;
 	}
 	(*wqty)++;
@@ -44,23 +57,14 @@ static int WriteElement(const EdfType_t* t,
 	size_t* readed, size_t* writed,
 	EdfWriter_t* dw)
 {
-	int err = 0;
-	size_t totalElement = GetTotalElements(&t->Dims);
+	int err = ERR_NO;
 	if (Char == t->Type)
 	{
-		if (*srcLen < totalElement)
-			return ERR_SRC_SHORT;
-		if (*dstLen < totalElement)
-			return ERR_DST_SHORT;
-		if (totalElement <= *skip)
-			*skip -= totalElement;
-		size_t charLen = totalElement;
-		if ((err = WritePrimitive(dw, t->Type, ppsrc, &charLen, ppdst, dstLen, skip, wqty, readed, writed)))
+		if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
 			return err;
-		if ((err = (EdfWriteSep(dw->SepVarEnd, ppdst, dstLen, skip, wqty, writed))))
-			return err;
-		return 0;
+		return EdfWriteSep(dw->SepVarEnd, ppdst, dstLen, skip, wqty, writed);
 	}
+	size_t totalElement = GetTotalElements(&t->Dims);
 	if (1 < totalElement)
 	{
 		if ((err = EdfWriteSep(dw->BeginArray, ppdst, dstLen, skip, wqty, writed)))
@@ -86,7 +90,7 @@ static int WriteElement(const EdfType_t* t,
 		}
 		else
 		{
-			if ((err = WritePrimitive(dw, t->Type, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
+			if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
 				return err;
 			if ((err = (EdfWriteSep(dw->SepVarEnd, ppdst, dstLen, skip, wqty, writed))))
 				return err;

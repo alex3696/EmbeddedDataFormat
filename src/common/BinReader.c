@@ -21,6 +21,18 @@ static int ReadPrimitive(const EdfType_t* t, MemStream_t* src, MemStream_t* mem,
 				(*primReaded)++;
 			//((uint8_t*)(*presult)) += sizeof(char*);
 			break;
+		case Char:
+		{
+			// Char - это массив фиксированной длины
+			size_t charArrayLen = GetTotalElements(&t->Dims);
+			if (charArrayLen == 0)
+				return ERR_WRONG_TYPE;
+			if ((err = StreamRead(src, NULL, (uint8_t*)(*presult), charArrayLen)))
+				return err;
+			if (primReaded)
+				(*primReaded)++;
+			break;
+		}
 		default:
 		{
 			size_t itemCLen = GetSizeOf(t->Type);
@@ -99,6 +111,8 @@ static int ReadArray(const EdfType_t* t, MemStream_t* src, size_t totalElement, 
 int EdfReadBin(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
+	if (t->Type == Char)
+		return ReadElement(t, src, mem, presult, resultPrimOffset, primReaded);
 	size_t totalElement = GetTotalElements(&t->Dims);
 	if (1 < totalElement)
 		return ReadArray(t, src, totalElement, mem, presult, resultPrimOffset, primReaded);
