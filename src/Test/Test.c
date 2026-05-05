@@ -204,7 +204,7 @@ static int CharArrayWriteRead()
 	uint8_t test[30] = { 0 };
 	size_t len = 0;
 	writed = 0;
-	EdfConfig_t cfg = MakeHeaderDefault();
+	EdfConfig_t cfg = MakeDefaultConfig();
 	err = EdfWriteConfig(&w, &cfg, & writed);
 	err = EdfWriteInf(&w, &charStructInf, &writed);
 	if(ERR_SRC_SHORT != EdfWriteData(&w, &(uint8_t){8}, sizeof(uint8_t)))
@@ -268,7 +268,7 @@ static int WriteSample(EdfWriter_t* dw)
 	size_t writed = 0;
 	int err = 0;
 
-	EdfConfig_t h = MakeHeaderDefault();
+	EdfConfig_t h = MakeDefaultConfig();
 	err = EdfWriteConfig(dw, &h, &writed);
 
 #pragma pack(push,1)
@@ -487,7 +487,7 @@ static void WriteBigVar(EdfWriter_t* dw)
 {
 	int err = 0;
 	size_t writed = 0;
-	EdfConfig_t h = MakeHeaderDefault();
+	EdfConfig_t h = MakeDefaultConfig();
 	err = EdfWriteConfig(dw, &h, &writed);
 
 	size_t arrLen = (size_t)(BLOCK_SIZE / sizeof(uint32_t) * 2.5);

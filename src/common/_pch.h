@@ -55,7 +55,7 @@ void Log_ErrF(const char* const fmt, ...);
 #define LOG_ERRF(fmt, ...) Log_ErrF(fmt, __VA_ARGS__)
 #endif
 
-#define EDF_HEADER_SIZE 16
+#define EDF_CONFIG_SIZE 16
 #define MIN_BLOCK_SIZE 256
 #define MAX_BLOCK_SIZE 4096
 #define MAX_STR_LEN 255

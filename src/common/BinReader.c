@@ -159,7 +159,7 @@ int EdfReadBlock(EdfWriter_t* dw)
 	// try read cfg
 	if (btConfig == dw->Blk.Type)
 	{
-		if ((err = MakeHeaderFromBytes(dw->Blk.Data, dw->Blk.Len, &dw->Cfg)))
+		if ((err = MakeConfigFromBytes(dw->Blk.Data, dw->Blk.Len, &dw->Cfg)))
 			return err;
 		if (dw->Cfg.Blocksize < BLOCK_SIZE)
 			return ERR_BLOCK_SIZE_LARGE;

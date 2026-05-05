@@ -40,7 +40,7 @@
 ## 4. Конфиг файла
 
 ```c
-typedef struct EdfConfig_t {
+typedef struct{
     uint8_t VersMajor;      // 1
     uint8_t VersMinor;      // 0
     uint16_t Encoding;      // 65001 = UTF-8
@@ -61,11 +61,11 @@ typedef struct EdfConfig_t {
 |Int8	|2	| 1      | 	int8_t	     |
 |UInt8	|3	| 1      | 	uint8_t	     |
 |Int16	|4	| 2      | 	int16_t	     |
-|UInt16	|5	| 2      | 	uint16_t     |	
+|UInt16	|5	| 2      | 	uint16_t     |
 |Int32	|6	| 4      | 	int32_t	     |
-|UInt32	|7	| 4      | 	uint32_t     |	
+|UInt32	|7	| 4      | 	uint32_t     |
 |Int64	|8	| 8      | 	int64_t	     |
-|UInt64	|9	| 8      | 	uint64_t     |	
+|UInt64	|9	| 8      | 	uint64_t     |
 |Half	|10	| 2      | 	16-битный float (IEEE 754-2008) |
 |Single	|11	| 4      | 	float	     |
 |Double	|12	| 8	     |  double	     |

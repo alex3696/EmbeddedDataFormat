@@ -97,7 +97,7 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 	float speed = (float)dat.Speed / 10;
 	float xDiscrete = speed / 341;
 
-	EdfConfig_t h = MakeHeaderDefault();
+	EdfConfig_t h = MakeDefaultConfig();
 	if ((err = EdfWriteConfig(&dw, &h, &writed)))
 		return err;
 
@@ -225,7 +225,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 			if (16 == br.Blk.Len)
 			{
 				//EdfConfig_t h = { 0 };
-				//err = MakeHeaderFromBytes(br.Blk.Data, br.Blk.Len, &h);
+				//err = MakeConfigFromBytes(br.Blk.Data, br.Blk.Len, &h);
 				//if (!err)
 				//	err = EdfWriteConfig(&tw, &h, &writed);
 			}

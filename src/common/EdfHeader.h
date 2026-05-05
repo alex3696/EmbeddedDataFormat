@@ -1,5 +1,5 @@
-#ifndef EDFHEADER_H
-#define EDFHEADER_H
+#ifndef EDFCONFIG_H
+#define EDFCONFIG_H
 
 #include "_pch.h"
 
@@ -8,7 +8,7 @@ typedef enum Options
 	Default = 0,
 } Options_t;
 
-typedef struct EdfHeader
+typedef struct
 {
 	uint8_t VersMajor;
 	uint8_t VersMinor;
@@ -17,9 +17,9 @@ typedef struct EdfHeader
 	uint32_t Flags; //Options_t
 } EdfConfig_t;
 
-EdfConfig_t MakeHeaderDefault(void);
-int MakeHeaderFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h);
-size_t HeaderToBytes(const EdfConfig_t* h, uint8_t* b);
+EdfConfig_t MakeDefaultConfig(void);
+int MakeConfigFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h);
+size_t ConfigToBytes(const EdfConfig_t* h, uint8_t* b);
 
 
 #endif

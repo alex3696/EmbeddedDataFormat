@@ -10,7 +10,7 @@
 typedef struct EdfWriter EdfWriter_t;
 
 typedef int (*FlushDataFn)(EdfWriter_t* w, size_t* writed);
-typedef int (*WriteHeaderFn)(EdfWriter_t* w, const EdfConfig_t* h, size_t* writed);
+typedef int (*WriteConfigFn)(EdfWriter_t* w, const EdfConfig_t* h, size_t* writed);
 typedef int (*WriteInfoFn)(EdfWriter_t* w, const EdfInf_t* t, size_t* writed);
 
 int EdfWriteSep(const char* const src,
@@ -40,7 +40,7 @@ typedef struct EdfWriter
 	uint8_t Buf[BLOCK_SIZE];
 
 	WritePrimitivesFn WritePrimitive;
-	WriteHeaderFn WriteHeader;
+	WriteConfigFn WriteConfig;
 	WriteInfoFn WriteInfo;
 	FlushDataFn FlushData;
 
