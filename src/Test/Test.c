@@ -85,7 +85,7 @@ static int PackUnpack()
 		char* Value;
 		uint8_t Arr[3];
 	} TestStruct_t;
-	EdfInf_t TestStructInf =
+	EdfSchema_t TestStructInf =
 	{
 		.Type =
 		{
@@ -173,7 +173,7 @@ static int CharArrayWriteRead()
 		char Arr[10];
 		uint16_t Val2;
 	} Char10Test_t;
-	EdfInf_t charStructInf =
+	EdfSchema_t charStructInf =
 	{
 		.Id = 0, .Name = "Char10Test", .Desc = NULL,
 		.Type =
@@ -235,7 +235,7 @@ static int CharArrayWriteRead()
 		return err;
 	if ((err = EdfReadBlock(&w))) // read Inf
 		return err;
-	if ((err = StreamWriteBinToCBin(w.Blk.Data, w.Blk.Len, NULL, w.Buf, sizeof(w.Buf), NULL, &w.InfPtr)))
+	if ((err = WriteSchemaBinToCBin(w.Blk.Data, w.Blk.Len, NULL, w.Buf, sizeof(w.Buf), NULL, &w.InfPtr)))
 		return err;
 	if ((err = EdfReadBlock(&w))) // read Data
 		return err;
@@ -277,7 +277,7 @@ static int WriteSample(EdfWriter_t* dw)
 		char* Key;
 		char* Value;
 	} KeyValue_t;
-	EdfInf_t keyValueType =
+	EdfSchema_t keyValueType =
 	{
 		.Id = 0, .Name = "VariableKV", .Desc = "comment",
 		.Type =
@@ -322,14 +322,14 @@ static int WriteSample(EdfWriter_t* dw)
 	}
 	EdfWritePrimitiveInfData(dw, String, 0, "test 260 string", NULL, EDF_CONSTSTR(tctArr260));
 
-	EdfInf_t t = { 0, "weight variable", NULL, { Int32 } };
+	EdfSchema_t t = { 0, "weight variable", NULL, { Int32 } };
 	err = EdfWriteInf(dw, &t, &writed);
 	uint8_t test[100] = { 0 };
 	(*(int32_t*)test) = (int32_t)(0xFFFFFFFF);
 	EdfWriteData(dw, test, 4);
 	EdfFlushData(dw, &writed);
 
-	EdfInf_t td = { 0, "TestDouble", NULL, { Double } };
+	EdfSchema_t td = { 0, "TestDouble", NULL, { Double } };
 	err = EdfWriteInf(dw, &td, &writed);
 	double dd = 1.1;
 	EdfWriteData(dw, &dd, sizeof(double));
@@ -338,7 +338,7 @@ static int WriteSample(EdfWriter_t* dw)
 	dd = 3.1;
 	EdfWriteData(dw, &dd, sizeof(double));
 
-	EdfInf_t tchar = { .Id=0, .Name="Char Text", .Desc=NULL, .Type={.Type = Char, .Dims = { 1, (uint32_t[]) { 20 } } } };
+	EdfSchema_t tchar = { .Id=0, .Name="Char Text", .Desc=NULL, .Type={.Type = Char, .Dims = { 1, (uint32_t[]) { 20 } } } };
 	err = EdfWriteInf(dw, &tchar, &writed);
 	size_t len = 0;
 	len += GetCString("Char", 20, test + len, sizeof(test));
@@ -361,7 +361,7 @@ static int WriteSample(EdfWriter_t* dw)
 		}
 	};
 	writed = 0;
-	err = EdfWriteInf(dw, &(EdfInf_t){.Type = comlexChar}, &writed);
+	err = EdfWriteInf(dw, &(EdfSchema_t){.Type = comlexChar}, &writed);
 	assert(ERR_SRC_SHORT == EdfWriteData(dw, &(uint8_t){8}, sizeof(uint8_t)));
 	len = GetCString("Char", 10, test, sizeof(test));
 	assert(ERR_SRC_SHORT == EdfWriteData(dw, test, len));
@@ -414,7 +414,7 @@ static int WriteSample(EdfWriter_t* dw)
 			}
 		}
 	};
-	err = EdfWriteInf(dw, &(EdfInf_t){.Type=comlexVarType}, & writed);
+	err = EdfWriteInf(dw, &(EdfSchema_t){.Type=comlexVarType}, & writed);
 #pragma pack(push,1)
 	struct ComplexVariable
 	{
@@ -491,7 +491,7 @@ static void WriteBigVar(EdfWriter_t* dw)
 	err = EdfWriteConfig(dw, &h, &writed);
 
 	size_t arrLen = (size_t)(BLOCK_SIZE / sizeof(uint32_t) * 2.5);
-	EdfInf_t t = { 0xF0F1F2F3 , NULL, NULL, {.Type = Int32, .Name = "variable", .Dims = { 1, (uint32_t[]) { arrLen }} } };
+	EdfSchema_t t = { 0xF0F1F2F3 , NULL, NULL, {.Type = Int32, .Name = "variable", .Dims = { 1, (uint32_t[]) { arrLen }} } };
 	err = EdfWriteInf(dw, &t, &writed);
 
 	uint32_t test[1000] = { 0 };

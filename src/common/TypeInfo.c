@@ -36,10 +36,10 @@ static int StreamWriteInfoBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 	return err;
 }
 //-----------------------------------------------------------------------------
-int StreamWriteInfBin(Stream_t* st, const EdfInf_t* t, size_t* writed)
+int WriteSchemaBinToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 {
 	int err = 0;
-	if ((err = StreamWrite(st, writed, &t->Id, FIELD_SIZEOF(EdfInf_t, Id))))
+	if ((err = StreamWrite(st, writed, &t->Id, FIELD_SIZEOF(EdfSchema_t, Id))))
 		return err;
 	if ((err = StreamWriteString(st, t->Name, writed)))
 		return err;
@@ -126,7 +126,7 @@ static int StreamWriteInfoTxt(Stream_t* s, const EdfType_t* t, int noffset, size
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int StreamWriteInfTxt(Stream_t* st, const EdfInf_t* t, size_t* writed)
+int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 {
 	int err = 0;
 	if ((err = StreamWrite(st, writed, "\n\n<? ", 5)))
@@ -203,9 +203,9 @@ static int StreamBinToCBin(MemStream_t* src, MemStream_t* mem, EdfType_t** t)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int StreamWriteBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
+int WriteSchemaBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	uint8_t* dst, size_t dstLen, size_t* writed,
-	EdfInf_t** t)
+	EdfSchema_t** t)
 {
 	int err = 0;
 	MemStream_t mssrc = { 0 };
@@ -215,14 +215,14 @@ int StreamWriteBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	if ((err = MemStreamOutOpen(&msdst, dst, dstLen)))
 		return err;
 
-	EdfInf_t* tr = NULL;
+	EdfSchema_t* tr = NULL;
 	if (*t)
 		tr = *t;
 	else
-		if ((err = MemAlloc(&msdst, sizeof(EdfInf_t), (void**)&tr)))
+		if ((err = MemAlloc(&msdst, sizeof(EdfSchema_t), (void**)&tr)))
 			return err;
 
-	if ((err = StreamRead(&mssrc, readed, &tr->Id, FIELD_SIZEOF(EdfInf_t, Id))))
+	if ((err = StreamRead(&mssrc, readed, &tr->Id, FIELD_SIZEOF(EdfSchema_t, Id))))
 		return err;
 	if ((err = StreamReadString(&mssrc, &msdst, &tr->Name)))
 		return err;
@@ -284,7 +284,7 @@ int8_t HasDynamicFields(const EdfType_t* t)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int IsVar(const EdfInf_t* r, int32_t varId, const char* varName)
+int IsVar(const EdfSchema_t* r, int32_t varId, const char* varName)
 {
 	if (varId && r->Id == varId)
 		return 1;
@@ -297,7 +297,7 @@ int IsVar(const EdfInf_t* r, int32_t varId, const char* varName)
 	return 0 == memcmp(r->Name, varName, nameLen);
 }
 //-----------------------------------------------------------------------------
-int IsVarName(const EdfInf_t* r, const char* varName)
+int IsVarName(const EdfSchema_t* r, const char* varName)
 {
 	return IsVar(r, 0, varName);
 }
