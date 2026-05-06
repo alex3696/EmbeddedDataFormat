@@ -18,7 +18,7 @@ int EdfWriteSep(const char* const src,
 	size_t* skip, size_t* wqty,
 	size_t* writed);
 //-----------------------------------------------------------------------------
-typedef struct EdfBlock
+typedef struct
 {
 	uint8_t Type;
 	uint16_t Len;
@@ -26,11 +26,20 @@ typedef struct EdfBlock
 	uint16_t Crc;
 } EdfBlock_t;
 
+typedef struct
+{
+	uint32_t RecId;			// RecordId - номер ЗАПИСИ с которой начинается блок 
+	uint16_t SchId;			// SchemaId - идентификатор схемы (0-65535) 
+	uint16_t PrmOffset;		// PrimitiveOffset - смещение примитива от начала ЗАПИСИ внутри ЗАПИСИ(0-65535)
+} EdfDataHdr_t;
+
 typedef struct EdfWriter
 {
 	EdfConfig_t Cfg;
 	const EdfSchema_t* SchemaPtr;
 	Stream_t Stream;
+
+	uint32_t RecordId;
 	size_t Skip;
 
 	EdfBlock_t Blk;

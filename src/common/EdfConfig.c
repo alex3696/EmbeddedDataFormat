@@ -15,10 +15,3 @@ int MakeConfigFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h)
 	memcpy(h, b, sizeof(EdfConfig_t));
 	return ERR_NO;
 }
-//-----------------------------------------------------------------------------
-size_t ConfigToBytes(const EdfConfig_t* h, uint8_t* b)
-{
-	memset(b, 0, sizeof(EdfConfig_t));
-	memcpy(b, h, sizeof(EdfConfig_t));
-	return sizeof(EdfConfig_t);
-}

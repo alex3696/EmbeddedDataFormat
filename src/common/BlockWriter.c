@@ -122,6 +122,9 @@ static int WriteSingleValue(EdfWriter_t* dw,
 //-----------------------------------------------------------------------------
 int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 {
+	if (NULL == dw->SchemaPtr)
+		return ERR_WRONG_TYPE;
+
 	const uint8_t* xsrc = (const uint8_t*)vsrc;
 	const uint8_t* src = xsrc;
 	size_t srcLen = xsrcLen;
@@ -192,6 +195,7 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 			break;
 		case ERR_NO:
 			dw->Skip = 0;
+			dw->RecordId++;
 			if (0 == xsrcLen)
 				return ERR_NO;
 			break;
@@ -200,7 +204,7 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 				return wr;
 			dstLen = sizeof(dw->Blk.Data);
 			dst = dw->Blk.Data;
-			dw->Skip += wqty;
+			dw->Skip = wqty;
 			wr = 0;
 			break;
 		}

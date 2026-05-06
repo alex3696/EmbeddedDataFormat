@@ -20,7 +20,5 @@ typedef struct
 
 EdfConfig_t MakeDefaultConfig(void);
 int MakeConfigFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h);
-size_t ConfigToBytes(const EdfConfig_t* h, uint8_t* b);
-
 
 #endif
