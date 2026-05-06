@@ -20,11 +20,9 @@
 //#include "assert.h"
 #include "memory.h"
 #include "stdarg.h"
-
 #include "edf_cfg.h"
 
-
-
+size_t strnlength(const char* s, size_t n);
 int CallStackSize(void);
 
 uint16_t MbCrc16acc(const void* d, size_t len, uint16_t crc);
@@ -55,12 +53,13 @@ void Log_ErrF(const char* const fmt, ...);
 #define LOG_ERRF(fmt, ...) Log_ErrF(fmt, __VA_ARGS__)
 #endif
 
-#define EDF_CONFIG_SIZE 16
-#define MIN_BLOCK_SIZE 256
-#define MAX_BLOCK_SIZE 4096
-#define MAX_STR_LEN 255
+#define EDF_VERSMAJOR	0		
+#define EDF_VERSMINOR	3
+#define EDF_ENCODING	65001	//UTF-8
 
-size_t strnlength(const char* s, size_t n);
+#define MIN_BLOCK_SIZE	256
+#define MAX_BLOCK_SIZE	4096
+#define MAX_STR_LEN		255
 
 #define EDF_CONSTSTR(val) &(const char*){val}
 

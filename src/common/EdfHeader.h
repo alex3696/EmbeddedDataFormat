@@ -14,6 +14,7 @@ typedef struct
 	uint8_t VersMinor;
 	uint16_t Encoding;
 	uint16_t Blocksize;
+	uint16_t Reserved;
 	uint32_t Flags; //Options_t
 } EdfConfig_t;
 

@@ -181,7 +181,7 @@
     <ClCompile Include="..\common\TypeInfo.c" />
     <ClCompile Include="..\common\EdfWriter.c" />
     <ClCompile Include="..\converter\ConverterEdf.c" />
-    <ClCompile Include="..\converter\FileStreamImpl.c" />
+    <ClCompile Include="..\converter\FileStreamImplWin.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Charts.h" />
