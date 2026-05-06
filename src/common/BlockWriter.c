@@ -113,7 +113,7 @@ static int WriteSingleValue(EdfWriter_t* dw,
 	int err;
 	if (ERR_NO != (err = EdfWriteSep(dw->RecBegin, dst, dstLen, skip, wqty, writed)))
 		return err;
-	if (ERR_NO != (err = WriteElement(&dw->InfPtr->Type, src, srcLen, dst, dstLen, skip, wqty, readed, writed, dw)))
+	if (ERR_NO != (err = WriteElement(&dw->SchemaPtr->Type, src, srcLen, dst, dstLen, skip, wqty, readed, writed, dw)))
 		return err;
 	if (ERR_NO != (err = EdfWriteSep(dw->RecEnd, dst, dstLen, skip, wqty, writed)))
 		return err;

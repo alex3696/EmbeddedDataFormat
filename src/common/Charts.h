@@ -5,9 +5,9 @@
 //-----------------------------------------------------------------------------
 #pragma pack(push,1)
 //-----------------------------------------------------------------------------
-static const EdfType_t ChartXYDescriptionInf =
+static const EdfType_t ChartXYDescriptionType =
 {
-	Struct, "ChartXYDescriptionInf", { 0, NULL },
+	Struct, "ChartXYDescriptionType", { 0, NULL },
 	.Childs =
 	{
 		.Count = 3,
@@ -26,7 +26,7 @@ typedef struct ChartXYDesct
 	char* AxisY;
 } ChartXYDesct_t;
 //-----------------------------------------------------------------------------
-static const EdfType_t Point2DInf =
+static const EdfType_t Point2DType =
 {
 	Struct, "Chart2D", { 0, NULL },
 	.Childs =
@@ -46,9 +46,9 @@ typedef struct PointXY
 } PointXY_t;
 
 //-----------------------------------------------------------------------------
-static const EdfType_t ChartNInf =
+static const EdfType_t ChartNType =
 {
-	Struct, "ChartNInf", { 0, NULL },
+	Struct, "ChartNType", { 0, NULL },
 	.Childs =
 	{
 		.Count = 4,

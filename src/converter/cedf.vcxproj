@@ -21,18 +21,18 @@
   <ItemGroup>
     <ClCompile Include="..\common\BinReader.c" />
     <ClCompile Include="..\common\BlockWriter.c" />
-    <ClCompile Include="..\common\EdfHeader.c" />
+    <ClCompile Include="..\common\EdfConfig.c" />
     <ClCompile Include="..\common\EdfUtils.c" />
     <ClCompile Include="..\common\KeyValue.c" />
     <ClCompile Include="..\common\MbCrc.c" />
     <ClCompile Include="..\common\MemStream.c" />
     <ClCompile Include="..\common\Primitives.c" />
-    <ClCompile Include="..\common\TypeInfo.c" />
+    <ClCompile Include="..\common\EdfSchema.c" />
     <ClCompile Include="ConverterEdf.c" />
     <ClCompile Include="ConverterDat.c" />
     <ClCompile Include="ConverterDyn.c" />
     <ClCompile Include="ConverterEcho.c" />
-    <ClCompile Include="FileStreamImpl.c" />
+    <ClCompile Include="FileStreamImplWin.c" />
     <ClCompile Include="..\common\EdfWriter.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="..\common\PoType.c" />
@@ -40,13 +40,13 @@
   <ItemGroup>
     <ClInclude Include="..\common\Charts.h" />
     <ClInclude Include="..\common\EdfWriter.h" />
-    <ClInclude Include="..\common\EdfHeader.h" />
+    <ClInclude Include="..\common\EdfConfig.h" />
     <ClInclude Include="..\common\edf.h" />
     <ClInclude Include="..\common\EdfStream.h" />
     <ClInclude Include="..\common\KeyValue.h" />
     <ClInclude Include="..\common\PoType.h" />
     <ClInclude Include="..\common\Primitives.h" />
-    <ClInclude Include="..\common\TypeInfo.h" />
+    <ClInclude Include="..\common\EdfSchema.h" />
     <ClInclude Include="..\common\_pch.h" />
     <ClInclude Include="converter.h" />
     <ClInclude Include="edf_cfg.h" />

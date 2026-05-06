@@ -101,17 +101,17 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 	if ((err = EdfWriteConfig(&dw, &h, &writed)))
 		return err;
 
-	//EdfWritePrimitiveInfData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
-	const EdfInf_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
-	EdfWriteInfData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
+	//EdfWritePrimSchData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
+	const EdfSchema_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
+	EdfWriteSchemaData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
-	const EdfInf_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
+	const EdfSchema_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
 	const DateTime_t beginDtDat =
 	{
 		dat.Id.Time.Year + 2000, dat.Id.Time.Month, dat.Id.Time.Day,
 		dat.Id.Time.Hour, dat.Id.Time.Min, dat.Id.Time.Sec,
 	};
-	EdfWriteInfData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
+	EdfWriteSchemaData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
 
 	char field[256] = { 0 };
 	char cluster[256] = { 0 };
@@ -121,53 +121,53 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 	memcpy(cluster, dat.Id.Cluster, strnlength(dat.Id.Cluster, FIELD_SIZEOF(RESEARCH_ID_V2_0, Cluster)));
 	memcpy(well, dat.Id.Well, strnlength(dat.Id.Well, FIELD_SIZEOF(RESEARCH_ID_V2_0, Well)));
 	snprintf(shop, sizeof(shop) - 1, "%d", dat.Id.Shop);
-	const EdfInf_t posInf = { POSITION, "Position", NULL, PositionType };
+	const EdfSchema_t posInf = { POSITION, "Position", NULL, PositionType };
 	const Position_t posDat = { .Field = field, .Cluster = cluster, .Well = well, .Shop = shop, };
-	EdfWriteInfData(&dw, &posInf, &posDat, sizeof(Position_t));
+	EdfWriteSchemaData(&dw, &posInf, &posDat, sizeof(Position_t));
 
-	const EdfInf_t devInf = { DEVICEINFO, "DevInfo", "прибор", DeviceInfoType };
+	const EdfSchema_t devInf = { DEVICEINFO, "DevInfo", "прибор", DeviceInfoType };
 	const DeviceInfo_t devDat =
 	{
 		.SwId = dat.Id.DeviceType, .SwModel = 0, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.Id.DeviceNum
 	};
-	EdfWriteInfData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
+	EdfWriteSchemaData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
 
-	const EdfInf_t regInf = { REGINFO, "RegInfo", "регистратор", DeviceInfoType };
+	const EdfSchema_t regInf = { REGINFO, "RegInfo", "регистратор", DeviceInfoType };
 	const DeviceInfo_t regDat =
 	{
 		.SwId = dat.Id.RegType, .SwModel = 0, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.Id.RegNum
 	};
-	EdfWriteInfData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
-	EdfWritePrimitiveInfData(&dw, UInt16, 0, "Oper", NULL, &dat.Id.Oper);
+	EdfWriteSchemaData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
+	EdfWritePrimSchData(&dw, UInt16, 0, "Oper", NULL, &dat.Id.Oper);
 
-	EdfWritePrimitiveInfData(&dw, Double, 0, "Discrete", "величина дискреты", &discrete);
-	EdfWritePrimitiveInfData(&dw, UInt16, 0, "Reflections", "число отражений",
+	EdfWritePrimSchData(&dw, Double, 0, "Discrete", "величина дискреты", &discrete);
+	EdfWritePrimSchData(&dw, UInt16, 0, "Reflections", "число отражений",
 		&((uint16_t) { ExtractReflections(dat.Reflections) }));
-	EdfWritePrimitiveInfData(&dw, Double, 0, "Level", "уровень без поправки на скорость звука (для скорости 341.333 м/с), м",
+	EdfWritePrimSchData(&dw, Double, 0, "Level", "уровень без поправки на скорость звука (для скорости 341.333 м/с), м",
 		&((double) { ExtractLevel(dat.Level) }));
-	EdfWritePrimitiveInfData(&dw, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0f }));
-	EdfWritePrimitiveInfData(&dw, UInt16, 0, "Table", "номер таблицы скоростей", &dat.Table);
-	EdfWritePrimitiveInfData(&dw, Single, 0, "Speed", "скорость звука, м/с", &speed);
-	EdfWritePrimitiveInfData(&dw, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0f }));
-	EdfWritePrimitiveInfData(&dw, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0f }));
-	EdfWritePrimitiveInfData(&dw, UInt16, 0, "Current", "ток, 0.1А", &dat.Current);
-	EdfWritePrimitiveInfData(&dw, UInt8, 0, "IdleHour", "время простоя, ч", &dat.IdleHour);
-	EdfWritePrimitiveInfData(&dw, UInt8, 0, "IdleMin", "время простоя, мин", &dat.IdleMin);
-	EdfWritePrimitiveInfData(&dw, UInt8, 0, "Mode", "режим исследования", &dat.Mode);
-	EdfWritePrimitiveInfData(&dw, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
-	EdfWritePrimitiveInfData(&dw, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
+	EdfWritePrimSchData(&dw, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0f }));
+	EdfWritePrimSchData(&dw, UInt16, 0, "Table", "номер таблицы скоростей", &dat.Table);
+	EdfWritePrimSchData(&dw, Single, 0, "Speed", "скорость звука, м/с", &speed);
+	EdfWritePrimSchData(&dw, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0f }));
+	EdfWritePrimSchData(&dw, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0f }));
+	EdfWritePrimSchData(&dw, UInt16, 0, "Current", "ток, 0.1А", &dat.Current);
+	EdfWritePrimSchData(&dw, UInt8, 0, "IdleHour", "время простоя, ч", &dat.IdleHour);
+	EdfWritePrimSchData(&dw, UInt8, 0, "IdleMin", "время простоя, мин", &dat.IdleMin);
+	EdfWritePrimSchData(&dw, UInt8, 0, "Mode", "режим исследования", &dat.Mode);
+	EdfWritePrimSchData(&dw, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
+	EdfWritePrimSchData(&dw, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
 
-	const EdfInf_t chartsInf = { 0, "EchoChartInfo", NULL, ChartNInf };
+	const EdfSchema_t chartsInf = { 0, "EchoChartInfo", NULL, ChartNType };
 	const ChartN_t chartsDat[] =
 	{
 		{ "Depth", "m", "", "глубина" },
 		{ "Val", "adc", "", "амплитуда" },
 	};
-	EdfWriteInfData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
+	EdfWriteSchemaData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
 
-	EdfWriteInf(&dw, &(const EdfInf_t){ 0, "EchoChart", NULL, Point2DInf}, & writed);
+	EdfWriteSchema(&dw, &(const EdfSchema_t){ 0, "EchoChart", NULL, Point2DType}, & writed);
 	struct PointXY p = { 0,0 };
 	for (size_t i = 0; i < 3000; i++)
 	{
@@ -230,12 +230,12 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				//	err = EdfWriteConfig(&tw, &h, &writed);
 			}
 			break;
-		case btInf:
+		case btSchema:
 		{
 			skip = 0;
 			msDst.WPos = 0;
-			br.InfPtr = NULL;
-			err = StreamWriteBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &br.InfPtr);
+			br.SchemaPtr = NULL;
+			err = WriteSchemaBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &br.SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -249,9 +249,9 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 		break;
 		case btData:
 		{
-			if (br.InfPtr->Id)
+			if (br.SchemaPtr->Id)
 			{
-				switch (br.InfPtr->Id)
+				switch (br.SchemaPtr->Id)
 				{
 				default: break;
 				case FILETYPEID:
@@ -317,40 +317,40 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				}
 				break;
 				}//switch
-			}//if (br.InfPtr->Id)
-			else if (IsVarName(br.InfPtr, "Oper"))
+			}//if (br.SchemaPtr->Id)
+			else if (IsVarName(br.SchemaPtr, "Oper"))
 				dat.Id.Oper = *((uint16_t*)br.Blk.Data);
-			else if (IsVarName(br.InfPtr, "Discrete"))
+			else if (IsVarName(br.SchemaPtr, "Discrete"))
 				discrete = *((double*)br.Blk.Data);
-			else if (IsVarName(br.InfPtr, "Reflections"))
+			else if (IsVarName(br.SchemaPtr, "Reflections"))
 				dat.Reflections = PackReflections(*((uint16_t*)br.Blk.Data));
-			else if (IsVarName(br.InfPtr, "Level"))
+			else if (IsVarName(br.SchemaPtr, "Level"))
 				dat.Level = PackLevel(*((double*)br.Blk.Data), discrete);
-			else if (IsVarName(br.InfPtr, "Pressure"))
+			else if (IsVarName(br.SchemaPtr, "Pressure"))
 				dat.Pressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
-			else if (IsVarName(br.InfPtr, "Table"))
+			else if (IsVarName(br.SchemaPtr, "Table"))
 				dat.Table = *((uint16_t*)br.Blk.Data);
-			else if (IsVarName(br.InfPtr, "Speed"))
+			else if (IsVarName(br.SchemaPtr, "Speed"))
 				dat.Speed = (uint16_t)round(*((float*)br.Blk.Data) * 10);
-			else if (IsVarName(br.InfPtr, "BufPressure"))
+			else if (IsVarName(br.SchemaPtr, "BufPressure"))
 				dat.BufPressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
-			else if (IsVarName(br.InfPtr, "LinePressure"))
+			else if (IsVarName(br.SchemaPtr, "LinePressure"))
 				dat.LinePressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
-			else if (IsVarName(br.InfPtr, "Current"))
+			else if (IsVarName(br.SchemaPtr, "Current"))
 				dat.Current = *((uint16_t*)br.Blk.Data);
-			else if (IsVarName(br.InfPtr, "IdleHour"))
+			else if (IsVarName(br.SchemaPtr, "IdleHour"))
 				dat.IdleHour = *((uint8_t*)br.Blk.Data);
-			else if (IsVarName(br.InfPtr, "IdleMin"))
+			else if (IsVarName(br.SchemaPtr, "IdleMin"))
 				dat.IdleMin = *((uint8_t*)br.Blk.Data);
-			else if (IsVarName(br.InfPtr, "Acc"))
+			else if (IsVarName(br.SchemaPtr, "Acc"))
 				dat.Acc = (int16_t)round(*((float*)br.Blk.Data) * 10);
-			else if (IsVarName(br.InfPtr, "Temp"))
+			else if (IsVarName(br.SchemaPtr, "Temp"))
 				dat.Temp = (int16_t)round(*((float*)br.Blk.Data) * 10);
 
-			else if (IsVarName(br.InfPtr, "EchoChart"))
+			else if (IsVarName(br.SchemaPtr, "EchoChart"))
 			{
 				PointXY_t* s = NULL;
-				while (!(err = EdfReadBin(&Point2DInf, &src, &msDst, &s, &skip, NULL))
+				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, NULL))
 					&& recN <= FIELD_ITEMS_COUNT(ECHO_FILE_V2_0, Data))
 				{
 					dat.Data[recN] = (int8_t)round(pow(fabs(s->y * 1000), 0.35));

@@ -1,8 +1,8 @@
 #include "_pch.h"
-#include "TypeInfo.h"
+#include "EdfSchema.h"
 
 //-----------------------------------------------------------------------------
-static int StreamWriteInfoBin(Stream_t* s, const EdfType_t* t, size_t* writed)
+static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 {
 	int err = 0;
 	// TYPE
@@ -30,7 +30,7 @@ static int StreamWriteInfoBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 		if ((err = StreamWrite(s, writed, &t->Childs.Count, 1)))
 			return err;
 		for (uint8_t i = 0; i < t->Childs.Count; i++)
-			if ((err = StreamWriteInfoBin(s, &t->Childs.Item[i], writed)))
+			if ((err = StreamWriteTypeBin(s, &t->Childs.Item[i], writed)))
 				return err;
 	}
 	return err;
@@ -45,7 +45,7 @@ int WriteSchemaBinToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 		return err;
 	if ((err = StreamWriteString(st, t->Desc, writed)))
 		return err;
-	if ((err = StreamWriteInfoBin(st, &t->Type, writed)))
+	if ((err = StreamWriteTypeBin(st, &t->Type, writed)))
 		return err;
 	return err;
 }
@@ -82,7 +82,7 @@ static int StreamPrintType(Stream_t* s, PoType po, size_t* writed)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int StreamWriteInfoTxt(Stream_t* s, const EdfType_t* t, int noffset, size_t* writed)
+static int StreamWriteTypeTxt(Stream_t* s, const EdfType_t* t, int noffset, size_t* writed)
 {
 	int err = 0;
 	// TYPE
@@ -110,7 +110,7 @@ static int StreamWriteInfoTxt(Stream_t* s, const EdfType_t* t, int noffset, size
 		for (size_t i = 0; i < t->Childs.Count; i++)
 		{
 			if ((err = StreamWrite(s, writed, "\n", 1)) ||
-				(err = StreamWriteInfoTxt(s, &t->Childs.Item[i], noffset + 1, writed)))
+				(err = StreamWriteTypeTxt(s, &t->Childs.Item[i], noffset + 1, writed)))
 				return err;
 		}
 		if ((err = StreamWrite(s, writed, "\n", 1)) ||
@@ -137,7 +137,7 @@ int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 		(err = StreamWrite(st, writed, "} ", 2)))
 		return err;
 
-	if ((err = StreamWriteInfoTxt(st, &t->Type, 0, writed)))
+	if ((err = StreamWriteTypeTxt(st, &t->Type, 0, writed)))
 		return err;
 
 	if ((err = StreamWrite(st, writed, ">", 1)))

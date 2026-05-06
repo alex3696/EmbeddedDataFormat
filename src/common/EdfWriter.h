@@ -2,16 +2,16 @@
 #define BLOCKWRITER_H
 
 #include "_pch.h"
-#include "EdfHeader.h"
+#include "EdfConfig.h"
 #include "EdfStream.h"
 #include "Primitives.h"
-#include "TypeInfo.h"
+#include "EdfSchema.h"
 
 typedef struct EdfWriter EdfWriter_t;
 
 typedef int (*FlushDataFn)(EdfWriter_t* w, size_t* writed);
 typedef int (*WriteConfigFn)(EdfWriter_t* w, const EdfConfig_t* h, size_t* writed);
-typedef int (*WriteInfoFn)(EdfWriter_t* w, const EdfInf_t* t, size_t* writed);
+typedef int (*WriteSchemaFn)(EdfWriter_t* w, const EdfSchema_t* t, size_t* writed);
 
 int EdfWriteSep(const char* const src,
 	uint8_t** dst, size_t* dstSize,
@@ -30,7 +30,7 @@ typedef struct EdfBlock
 typedef struct EdfWriter
 {
 	EdfConfig_t Cfg;
-	const EdfInf_t* InfPtr;
+	const EdfSchema_t* SchemaPtr;
 	Stream_t Stream;
 	size_t Skip;
 
@@ -41,7 +41,7 @@ typedef struct EdfWriter
 
 	WritePrimitivesFn WritePrimitive;
 	WriteConfigFn WriteConfig;
-	WriteInfoFn WriteInfo;
+	WriteSchemaFn WriteSchema;
 	FlushDataFn FlushData;
 
 	const char* BeginStruct;

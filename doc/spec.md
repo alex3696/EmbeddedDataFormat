@@ -12,32 +12,38 @@
 - Блочный формат для встраиваемых систем (RAM ≤ 1024 байт)
 - Без `malloc` — линейный аллокатор в статическом буфере
 - Append-only — подходит для флэш-памяти, потоковой записи для телеметрии и логов
-- Поддержка CRC16 (в текстовом режиме CRC не используется)
+- Контроль целостности CRC16 для блоков (в текстовом режиме CRC не используется)
+- Восстановление последовательности при повреждении блоков
 - Бинарное и текстовое представление (конвертируемы)
 - Little-endian, UTF-8
 - Макс. длина строки: 255 байт (обрезается без предупреждения)
 - Размер блока: 256-4096 байт (задаётся в заголовке)
 
-## 2. Структура блока (EdfBlock_t)
-| Поле | Размер | Описание |
-|------|------  |----------|
-| Type | 1 | Тип блока (см. раздел 3) |
-| Seq  | 1 | Порядковый номер (инкрементируется, переполнение разрешено) |
-| Len  | 2 | Длина поля Data (0 ≤ Len ≤ BlockSize) |
-| Data | Len | Данные блока |
-| CRC  | 2 | CRC16 (Modbus), вычисляется от Type + Seq + Len + Data |
 
-**Примечание**: В текстовом режиме поле CRC отсутствует, блок завершается символом `>`.
+для фукционирования требуется реализовать для своей платформы
+- FileStreamImpl.c, FileStreamOpen основная функция для определения, 
+    которая инициализирует имплементацию StreamFnImpl_t: Write, Read, WriteFmt, Close, Seek
+- MbCrc.c, MbCrc16acc - табличный расчёт контрольной суммы модбас
 
-## 3. Типы блоков (EdfBlockType)
+## 2. Типы блоков (EdfBlockType)
 
 | Тип | Значение | Символ | Текстовый вид | Назначение |
 |-----|----------|--------|---------------|------------|
-| Конфиг | 126 (0x7E) | `~` | `<~ ... >` | Конфиг файла |
-| Схема | 63 (0x3F) | `?` | `<? ... >` | Описание типа данных |
-| Данные | 61 (0x3D) | `=` | `<= ... >` | Данные переменной |
+| Конфиг | 126 (0x7E) | `~` | `<~ ... >` | Конфигурация файла |
+| Схема | 63 (0x3F) | `?` | `<? ... >` | Описание типа данных (схема) |
+| Данные | 61 (0x3D) | `=` | `<= ... >` | Данные переменной (записи) |
 
-## 4. Конфиг файла
+## 3. Структура блока (EdfBlock_t)
+| Поле | Размер | Описание |
+|------|------  |----------|
+| Type | 1 | Тип блока (см. раздел 3) |
+| Len  | 2 | Длина поля Data (0 ≤ Len ≤ BlockSize) |
+| Data | Len | Данные блока |
+| CRC  | 2 | CRC16 (Modbus), вычисляется от Type + Len + Data |
+
+**Примечание**: В текстовом режиме поле CRC отсутствует, блок завершается символом `>`.
+
+## 4. Структура Конфигурации 
 
 ```c
 typedef struct{
@@ -45,13 +51,13 @@ typedef struct{
     uint8_t VersMinor;      // 0
     uint16_t Encoding;      // 65001 = UTF-8
     uint16_t Blocksize;     // размер блока (256-4096)
+    uint16_t Reserved;      // зарезервировано, должен быть 0
     uint32_t Flags;         // зарезервировано, должен быть 0
 } EdfHeader_t;
 ```
-В бинарном формате занимает 16 байт, остальные байты блока (до Blocksize) заполняются нулями
 Конфиг всегда находится в первом блоке файла
 
-## 5. Схема данных
+## 5. Структура Схемы данных
 
 ## 5.1 Примитивные типы
 | Тип | Код | Размер (байт) | C-тип | Примечание
@@ -76,14 +82,14 @@ typedef struct{
 Пустые элементы в конце дополняются '\0'.
 - String — динамическая строка, в бинарном виде имеет префикс длины (1 байт).
 
-## 5.2 Бинарный формат EdfInf_t
+## 5.2 Бинарный формат EdfSchema_t
 
 | Поле | Размер | Описание |
 |------|--------|----------|
-| Id | 4 | Идентификатор переменной |
-| Name | переменный | Имя переменной (String, см. раздел 6) |
-| Desc | переменный | Описание переменной (String, опционально) |
-| EdfType_t | переменный | Рекурсивное описание типа (см. раздел 5.3) |
+| Id | 2 | Идентификатор схемы |
+| Name | переменный | Имя схемы (String, см. раздел 6) |
+| Desc | переменный | Описание схемы (String, опционально) |
+| EdfType_t | переменный | Рекурсивное описание типа схемы (см. раздел 5.3) |
 
 ## 5.3 Бинарный формат EdfType_t
 
@@ -109,7 +115,7 @@ typedef struct{
 
 где значения в [] необязательные
 ```
-<? {EdfInf.Id, EdfInf.Name[, EdfInf.Desc]}
+<? {EdfSchema.Id, EdfSchema.Name[, EdfSchema.Desc]}
    EdfType_t.Type [EdfType_t.Name] [ [EdfType_t.Dims.Item[0]...[EdfType_t.Dims.Item[EdfType_t.Dims.Count]]
    [{ тут поля структуры рекурсивно, если тип Struct }]
    >
@@ -211,7 +217,7 @@ typedef struct{
 
 ## 7. Чтение множественных схем
 При чтении EDF файла схема десериализуется во внутреннее представление с использованием линейного аллокатора.
-При чтении EDF файла с несколькими блоками `btInf` необходимо:
+При чтении EDF файла с несколькими блоками `btSchema` необходимо:
 
 1. Сбрасывать позицию записи в буфере (`mem.WPos = 0`)
 2. Обнулять указатель на схему (`br.t = NULL`)
@@ -224,7 +230,7 @@ MemStream_t msDst = {0};
 MemStreamOutOpen(&msDst, buffer, buffer_size);
 
 while (!EdfReadBlock(&br)) {
-    if (br.Blk.Type == btInf) {
+    if (br.Blk.Type == btSchema) {
         msDst.WPos = 0;     // ← сброс позиции
         br.t = NULL;        // ← сброс указателя
         StreamWriteBinToCBin(br.Block, br.DatLen, NULL,
@@ -244,7 +250,7 @@ int EdfClose(EdfWriter_t* dw);
 
 // Запись
 int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed);
-int EdfWriteInf(EdfWriter_t* dw, const EdfInf_t* t, size_t* writed);
+int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed);
 int EdfWriteData(EdfWriter_t* dw, const void* src, size_t srcLen);
 int EdfFlushData(EdfWriter_t* dw, size_t* writed);
 
@@ -255,6 +261,18 @@ int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem,
 
 // Утилиты
 //shortcut: запись схемы + данных
-int EdfWriteInfData(EdfWriter_t* dw, const EdfInf_t* ir, const void* d, size_t len);
-int EdfWritePrimitiveInfData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d);
+int EdfWriteSchData(EdfWriter_t* dw, const EdfSchema_t* ir, const void* d, size_t len);
+int EdfWritePrimitiveSchData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d);
+```
+
+Для примитивных типов (Int32, Single, etc.) передавайте указатель на значение:
+```c
+   int32_t val = 123;
+   EdfWritePrimitiveSchData(dw, Int32, 0, "key", NULL, &val);
+```
+
+Для типа String передавайте указатель на указатель:
+```c
+   const char* str = "hello";
+   EdfWritePrimitiveSchData(dw, String, 0, "key", NULL, &str);
 ```

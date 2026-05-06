@@ -117,7 +117,7 @@ typedef struct
 } DYN_FILE_V2_0;
 
 //-----------------------------------------------------------------------------
-// edf inf
+// standard schemas
 // 
 typedef enum
 {
@@ -128,7 +128,7 @@ typedef enum
 	REGINFO,
 
 	OMEGADATA
-} VarInfoId;
+} StdSchemaEnum;
 
 static const char FileDescDyn[] = "SIAM COMPLEX DYNAMOGRAM V2.0";
 static const char FileDescEcho[] = "SIAM COMPLEX ECHOGRAM V2.0";

@@ -60,7 +60,7 @@ uint8_t IsPoType(PoType p);
 typedef enum EdfBlockType
 {
 	btConfig = 126, //0xB0, ~
-	btInf = 63, //0x3f, ?
+	btSchema = 63, //0x3f, ?
 	btData = 61, //0x3d, =
 } EdfBlockType;
 

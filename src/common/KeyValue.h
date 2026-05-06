@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 #pragma pack(push,1)
 //-----------------------------------------------------------------------------
-static const EdfType_t UInt16ValueInf =
+static const EdfType_t UInt16ValueType =
 {
 	Struct, "UInt16Value", { 0, NULL },
 	.Childs =
@@ -33,7 +33,7 @@ typedef void (*DoOnItemUInt16)(UInt16Value_t* s, void* state);
 int UnpackUInt16KeyVal(MemStream_t* src, MemStream_t* dst,
 	size_t* skip, DoOnItemUInt16 DoOnItem, void* state);
 //-----------------------------------------------------------------------------
-static const EdfType_t UInt32ValueInf =
+static const EdfType_t UInt32ValueType =
 {
 	Struct, "UInt32Value", { 0, NULL },
 	.Childs =
@@ -61,7 +61,7 @@ typedef void (*DoOnItemUInt32Fn)(UInt32Value_t* s, void* state);
 int UnpackUInt32KeyVal(MemStream_t* src, MemStream_t* dst,
 	size_t* skip, DoOnItemUInt32Fn DoOnItem, void* state);
 //-----------------------------------------------------------------------------
-static const EdfType_t DoubleValueInf =
+static const EdfType_t DoubleValueType =
 {
 	Struct, "DoubleValue", { 0, NULL },
 	.Childs =

@@ -53,19 +53,19 @@ int BinToText(const char* src, const char* dst)
 			if ((err = EdfWriteConfig(&tw, &br.Cfg, &writed)))
 				return err;
 			break;
-		case btInf:
+		case btSchema:
 		{
-			tw.InfPtr = NULL;
-			err = StreamWriteBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.InfPtr);
+			tw.SchemaPtr = NULL;
+			err = WriteSchemaBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
-				err = EdfWriteInf(&tw, tw.InfPtr, &writed);
+				err = EdfWriteSchema(&tw, tw.SchemaPtr, &writed);
 			}
 			else
 			{
 				//err = 0;
-				//return err;// ignore wrong or too big info block
+				//return err;// ignore wrong or too big Schema block
 			}
 		}
 		break;

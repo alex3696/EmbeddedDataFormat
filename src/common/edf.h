@@ -26,7 +26,7 @@ int EdfClose(EdfWriter_t* dw);
 // запись конфигурации
 int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed);
 // запись схемы данных
-int EdfWriteInf(EdfWriter_t* dw, const EdfInf_t* t, size_t* writed);
+int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed);
 // запись данных
 int EdfWriteData(EdfWriter_t* dw, const void* src, size_t srcLen);
 // закрывает и скидывает текущий блок на диск  
@@ -38,8 +38,8 @@ int EdfReadBin(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** pr
 int EdfReadBlock(EdfWriter_t* dr);
 
 //shortcut: запись схемы + данных
-int EdfWriteInfData(EdfWriter_t* dw, const EdfInf_t* ir, const void* d, size_t len);
-int EdfWritePrimitiveInfData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d);
+int EdfWriteSchemaData(EdfWriter_t* dw, const EdfSchema_t* ir, const void* d, size_t len);
+int EdfWritePrimSchData(EdfWriter_t* dw, PoType pt, uint16_t schId, char* schName, char* schDesc, const void* d);
 //-----------------------------------------------------------------------------
 #ifdef __cplusplus
 }

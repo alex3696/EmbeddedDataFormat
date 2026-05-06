@@ -176,9 +176,9 @@
     <ClCompile Include="Test.c" />
     <ClCompile Include="..\common\PoType.c" />
     <ClCompile Include="..\common\BlockWriter.c" />
-    <ClCompile Include="..\common\EdfHeader.c" />
+    <ClCompile Include="..\common\EdfConfig.c" />
     <ClCompile Include="..\common\Primitives.c" />
-    <ClCompile Include="..\common\TypeInfo.c" />
+    <ClCompile Include="..\common\EdfSchema.c" />
     <ClCompile Include="..\common\EdfWriter.c" />
     <ClCompile Include="..\converter\ConverterEdf.c" />
     <ClCompile Include="..\converter\FileStreamImplWin.c" />
@@ -186,13 +186,13 @@
   <ItemGroup>
     <ClInclude Include="..\common\Charts.h" />
     <ClInclude Include="..\common\EdfWriter.h" />
-    <ClInclude Include="..\common\EdfHeader.h" />
+    <ClInclude Include="..\common\EdfConfig.h" />
     <ClInclude Include="..\common\edf.h" />
     <ClInclude Include="..\common\EdfStream.h" />
     <ClInclude Include="..\common\KeyValue.h" />
     <ClInclude Include="..\common\PoType.h" />
     <ClInclude Include="..\common\Primitives.h" />
-    <ClInclude Include="..\common\TypeInfo.h" />
+    <ClInclude Include="..\common\EdfSchema.h" />
     <ClInclude Include="..\common\_pch.h" />
     <ClInclude Include="..\converter\converter.h" />
     <ClInclude Include="..\converter\edf_cfg.h" />

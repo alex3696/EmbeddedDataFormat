@@ -38,13 +38,13 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	if ((err = EdfWriteConfig(&dw, &h, &writed)))
 		return err;
 
-	//EdfWritePrimitiveInfData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
-	const EdfInf_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
-	EdfWriteInfData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
+	//EdfWritePrimSchData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
+	const EdfSchema_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
+	EdfWriteSchemaData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
-	const EdfInf_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
+	const EdfSchema_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
 	const DateTime_t beginDtDat = { dat.Year + 2000, dat.Month, dat.Day, };
-	EdfWriteInfData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
+	EdfWriteSchemaData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
 
 	char field[256] = { 0 };
 	char cluster[256] = { 0 };
@@ -54,30 +54,30 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	memcpy(cluster, dat.Id.Cluster, strnlength(dat.Id.Cluster, FIELD_SIZEOF(FILES_RESEARCH_ID_V1_0, Cluster)));
 	memcpy(well, dat.Id.Well, strnlength(dat.Id.Well, FIELD_SIZEOF(FILES_RESEARCH_ID_V1_0, Well)));
 	snprintf(shop, sizeof(shop) - 1, "%d", dat.Id.Shop);
-	const EdfInf_t posInf = { POSITION, "Position", NULL, PositionType };
+	const EdfSchema_t posInf = { POSITION, "Position", NULL, PositionType };
 	const Position_t posDat = { .Field = field, .Cluster = cluster, .Well = well, .Shop = shop, };
-	EdfWriteInfData(&dw, &posInf, &posDat, sizeof(Position_t));
+	EdfWriteSchemaData(&dw, &posInf, &posDat, sizeof(Position_t));
 
-	EdfWritePrimitiveInfData(&dw, UInt16, 0, "PlaceId", "место установки", &dat.Id.PlaceId);
-	EdfWritePrimitiveInfData(&dw, Int32, 0, "Depth", "глубина установки", &dat.Id.Depth);
+	EdfWritePrimSchData(&dw, UInt16, 0, "PlaceId", "место установки", &dat.Id.PlaceId);
+	EdfWritePrimSchData(&dw, Int32, 0, "Depth", "глубина установки", &dat.Id.Depth);
 
-	const EdfInf_t devInf = { DEVICEINFO, "DevInfo", "скважный прибор", DeviceInfoType };
+	const EdfSchema_t devInf = { DEVICEINFO, "DevInfo", "скважный прибор", DeviceInfoType };
 	const DeviceInfo_t devDat =
 	{
 		.SwId = dat.SensType, .SwModel = dat.SensVer, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.SensNum
 	};
-	EdfWriteInfData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
+	EdfWriteSchemaData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
 
-	const EdfInf_t regInf = { REGINFO, "RegInfo", "наземный регистратор", DeviceInfoType };
+	const EdfSchema_t regInf = { REGINFO, "RegInfo", "наземный регистратор", DeviceInfoType };
 	const DeviceInfo_t regDat =
 	{
 		.SwId = dat.RegType, .SwModel = dat.RegVer, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.RegNum
 	};
-	EdfWriteInfData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
+	EdfWriteSchemaData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
 
-	const EdfInf_t chartsInf = { 0, "ChartInfo", NULL, ChartNInf };
+	const EdfSchema_t chartsInf = { 0, "ChartInfo", NULL, ChartNType };
 	const ChartN_t chartsDat[] =
 	{
 		{ "Time", "мс", "", "время измерения от начала дня" },
@@ -85,9 +85,9 @@ int DatToEdf(const char* src, const char* edf, char mode)
 		{ "Temp", "0.001 °С","", "температура" },
 		{ "Vbat", "0.001 V","", "напряжение батареи" },
 	};
-	EdfWriteInfData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
+	EdfWriteSchemaData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
 
-	if ((err = EdfWriteInf(&dw, &(EdfInf_t){OMEGADATA, NULL, NULL, OmegaDataType}, & writed)))
+	if ((err = EdfWriteSchema(&dw, &(EdfSchema_t){OMEGADATA, NULL, NULL, OmegaDataType}, & writed)))
 		return err;
 
 	OMEGA_DATA_V1_1 record;
@@ -158,14 +158,14 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				//	err = EdfWriteConfig(&tw, &h, &writed);
 			}
 			break;
-		case btInf:
+		case btSchema:
 		{
-			br.InfPtr = NULL;
-			EdfInf_t* typeRec = NULL;
-			err = StreamWriteBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
+			br.SchemaPtr = NULL;
+			EdfSchema_t* typeRec = NULL;
+			err = WriteSchemaBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
 			if (!err)
 			{
-				br.InfPtr = typeRec;
+				br.SchemaPtr = typeRec;
 				writed = 0;
 			}
 			else
@@ -177,9 +177,9 @@ int EdfToDat(const char* edfFile, const char* datFile)
 		break;
 		case btData:
 		{
-			if (br.InfPtr->Id)
+			if (br.SchemaPtr->Id)
 			{
-				switch (br.InfPtr->Id)
+				switch (br.SchemaPtr->Id)
 				{
 				default: break;
 				case FILETYPEID:
@@ -274,11 +274,11 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				}//switch
 
 			}
-			else if (IsVarName(br.InfPtr, "Shop"))
+			else if (IsVarName(br.SchemaPtr, "Shop"))
 				dat.Id.Shop = *((uint16_t*)br.Blk.Data);
-			else if (IsVarName(br.InfPtr, "PlaceId"))
+			else if (IsVarName(br.SchemaPtr, "PlaceId"))
 				dat.Id.PlaceId = *((uint16_t*)br.Blk.Data);
-			else if (IsVarName(br.InfPtr, "Depth"))
+			else if (IsVarName(br.SchemaPtr, "Depth"))
 				dat.Id.Depth = *((int32_t*)br.Blk.Data);
 
 		}//case btData:

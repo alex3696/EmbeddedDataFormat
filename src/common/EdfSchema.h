@@ -1,5 +1,5 @@
-#ifndef TYPEINFO_H
-#define TYPEINFO_H
+#ifndef SCHEMA_H
+#define SCHEMA_H
 
 #include "_pch.h"
 #include "EdfStream.h"
@@ -26,10 +26,10 @@ typedef struct EdfType
 
 typedef struct
 {
-	int32_t Id; // var id
-	char* Name; // var name
-	char* Desc; // var description
-	EdfType_t Type; // var type
+	int16_t Id;		// Schema id
+	char* Name;		// Schema name
+	char* Desc;		// Schema description
+	EdfType_t Type; // Schema type
 } EdfSchema_t;
 
 int IsVar(const EdfSchema_t* r, int32_t varId, const char* varName);

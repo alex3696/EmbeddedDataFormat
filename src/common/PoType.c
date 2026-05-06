@@ -41,5 +41,5 @@ uint8_t IsPoType(PoType p)
 //-----------------------------------------------------------------------------
 uint8_t IsBlockType(EdfBlockType t)
 {
-	return btConfig == t || btInf == t || btData == t;
+	return btConfig == t || btSchema == t || btData == t;
 }
