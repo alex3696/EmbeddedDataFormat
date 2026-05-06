@@ -136,7 +136,7 @@ static int PackUnpack()
 	EdfClose(dw);
 
 	MemStream_t mssrc = { 0 };
-	if ((err = MemStreamInOpen(&mssrc, &binBuf[4], 100)))
+	if ((err = MemStreamInOpen(&mssrc, &binBuf[3], 100)))
 		return err;
 	uint8_t buf[1024] = { 0 };
 	MemStream_t mem = { 0 };

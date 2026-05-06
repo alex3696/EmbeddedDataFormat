@@ -79,9 +79,8 @@ void Log_ErrF(const char* const fmt, ...);
 
 #define ERR_BLK ERR_BASE+100
 #define ERR_BLK_WRONG_TYPE		ERR_BLK+20
-#define ERR_BLK_WRONG_SEQ		ERR_BLK+21
-#define ERR_BLK_WRONG_SIZE		ERR_BLK+22
-#define ERR_BLK_WRONG_CRC		ERR_BLK+23
-#define ERR_BLOCK_SIZE_LARGE    ERR_BLK+24
+#define ERR_BLK_WRONG_SIZE		ERR_BLK+21
+#define ERR_BLK_WRONG_CRC		ERR_BLK+22
+#define ERR_BLOCK_SIZE_LARGE    ERR_BLK+23
 
 #endif //PCH_H

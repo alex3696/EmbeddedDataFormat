@@ -6,9 +6,9 @@ static int EdfWriteBlockBin(Stream_t* st, const EdfConfig_t* cfg, const EdfBlock
 {
 	UNUSED(cfg);
 	int err = 0;
-	uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + 4 + blk->Len);
-	*blkCrc = MbCrc16(blk, 4 + blk->Len);
-	if ((err = StreamWrite(st, NULL, blk, 4 + blk->Len + 2)))
+	uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + 3 + blk->Len);
+	*blkCrc = MbCrc16(blk, 3 + blk->Len);
+	if ((err = StreamWrite(st, NULL, blk, 3 + blk->Len + 2)))
 		return err;
 	*writed = blk->Len;
 	return 0;
@@ -21,7 +21,6 @@ int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
 {
 	if (!dw->WriteConfig || !h)
 		return ERR_FN_NOT_EXIST;
-	dw->Blk.Seq = 0;
 	dw->Cfg = *h;
 	int err = (*dw->WriteConfig)(dw, h, writed);
 	if (err)
@@ -29,7 +28,6 @@ int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
 		LOG_ERR();
 		return err;
 	}
-	dw->Blk.Seq++;
 	dw->Blk.Len = 0;
 	return err;
 }
@@ -69,7 +67,6 @@ int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed)
 	dw->SchemaPtr = t;
 	//dw->TypeFlag |= HasDynamicFields(&SchemaPtr->Type);
 	//dw->TypeLen = GetTypeCSize(&SchemaPtr->Type);
-	dw->Blk.Seq++;
 	dw->Blk.Len = 0;
 	dw->BufLen = 0;
 	return err;
@@ -107,7 +104,6 @@ int EdfFlushData(EdfWriter_t* dw, size_t* writed)
 		LOG_ERR();
 		return err;
 	}
-	dw->Blk.Seq++;
 	dw->Blk.Len = 0;
 	return err;
 }
@@ -165,7 +161,6 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	if (0 == strncmp("wb", mode, 2) || 0 == strncmp("ab", mode, 2))
 	{
 		f->Stream = *stream;
-		f->Blk.Seq = 0;
 		f->Skip = 0;
 		f->Blk.Len = 0;
 		f->BufLen = 0;
@@ -188,7 +183,6 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2))
 	{
 		f->Stream = *stream;
-		f->Blk.Seq = 0;
 		f->Skip = 0;
 		f->Blk.Len = 0;
 		f->BufLen = 0;
@@ -212,7 +206,6 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	else if (0 == strncmp("rb", mode, 2))
 	{
 		f->Stream = *stream;
-		f->Blk.Seq = 0;
 		f->Skip = 0;
 		f->Blk.Len = 0;
 		f->BufLen = 0;
