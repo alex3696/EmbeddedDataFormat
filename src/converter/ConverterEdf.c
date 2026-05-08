@@ -46,38 +46,33 @@ int BinToText(const char* src, const char* dst)
 
 	while (!(err = EdfReadBlock(&br)))
 	{
-		switch (br.BlkType)
+		switch (br.Blk.Type)
 		{
 		default: break;
-		case btHeader:
-			if (16 == br.DatLen)
-			{
-				EdfHeader_t h = { 0 };
-				err = MakeHeaderFromBytes(br.Block, br.DatLen, &h);
-				if (!err)
-					err = EdfWriteHeader(&tw, &h, &writed);
-			}
+		case btConfig:
+			if ((err = EdfWriteConfig(&tw, &br.Cfg, &writed)))
+				return err;
 			break;
-		case btVarInfo:
+		case btSchema:
 		{
-			tw.t = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.t);
+			tw.SchemaPtr = NULL;
+			err = WriteSchemaBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
-				err = EdfWriteInfo(&tw, tw.t, &writed);
+				err = EdfWriteSchema(&tw, tw.SchemaPtr, &writed);
 			}
 			else
 			{
 				//err = 0;
-				//return err;// ignore wrong or too big info block
+				//return err;// ignore wrong or too big Schema block
 			}
 		}
 		break;
-		case btVarData:
+		case btData:
 		{
-			EdfWriteDataBlock(&tw, &br.Block, br.DatLen);
-			//EdfFlushDataBlock(&tw, &writed);
+			EdfWriteData(&tw, &br.Blk.Data, br.Blk.Len);
+			//EdfFlushData(&tw, &writed);
 		}
 		break;
 		}

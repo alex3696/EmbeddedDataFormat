@@ -28,7 +28,7 @@ static int StreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)
 	if (ret != len)
 	{
 		if (feof(f))
-			return EOF;
+			return ERR_EOF;
 		//	printf("Error reading : unexpected end of file\n");
 		int err = 0;
 		if ((err = ferror(f)))
@@ -57,7 +57,7 @@ static int StreamWriteFormatImpl(void* stream, size_t* writed, const char* forma
 	va_start(arglist, format);
 	int ret = vfprintf(f, format, arglist);
 	va_end(arglist);
-	if (-1 == ret)
+	if (0 > ret)
 	{
 		int err = 0;
 		if ((err = ferror(f)))
@@ -103,7 +103,7 @@ int FileStreamOpen(FileStream_t* s, const char* file, const char* inMode)
 	const char* mode = NULL;
 	const StreamFnImpl_t* impl = NULL;
 
-	int  err = -1;
+	int  err = ERR_WRONG_PARAMETERS;
 
 	if (0 == strcmp("wb", inMode))
 	{
