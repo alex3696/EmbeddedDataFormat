@@ -34,17 +34,17 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	if ((err = EdfOpen(&dw, edf, edfMode)))
 		return err;
 
-	EdfHeader_t h = MakeHeaderDefault();
-	if ((err = EdfWriteHeader(&dw, &h, &writed)))
+	EdfConfig_t h = MakeDefaultConfig();
+	if ((err = EdfWriteConfig(&dw, &h, &writed)))
 		return err;
 
-	//EdfWriteInfData(&dw, 0, String, "Comment", "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
-	const TypeRec_t typeInf = { FileTypeIdType, FILETYPEID };
-	EdfWriteInfRecData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
+	//EdfWritePrimSchData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
+	const EdfSchema_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
+	EdfWriteSchemaData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
-	const TypeRec_t beginDtInf = { DateTimeType, BEGINDATETIME, "BeginDateTime" };
+	const EdfSchema_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
 	const DateTime_t beginDtDat = { dat.Year + 2000, dat.Month, dat.Day, };
-	EdfWriteInfRecData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
+	EdfWriteSchemaData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
 
 	char field[256] = { 0 };
 	char cluster[256] = { 0 };
@@ -54,30 +54,30 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	memcpy(cluster, dat.Id.Cluster, strnlength(dat.Id.Cluster, FIELD_SIZEOF(FILES_RESEARCH_ID_V1_0, Cluster)));
 	memcpy(well, dat.Id.Well, strnlength(dat.Id.Well, FIELD_SIZEOF(FILES_RESEARCH_ID_V1_0, Well)));
 	snprintf(shop, sizeof(shop) - 1, "%d", dat.Id.Shop);
-	const TypeRec_t posInf = { PositionType, POSITION, "Position" };
+	const EdfSchema_t posInf = { POSITION, "Position", NULL, PositionType };
 	const Position_t posDat = { .Field = field, .Cluster = cluster, .Well = well, .Shop = shop, };
-	EdfWriteInfRecData(&dw, &posInf, &posDat, sizeof(Position_t));
+	EdfWriteSchemaData(&dw, &posInf, &posDat, sizeof(Position_t));
 
-	EdfWriteInfData0(&dw, UInt16, 0, "PlaceId", "место установки", &dat.Id.PlaceId);
-	EdfWriteInfData0(&dw, Int32, 0, "Depth", "глубина установки", &dat.Id.Depth);
+	EdfWritePrimSchData(&dw, UInt16, 0, "PlaceId", "место установки", &dat.Id.PlaceId);
+	EdfWritePrimSchData(&dw, Int32, 0, "Depth", "глубина установки", &dat.Id.Depth);
 
-	const TypeRec_t devInf = { DeviceInfoType, DEVICEINFO, "DevInfo", "скважный прибор" };
+	const EdfSchema_t devInf = { DEVICEINFO, "DevInfo", "скважный прибор", DeviceInfoType };
 	const DeviceInfo_t devDat =
 	{
 		.SwId = dat.SensType, .SwModel = dat.SensVer, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.SensNum
 	};
-	EdfWriteInfRecData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
+	EdfWriteSchemaData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
 
-	const TypeRec_t regInf = { DeviceInfoType, REGINFO, "RegInfo", "наземный регистратор" };
+	const EdfSchema_t regInf = { REGINFO, "RegInfo", "наземный регистратор", DeviceInfoType };
 	const DeviceInfo_t regDat =
 	{
 		.SwId = dat.RegType, .SwModel = dat.RegVer, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.RegNum
 	};
-	EdfWriteInfRecData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
+	EdfWriteSchemaData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
 
-	const TypeRec_t chartsInf = { ChartNInf, 0, "ChartInfo" };
+	const EdfSchema_t chartsInf = { 0, "ChartInfo", NULL, ChartNType };
 	const ChartN_t chartsDat[] =
 	{
 		{ "Time", "мс", "", "время измерения от начала дня" },
@@ -85,9 +85,9 @@ int DatToEdf(const char* src, const char* edf, char mode)
 		{ "Temp", "0.001 °С","", "температура" },
 		{ "Vbat", "0.001 V","", "напряжение батареи" },
 	};
-	EdfWriteInfRecData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
+	EdfWriteSchemaData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
 
-	if ((err = EdfWriteInfo(&dw, &(TypeRec_t){OmegaDataType, OMEGADATA}, & writed)))
+	if ((err = EdfWriteSchema(&dw, &(EdfSchema_t){OMEGADATA, NULL, NULL, OmegaDataType}, & writed)))
 		return err;
 
 	OMEGA_DATA_V1_1 record;
@@ -95,9 +95,9 @@ int DatToEdf(const char* src, const char* edf, char mode)
 	{
 		if (1 == fread(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
 		{
-			if ((err = EdfWriteDataBlock(&dw, &record, sizeof(OMEGA_DATA_V1_1) - 2)))
+			if ((err = EdfWriteData(&dw, &record, sizeof(OMEGA_DATA_V1_1) - 2)))
 				return err;
-			//EdfFlushDataBlock(&dw, &writed);
+			//EdfFlushData(&dw, &writed);
 		}
 	} while (!feof(f));
 
@@ -143,29 +143,29 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	while (!(err = EdfReadBlock(&br)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamInOpen(&src, br.Block, br.DatLen)))
+		if ((err = MemStreamInOpen(&src, br.Blk.Data, br.Blk.Len)))
 			return err;
 
-		switch (br.BlkType)
+		switch (br.Blk.Type)
 		{
 		default: break;
-		case btHeader:
-			if (16 == br.DatLen)
+		case btConfig:
+			if (16 == br.Blk.Len)
 			{
-				//EdfHeader_t h = { 0 };
-				//err = MakeHeaderFromBytes(br.Block, br.DatLen, &h);
+				//EdfConfig_t h = { 0 };
+				//err = MakeConfigFromBytes(br.Blk.Data, br.Blk.Len, &h);
 				//if (!err)
-				//	err = EdfWriteHeader(&tw, &h, &writed);
+				//	err = EdfWriteConfig(&tw, &h, &writed);
 			}
 			break;
-		case btVarInfo:
+		case btSchema:
 		{
-			br.t = NULL;
-			TypeRec_t* typeRec = NULL;
-			err = StreamWriteBinToCBin(br.Block, br.DatLen, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
+			br.SchemaPtr = NULL;
+			EdfSchema_t* typeRec = NULL;
+			err = WriteSchemaBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
 			if (!err)
 			{
-				br.t = typeRec;
+				br.SchemaPtr = typeRec;
 				writed = 0;
 			}
 			else
@@ -175,20 +175,20 @@ int EdfToDat(const char* edfFile, const char* datFile)
 			}
 		}
 		break;
-		case btVarData:
+		case btData:
 		{
-			if (br.t->Id)
+			if (br.SchemaPtr->Id)
 			{
-				switch (br.t->Id)
+				switch (br.SchemaPtr->Id)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)br.Block)->Type)
+					if (dat.FileType != ((FileTypeId_t*)br.Blk.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t t = *((DateTime_t*)br.Block);
+					DateTime_t t = *((DateTime_t*)br.Blk.Data);
 					dat.Year = (uint8_t)(t.Year - 2000);
 					dat.Month = t.Month;
 					dat.Day = t.Day;
@@ -252,38 +252,38 @@ int EdfToDat(const char* edfFile, const char* datFile)
 						if (1 != fwrite(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
 							return ERR_FWRITE;
 					}
-					uint8_t* pblock = br.Block;
+					uint8_t* pblock = br.Blk.Data;
 
-					while (0 < br.DatLen)
+					while (0 < br.Blk.Len)
 					{
-						size_t len = (size_t)MIN(br.DatLen, (size_t)(recordEnd - precord));
+						size_t len = (size_t)MIN(br.Blk.Len, (size_t)(recordEnd - precord));
 						memcpy(precord, pblock, len);
 						precord += len;
 						pblock += len;
-						br.DatLen -= (uint16_t)len;
+						br.Blk.Len -= (uint16_t)len;
 						if (recordEnd == precord)
 						{
 							precord = recordBegin;
 							if (1 != fwrite(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
 								return ERR_FWRITE;
 						}
-					}//while (0 < br.DatLen)
+					}//while (0 < br.Blk.Len)
 				}
 				break;//OMEGADATAREC
 
 				}//switch
 
 			}
-			else if (IsVarName(br.t, "Shop"))
-				dat.Id.Shop = *((uint16_t*)br.Block);
-			else if (IsVarName(br.t, "PlaceId"))
-				dat.Id.PlaceId = *((uint16_t*)br.Block);
-			else if (IsVarName(br.t, "Depth"))
-				dat.Id.Depth = *((int32_t*)br.Block);
+			else if (IsVarName(br.SchemaPtr, "Shop"))
+				dat.Id.Shop = *((uint16_t*)br.Blk.Data);
+			else if (IsVarName(br.SchemaPtr, "PlaceId"))
+				dat.Id.PlaceId = *((uint16_t*)br.Blk.Data);
+			else if (IsVarName(br.SchemaPtr, "Depth"))
+				dat.Id.Depth = *((int32_t*)br.Blk.Data);
 
-		}//case btVarData:
+		}//case btData:
 		break;
-		}//switch (br.BlkType)
+		}//switch (br.Blk.Type)
 		if (0 != err)
 		{
 			LOG_ERR();

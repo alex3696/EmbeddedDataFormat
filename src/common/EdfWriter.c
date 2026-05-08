@@ -2,104 +2,101 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
-static int EdfWriteBlockBin(Stream_t* st, const EdfHeader_t* cfg, const EdfBlock_t* blk, size_t* writed)
+static int EdfWriteBlockBin(Stream_t* st, const EdfConfig_t* cfg, const EdfBlock_t* blk, size_t* writed)
 {
 	UNUSED(cfg);
 	int err = 0;
-	uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + 4 + blk->Len);
-	*blkCrc = MbCrc16(blk, 4 + blk->Len);
-	if ((err = StreamWrite(st, NULL, blk, 4 + blk->Len + 2)))
+	uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + 3 + blk->Len);
+	*blkCrc = MbCrc16(blk, 3 + blk->Len);
+	if ((err = StreamWrite(st, NULL, blk, 3 + blk->Len + 2)))
 		return err;
 	*writed = blk->Len;
 	return 0;
 }
 //-----------------------------------------------------------------------------
 
-// Write Header
+// Write Config
 //-----------------------------------------------------------------------------
-int EdfWriteHeader(EdfWriter_t* dw, const EdfHeader_t* h, size_t* writed)
+int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
 {
-	if (!dw->WriteHeader || !h)
+	if (!dw->WriteConfig || !h)
 		return ERR_FN_NOT_EXIST;
-	dw->BlkSeq = 0;
-	dw->h = *h;
-	int err = (*dw->WriteHeader)(dw, h, writed);
+	dw->Cfg = *h;
+	int err = (*dw->WriteConfig)(dw, h, writed);
 	if (err)
 	{
 		LOG_ERR();
 		return err;
 	}
-	dw->BlkSeq++;
-	dw->DatLen = 0;
+	dw->Blk.Len = 0;
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int EdfWriteHeaderBin(EdfWriter_t* dw, const EdfHeader_t* h, size_t* writed)
+static int EdfWriteConfigBin(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
 {
-	dw->BlkType = (uint8_t)btHeader;
-	dw->DatLen = (uint16_t)HeaderToBytes(h, dw->Block);
-	return EdfWriteBlockBin(&dw->Stream, h, (EdfBlock_t*)&dw->BlkType, writed);
+	dw->Blk.Type = (uint8_t)btConfig;
+	dw->Blk.Len = (uint16_t)sizeof(EdfConfig_t);
+	memcpy(dw->Blk.Data, h, sizeof(EdfConfig_t));
+	return EdfWriteBlockBin(&dw->Stream, h, (EdfBlock_t*)&dw->Blk.Type, writed);
 }
 //-----------------------------------------------------------------------------
-static int EdfWriteHeaderTxt(EdfWriter_t* dw, const EdfHeader_t* h, size_t* writed)
+static int EdfWriteConfigTxt(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
 {
 	return StreamWriteFmt(&dw->Stream, writed, "<~ {version=%d.%d; bs=%d; encoding=%d; flags=%d; } >\n"
 		, h->VersMajor, h->VersMinor
 		, h->Blocksize, h->Encoding, h->Flags);
 }
 
-// Write Info
+// Write Schema
 //-----------------------------------------------------------------------------
-int EdfWriteInfo(EdfWriter_t* dw, const TypeRec_t* t, size_t* writed)
+int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed)
 {
 	int err = 0;
 	size_t flushed = 0;
-	if ((err = EdfFlushDataBlock(dw, &flushed)))
+	if ((err = EdfFlushData(dw, &flushed)))
 		return err;
 	dw->Skip = 0;
+	dw->RecordId = 0;
 
-	if (!dw->WriteInfo || !t)
+	if (!dw->WriteSchema || !t)
 		return ERR_FN_NOT_EXIST;
-	err = (*dw->WriteInfo)(dw, t, writed);
+	err = (*dw->WriteSchema)(dw, t, writed);
 	if (err)
 	{
 		LOG_ERR();
 		return err;
 	}
-	dw->t = t;
-	//dw->TypeFlag |= HasDynamicFields(&t->Inf);
-	//dw->TypeLen = GetTypeCSize(&t->Inf);
-	dw->BlkSeq++;
-	dw->DatLen = 0;
+	dw->SchemaPtr = t;
+	dw->Blk.Len = 0;
 	dw->BufLen = 0;
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int EdfWriteInfoBin(EdfWriter_t* dw, const TypeRec_t* t, size_t* writed)
+static int EdfWriteSchemaBin(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed)
 {
 	int err = 0;
-	dw->BlkType = (uint8_t)btVarInfo;
+	dw->Blk.Type = (uint8_t)btSchema;
 	MemStream_t ms = { 0 };
 	size_t w = 0;
-	if ((err = MemStreamOutOpen(&ms, dw->Block, sizeof(dw->Block))) ||
-		(err = StreamWriteInfBin((Stream_t*)&ms, t, &w)))
+	if ((err = MemStreamOutOpen(&ms, dw->Blk.Data, sizeof(dw->Blk.Data))) ||
+		(err = WriteSchemaBinToStream((Stream_t*)&ms, t, &w)))
 		return err;
-	dw->DatLen = (uint16_t)w;// (uint16_t)ms.WPos;
-	if ((err = EdfWriteBlockBin(&dw->Stream, &dw->h, (EdfBlock_t*)&dw->BlkType, writed)))
+	dw->Blk.Len = (uint16_t)w;// (uint16_t)ms.WPos;
+	if ((err = EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk.Type, writed)))
 		return err;
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int EdfWriteInfoTxt(EdfWriter_t* w, const TypeRec_t* t, size_t* writed)
+static int EdfWriteSchemaTxt(EdfWriter_t* w, const EdfSchema_t* t, size_t* writed)
 {
-	return StreamWriteInfTxt(&w->Stream, t, writed);
+	return WriteSchemaTxtToStream(&w->Stream, t, writed);
 }
 
 // Write Data
 //-----------------------------------------------------------------------------
-int EdfFlushDataBlock(EdfWriter_t* dw, size_t* writed)
+int EdfFlushData(EdfWriter_t* dw, size_t* writed)
 {
-	if (NULL == dw->FlushData || 0 == dw->DatLen)
+	if (NULL == dw->FlushData || 0 == dw->Blk.Len)
 		return 0;
 	int err = (*dw->FlushData)(dw, writed);
 	if (err)
@@ -107,20 +104,19 @@ int EdfFlushDataBlock(EdfWriter_t* dw, size_t* writed)
 		LOG_ERR();
 		return err;
 	}
-	dw->BlkSeq++;
-	dw->DatLen = 0;
+	dw->Blk.Len = 0;
 	return err;
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataBin(EdfWriter_t* dw, size_t* writed)
 {
-	dw->BlkType = (uint8_t)btVarData;
-	return EdfWriteBlockBin(&dw->Stream, &dw->h, (EdfBlock_t*)&dw->BlkType, writed);
+	dw->Blk.Type = (uint8_t)btData;
+	return EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk.Type, writed);
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataTxt(EdfWriter_t* dw, size_t* writed)
 {
-	return StreamWrite((Stream_t*)&dw->Stream, writed, dw->Block, dw->DatLen);
+	return StreamWrite((Stream_t*)&dw->Stream, writed, dw->Blk.Data, dw->Blk.Len);
 }
 
 //-----------------------------------------------------------------------------
@@ -131,20 +127,15 @@ static int SeekEnd(EdfWriter_t* f)
 	int err = 0;
 	while (!(err = EdfReadBlock(f)))
 	{
-		switch (f->BlkType)
+		switch (f->Blk.Type)
 		{
 		default: break;
-		case btHeader:
-			if (EDF_HEADER_SIZE == f->DatLen)
-			{
-				err = MakeHeaderFromBytes(f->Block, f->DatLen, &f->h);
-			}
-			break;
-		case btVarInfo:
+		case btConfig: break;
+		case btSchema:
 		{
 		}
 		break;
-		case btVarData:
+		case btData:
 		{
 		}
 		break;
@@ -165,18 +156,18 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	if (2 > strnlength(mode, 2))
 		return ERR_WRONG_PARAMETERS;
 	int err = 0;
-	f->t = NULL;
-	memset(&f->h, 0, sizeof(EdfHeader_t));
+	f->SchemaPtr = NULL;
+	f->Cfg = MakeDefaultConfig();
 	if (0 == strncmp("wb", mode, 2) || 0 == strncmp("ab", mode, 2))
 	{
 		f->Stream = *stream;
-		f->BlkSeq = 0;
 		f->Skip = 0;
-		f->DatLen = 0;
+		f->RecordId = 0;
+		f->Blk.Len = 0;
 		f->BufLen = 0;
 		f->WritePrimitive = strchr(mode, 'c') ? BinToBin : CBinToBin;
-		f->WriteHeader = EdfWriteHeaderBin;
-		f->WriteInfo = EdfWriteInfoBin;
+		f->WriteConfig = EdfWriteConfigBin;
+		f->WriteSchema = EdfWriteSchemaBin;
 		f->FlushData = StreamWriteBlockDataBin;
 		f->BeginStruct = NULL;
 		f->EndStruct = NULL;
@@ -193,13 +184,13 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2))
 	{
 		f->Stream = *stream;
-		f->BlkSeq = 0;
 		f->Skip = 0;
-		f->DatLen = 0;
+		f->RecordId = 0;
+		f->Blk.Len = 0;
 		f->BufLen = 0;
 		f->WritePrimitive = strchr(mode, 'c') ? BinToStr : CBinToStr;
-		f->WriteHeader = EdfWriteHeaderTxt;
-		f->WriteInfo = EdfWriteInfoTxt;
+		f->WriteConfig = EdfWriteConfigTxt;
+		f->WriteSchema = EdfWriteSchemaTxt;
 		f->FlushData = StreamWriteBlockDataTxt;
 		f->BeginStruct = SepBeginStruct;
 		f->EndStruct = SepEndStruct;
@@ -217,13 +208,13 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	else if (0 == strncmp("rb", mode, 2))
 	{
 		f->Stream = *stream;
-		f->BlkSeq = 0;
 		f->Skip = 0;
-		f->DatLen = 0;
+		f->RecordId = 0;
+		f->Blk.Len = 0;
 		f->BufLen = 0;
 		f->WritePrimitive = BinToBin;
-		f->WriteHeader = NULL;
-		f->WriteInfo = NULL;
+		f->WriteConfig = NULL;
+		f->WriteSchema = NULL;
 		f->FlushData = NULL;
 		f->BeginStruct = NULL;
 		f->EndStruct = NULL;
@@ -286,7 +277,7 @@ int EdfClose(EdfWriter_t* dw)
 {
 	int err = 0;
 	size_t w = 0;
-	if ((err = EdfFlushDataBlock(dw, &w)))
+	if ((err = EdfFlushData(dw, &w)))
 		return err;
 	return StreamClose(&dw->Stream);
 }
@@ -317,25 +308,19 @@ int EdfWriteSep(const char* const src,
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int EdfWriteInfRecData(EdfWriter_t* dw, const TypeRec_t* ir, const void* d, size_t len)
+int EdfWriteSchemaData(EdfWriter_t* dw, const EdfSchema_t* ir, const void* d, size_t len)
 {
 	int err;
 	size_t writed = 0;
-	if ((err = EdfWriteInfo(dw, ir, &writed)) ||
-		(err = EdfWriteDataBlock(dw, d, len)))
+	if ((err = EdfWriteSchema(dw, ir, &writed)) ||
+		(err = EdfWriteData(dw, d, len)))
 		return err;
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int EdfWriteInfData0(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d)
+int EdfWritePrimSchData(EdfWriter_t* dw, PoType pt, uint16_t schId, char* schName, char* schDesc, const void* d)
 {
-	TypeRec_t rec = { { pt }, id, name, desc };
-	return EdfWriteInfRecData(dw, &rec, d, GetTypeCSize(&rec.Inf));
-}
-//-----------------------------------------------------------------------------
-int EdfWriteInfData(EdfWriter_t* dw, uint32_t id, PoType pt, char* name, const void* d)
-{
-	TypeRec_t rec = { { pt }, id, name };
-	return EdfWriteInfRecData(dw, &rec, d, GetTypeCSize(&rec.Inf));
+	EdfSchema_t rec = { schId, schName, schDesc, { pt } };
+	return EdfWriteSchemaData(dw, &rec, d, GetTypeCSize(&rec.Type));
 }
 //-----------------------------------------------------------------------------

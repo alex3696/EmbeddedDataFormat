@@ -8,7 +8,7 @@ int UnpackUInt16KeyVal(MemStream_t* src, MemStream_t* dst,
 	size_t primReaded = 0;
 	int err = 0;
 	UInt16Value_t* s = (*skip) ? (UInt16Value_t*)dst->Buffer : NULL;
-	while (!(err = EdfReadBin(&UInt16ValueInf, src, dst, (void **)&s, skip, &primReaded)))
+	while (!(err = EdfReadBin(&UInt16ValueType, src, dst, (void **)&s, skip, &primReaded)))
 	{
 		(*DoOnItem)(s, state);
 		s = NULL;
@@ -24,7 +24,7 @@ int UnpackUInt32KeyVal(MemStream_t* src, MemStream_t* dst,
 	size_t primReaded = 0;
 	int err = 0;
 	UInt32Value_t* s = (*skip) ? (UInt32Value_t*)dst->Buffer : NULL;
-	while (!(err = EdfReadBin(&UInt32ValueInf, src, dst, (void **)&s, skip, &primReaded)))
+	while (!(err = EdfReadBin(&UInt32ValueType, src, dst, (void **)&s, skip, &primReaded)))
 	{
 		(*DoOnItem)(s, state);
 		s = NULL;
@@ -40,7 +40,7 @@ int UnpackDoubleKeyVal(MemStream_t* src, MemStream_t* dst,
 	size_t primReaded = 0;
 	int err = 0;
 	DoubleValue_t* s = (*skip) ? (DoubleValue_t*)dst->Buffer : NULL;
-	while (!(err = EdfReadBin(&DoubleValueInf, src, dst, (void **)&s, skip, &primReaded)))
+	while (!(err = EdfReadBin(&DoubleValueType, src, dst, (void **)&s, skip, &primReaded)))
 	{
 		(*DoOnItem)(s, state);
 		s = NULL;

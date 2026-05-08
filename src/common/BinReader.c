@@ -2,7 +2,7 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
-static int ReadPrimitive(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadPrimitive(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	if (0 < (*resultPrimOffset))
@@ -21,6 +21,18 @@ static int ReadPrimitive(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem
 				(*primReaded)++;
 			//((uint8_t*)(*presult)) += sizeof(char*);
 			break;
+		case Char:
+		{
+			// Char - это массив фиксированной длины
+			size_t charArrayLen = GetTotalElements(&t->Dims);
+			if (charArrayLen == 0)
+				return ERR_WRONG_TYPE;
+			if ((err = StreamRead(src, NULL, (uint8_t*)(*presult), charArrayLen)))
+				return err;
+			if (primReaded)
+				(*primReaded)++;
+			break;
+		}
 		default:
 		{
 			size_t itemCLen = GetSizeOf(t->Type);
@@ -35,7 +47,7 @@ static int ReadPrimitive(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int ReadStruct(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadStruct(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	int err = 0;
@@ -53,7 +65,7 @@ static int ReadStruct(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, v
 
 	for (size_t j = 0; j < t->Childs.Count; j++)
 	{
-		const TypeInfo_t* s = &t->Childs.Item[j];
+		const EdfType_t* s = &t->Childs.Item[j];
 		size_t childCLen = GetTypeCSize(s);
 		if ((err = EdfReadBin(s, src, mem, (void**)&ti, resultPrimOffset, primReaded)))
 			return err;
@@ -62,7 +74,7 @@ static int ReadStruct(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, v
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int ReadElement(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadElement(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	if (Struct == t->Type)
@@ -70,7 +82,7 @@ static int ReadElement(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, 
 	return ReadPrimitive(t, src, mem, presult, resultPrimOffset, primReaded);
 }
 //-----------------------------------------------------------------------------
-static int ReadArray(const TypeInfo_t* t, MemStream_t* src, size_t totalElement, MemStream_t* mem, void** presult,
+static int ReadArray(const EdfType_t* t, MemStream_t* src, size_t totalElement, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	int err = 0;
@@ -96,9 +108,11 @@ static int ReadArray(const TypeInfo_t* t, MemStream_t* src, size_t totalElement,
 	return err;
 }
 //-----------------------------------------------------------------------------
-int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+int EdfReadBin(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
+	if (t->Type == Char)
+		return ReadElement(t, src, mem, presult, resultPrimOffset, primReaded);
 	size_t totalElement = GetTotalElements(&t->Dims);
 	if (1 < totalElement)
 		return ReadArray(t, src, totalElement, mem, presult, resultPrimOffset, primReaded);
@@ -112,39 +126,37 @@ int EdfReadBlock(EdfWriter_t* dw)
 	int err = 0;
 	size_t readed = 0;
 
-	dw->BlkType = 0;
-	dw->DatLen = 0;
-
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->BlkType, 1)))
+	dw->Blk.Type = 0;
+	dw->Blk.Len = 0;
+	// read Block Type
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Type, 1)))
 		return err;
-	if (!IsBlockType(dw->BlkType))
+	if (!IsBlockType(dw->Blk.Type))
 		return ERR_BLK_WRONG_TYPE;
-
-	uint8_t blockseq;
-	if ((err = StreamRead(&dw->Stream, &readed, &blockseq, 1)))
+	// read Block Length
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Len, 2)))
 		return err;
-	if (blockseq != dw->BlkSeq)
-		return ERR_BLK_WRONG_SEQ;
-
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->DatLen, 2)))
-		return err;
-	if (4096 < dw->DatLen || BLOCK_SIZE < dw->DatLen)
+	if (MAX_BLOCK_SIZE < dw->Blk.Len || BLOCK_SIZE < dw->Blk.Len)
 		return ERR_BLK_WRONG_SIZE;
-
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->Block, dw->DatLen)))
+	// read Block Content
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Data, dw->Blk.Len)))
 		return err;
-
-	if (btHeader == dw->BlkType)
-		memcpy(&dw->h, &dw->Block, sizeof(EdfHeader_t));
-
-	uint16_t crcData = MbCrc16(&dw->BlkType, 4 + dw->DatLen);
+	// read Block CRC
 	uint16_t crcFile = 0;
 	if ((err = StreamRead(&dw->Stream, &readed, &crcFile, sizeof(uint16_t))))
 		return err;
+	// calculate Block CRC
+	uint16_t crcData = MbCrc16(&dw->Blk.Type, 3 + dw->Blk.Len);
 	if (crcData != crcFile)
 		return ERR_BLK_WRONG_CRC;
 
-	dw->BlkSeq++;
+	// try read cfg
+	if (btConfig == dw->Blk.Type)
+	{
+		if ((err = MakeConfigFromBytes(dw->Blk.Data, dw->Blk.Len, &dw->Cfg)))
+			return err;
+		if (dw->Cfg.Blocksize < BLOCK_SIZE)
+			return ERR_BLOCK_SIZE_LARGE;
+	}
 	return 0;
-
 }
