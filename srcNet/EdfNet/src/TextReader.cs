@@ -308,6 +308,12 @@ public class TextReader : BaseDisposable
             return err;
         return err;
     }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (!disposing)
+            return;
+    }
 }
 
 
