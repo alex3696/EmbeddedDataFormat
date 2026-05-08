@@ -57,7 +57,6 @@ public class TestTxtWriterReader
         using (var file = new FileStream(txtFile, FileMode.Open))
         using (var reader = new NetEdf.src.TextReader(file))
         {
-            var header = reader.ReadHeader();
             var rec = reader.ReadInfo();
             Assert.IsTrue(playerRec.Inf.Equals(rec.Inf));
             reader.TryRead(out PlayerStats? ret);
@@ -120,7 +119,6 @@ public class TestTxtWriterReader
         using (var file = new FileStream(txtFile, FileMode.Open))
         using (var reader = new NetEdf.src.TextReader(file))
         {
-            var header = reader.ReadHeader();
             var rec = reader.ReadInfo();
             Assert.IsTrue(bigData.Inf.Equals(rec.Inf));
             reader.TryRead(out long[]? data);
@@ -199,7 +197,6 @@ public class TestTxtWriterReader
         using (var file = new FileStream(txtFile, FileMode.Open))
         using (var reader = new NetEdf.src.TextReader(file))
         {
-            var header = reader.ReadHeader();
             var rec = reader.ReadInfo();
             Assert.IsTrue(comlexVarInf.Equals(rec.Inf));
             reader.TryRead(out ComplexVariable? ret);

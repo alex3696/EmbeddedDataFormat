@@ -14,7 +14,7 @@ public class TextReader : BaseDisposable
     {
         _tr = new StreamReader(stream);
         Cfg = Header.Default;
-        //var newCfg = ReadHeader();
+        var newCfg = ReadHeader();
     }
 
     public string ReadNextLine()

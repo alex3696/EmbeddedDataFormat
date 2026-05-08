@@ -80,7 +80,7 @@ public class Reflection
 
 
 
-    public List<(string type, string? nameType)> GetPropertyAndName(object obj)
+    private List<(string type, string? nameType)> GetPropertyAndName(object obj)
     {
         List<(string type, string? nameType)> result = [];
 
@@ -152,18 +152,8 @@ public class Reflection
 
             }
         }
-        //foreach (var propertyInfo in type.GetProperties())
-        //{
-        //    typeInfo.Add((propertyInfo.PropertyType.Name, propertyInfo.Name));
-        //}
-
         return typeInfo;
     }
-
-
-
-
-
     private bool IsSimpleType1(PropertyInfo type)
     {
         return type.PropertyType.IsPrimitive ||
@@ -189,30 +179,17 @@ public class Reflection
         switch (code)
         {
             case TypeCode.Char: return PoType.Char;
-            case TypeCode.SByte: return PoType.UInt8;
+            case TypeCode.SByte: return PoType.Int8;
             case TypeCode.Byte: return PoType.UInt8;
             case TypeCode.Int16: return PoType.Int16;
             case TypeCode.Int32: return PoType.Int32;
             case TypeCode.String: return PoType.String;
-            /*
-        case TypeCode.UInt16:
-            break;
-        case TypeCode.Int32:
-            break;
-        case TypeCode.UInt32:
-            break;
-        case TypeCode.Int64:
-            break;
-        case TypeCode.UInt64:
-            break;
-        case TypeCode.Single:
-            break;
-        case TypeCode.Double:
-            break;
-            break;
-        case TypeCode.String:
-            break;
-            */
+            case TypeCode.UInt16: return PoType.UInt16;
+            case TypeCode.UInt32: return PoType.UInt32;
+            case TypeCode.Int64: return PoType.Int64;
+            case TypeCode.UInt64: return PoType.UInt64;
+            case TypeCode.Single: return PoType.Single;
+            case TypeCode.Double: return PoType.Double;
             default: return 0;
         }
     }
