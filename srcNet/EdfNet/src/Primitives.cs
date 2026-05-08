@@ -172,44 +172,51 @@ public static class Primitives
         return EdfErr.WrongType;
     }
 
-    public static T TryParse<T>(PoType t, ReadOnlySpan<byte> src)
+    public static bool TryParse<T>(PoType t, ReadOnlySpan<byte> src, out T result)
         where T : IUtf8SpanParsable<T>
     {
-        if (T.TryParse(src, CultureInfo.InvariantCulture, out T? obj))
-            return obj;
-        return default;
+        return T.TryParse(src, CultureInfo.InvariantCulture, out result);
     }
 
-    public static EdfErr TryTxtToSrc(PoType t, ReadOnlySpan<byte> src, out int r, out object obj)
+    public static EdfErr TryTxtToSrc(PoType t, ReadOnlySpan<byte> src, out object obj)
     {
         obj = default;
-        r = t.GetSizeOf();
         switch (t)
         {
             case PoType.Struct:
-            default: r = 0; return EdfErr.WrongType;
+            return EdfErr.WrongType;
             case PoType.Char:
                 string ch = Encoding.UTF8.GetString(src).TrimStart('\'').TrimEnd('\'');
                 char sym = Convert.ToChar(ch);
                 obj = sym;
                 break;
-            case PoType.Int8: obj = TryParse<sbyte>(t, src); break;
-            case PoType.UInt8: obj = TryParse<byte>(t, src); break;
-            case PoType.Int16: obj = TryParse<short>(t, src); break;
-            case PoType.UInt16: obj = TryParse<ushort>(t, src); break;
-            case PoType.Int32: obj = TryParse<int>(t, src); break;
-            case PoType.UInt32: obj = TryParse<uint>(t, src); break;
-            case PoType.Int64: obj = TryParse<long>(t, src); break;
-            case PoType.UInt64: obj = TryParse<ulong>(t, src); break;
-            case PoType.Half: obj = TryParse<Half>(t, src); break;
-            case PoType.Single: obj = TryParse<float>(t, src); break;
-            case PoType.Double: obj = TryParse<double>(t, src); break;
+            case PoType.Int8:
+                if(TryParse(t, src, out sbyte resSbyte)) obj = resSbyte; break;
+            case PoType.UInt8:
+                if(TryParse(t, src, out byte resByte)) obj = resByte; break;
+            case PoType.Int16:
+                if(TryParse(t, src, out short resInt16)) obj = resInt16; break;
+            case PoType.UInt16:
+                if(TryParse(t, src, out ushort resUInt16)) obj = resUInt16; break;
+            case PoType.Int32:
+                if(TryParse(t, src, out int resInt32)) obj = resInt32; break;
+            case PoType.UInt32:
+                if (TryParse(t, src, out uint resUInt32)) obj = resUInt32; break;
+            case PoType.Int64:
+                if (TryParse(t, src, out long resInt64)) obj = resInt64; break;
+            case PoType.UInt64:
+                if (TryParse(t, src, out ulong resUInt64)) obj = resUInt64; break;
+            case PoType.Half:
+                if (TryParse(t, src, out Half resHalf)) obj = resHalf; break;
+            case PoType.Single:
+                if (TryParse(t, src, out Single resSingle)) obj = resSingle; break;
+            case PoType.Double:
+                if (TryParse(t, src, out Double resDouble)) obj = resDouble; break;
             case PoType.String:
-                Regex regex = new Regex(@"^\""[\w\s]*\""");
-                string str = Encoding.UTF8.GetString(src);
-                string result = regex.Match(str).ToString();
-                result = result.TrimStart('"').TrimEnd('"');
-                obj = result;
+                string str = Encoding.UTF8.GetString(src).Trim();
+                if(str.StartsWith('"') && str.EndsWith('"'))
+                    str = str.Substring(1, str.Length - 2);
+                obj = str;
                 break;
         }
         return EdfErr.IsOk;

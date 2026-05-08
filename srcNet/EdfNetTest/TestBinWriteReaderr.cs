@@ -1,5 +1,6 @@
 using NetEdf.src;
 using Newtonsoft.Json.Converters;
+using System.IO.Compression;
 using System.Text;
 
 namespace NetEdfTest;
@@ -267,6 +268,86 @@ public class TestBinWriteReaderr
             }
 
             Assert.IsTrue(arr.SequenceEqual(arrRead));
+        }
+    }
+
+    class ComplexVariable
+    {
+        public long Time { get; set; }
+        public struct StateT
+        {
+            public sbyte Text { get; set; }
+            public struct PosT
+            {
+                public int x { get; set; }
+                public int y { get; set; }
+            };
+            public PosT Pos { get; set; }
+            public double[] Temp { get; set; }
+        };
+        public StateT[] State { get; set; }
+    };
+
+    [TestMethod]
+    public void WriteReadDiffStructTest()
+    {
+        string binFile = GetTestFilePath("ComplexVariable.bdf");
+        TypeInf comlexVarInf = new()
+        {
+            Type = PoType.Struct,
+            Name = "ComplexVariable",
+            Childs =
+           [
+               new (PoType.Int64, "time"),
+                new ()
+                {
+                    Type = PoType.Struct, Name = "State", Dims = [3],
+                    Childs =
+                    [
+                        new (PoType.Int8, "text"),
+                        new(PoType.Struct,"Pos")
+                        {
+                            Childs =
+                            [
+                                new (PoType.Int32, "x"),
+                                new (PoType.Int32, "y"),
+                            ]
+                        },
+                        new (PoType.Double, "Temp", [2]),
+                    ]
+                }
+           ]
+        };
+
+        var cv = new ComplexVariable()
+        {
+            Time = -123,
+            State =
+           [
+               new(){ Text = 1,Pos = new (){x=11,y=12 },Temp = new double[2] {1.1,1.2 }  },
+                new(){ Text = 2,Pos = new (){x=21,y=22 },Temp = new double[2]{2.3,2.4 }  },
+                new(){ Text = 3,Pos = new (){x=31,y=32 },Temp = new double[2]{3.3,3.4 }  },
+            ]
+        };
+
+        using (var file = new FileStream(binFile, FileMode.Create))
+        {
+            using var bw = new BinWriter(file);
+            bw.Write(new TypeRec() { Inf = comlexVarInf });
+            Assert.AreEqual(EdfErr.IsOk, bw.Write(cv));
+        }
+
+        using (var file = new FileStream(binFile, FileMode.Open))
+        {
+            using var reader = new BinReader(file);
+            Assert.IsTrue(reader.ReadBlock());
+            var rec = reader.ReadInfo();
+            Assert.IsNotNull(rec);
+            Assert.IsTrue(comlexVarInf.Equals(rec.Inf));
+            reader.ReadBlock();
+            Assert.AreEqual(EdfErr.IsOk, reader.TryRead(out ComplexVariable? ret));
+         
+
         }
     }
 }

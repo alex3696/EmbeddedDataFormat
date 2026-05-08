@@ -191,7 +191,7 @@ public class TestPrimitives
         Assert.AreEqual(expected.Length, w);
         Assert.IsTrue(dst.Slice(0, w).SequenceEqual(expected));
 
-        actual = Primitives.TryTxtToSrc(type, expected, out int r, out object value);
+        actual = Primitives.TryTxtToSrc(type, expected,out object value);
         Assert.AreEqual(EdfErr.IsOk, actual);
         Assert.AreEqual(obj, value);
 
@@ -211,7 +211,7 @@ public class TestPrimitives
     {
         Span<byte> dst = new byte[40];
 
-        var actual = Primitives.TryTxtToSrc(type, expected, out int r , out object value);
+        var actual = Primitives.TryTxtToSrc(type, expected, out object value);
 
         Assert.AreEqual(EdfErr.IsOk, actual);
         Assert.AreEqual(EdfErr.IsOk, actual);
@@ -358,7 +358,7 @@ public class TestPrimitives
         Assert.AreEqual(expected.Length, w);
         Assert.IsTrue(dst.Slice(0, w).SequenceEqual(expected));
 
-        actual = Primitives.TryTxtToSrc(PoType.String, dst, out int r, out object obj);
+        actual = Primitives.TryTxtToSrc(PoType.String, dst, out object obj);
         Assert.AreEqual(EdfErr.IsOk, actual);
         Assert.AreEqual(value, obj);
     }
