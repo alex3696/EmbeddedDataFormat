@@ -215,17 +215,17 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 	while (!(err = EdfReadBlock(&br)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamInOpen(&src, br.Blk.Data, br.Blk.Len)))
+		if ((err = MemStreamInOpen(&src, br.Blk->Conent.Record.Data, br.Blk->Len - offsetof(EdfRecordContent_t, Data))))
 			return err;
 
-		switch (br.Blk.Type)
+		switch (br.Blk->Type)
 		{
 		default: break;
 		case btConfig:
-			if (16 == br.Blk.Len)
+			if (16 == br.Blk->Len)
 			{
 				//EdfConfig_t h = { 0 };
-				//err = MakeConfigFromBytes(br.Blk.Data, br.Blk.Len, &h);
+				//err = MakeConfigFromBytes(br.Blk->Conent.Record.Data, br.Blk->Len, &h);
 				//if (!err)
 				//	err = EdfWriteConfig(&tw, &h, &writed);
 			}
@@ -235,7 +235,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 			skip = 0;
 			msDst.WPos = 0;
 			br.SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &br.SchemaPtr);
+			err = WriteSchemaBinToCBin(br.Blk->Conent.Schema.Data, br.Blk->Len, NULL, br.Buf, sizeof(br.Buf), NULL, &br.SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -255,12 +255,12 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)br.Blk.Data)->Type)
+					if (dat.FileType != ((FileTypeId_t*)br.Blk->Conent.Record.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t* t = (DateTime_t*)br.Blk.Data;
+					DateTime_t* t = (DateTime_t*)br.Blk->Conent.Record.Data;
 					dat.Id.Time.Year = (uint8_t)(t->Year - 2000);
 					dat.Id.Time.Month = t->Month;
 					dat.Id.Time.Day = t->Day;
@@ -319,33 +319,33 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				}//switch
 			}//if (br.SchemaPtr->Id)
 			else if (IsVarName(br.SchemaPtr, "Oper"))
-				dat.Id.Oper = *((uint16_t*)br.Blk.Data);
+				dat.Id.Oper = *((uint16_t*)br.Blk->Conent.Record.Data);
 			else if (IsVarName(br.SchemaPtr, "Discrete"))
-				discrete = *((double*)br.Blk.Data);
+				discrete = *((double*)br.Blk->Conent.Record.Data);
 			else if (IsVarName(br.SchemaPtr, "Reflections"))
-				dat.Reflections = PackReflections(*((uint16_t*)br.Blk.Data));
+				dat.Reflections = PackReflections(*((uint16_t*)br.Blk->Conent.Record.Data));
 			else if (IsVarName(br.SchemaPtr, "Level"))
-				dat.Level = PackLevel(*((double*)br.Blk.Data), discrete);
+				dat.Level = PackLevel(*((double*)br.Blk->Conent.Record.Data), discrete);
 			else if (IsVarName(br.SchemaPtr, "Pressure"))
-				dat.Pressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
+				dat.Pressure = (int16_t)round(*((double*)br.Blk->Conent.Record.Data) * 10);
 			else if (IsVarName(br.SchemaPtr, "Table"))
-				dat.Table = *((uint16_t*)br.Blk.Data);
+				dat.Table = *((uint16_t*)br.Blk->Conent.Record.Data);
 			else if (IsVarName(br.SchemaPtr, "Speed"))
-				dat.Speed = (uint16_t)round(*((float*)br.Blk.Data) * 10);
+				dat.Speed = (uint16_t)round(*((float*)br.Blk->Conent.Record.Data) * 10);
 			else if (IsVarName(br.SchemaPtr, "BufPressure"))
-				dat.BufPressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
+				dat.BufPressure = (int16_t)round(*((double*)br.Blk->Conent.Record.Data) * 10);
 			else if (IsVarName(br.SchemaPtr, "LinePressure"))
-				dat.LinePressure = (int16_t)round(*((double*)br.Blk.Data) * 10);
+				dat.LinePressure = (int16_t)round(*((double*)br.Blk->Conent.Record.Data) * 10);
 			else if (IsVarName(br.SchemaPtr, "Current"))
-				dat.Current = *((uint16_t*)br.Blk.Data);
+				dat.Current = *((uint16_t*)br.Blk->Conent.Record.Data);
 			else if (IsVarName(br.SchemaPtr, "IdleHour"))
-				dat.IdleHour = *((uint8_t*)br.Blk.Data);
+				dat.IdleHour = *((uint8_t*)br.Blk->Conent.Record.Data);
 			else if (IsVarName(br.SchemaPtr, "IdleMin"))
-				dat.IdleMin = *((uint8_t*)br.Blk.Data);
+				dat.IdleMin = *((uint8_t*)br.Blk->Conent.Record.Data);
 			else if (IsVarName(br.SchemaPtr, "Acc"))
-				dat.Acc = (int16_t)round(*((float*)br.Blk.Data) * 10);
+				dat.Acc = (int16_t)round(*((float*)br.Blk->Conent.Record.Data) * 10);
 			else if (IsVarName(br.SchemaPtr, "Temp"))
-				dat.Temp = (int16_t)round(*((float*)br.Blk.Data) * 10);
+				dat.Temp = (int16_t)round(*((float*)br.Blk->Conent.Record.Data) * 10);
 
 			else if (IsVarName(br.SchemaPtr, "EchoChart"))
 			{
@@ -366,7 +366,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 			}//else
 		}//case btData:
 		break;
-		}//switch (br.Blk.Type)
+		}//switch (br.Blk->Type)
 		if (0 != err)
 		{
 			LOG_ERR();

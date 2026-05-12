@@ -18,20 +18,37 @@ int EdfWriteSep(const char* const src,
 	size_t* skip, size_t* wqty,
 	size_t* writed);
 //-----------------------------------------------------------------------------
+
+typedef struct
+{
+	//uint16_t SchId;			// Id - идентификатор СХЕМЫ
+	uint8_t Data[4096 - 3 - 2];
+} EdfSchemaContent_t;
+
+
+typedef struct
+{
+	uint16_t SchId;			// SchemaId - идентификатор схемы (0-65535)
+	uint16_t PrmOffset;		// PrimitiveOffset - смещение примитива от начала ЗАПИСИ внутри ЗАПИСИ(0-65535)
+	uint32_t RecId;			// RecordId - номер ЗАПИСИ с которой начинается блок 
+	uint8_t Data[4096 - 3 - 8 - 2];
+} EdfRecordContent_t;
+
+
 typedef struct
 {
 	uint8_t Type;
 	uint16_t Len;
-	uint8_t Data[BLOCK_SIZE];
+	union
+	{
+		//EdfContent_t Raw;
+		EdfConfig_t Config;
+		EdfSchemaContent_t Schema;
+		EdfRecordContent_t Record;
+	} Conent;
 	uint16_t Crc;
 } EdfBlock_t;
 
-typedef struct
-{
-	uint32_t RecId;			// RecordId - номер ЗАПИСИ с которой начинается блок 
-	uint16_t SchId;			// SchemaId - идентификатор схемы (0-65535) 
-	uint16_t PrmOffset;		// PrimitiveOffset - смещение примитива от начала ЗАПИСИ внутри ЗАПИСИ(0-65535)
-} EdfDataHdr_t;
 
 typedef struct EdfWriter
 {
@@ -41,8 +58,10 @@ typedef struct EdfWriter
 
 	uint32_t RecordId;
 	size_t Skip;
-
-	EdfBlock_t Blk;
+	EdfBlock_t* const Blk;
+	const size_t SchMaxLen;// = BLOCK_SIZE;
+	const size_t RecMaxLen;// = BLOCK_SIZE - offsetof(EdfRecordContent_t, Data);
+	uint8_t RawBlk[BLOCK_SIZE];
 
 	size_t BufLen;
 	uint8_t Buf[BLOCK_SIZE];

@@ -136,7 +136,7 @@ static int PackUnpack()
 	EdfClose(dw);
 
 	MemStream_t mssrc = { 0 };
-	if ((err = MemStreamInOpen(&mssrc, &binBuf[3], 100)))
+	if ((err = MemStreamInOpen(&mssrc, &binBuf[3 + 8], 100)))
 		return err;
 	uint8_t buf[1024] = { 0 };
 	MemStream_t mem = { 0 };
@@ -235,14 +235,14 @@ static int CharArrayWriteRead()
 		return err;
 	if ((err = EdfReadBlock(&w))) // read Schema
 		return err;
-	if ((err = WriteSchemaBinToCBin(w.Blk.Data, w.Blk.Len, NULL, w.Buf, sizeof(w.Buf), NULL, &w.SchemaPtr)))
+	if ((err = WriteSchemaBinToCBin(w.Blk->Conent.Schema.Data, w.Blk->Len, NULL, w.Buf, sizeof(w.Buf), NULL, &w.SchemaPtr)))
 		return err;
 	if ((err = EdfReadBlock(&w))) // read Data
 		return err;
 	Char10Test_t* item = NULL;
 	// открываем поток чтения данных в блоке
 	MemStream_t blkStream = { 0 };
-	if ((err = MemStreamInOpen(&blkStream, w.Blk.Data, w.Blk.Len)))
+	if ((err = MemStreamInOpen(&blkStream, w.Blk->Conent.Record.Data, w.Blk->Len - offsetof(EdfRecordContent_t, Data))))
 		return err;
 	// читаем данные используя схему считанную в блоке Schema
 	if ((err = EdfReadBin(&w.SchemaPtr->Type, &blkStream, &mem, &item, &resultPrimOffset, &primReaded)))

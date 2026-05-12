@@ -143,17 +143,17 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	while (!(err = EdfReadBlock(&br)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamInOpen(&src, br.Blk.Data, br.Blk.Len)))
+		if ((err = MemStreamInOpen(&src, br.Blk->Conent.Record.Data, br.Blk->Len - offsetof(EdfRecordContent_t, Data))))
 			return err;
 
-		switch (br.Blk.Type)
+		switch (br.Blk->Type)
 		{
 		default: break;
 		case btConfig:
-			if (16 == br.Blk.Len)
+			if (16 == br.Blk->Len)
 			{
 				//EdfConfig_t h = { 0 };
-				//err = MakeConfigFromBytes(br.Blk.Data, br.Blk.Len, &h);
+				//err = MakeConfigFromBytes(br.Blk.Data, br.Blk->Len, &h);
 				//if (!err)
 				//	err = EdfWriteConfig(&tw, &h, &writed);
 			}
@@ -162,7 +162,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 		{
 			br.SchemaPtr = NULL;
 			EdfSchema_t* typeRec = NULL;
-			err = WriteSchemaBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
+			err = WriteSchemaBinToCBin(br.Blk->Conent.Schema.Data, br.Blk->Len, NULL, br.Buf, sizeof(br.Buf), NULL, &typeRec);
 			if (!err)
 			{
 				br.SchemaPtr = typeRec;
@@ -183,12 +183,12 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)br.Blk.Data)->Type)
+					if (dat.FileType != ((FileTypeId_t*)br.Blk->Conent.Record.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t t = *((DateTime_t*)br.Blk.Data);
+					DateTime_t t = *((DateTime_t*)br.Blk->Conent.Record.Data);
 					dat.Year = (uint8_t)(t.Year - 2000);
 					dat.Month = t.Month;
 					dat.Day = t.Day;
@@ -252,22 +252,23 @@ int EdfToDat(const char* edfFile, const char* datFile)
 						if (1 != fwrite(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
 							return ERR_FWRITE;
 					}
-					uint8_t* pblock = br.Blk.Data;
+					uint8_t* pblock = br.Blk->Conent.Record.Data;
+					size_t blkDatLen = src.Size;
 
-					while (0 < br.Blk.Len)
+					while (0 < blkDatLen)
 					{
-						size_t len = (size_t)MIN(br.Blk.Len, (size_t)(recordEnd - precord));
+						size_t len = (size_t)MIN(blkDatLen, (size_t)(recordEnd - precord));
 						memcpy(precord, pblock, len);
 						precord += len;
 						pblock += len;
-						br.Blk.Len -= (uint16_t)len;
+						blkDatLen -= (uint16_t)len;
 						if (recordEnd == precord)
 						{
 							precord = recordBegin;
 							if (1 != fwrite(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
 								return ERR_FWRITE;
 						}
-					}//while (0 < br.Blk.Len)
+					}//while (0 < blkDatLen)
 				}
 				break;//OMEGADATAREC
 
@@ -275,15 +276,15 @@ int EdfToDat(const char* edfFile, const char* datFile)
 
 			}
 			else if (IsVarName(br.SchemaPtr, "Shop"))
-				dat.Id.Shop = *((uint16_t*)br.Blk.Data);
+				dat.Id.Shop = *((uint16_t*)br.Blk->Conent.Record.Data);
 			else if (IsVarName(br.SchemaPtr, "PlaceId"))
-				dat.Id.PlaceId = *((uint16_t*)br.Blk.Data);
+				dat.Id.PlaceId = *((uint16_t*)br.Blk->Conent.Record.Data);
 			else if (IsVarName(br.SchemaPtr, "Depth"))
-				dat.Id.Depth = *((int32_t*)br.Blk.Data);
+				dat.Id.Depth = *((int32_t*)br.Blk->Conent.Record.Data);
 
 		}//case btData:
 		break;
-		}//switch (br.Blk.Type)
+		}//switch (br.Blk->Type)
 		if (0 != err)
 		{
 			LOG_ERR();

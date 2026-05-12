@@ -126,34 +126,34 @@ int EdfReadBlock(EdfWriter_t* dw)
 	int err = 0;
 	size_t readed = 0;
 
-	dw->Blk.Type = 0;
-	dw->Blk.Len = 0;
+	dw->Blk->Type = 0;
+	dw->Blk->Len = 0;
 	// read Block Type
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Type, 1)))
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Type, 1)))
 		return err;
-	if (!IsBlockType(dw->Blk.Type))
+	if (!IsBlockType(dw->Blk->Type))
 		return ERR_BLK_WRONG_TYPE;
 	// read Block Length
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Len, 2)))
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Len, 2)))
 		return err;
-	if (MAX_BLOCK_SIZE < dw->Blk.Len || BLOCK_SIZE < dw->Blk.Len)
+	if (MAX_BLOCK_SIZE < dw->Blk->Len || BLOCK_SIZE < dw->Blk->Len)
 		return ERR_BLK_WRONG_SIZE;
 	// read Block Content
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk.Data, dw->Blk.Len)))
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Conent.Schema, dw->Blk->Len)))
 		return err;
 	// read Block CRC
 	uint16_t crcFile = 0;
 	if ((err = StreamRead(&dw->Stream, &readed, &crcFile, sizeof(uint16_t))))
 		return err;
 	// calculate Block CRC
-	uint16_t crcData = MbCrc16(&dw->Blk.Type, 3 + dw->Blk.Len);
+	uint16_t crcData = MbCrc16(&dw->Blk->Type, 3 + dw->Blk->Len);
 	if (crcData != crcFile)
 		return ERR_BLK_WRONG_CRC;
 
 	// try read cfg
-	if (btConfig == dw->Blk.Type)
+	if (btConfig == dw->Blk->Type)
 	{
-		if ((err = MakeConfigFromBytes(dw->Blk.Data, dw->Blk.Len, &dw->Cfg)))
+		if ((err = MakeConfigFromBytes((const uint8_t*)&dw->Blk->Conent.Config, dw->Blk->Len, &dw->Cfg)))
 			return err;
 		if (dw->Cfg.Blocksize < BLOCK_SIZE)
 			return ERR_BLOCK_SIZE_LARGE;

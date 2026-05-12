@@ -28,16 +28,16 @@ int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
 		LOG_ERR();
 		return err;
 	}
-	dw->Blk.Len = 0;
+	dw->Blk->Len = 0;
 	return err;
 }
 //-----------------------------------------------------------------------------
 static int EdfWriteConfigBin(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
 {
-	dw->Blk.Type = (uint8_t)btConfig;
-	dw->Blk.Len = (uint16_t)sizeof(EdfConfig_t);
-	memcpy(dw->Blk.Data, h, sizeof(EdfConfig_t));
-	return EdfWriteBlockBin(&dw->Stream, h, (EdfBlock_t*)&dw->Blk.Type, writed);
+	dw->Blk->Type = (uint8_t)btConfig;
+	dw->Blk->Len = (uint16_t)sizeof(EdfConfig_t);
+	memcpy(&dw->Blk->Conent.Config, h, sizeof(EdfConfig_t));
+	return EdfWriteBlockBin(&dw->Stream, h, (EdfBlock_t*)&dw->Blk->Type, writed);
 }
 //-----------------------------------------------------------------------------
 static int EdfWriteConfigTxt(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
@@ -55,8 +55,6 @@ int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed)
 	size_t flushed = 0;
 	if ((err = EdfFlushData(dw, &flushed)))
 		return err;
-	dw->Skip = 0;
-	dw->RecordId = 0;
 
 	if (!dw->WriteSchema || !t)
 		return ERR_FN_NOT_EXIST;
@@ -67,7 +65,6 @@ int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed)
 		return err;
 	}
 	dw->SchemaPtr = t;
-	dw->Blk.Len = 0;
 	dw->BufLen = 0;
 	return err;
 }
@@ -75,15 +72,19 @@ int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed)
 static int EdfWriteSchemaBin(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed)
 {
 	int err = 0;
-	dw->Blk.Type = (uint8_t)btSchema;
+	dw->Blk->Type = (uint8_t)btSchema;
 	MemStream_t ms = { 0 };
 	size_t w = 0;
-	if ((err = MemStreamOutOpen(&ms, dw->Blk.Data, sizeof(dw->Blk.Data))) ||
+	if ((err = MemStreamOutOpen(&ms, dw->Blk->Conent.Schema.Data, dw->SchMaxLen)) ||
 		(err = WriteSchemaBinToStream((Stream_t*)&ms, t, &w)))
 		return err;
-	dw->Blk.Len = (uint16_t)w;// (uint16_t)ms.WPos;
-	if ((err = EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk.Type, writed)))
+	dw->Blk->Len = (uint16_t)w;// (uint16_t)ms.WPos;
+	if ((err = EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk->Type, writed)))
 		return err;
+	dw->Blk->Conent.Record.SchId = t->Id;
+	dw->Blk->Conent.Record.PrmOffset = 0;
+	dw->Blk->Conent.Record.RecId = 0;
+	dw->Blk->Len = 0; // offsetof(EdfRecordContent_t, Data);
 	return 0;
 }
 //-----------------------------------------------------------------------------
@@ -96,7 +97,7 @@ static int EdfWriteSchemaTxt(EdfWriter_t* w, const EdfSchema_t* t, size_t* write
 //-----------------------------------------------------------------------------
 int EdfFlushData(EdfWriter_t* dw, size_t* writed)
 {
-	if (NULL == dw->FlushData || 0 == dw->Blk.Len)
+	if (NULL == dw->FlushData || 0 == dw->Blk->Len)
 		return 0;
 	int err = (*dw->FlushData)(dw, writed);
 	if (err)
@@ -104,19 +105,23 @@ int EdfFlushData(EdfWriter_t* dw, size_t* writed)
 		LOG_ERR();
 		return err;
 	}
-	dw->Blk.Len = 0;
+	dw->Blk->Len = 0;
 	return err;
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataBin(EdfWriter_t* dw, size_t* writed)
 {
-	dw->Blk.Type = (uint8_t)btData;
-	return EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk.Type, writed);
+	dw->Blk->Type = (uint8_t)btData;
+	if (btData == dw->Blk->Type)
+	{
+		dw->Blk->Len += offsetof(EdfRecordContent_t, Data);
+	}
+	return EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk->Type, writed);
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataTxt(EdfWriter_t* dw, size_t* writed)
 {
-	return StreamWrite((Stream_t*)&dw->Stream, writed, dw->Blk.Data, dw->Blk.Len);
+	return StreamWrite((Stream_t*)&dw->Stream, writed, dw->Blk->Conent.Record.Data, dw->Blk->Len);
 }
 
 //-----------------------------------------------------------------------------
@@ -127,7 +132,7 @@ static int SeekEnd(EdfWriter_t* f)
 	int err = 0;
 	while (!(err = EdfReadBlock(f)))
 	{
-		switch (f->Blk.Type)
+		switch (f->Blk->Type)
 		{
 		default: break;
 		case btConfig: break;
@@ -158,12 +163,21 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	int err = 0;
 	f->SchemaPtr = NULL;
 	f->Cfg = MakeDefaultConfig();
+
+	*(size_t*)&f->SchMaxLen = BLOCK_SIZE - 3 - 2;
+	*(size_t*)&f->RecMaxLen = BLOCK_SIZE - 3 - 8 - 2;
+	*(EdfBlock_t**)&f->Blk = (EdfBlock_t*)f->RawBlk;
+
 	if (0 == strncmp("wb", mode, 2) || 0 == strncmp("ab", mode, 2))
 	{
 		f->Stream = *stream;
-		f->Skip = 0;
-		f->RecordId = 0;
-		f->Blk.Len = 0;
+		memset(&f->Blk->Conent, 0, 16);
+		/*
+		f->Blk->Conent.Record.SchId = 0;
+		f->Blk->Conent.Record.PrmOffset = 0;
+		f->Blk->Conent.Record.RecId = 0;
+		f->Blk->Conent.Record.Mem.Len = 0;
+		*/
 		f->BufLen = 0;
 		f->WritePrimitive = strchr(mode, 'c') ? BinToBin : CBinToBin;
 		f->WriteConfig = EdfWriteConfigBin;
@@ -184,9 +198,7 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2))
 	{
 		f->Stream = *stream;
-		f->Skip = 0;
-		f->RecordId = 0;
-		f->Blk.Len = 0;
+		memset(&f->Blk->Conent, 0, 16);
 		f->BufLen = 0;
 		f->WritePrimitive = strchr(mode, 'c') ? BinToStr : CBinToStr;
 		f->WriteConfig = EdfWriteConfigTxt;
@@ -208,9 +220,7 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	else if (0 == strncmp("rb", mode, 2))
 	{
 		f->Stream = *stream;
-		f->Skip = 0;
-		f->RecordId = 0;
-		f->Blk.Len = 0;
+		memset(&f->Blk->Conent, 0, 16);
 		f->BufLen = 0;
 		f->WritePrimitive = BinToBin;
 		f->WriteConfig = NULL;

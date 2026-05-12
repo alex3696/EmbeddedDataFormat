@@ -33,12 +33,12 @@ static int WriteOnePrimitive(EdfWriter_t* dw, const EdfType_t* t,
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
-		dw->Blk.Len += (uint16_t)(*writed);
+		dw->Blk->Len += (uint16_t)(*writed);
 		if ((err = EdfFlushData(dw, &w)))
 			return err;
 		*writed = 0;
-		*dstLen = sizeof(dw->Blk.Data);
-		*ppdst = dw->Blk.Data;
+		*dstLen = dw->RecMaxLen;
+		*ppdst = dw->Blk->Conent.Record.Data;
 		if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
 			return err;
 	}
@@ -129,8 +129,8 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 	const uint8_t* src = xsrc;
 	size_t srcLen = xsrcLen;
 
-	size_t dstLen = sizeof(dw->Blk.Data) - dw->Blk.Len;
-	uint8_t* dst = dw->Blk.Data + dw->Blk.Len;
+	size_t dstLen = dw->RecMaxLen - dw->Blk->Len;
+	uint8_t* dst = dw->Blk->Conent.Record.Data + dw->Blk->Len;
 
 	int wr;
 	do
@@ -156,7 +156,7 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 			srcLen = xsrcLen;
 		}
 
-		size_t skip = dw->Skip;
+		size_t skip = dw->Blk->Conent.Record.PrmOffset;
 		size_t r = 0, w = 0, wqty = 0;
 		wr = WriteSingleValue(dw, &src, &srcLen, &dst, &dstLen, &skip, &wqty, &r, &w);
 
@@ -185,26 +185,26 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 			srcLen = xsrcLen;
 		}
 
-		dw->Blk.Len += (uint16_t)w;
+		dw->Blk->Len += (uint16_t)w;
 		switch (wr)
 		{
 		default:
 		case ERR_WRONG_TYPE: return ERR_WRONG_TYPE;
 		case ERR_SRC_SHORT:
-			dw->Skip += wqty;
+			dw->Blk->Conent.Record.PrmOffset += (uint16_t)wqty;
 			break;
 		case ERR_NO:
-			dw->Skip = 0;
-			dw->RecordId++;
+			dw->Blk->Conent.Record.PrmOffset = 0;
+			dw->Blk->Conent.Record.RecId++;
 			if (0 == xsrcLen)
 				return ERR_NO;
 			break;
 		case ERR_DST_SHORT:
 			if ((wr == EdfFlushData(dw, &w)))
 				return wr;
-			dstLen = sizeof(dw->Blk.Data);
-			dst = dw->Blk.Data;
-			dw->Skip = wqty;
+			dstLen = dw->RecMaxLen;
+			dst = dw->Blk->Conent.Record.Data;
+			dw->Blk->Conent.Record.PrmOffset = (uint16_t)wqty;
 			wr = 0;
 			break;
 		}

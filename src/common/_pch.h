@@ -15,6 +15,7 @@
 #include "string.h"
 #endif
 
+#include "stddef.h"
 //#include "windows.h"
 //#include "uchar.h"
 //#include "assert.h"

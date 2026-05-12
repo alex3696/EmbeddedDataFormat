@@ -46,7 +46,7 @@ int BinToText(const char* src, const char* dst)
 
 	while (!(err = EdfReadBlock(&br)))
 	{
-		switch (br.Blk.Type)
+		switch (br.Blk->Type)
 		{
 		default: break;
 		case btConfig:
@@ -56,7 +56,7 @@ int BinToText(const char* src, const char* dst)
 		case btSchema:
 		{
 			tw.SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(br.Blk.Data, br.Blk.Len, NULL, br.Buf, sizeof(br.Buf), NULL, &tw.SchemaPtr);
+			err = WriteSchemaBinToCBin(br.Blk->Conent.Schema.Data, br.Blk->Len , NULL, br.Buf, sizeof(br.Buf), NULL, &tw.SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -71,7 +71,7 @@ int BinToText(const char* src, const char* dst)
 		break;
 		case btData:
 		{
-			EdfWriteData(&tw, &br.Blk.Data, br.Blk.Len);
+			EdfWriteData(&tw, &br.Blk->Conent.Record.Data, br.Blk->Len - offsetof(EdfRecordContent_t, Data));
 			//EdfFlushData(&tw, &writed);
 		}
 		break;
