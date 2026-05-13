@@ -2,6 +2,32 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
+static int EdfWriteSep(const char* const src,
+	uint8_t** dst, size_t* dstSize,
+	size_t* skip, size_t* wqty,
+	size_t* writed)
+{
+	if (0 < (*skip))
+	{
+		(*skip)--;
+		return 0;
+	}
+	size_t srcLen = src ? strnlength(src, 10) : 0;
+	if (!srcLen)
+	{
+		(*wqty)++;
+		return 0;
+	}
+	if (srcLen > *dstSize)
+		return ERR_DST_SHORT;
+	(*wqty)++;
+	memcpy(*dst, src, srcLen);
+	(*dstSize) -= srcLen;
+	(*writed) += srcLen;
+	(*dst) += srcLen;
+	return 0;
+}
+//-----------------------------------------------------------------------------
 // 
 static int WriteOnePrimitive(EdfWriter_t* dw, const EdfType_t* t,
 	const uint8_t** ppsrc, size_t* srcLen,
@@ -29,7 +55,7 @@ static int WriteOnePrimitive(EdfWriter_t* dw, const EdfType_t* t,
 	{
 		charLen = *srcLen;
 	}
-	if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
+	if ((err = (*dw->impl->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
@@ -39,7 +65,7 @@ static int WriteOnePrimitive(EdfWriter_t* dw, const EdfType_t* t,
 		*writed = 0;
 		*dstLen = dw->RecMaxLen;
 		*ppdst = dw->Blk->Conent.Record.Data;
-		if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
+		if ((err = (*dw->impl->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
 			return err;
 	}
 	(*wqty)++;
@@ -62,12 +88,12 @@ static int WriteElement(const EdfType_t* t,
 	{
 		if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
 			return err;
-		return EdfWriteSep(dw->SepVarEnd, ppdst, dstLen, skip, wqty, writed);
+		return EdfWriteSep(dw->impl->SepVarEnd, ppdst, dstLen, skip, wqty, writed);
 	}
 	size_t totalElement = GetTotalElements(&t->Dims);
 	if (1 < totalElement)
 	{
-		if ((err = EdfWriteSep(dw->BeginArray, ppdst, dstLen, skip, wqty, writed)))
+		if ((err = EdfWriteSep(dw->impl->BeginArray, ppdst, dstLen, skip, wqty, writed)))
 			return err;
 	}
 	for (size_t i = 0; i < totalElement; i++)
@@ -76,7 +102,7 @@ static int WriteElement(const EdfType_t* t,
 		{
 			if (t->Fields.Count)
 			{
-				if ((err = EdfWriteSep(dw->BeginStruct, ppdst, dstLen, skip, wqty, writed)))
+				if ((err = EdfWriteSep(dw->impl->BeginStruct, ppdst, dstLen, skip, wqty, writed)))
 					return err;
 				for (size_t j = 0; j < t->Fields.Count; j++)
 				{
@@ -84,7 +110,7 @@ static int WriteElement(const EdfType_t* t,
 					if ((err = WriteElement(s, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed, dw)))
 						return err;
 				}
-				if ((err = EdfWriteSep(dw->EndStruct, ppdst, dstLen, skip, wqty, writed)))
+				if ((err = EdfWriteSep(dw->impl->EndStruct, ppdst, dstLen, skip, wqty, writed)))
 					return err;
 			}
 		}
@@ -92,13 +118,13 @@ static int WriteElement(const EdfType_t* t,
 		{
 			if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
 				return err;
-			if ((err = (EdfWriteSep(dw->SepVarEnd, ppdst, dstLen, skip, wqty, writed))))
+			if ((err = (EdfWriteSep(dw->impl->SepVarEnd, ppdst, dstLen, skip, wqty, writed))))
 				return err;
 		}
 	}
 	if (1 < totalElement)
 	{
-		if ((err = (EdfWriteSep(dw->EndArray, ppdst, dstLen, skip, wqty, writed))))
+		if ((err = (EdfWriteSep(dw->impl->EndArray, ppdst, dstLen, skip, wqty, writed))))
 			return err;
 	}
 	return err;
@@ -111,11 +137,11 @@ static int WriteSingleValue(EdfWriter_t* dw,
 	size_t* readed, size_t* writed)
 {
 	int err;
-	if (ERR_NO != (err = EdfWriteSep(dw->RecBegin, dst, dstLen, skip, wqty, writed)))
+	if (ERR_NO != (err = EdfWriteSep(dw->impl->RecBegin, dst, dstLen, skip, wqty, writed)))
 		return err;
 	if (ERR_NO != (err = WriteElement(&dw->SchemaPtr->Type, src, srcLen, dst, dstLen, skip, wqty, readed, writed, dw)))
 		return err;
-	if (ERR_NO != (err = EdfWriteSep(dw->RecEnd, dst, dstLen, skip, wqty, writed)))
+	if (ERR_NO != (err = EdfWriteSep(dw->impl->RecEnd, dst, dstLen, skip, wqty, writed)))
 		return err;
 	return err;
 }
@@ -138,7 +164,7 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 		if (dw->BufLen)
 		{
 			// copy xsrc data to buffer
-			size_t len = MIN(sizeof(dw->Buf) - dw->BufLen, xsrcLen);
+			size_t len = MIN(dw->BufMaxLen - dw->BufLen, xsrcLen);
 			if (0 < len)
 			{
 				memcpy(dw->Buf + dw->BufLen, xsrc, len);

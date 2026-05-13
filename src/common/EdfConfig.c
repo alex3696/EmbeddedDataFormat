@@ -1,12 +1,15 @@
 #include "_pch.h"
 #include "edf.h"
 
-//-----------------------------------------------------------------------------
-EdfConfig_t MakeDefaultConfig(void)
-{
-	EdfConfig_t h = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, BLOCK_SIZE, Default };
-	return h;
-}
+
+const EdfConfig_t EdfDefaultConfig = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, BLOCK_SIZE, Default };
+
+////-----------------------------------------------------------------------------
+//EdfConfig_t MakeDefaultConfig(void)
+//{
+//	EdfConfig_t h = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, BLOCK_SIZE, Default };
+//	return h;
+//}
 //-----------------------------------------------------------------------------
 int MakeConfigFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h)
 {

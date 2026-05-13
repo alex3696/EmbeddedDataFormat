@@ -34,33 +34,41 @@ int ChangeExt(char* file, const char* ext)
 //-----------------------------------------------------------------------------
 int BinToText(const char* src, const char* dst)
 {
-	EdfWriter_t br = { 0 };
-	EdfWriter_t tw = { 0 };
-	if (EdfOpen(&br, src, "rb"))
+	int err = 0;
+	uint8_t edfMemReader[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
+	EdfWriter_t* br = EdfCreate(edfMemReader, sizeof(edfMemReader), NULL, &err);
+	if (err)
+		return err;
+	uint8_t edfMemWriter[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
+	EdfWriter_t* tw = EdfCreate(edfMemWriter, sizeof(edfMemWriter), NULL, &err);
+	if (err)
+		return err;
+
+	if (EdfOpenFile(br, src, "rb"))
 		LOG_ERR();
-	if (EdfOpen(&tw, dst, "wtc"))
+	if (EdfOpenFile(tw, dst, "wtc"))
 		LOG_ERR();
 
 	size_t writed = 0;
-	int err = 0;
+	
 
-	while (!(err = EdfReadBlock(&br)))
+	while (!(err = EdfReadBlock(br)))
 	{
-		switch (br.Blk->Type)
+		switch (br->Blk->Type)
 		{
 		default: break;
 		case btConfig:
-			if ((err = EdfWriteConfig(&tw, &br.Cfg, &writed)))
+			if ((err = EdfWriteConfig(tw, &br->Cfg, &writed)))
 				return err;
 			break;
 		case btSchema:
 		{
-			tw.SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(br.Blk->Conent.Schema.Data, br.Blk->Len , NULL, br.Buf, sizeof(br.Buf), NULL, &tw.SchemaPtr);
+			tw->SchemaPtr = NULL;
+			err = WriteSchemaBinToCBin(br->Blk->Conent.Schema.Data, GetContentLen(br->Blk), NULL, br->Buf, br->BufMaxLen, NULL, &tw->SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
-				err = EdfWriteSchema(&tw, tw.SchemaPtr, &writed);
+				err = EdfWriteSchema(tw, tw->SchemaPtr, &writed);
 			}
 			else
 			{
@@ -71,7 +79,7 @@ int BinToText(const char* src, const char* dst)
 		break;
 		case btData:
 		{
-			EdfWriteData(&tw, &br.Blk->Conent.Record.Data, br.Blk->Len - offsetof(EdfRecordContent_t, Data));
+			EdfWriteData(tw, br->Blk->Conent.Record.Data, GetContentLen(br->Blk));
 			//EdfFlushData(&tw, &writed);
 		}
 		break;
@@ -82,8 +90,8 @@ int BinToText(const char* src, const char* dst)
 			break;
 		}
 	}
-	EdfClose(&br);
-	EdfClose(&tw);
+	EdfClose(br);
+	EdfClose(tw);
 	return 0;
 }
 //-----------------------------------------------------------------------------

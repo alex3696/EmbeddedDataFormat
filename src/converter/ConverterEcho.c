@@ -67,7 +67,7 @@ static double Pow(double v, double p)
 	return pow(v, p);
 }
 //-----------------------------------------------------------------------------
-int EchoToEdf(const char* src, const char* edf, char mode)
+int EchoToEdf(const char* src, const char* edfFile, char mode)
 {
 	FILE* f = NULL;
 	int err = fopen_s(&f, src, "rb");
@@ -78,13 +78,15 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 	if (1 != fread(&dat, sizeof(ECHO_FILE_V2_0), 1, f))
 		return ERR_FREAD;
 
-	EdfWriter_t dw;
+	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+
 	size_t writed = 0;
 
 	if ('t' == mode)
-		err = EdfOpen(&dw, edf, "wt");
+		err = EdfOpenFile(edf, edfFile, "wt");
 	else if ('b' == mode)
-		err = EdfOpen(&dw, edf, "wb");
+		err = EdfOpenFile(edf, edfFile, "wb");
 	else
 		err = ERR_WRONG_PARAMETERS;
 	if (err)
@@ -97,13 +99,12 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 	float speed = (float)dat.Speed / 10;
 	float xDiscrete = speed / 341;
 
-	EdfConfig_t h = MakeDefaultConfig();
-	if ((err = EdfWriteConfig(&dw, &h, &writed)))
+	if ((err = EdfWriteConfig(edf, &EdfDefaultConfig, &writed)))
 		return err;
 
-	//EdfWritePrimSchData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
+	//EdfWritePrimSchData(edf, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
 	const EdfSchema_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
-	EdfWriteSchemaData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
+	EdfWriteSchemaData(edf, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
 	const EdfSchema_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
 	const DateTime_t beginDtDat =
@@ -111,7 +112,7 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 		dat.Id.Time.Year + 2000, dat.Id.Time.Month, dat.Id.Time.Day,
 		dat.Id.Time.Hour, dat.Id.Time.Min, dat.Id.Time.Sec,
 	};
-	EdfWriteSchemaData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
+	EdfWriteSchemaData(edf, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
 
 	char field[256] = { 0 };
 	char cluster[256] = { 0 };
@@ -123,7 +124,7 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 	snprintf(shop, sizeof(shop) - 1, "%d", dat.Id.Shop);
 	const EdfSchema_t posInf = { POSITION, "Position", NULL, PositionType };
 	const Position_t posDat = { .Field = field, .Cluster = cluster, .Well = well, .Shop = shop, };
-	EdfWriteSchemaData(&dw, &posInf, &posDat, sizeof(Position_t));
+	EdfWriteSchemaData(edf, &posInf, &posDat, sizeof(Position_t));
 
 	const EdfSchema_t devInf = { DEVICEINFO, "DevInfo", "прибор", DeviceInfoType };
 	const DeviceInfo_t devDat =
@@ -131,7 +132,7 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 		.SwId = dat.Id.DeviceType, .SwModel = 0, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.Id.DeviceNum
 	};
-	EdfWriteSchemaData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
+	EdfWriteSchemaData(edf, &devInf, &devDat, sizeof(DeviceInfo_t));
 
 	const EdfSchema_t regInf = { REGINFO, "RegInfo", "регистратор", DeviceInfoType };
 	const DeviceInfo_t regDat =
@@ -139,25 +140,25 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 		.SwId = dat.Id.RegType, .SwModel = 0, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.Id.RegNum
 	};
-	EdfWriteSchemaData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
-	EdfWritePrimSchData(&dw, UInt16, 0, "Oper", NULL, &dat.Id.Oper);
+	EdfWriteSchemaData(edf, &regInf, &regDat, sizeof(DeviceInfo_t));
+	EdfWritePrimSchData(edf, UInt16, 0, "Oper", NULL, &dat.Id.Oper);
 
-	EdfWritePrimSchData(&dw, Double, 0, "Discrete", "величина дискреты", &discrete);
-	EdfWritePrimSchData(&dw, UInt16, 0, "Reflections", "число отражений",
+	EdfWritePrimSchData(edf, Double, 0, "Discrete", "величина дискреты", &discrete);
+	EdfWritePrimSchData(edf, UInt16, 0, "Reflections", "число отражений",
 		&((uint16_t) { ExtractReflections(dat.Reflections) }));
-	EdfWritePrimSchData(&dw, Double, 0, "Level", "уровень без поправки на скорость звука (для скорости 341.333 м/с), м",
+	EdfWritePrimSchData(edf, Double, 0, "Level", "уровень без поправки на скорость звука (для скорости 341.333 м/с), м",
 		&((double) { ExtractLevel(dat.Level) }));
-	EdfWritePrimSchData(&dw, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0f }));
-	EdfWritePrimSchData(&dw, UInt16, 0, "Table", "номер таблицы скоростей", &dat.Table);
-	EdfWritePrimSchData(&dw, Single, 0, "Speed", "скорость звука, м/с", &speed);
-	EdfWritePrimSchData(&dw, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0f }));
-	EdfWritePrimSchData(&dw, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0f }));
-	EdfWritePrimSchData(&dw, UInt16, 0, "Current", "ток, 0.1А", &dat.Current);
-	EdfWritePrimSchData(&dw, UInt8, 0, "IdleHour", "время простоя, ч", &dat.IdleHour);
-	EdfWritePrimSchData(&dw, UInt8, 0, "IdleMin", "время простоя, мин", &dat.IdleMin);
-	EdfWritePrimSchData(&dw, UInt8, 0, "Mode", "режим исследования", &dat.Mode);
-	EdfWritePrimSchData(&dw, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
-	EdfWritePrimSchData(&dw, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0f }));
+	EdfWritePrimSchData(edf, UInt16, 0, "Table", "номер таблицы скоростей", &dat.Table);
+	EdfWritePrimSchData(edf, Single, 0, "Speed", "скорость звука, м/с", &speed);
+	EdfWritePrimSchData(edf, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0f }));
+	EdfWritePrimSchData(edf, UInt16, 0, "Current", "ток, 0.1А", &dat.Current);
+	EdfWritePrimSchData(edf, UInt8, 0, "IdleHour", "время простоя, ч", &dat.IdleHour);
+	EdfWritePrimSchData(edf, UInt8, 0, "IdleMin", "время простоя, мин", &dat.IdleMin);
+	EdfWritePrimSchData(edf, UInt8, 0, "Mode", "режим исследования", &dat.Mode);
+	EdfWritePrimSchData(edf, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
+	EdfWritePrimSchData(edf, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
 
 	const EdfSchema_t chartsInf = { 0, "EchoChartInfo", NULL, ChartNType };
 	const ChartN_t chartsDat[] =
@@ -165,9 +166,9 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 		{ "Depth", "m", "", "глубина" },
 		{ "Val", "adc", "", "амплитуда" },
 	};
-	EdfWriteSchemaData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
+	EdfWriteSchemaData(edf, &chartsInf, &chartsDat, sizeof(chartsDat));
 
-	EdfWriteSchema(&dw, &(const EdfSchema_t){ 0, "EchoChart", NULL, Point2DType}, & writed);
+	EdfWriteSchema(edf, &(const EdfSchema_t){ 0, "EchoChart", NULL, Point2DType}, & writed);
 	struct PointXY p = { 0,0 };
 	for (size_t i = 0; i < 3000; i++)
 	{
@@ -178,10 +179,10 @@ int EchoToEdf(const char* src, const char* edf, char mode)
 
 		p.x = xDiscrete * i * maxDepthMult;
 
-		EdfWriteData(&dw, &p, sizeof(struct PointXY));
+		EdfWriteData(edf, &p, sizeof(struct PointXY));
 	}
 	fclose(f);
-	EdfClose(&dw);
+	EdfClose(edf);
 	return 0;
 }
 //-----------------------------------------------------------------------------
@@ -189,9 +190,11 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 {
 	int err = 0;
 
-	EdfWriter_t br;
+	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
+	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+
 	size_t writed = 0;
-	if ((err = EdfOpen(&br, edfFile, "rb")))
+	if ((err = EdfOpenFile(bdfr, edfFile, "rb")))
 		return err;
 
 	FILE* f = NULL;
@@ -212,20 +215,20 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 	if ((err = MemStreamOpen(&msDst, bDst, sizeof(bDst), 0, "w")))
 		return err;
 
-	while (!(err = EdfReadBlock(&br)))
+	while (!(err = EdfReadBlock(bdfr)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamInOpen(&src, br.Blk->Conent.Record.Data, br.Blk->Len - offsetof(EdfRecordContent_t, Data))))
+		if ((err = MemStreamInOpen(&src, bdfr->Blk->Conent.Record.Data, GetContentLen(bdfr->Blk))))
 			return err;
 
-		switch (br.Blk->Type)
+		switch (bdfr->Blk->Type)
 		{
 		default: break;
 		case btConfig:
-			if (16 == br.Blk->Len)
+			if (16 == bdfr->Blk->Len)
 			{
 				//EdfConfig_t h = { 0 };
-				//err = MakeConfigFromBytes(br.Blk->Conent.Record.Data, br.Blk->Len, &h);
+				//err = MakeConfigFromBytes(bdfr->Blk->Conent.Record.Data, bdfr->Blk->Len, &h);
 				//if (!err)
 				//	err = EdfWriteConfig(&tw, &h, &writed);
 			}
@@ -234,8 +237,8 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 		{
 			skip = 0;
 			msDst.WPos = 0;
-			br.SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(br.Blk->Conent.Schema.Data, br.Blk->Len, NULL, br.Buf, sizeof(br.Buf), NULL, &br.SchemaPtr);
+			bdfr->SchemaPtr = NULL;
+			err = WriteSchemaBinToCBin(bdfr->Blk->Conent.Schema.Data, GetContentLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->BufMaxLen, NULL, &bdfr->SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -249,18 +252,18 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 		break;
 		case btData:
 		{
-			if (br.SchemaPtr->Id)
+			if (bdfr->SchemaPtr->Id)
 			{
-				switch (br.SchemaPtr->Id)
+				switch (bdfr->SchemaPtr->Id)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)br.Blk->Conent.Record.Data)->Type)
+					if (dat.FileType != ((FileTypeId_t*)bdfr->Blk->Conent.Record.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t* t = (DateTime_t*)br.Blk->Conent.Record.Data;
+					DateTime_t* t = (DateTime_t*)bdfr->Blk->Conent.Record.Data;
 					dat.Id.Time.Year = (uint8_t)(t->Year - 2000);
 					dat.Id.Time.Month = t->Month;
 					dat.Id.Time.Day = t->Day;
@@ -317,37 +320,37 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				}
 				break;
 				}//switch
-			}//if (br.SchemaPtr->Id)
-			else if (IsVarName(br.SchemaPtr, "Oper"))
-				dat.Id.Oper = *((uint16_t*)br.Blk->Conent.Record.Data);
-			else if (IsVarName(br.SchemaPtr, "Discrete"))
-				discrete = *((double*)br.Blk->Conent.Record.Data);
-			else if (IsVarName(br.SchemaPtr, "Reflections"))
-				dat.Reflections = PackReflections(*((uint16_t*)br.Blk->Conent.Record.Data));
-			else if (IsVarName(br.SchemaPtr, "Level"))
-				dat.Level = PackLevel(*((double*)br.Blk->Conent.Record.Data), discrete);
-			else if (IsVarName(br.SchemaPtr, "Pressure"))
-				dat.Pressure = (int16_t)round(*((double*)br.Blk->Conent.Record.Data) * 10);
-			else if (IsVarName(br.SchemaPtr, "Table"))
-				dat.Table = *((uint16_t*)br.Blk->Conent.Record.Data);
-			else if (IsVarName(br.SchemaPtr, "Speed"))
-				dat.Speed = (uint16_t)round(*((float*)br.Blk->Conent.Record.Data) * 10);
-			else if (IsVarName(br.SchemaPtr, "BufPressure"))
-				dat.BufPressure = (int16_t)round(*((double*)br.Blk->Conent.Record.Data) * 10);
-			else if (IsVarName(br.SchemaPtr, "LinePressure"))
-				dat.LinePressure = (int16_t)round(*((double*)br.Blk->Conent.Record.Data) * 10);
-			else if (IsVarName(br.SchemaPtr, "Current"))
-				dat.Current = *((uint16_t*)br.Blk->Conent.Record.Data);
-			else if (IsVarName(br.SchemaPtr, "IdleHour"))
-				dat.IdleHour = *((uint8_t*)br.Blk->Conent.Record.Data);
-			else if (IsVarName(br.SchemaPtr, "IdleMin"))
-				dat.IdleMin = *((uint8_t*)br.Blk->Conent.Record.Data);
-			else if (IsVarName(br.SchemaPtr, "Acc"))
-				dat.Acc = (int16_t)round(*((float*)br.Blk->Conent.Record.Data) * 10);
-			else if (IsVarName(br.SchemaPtr, "Temp"))
-				dat.Temp = (int16_t)round(*((float*)br.Blk->Conent.Record.Data) * 10);
+			}//if (bdfr->SchemaPtr->Id)
+			else if (IsVarName(bdfr->SchemaPtr, "Oper"))
+				dat.Id.Oper = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+			else if (IsVarName(bdfr->SchemaPtr, "Discrete"))
+				discrete = *((double*)bdfr->Blk->Conent.Record.Data);
+			else if (IsVarName(bdfr->SchemaPtr, "Reflections"))
+				dat.Reflections = PackReflections(*((uint16_t*)bdfr->Blk->Conent.Record.Data));
+			else if (IsVarName(bdfr->SchemaPtr, "Level"))
+				dat.Level = PackLevel(*((double*)bdfr->Blk->Conent.Record.Data), discrete);
+			else if (IsVarName(bdfr->SchemaPtr, "Pressure"))
+				dat.Pressure = (int16_t)round(*((double*)bdfr->Blk->Conent.Record.Data) * 10);
+			else if (IsVarName(bdfr->SchemaPtr, "Table"))
+				dat.Table = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+			else if (IsVarName(bdfr->SchemaPtr, "Speed"))
+				dat.Speed = (uint16_t)round(*((float*)bdfr->Blk->Conent.Record.Data) * 10);
+			else if (IsVarName(bdfr->SchemaPtr, "BufPressure"))
+				dat.BufPressure = (int16_t)round(*((double*)bdfr->Blk->Conent.Record.Data) * 10);
+			else if (IsVarName(bdfr->SchemaPtr, "LinePressure"))
+				dat.LinePressure = (int16_t)round(*((double*)bdfr->Blk->Conent.Record.Data) * 10);
+			else if (IsVarName(bdfr->SchemaPtr, "Current"))
+				dat.Current = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+			else if (IsVarName(bdfr->SchemaPtr, "IdleHour"))
+				dat.IdleHour = *((uint8_t*)bdfr->Blk->Conent.Record.Data);
+			else if (IsVarName(bdfr->SchemaPtr, "IdleMin"))
+				dat.IdleMin = *((uint8_t*)bdfr->Blk->Conent.Record.Data);
+			else if (IsVarName(bdfr->SchemaPtr, "Acc"))
+				dat.Acc = (int16_t)round(*((float*)bdfr->Blk->Conent.Record.Data) * 10);
+			else if (IsVarName(bdfr->SchemaPtr, "Temp"))
+				dat.Temp = (int16_t)round(*((float*)bdfr->Blk->Conent.Record.Data) * 10);
 
-			else if (IsVarName(br.SchemaPtr, "EchoChart"))
+			else if (IsVarName(bdfr->SchemaPtr, "EchoChart"))
 			{
 				PointXY_t* s = NULL;
 				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, NULL))
@@ -366,7 +369,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 			}//else
 		}//case btData:
 		break;
-		}//switch (br.Blk->Type)
+		}//switch (bdfr->Blk->Type)
 		if (0 != err)
 		{
 			LOG_ERR();
@@ -380,6 +383,6 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 		return ERR_FWRITE;
 
 	fclose(f);
-	EdfClose(&br);
+	EdfClose(bdfr);
 	return 0;
 }

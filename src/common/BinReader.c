@@ -2,6 +2,23 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
+uint16_t GetContentLen(const EdfBlock_t* blk)
+{
+	uint16_t len = 0;
+	switch (blk->Type)
+	{
+		default: break;
+		case btConfig:
+		case btSchema:
+			len = blk->Len; //- offsetof(EdfBlock_t, Conent);
+			break;
+		case btData:
+			len = blk->Len /* - offsetof(EdfBlock_t, Conent) */ - offsetof(EdfRecordContent_t, Data);
+			break;
+	}
+	return len;
+}
+//-----------------------------------------------------------------------------
 static int ReadPrimitive(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {

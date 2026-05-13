@@ -16,7 +16,7 @@ static int8_t ExtractTravel(uint16_t number) // 6bit integer
 	return (result > 31) ? (result - 64) : result;
 }
 //-----------------------------------------------------------------------------
-int DynToEdf(const char* src, const char* edf, char mode)
+int DynToEdf(const char* src, const char* edfFile, char mode)
 {
 	assert(8 == strlen("тест"));
 
@@ -29,26 +29,25 @@ int DynToEdf(const char* src, const char* edf, char mode)
 	if (1 != fread(&dat, sizeof(DYN_FILE_V2_0), 1, f))
 		return ERR_FREAD;
 
-	EdfWriter_t dw;
+	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
 	size_t writed = 0;
 
 	if ('t' == mode)
-		err = EdfOpen(&dw, edf, "wt");
+		err = EdfOpenFile(edf, edfFile, "wt");
 	else if ('b' == mode)
-		err = EdfOpen(&dw, edf, "wb");
+		err = EdfOpenFile(edf, edfFile, "wb");
 	else
 		err = ERR_WRONG_PARAMETERS;
 	if (err)
 		return err;
 
-
-	EdfConfig_t h = MakeDefaultConfig();
-	if ((err = EdfWriteConfig(&dw, &h, &writed)))
+	if ((err = EdfWriteConfig(edf, &EdfDefaultConfig, &writed)))
 		return err;
 
-	//EdfWritePrimSchData(&dw, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
+	//EdfWritePrimSchData(edf, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
 	const EdfSchema_t typeInf = { FILETYPEID, NULL, NULL, FileTypeIdType };
-	EdfWriteSchemaData(&dw, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
+	EdfWriteSchemaData(edf, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
 	const EdfSchema_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType};
 	const DateTime_t beginDtDat =
@@ -56,7 +55,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 		dat.Id.Time.Year + 2000, dat.Id.Time.Month, dat.Id.Time.Day,
 		dat.Id.Time.Hour, dat.Id.Time.Min, dat.Id.Time.Sec,
 	};
-	EdfWriteSchemaData(&dw, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
+	EdfWriteSchemaData(edf, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
 
 	char field[256] = { 0 };
 	char cluster[256] = { 0 };
@@ -68,7 +67,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 	snprintf(shop, sizeof(shop) - 1, "%d", dat.Id.Shop);
 	const EdfSchema_t posInf = { POSITION, "Position" , NULL, PositionType };
 	const Position_t posDat = { .Field = field, .Cluster = cluster, .Well = well, .Shop = shop, };
-	EdfWriteSchemaData(&dw, &posInf, &posDat, sizeof(Position_t));
+	EdfWriteSchemaData(edf, &posInf, &posDat, sizeof(Position_t));
 
 	const EdfSchema_t devInf = { DEVICEINFO, "DevInfo", "прибор", DeviceInfoType};
 	const DeviceInfo_t devDat =
@@ -76,7 +75,7 @@ int DynToEdf(const char* src, const char* edf, char mode)
 		.SwId = dat.Id.DeviceType, .SwModel = 0, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.Id.DeviceNum
 	};
-	EdfWriteSchemaData(&dw, &devInf, &devDat, sizeof(DeviceInfo_t));
+	EdfWriteSchemaData(edf, &devInf, &devDat, sizeof(DeviceInfo_t));
 
 	const EdfSchema_t regInf = { REGINFO, "RegInfo", "регистратор", DeviceInfoType };
 	const DeviceInfo_t regDat =
@@ -84,30 +83,30 @@ int DynToEdf(const char* src, const char* edf, char mode)
 		.SwId = dat.Id.RegType, .SwModel = 0, .SwRevision = 0,
 		.HwId = 0, .HwModel = 0, .HwNumber = dat.Id.RegNum
 	};
-	EdfWriteSchemaData(&dw, &regInf, &regDat, sizeof(DeviceInfo_t));
-	EdfWritePrimSchData(&dw, UInt16, 0, "Oper", NULL, &dat.Id.Oper);
+	EdfWriteSchemaData(edf, &regInf, &regDat, sizeof(DeviceInfo_t));
+	EdfWritePrimSchData(edf, UInt16, 0, "Oper", NULL, &dat.Id.Oper);
 
-	EdfWritePrimSchData(&dw, UInt16, 0, "TravelStep", "величина дискреты перемещения 0.1мм/1", &dat.TravelStep);
-	EdfWritePrimSchData(&dw, UInt16, 0, "LoadStep", "величина дискреты нагрузки кг/1", &dat.LoadStep);
-	EdfWritePrimSchData(&dw, UInt16, 0, "TimeStep", "величина дискреты времени мс/1", &dat.TimeStep);
+	EdfWritePrimSchData(edf, UInt16, 0, "TravelStep", "величина дискреты перемещения 0.1мм/1", &dat.TravelStep);
+	EdfWritePrimSchData(edf, UInt16, 0, "LoadStep", "величина дискреты нагрузки кг/1", &dat.LoadStep);
+	EdfWritePrimSchData(edf, UInt16, 0, "TimeStep", "величина дискреты времени мс/1", &dat.TimeStep);
 
-	EdfWritePrimSchData(&dw, Single, 0, "Rod", "диаметр штока", &((float) { dat.Rod / 10.0f }));
-	EdfWritePrimSchData(&dw, UInt16, 0, "Aperture", "номер отверстия", &dat.Aperture);
-	EdfWritePrimSchData(&dw, UInt32, 0, "MaxWeight", "максимальная нагрузка (кг)", &((uint32_t) { dat.MaxWeight* dat.LoadStep }));
-	EdfWritePrimSchData(&dw, UInt32, 0, "MinWeight", "минимальная нагрузка (кг)", &((uint32_t) { dat.MinWeight* dat.LoadStep }));
-	EdfWritePrimSchData(&dw, UInt32, 0, "TopWeight", "вес штанг вверху (кг)", &((uint32_t) { dat.TopWeight* dat.LoadStep }));
-	EdfWritePrimSchData(&dw, UInt32, 0, "BotWeight", "вес штанг внизу (кг)", &((uint32_t) { dat.BotWeight* dat.LoadStep }));
-	EdfWritePrimSchData(&dw, Double, 0, "Travel", "ход штока (мм)", &((double) { dat.Travel* dat.TravelStep / 10.0f }));
-	EdfWritePrimSchData(&dw, Double, 0, "BeginPos", "положение штока перед первым измерением (мм)",
+	EdfWritePrimSchData(edf, Single, 0, "Rod", "диаметр штока", &((float) { dat.Rod / 10.0f }));
+	EdfWritePrimSchData(edf, UInt16, 0, "Aperture", "номер отверстия", &dat.Aperture);
+	EdfWritePrimSchData(edf, UInt32, 0, "MaxWeight", "максимальная нагрузка (кг)", &((uint32_t) { dat.MaxWeight* dat.LoadStep }));
+	EdfWritePrimSchData(edf, UInt32, 0, "MinWeight", "минимальная нагрузка (кг)", &((uint32_t) { dat.MinWeight* dat.LoadStep }));
+	EdfWritePrimSchData(edf, UInt32, 0, "TopWeight", "вес штанг вверху (кг)", &((uint32_t) { dat.TopWeight* dat.LoadStep }));
+	EdfWritePrimSchData(edf, UInt32, 0, "BotWeight", "вес штанг внизу (кг)", &((uint32_t) { dat.BotWeight* dat.LoadStep }));
+	EdfWritePrimSchData(edf, Double, 0, "Travel", "ход штока (мм)", &((double) { dat.Travel* dat.TravelStep / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "BeginPos", "положение штока перед первым измерением (мм)",
 		&((double) { dat.BeginPos* dat.TravelStep / 10.0f }));
-	EdfWritePrimSchData(&dw, UInt32, 0, "Period", "период качаний (мс)", &((uint32_t) { dat.Period* dat.TimeStep }));
-	EdfWritePrimSchData(&dw, UInt16, 0, "Cycles", "пропущено циклов", &dat.Cycles);
-	EdfWritePrimSchData(&dw, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0f }));
-	EdfWritePrimSchData(&dw, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0f }));
-	EdfWritePrimSchData(&dw, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0f }));
-	EdfWritePrimSchData(&dw, UInt16, 0, "PumpType", "тип привода станка-качалки {}", &dat.PumpType);
-	EdfWritePrimSchData(&dw, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
-	EdfWritePrimSchData(&dw, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
+	EdfWritePrimSchData(edf, UInt32, 0, "Period", "период качаний (мс)", &((uint32_t) { dat.Period* dat.TimeStep }));
+	EdfWritePrimSchData(edf, UInt16, 0, "Cycles", "пропущено циклов", &dat.Cycles);
+	EdfWritePrimSchData(edf, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0f }));
+	EdfWritePrimSchData(edf, UInt16, 0, "PumpType", "тип привода станка-качалки {}", &dat.PumpType);
+	EdfWritePrimSchData(edf, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
+	EdfWritePrimSchData(edf, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
 
 	const EdfSchema_t chartsInf = { 0, "DynamogrammChartInfo", NULL, ChartNType};
 	const ChartN_t chartsDat[] =
@@ -115,18 +114,18 @@ int DynToEdf(const char* src, const char* edf, char mode)
 		{ "Position", "m", "", "перемещение" },
 		{ "Weight", "T", "", "вес" }
 	};
-	EdfWriteSchemaData(&dw, &chartsInf, &chartsDat, sizeof(chartsDat));
+	EdfWriteSchemaData(edf, &chartsInf, &chartsDat, sizeof(chartsDat));
 
-	EdfWriteSchema(&dw, &(const EdfSchema_t){ 0, "DynChart", NULL, Point2DType}, & writed);
+	EdfWriteSchema(edf, &(const EdfSchema_t){ 0, "DynChart", NULL, Point2DType}, & writed);
 	struct PointXY p = { 0,0 };
 	for (size_t i = 0; i < 1000; i++)
 	{
 		p.x += (float)(ExtractTravel(dat.Data[i]) * dat.TravelStep / 1.E4);
 		p.y = (float)((dat.Data[i] & 1023) * dat.LoadStep * 1.0E-3);
-		EdfWriteData(&dw, &p, sizeof(struct PointXY));
+		EdfWriteData(edf, &p, sizeof(struct PointXY));
 	}
 	fclose(f);
-	EdfClose(&dw);
+	EdfClose(edf);
 	return 0;
 }
 //-----------------------------------------------------------------------------
@@ -135,9 +134,11 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 {
 	int err = 0;
 
-	EdfWriter_t br;
+	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
+	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+
 	size_t writed = 0;
-	if ((err = EdfOpen(&br, edfFile, "rb")))
+	if ((err = EdfOpenFile(bdfr, edfFile, "rb")))
 		return err;
 
 	FILE* f = NULL;
@@ -157,19 +158,19 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 	if ((err = MemStreamOpen(&msDst, bDst, sizeof(bDst), 0, "w")))
 		return err;
 
-	while (!(err = EdfReadBlock(&br)))
+	while (!(err = EdfReadBlock(bdfr)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamInOpen(&src, br.Blk->Conent.Record.Data, br.Blk->Len - offsetof(EdfRecordContent_t, Data))))
+		if ((err = MemStreamInOpen(&src, bdfr->Blk->Conent.Record.Data, GetContentLen(bdfr->Blk))))
 			return err;
 
-		switch (br.Blk->Type)
+		switch (bdfr->Blk->Type)
 		{
 		default: break;
 		case btConfig:
 			{
 				//EdfConfig_t h = { 0 };
-				//err = MakeConfigFromBytes(br.Blk->Conent.Record.Data, br.Blk->Len, &h);
+				//err = MakeConfigFromBytes(bdfr->Blk->Conent.Record.Data, bdfr->Blk->Len, &h);
 				//if (!err)
 				//	err = EdfWriteConfig(&tw, &h, &writed);
 			}
@@ -178,8 +179,8 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 		{
 			skip = 0;
 			msDst.WPos = 0;
-			br.SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(br.Blk->Conent.Schema.Data, br.Blk->Len, NULL, br.Buf, sizeof(br.Buf), NULL, &br.SchemaPtr);
+			bdfr->SchemaPtr = NULL;
+			err = WriteSchemaBinToCBin(bdfr->Blk->Conent.Schema.Data, GetContentLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->BufMaxLen, NULL, &bdfr->SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -193,18 +194,18 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 		break;
 		case btData:
 		{
-			if (br.SchemaPtr->Id)
+			if (bdfr->SchemaPtr->Id)
 			{
-				switch (br.SchemaPtr->Id)
+				switch (bdfr->SchemaPtr->Id)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)br.Blk->Conent.Record.Data)->Type)
+					if (dat.FileType != ((FileTypeId_t*)bdfr->Blk->Conent.Record.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t* t = (DateTime_t*)br.Blk->Conent.Record.Data;
+					DateTime_t* t = (DateTime_t*)bdfr->Blk->Conent.Record.Data;
 					dat.Id.Time.Year = (uint8_t)(t->Year - 2000);
 					dat.Id.Time.Month = t->Month;
 					dat.Id.Time.Day = t->Day;
@@ -262,49 +263,49 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				break;
 
 				}//switch
-			}//if (br.SchemaPtr->Id)
-			else if (IsVarName(br.SchemaPtr, "Oper"))
-				dat.Id.Oper = *((uint16_t*)br.Blk->Conent.Record.Data);
-			else if (IsVarName(br.SchemaPtr, "TravelStep"))
-				dat.TravelStep = *(uint16_t*)br.Blk->Conent.Record.Data;
-			else if (IsVarName(br.SchemaPtr, "LoadStep"))
-				dat.LoadStep = *(uint16_t*)br.Blk->Conent.Record.Data;
-			else if (IsVarName(br.SchemaPtr, "TimeStep"))
-				dat.TimeStep = *(uint16_t*)br.Blk->Conent.Record.Data;
-			else if (IsVarName(br.SchemaPtr, "Rod"))
-				dat.Rod = (uint16_t)(*(float*)br.Blk->Conent.Record.Data * 10);
-			else if (IsVarName(br.SchemaPtr, "Aperture"))
-				dat.Aperture = (*(uint16_t*)br.Blk->Conent.Record.Data);
-			else if (IsVarName(br.SchemaPtr, "MaxWeight"))
-				dat.MaxWeight = (uint16_t)(*(uint32_t*)br.Blk->Conent.Record.Data / dat.LoadStep);
-			else if (IsVarName(br.SchemaPtr, "MinWeight"))
-				dat.MinWeight = (uint16_t)(*(uint32_t*)br.Blk->Conent.Record.Data / dat.LoadStep);
-			else if (IsVarName(br.SchemaPtr, "TopWeight"))
-				dat.TopWeight = (uint16_t)(*(uint32_t*)br.Blk->Conent.Record.Data / dat.LoadStep);
-			else if (IsVarName(br.SchemaPtr, "BotWeight"))
-				dat.BotWeight = (uint16_t)(*(uint32_t*)br.Blk->Conent.Record.Data / dat.LoadStep);
-			else if (IsVarName(br.SchemaPtr, "Travel"))
-				dat.Travel = (uint16_t)(*(double*)br.Blk->Conent.Record.Data * 10.0 / dat.TravelStep);
-			else if (IsVarName(br.SchemaPtr, "BeginPos"))
-				dat.BeginPos = (uint16_t)(*(double*)br.Blk->Conent.Record.Data * 10.0 / dat.TravelStep);
-			else if (IsVarName(br.SchemaPtr, "Period"))
-				dat.Period = (uint16_t)(*(uint32_t*)br.Blk->Conent.Record.Data / dat.TimeStep);
-			else if (IsVarName(br.SchemaPtr, "Cycles"))
-				dat.Cycles = *(uint16_t*)br.Blk->Conent.Record.Data;
-			else if (IsVarName(br.SchemaPtr, "BeginPos"))
-				dat.Pressure = (uint16_t)(*(double*)br.Blk->Conent.Record.Data * 10.0);
-			else if (IsVarName(br.SchemaPtr, "BeginPos"))
-				dat.BufPressure = (uint16_t)(*(double*)br.Blk->Conent.Record.Data * 10.0);
-			else if (IsVarName(br.SchemaPtr, "BeginPos"))
-				dat.LinePressure = (uint16_t)(*(double*)br.Blk->Conent.Record.Data * 10.0);
-			else if (IsVarName(br.SchemaPtr, "PumpType"))
-				dat.PumpType = *(uint16_t*)br.Blk->Conent.Record.Data;
-			else if (IsVarName(br.SchemaPtr, "Acc"))
-				dat.Acc = (uint16_t)(*(float*)br.Blk->Conent.Record.Data * 10);
-			else if (IsVarName(br.SchemaPtr, "Temp"))
-				dat.Temp = (uint16_t)(*(float*)br.Blk->Conent.Record.Data * 10);
+			}//if (bdfr->SchemaPtr->Id)
+			else if (IsVarName(bdfr->SchemaPtr, "Oper"))
+				dat.Id.Oper = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+			else if (IsVarName(bdfr->SchemaPtr, "TravelStep"))
+				dat.TravelStep = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+			else if (IsVarName(bdfr->SchemaPtr, "LoadStep"))
+				dat.LoadStep = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+			else if (IsVarName(bdfr->SchemaPtr, "TimeStep"))
+				dat.TimeStep = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+			else if (IsVarName(bdfr->SchemaPtr, "Rod"))
+				dat.Rod = (uint16_t)(*(float*)bdfr->Blk->Conent.Record.Data * 10);
+			else if (IsVarName(bdfr->SchemaPtr, "Aperture"))
+				dat.Aperture = (*(uint16_t*)bdfr->Blk->Conent.Record.Data);
+			else if (IsVarName(bdfr->SchemaPtr, "MaxWeight"))
+				dat.MaxWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.LoadStep);
+			else if (IsVarName(bdfr->SchemaPtr, "MinWeight"))
+				dat.MinWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.LoadStep);
+			else if (IsVarName(bdfr->SchemaPtr, "TopWeight"))
+				dat.TopWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.LoadStep);
+			else if (IsVarName(bdfr->SchemaPtr, "BotWeight"))
+				dat.BotWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.LoadStep);
+			else if (IsVarName(bdfr->SchemaPtr, "Travel"))
+				dat.Travel = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0 / dat.TravelStep);
+			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
+				dat.BeginPos = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0 / dat.TravelStep);
+			else if (IsVarName(bdfr->SchemaPtr, "Period"))
+				dat.Period = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.TimeStep);
+			else if (IsVarName(bdfr->SchemaPtr, "Cycles"))
+				dat.Cycles = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
+				dat.Pressure = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0);
+			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
+				dat.BufPressure = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0);
+			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
+				dat.LinePressure = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0);
+			else if (IsVarName(bdfr->SchemaPtr, "PumpType"))
+				dat.PumpType = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+			else if (IsVarName(bdfr->SchemaPtr, "Acc"))
+				dat.Acc = (uint16_t)(*(float*)bdfr->Blk->Conent.Record.Data * 10);
+			else if (IsVarName(bdfr->SchemaPtr, "Temp"))
+				dat.Temp = (uint16_t)(*(float*)bdfr->Blk->Conent.Record.Data * 10);
 
-			else if (IsVarName(br.SchemaPtr, "DynChart"))
+			else if (IsVarName(bdfr->SchemaPtr, "DynChart"))
 			{
 				PointXY_t* s = NULL;
 				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, NULL))
@@ -325,7 +326,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 			}//else
 		}//case btData:
 		break;
-		}//switch (br.Blk->Type)
+		}//switch (bdfr->Blk->Type)
 		if (0 != err)
 		{
 			LOG_ERR();
@@ -339,7 +340,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 		return ERR_FWRITE;
 
 	fclose(f);
-	EdfClose(&br);
+	EdfClose(bdfr);
 	return 0;
 }
 

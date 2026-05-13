@@ -7,6 +7,7 @@
 #define EDF_VERSMINOR	3
 #define EDF_ENCODING	65001	//UTF-8
 
+#define DEFAULT_MEM_BLOCK_SIZE	(sizeof(EdfWriter_t) + BLOCK_SIZE*2)
 #define MIN_BLOCK_SIZE	256
 #define MAX_BLOCK_SIZE	4096
 #define MAX_STR_LEN		255
@@ -41,6 +42,9 @@ extern "C" {
 #include "EdfWriter.h"
 #pragma pack(pop)
 //-----------------------------------------------------------------------------
+int EdfInit(EdfWriter_t* pEdf, uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg);
+EdfWriter_t* EdfCreate(uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg, int* pErr);
+ 
 // mode 
 // "wb" - Write Binary file
 // "wt" - Write Text file
@@ -52,7 +56,7 @@ extern "C" {
 int EdfOpenStream(EdfWriter_t* w, Stream_t* stream, const char* mode);
 // Открыть файл для чтения (до)записи, внутри обращается к EdfOpenStream
 int EdfOpenWithFs(EdfWriter_t* w, const char* file, const char* mode, FileStreamOpenFn fnOpen);
-int EdfOpen(EdfWriter_t* w, const char* file, const char* mode);
+int EdfOpenFile(EdfWriter_t* w, const char* file, const char* mode);
 // освобождает фнутренние буферы и закрывает файли или поток, 
 int EdfClose(EdfWriter_t* dw);
 // запись конфигурации
