@@ -1,7 +1,6 @@
+#include "edf.h"
 #include "converter.h"
-#include "edf_cfg.h"
 #include "assert.h"
-
 
 //-----------------------------------------------------------------------------
 static char* GetTestFilePath(char* filename)

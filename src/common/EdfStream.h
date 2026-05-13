@@ -2,6 +2,7 @@
 #define EDFSTREAM_H
 
 #include "_pch.h"
+#include "EdfUtils.h"
 //-----------------------------------------------------------------------------
 // Common stream
 #define FSEEK_CUR    1

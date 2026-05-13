@@ -1,11 +1,10 @@
 #ifndef BLOCKWRITER_H
 #define BLOCKWRITER_H
 
-#include "_pch.h"
-#include "EdfConfig.h"
 #include "EdfStream.h"
-#include "Primitives.h"
+#include "EdfConfig.h"
 #include "EdfSchema.h"
+#include "Primitives.h"
 
 typedef struct EdfWriter EdfWriter_t;
 
@@ -22,7 +21,7 @@ int EdfWriteSep(const char* const src,
 typedef struct
 {
 	//uint16_t SchId;			// Id - идентификатор СХЕМЫ
-	uint8_t Data[4096 - 3 - 2];
+	uint8_t Data[MAX_BLOCK_SIZE - 3 - 2];
 } EdfSchemaContent_t;
 
 
@@ -31,7 +30,7 @@ typedef struct
 	uint16_t SchId;			// SchemaId - идентификатор схемы (0-65535)
 	uint16_t PrmOffset;		// PrimitiveOffset - смещение примитива от начала ЗАПИСИ внутри ЗАПИСИ(0-65535)
 	uint32_t RecId;			// RecordId - номер ЗАПИСИ с которой начинается блок 
-	uint8_t Data[4096 - 3 - 8 - 2];
+	uint8_t Data[MAX_BLOCK_SIZE - 3 - 8 - 2];
 } EdfRecordContent_t;
 
 

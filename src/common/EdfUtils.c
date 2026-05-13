@@ -1,4 +1,6 @@
 #include "_pch.h"
+#include "EdfUtils.h"
+
 //-----------------------------------------------------------------------------
 #ifdef LOG_ERRF
 static char errBuf[128];

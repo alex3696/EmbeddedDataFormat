@@ -2,7 +2,7 @@
 #include "assert.h"
 #include "Charts.h"
 #include "converter.h"
-#include "edf_cfg.h"
+#include "edf.h"
 #include "KeyValue.h"
 #include "math.h"
 #include "SiamFileFormat.h"

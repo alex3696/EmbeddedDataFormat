@@ -1,7 +1,7 @@
 #include "_pch.h"
 #include "assert.h"
 #include "converter.h"
-#include "edf_cfg.h"
+#include "edf.h"
 #include "math.h"
 //-----------------------------------------------------------------------------
 static char* GetFileExt(const char* filename) {

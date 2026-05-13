@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Charts.h" />
+    <ClInclude Include="..\common\EdfUtils.h" />
     <ClInclude Include="..\common\EdfWriter.h" />
     <ClInclude Include="..\common\EdfConfig.h" />
     <ClInclude Include="..\common\edf.h" />

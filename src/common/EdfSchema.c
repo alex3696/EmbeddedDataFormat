@@ -1,5 +1,5 @@
 #include "_pch.h"
-#include "EdfSchema.h"
+#include "edf.h"
 
 //-----------------------------------------------------------------------------
 static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed)

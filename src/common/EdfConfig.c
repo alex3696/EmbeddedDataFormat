@@ -1,5 +1,5 @@
 #include "_pch.h"
-#include "EdfConfig.h"
+#include "edf.h"
 
 //-----------------------------------------------------------------------------
 EdfConfig_t MakeDefaultConfig(void)
