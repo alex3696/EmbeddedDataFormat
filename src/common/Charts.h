@@ -8,7 +8,7 @@
 static const EdfType_t ChartXYDescriptionType =
 {
 	Struct, "ChartXYDescriptionType", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 3,
 		.Item = (EdfType_t[])
@@ -29,7 +29,7 @@ typedef struct ChartXYDesct
 static const EdfType_t Point2DType =
 {
 	Struct, "Chart2D", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 2,
 		.Item = (EdfType_t[])
@@ -49,7 +49,7 @@ typedef struct PointXY
 static const EdfType_t ChartNType =
 {
 	Struct, "ChartNType", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])

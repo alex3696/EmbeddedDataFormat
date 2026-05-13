@@ -25,12 +25,12 @@ static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 	if ((err = StreamWriteString(s, t->Name, writed)))
 		return err;
 
-	if (Struct == t->Type && t->Childs.Item && t->Childs.Count)
+	if (Struct == t->Type && t->Fields.Item && t->Fields.Count)
 	{
-		if ((err = StreamWrite(s, writed, &t->Childs.Count, 1)))
+		if ((err = StreamWrite(s, writed, &t->Fields.Count, 1)))
 			return err;
-		for (uint8_t i = 0; i < t->Childs.Count; i++)
-			if ((err = StreamWriteTypeBin(s, &t->Childs.Item[i], writed)))
+		for (uint8_t i = 0; i < t->Fields.Count; i++)
+			if ((err = StreamWriteTypeBin(s, &t->Fields.Item[i], writed)))
 				return err;
 	}
 	return err;
@@ -101,16 +101,16 @@ static int StreamWriteTypeTxt(Stream_t* s, const EdfType_t* t, int noffset, size
 		if ((err = StreamWriteFmt(s, writed, " \"%.255s\"", t->Name)))
 			return err;
 	// CHILDS
-	if (Struct == t->Type && t->Childs.Item && t->Childs.Count)
+	if (Struct == t->Type && t->Fields.Item && t->Fields.Count)
 	{
 		if ((err = StreamWrite(s, writed, "\n", 1)) ||
 			(err = StreamPrintOffset(s, noffset, writed)) ||
 			(err = StreamWrite(s, writed, "{", 1)))
 			return err;
-		for (size_t i = 0; i < t->Childs.Count; i++)
+		for (size_t i = 0; i < t->Fields.Count; i++)
 		{
 			if ((err = StreamWrite(s, writed, "\n", 1)) ||
-				(err = StreamWriteTypeTxt(s, &t->Childs.Item[i], noffset + 1, writed)))
+				(err = StreamWriteTypeTxt(s, &t->Fields.Item[i], noffset + 1, writed)))
 				return err;
 		}
 		if ((err = StreamWrite(s, writed, "\n", 1)) ||
@@ -183,17 +183,17 @@ static int StreamBinToCBin(MemStream_t* src, MemStream_t* mem, EdfType_t** t)
 
 	if (Struct == ti->Type)
 	{
-		if ((err = StreamRead(src, &readed, &ti->Childs.Count, 1)))
+		if ((err = StreamRead(src, &readed, &ti->Fields.Count, 1)))
 			return err;
-		if (ti->Childs.Count)
+		if (ti->Fields.Count)
 		{
 			// allocate array
-			const size_t childsSize = sizeof(EdfType_t) * ti->Childs.Count;
-			if ((err = MemAlloc(mem, childsSize, (void**)&ti->Childs.Item)))
+			const size_t childsSize = sizeof(EdfType_t) * ti->Fields.Count;
+			if ((err = MemAlloc(mem, childsSize, (void**)&ti->Fields.Item)))
 				return err;
-			for (uint8_t i = 0; i < ti->Childs.Count; i++)
+			for (uint8_t i = 0; i < ti->Fields.Count; i++)
 			{
-				EdfType_t* ch = &ti->Childs.Item[i];
+				EdfType_t* ch = &ti->Fields.Item[i];
 				if ((err = StreamBinToCBin(src, mem, &ch)))
 					return err;
 			}
@@ -247,10 +247,10 @@ uint32_t GetTypeCSize(const EdfType_t* t)
 	switch (t->Type)
 	{
 	case Struct:
-		if (t->Childs.Item && t->Childs.Count)
+		if (t->Fields.Item && t->Fields.Count)
 		{
-			for (uint32_t i = 0; i < t->Childs.Count; i++)
-				sz += GetTypeCSize(&t->Childs.Item[i]);
+			for (uint32_t i = 0; i < t->Fields.Count; i++)
+				sz += GetTypeCSize(&t->Fields.Item[i]);
 		}
 		break;
 	case String:
@@ -271,10 +271,10 @@ int8_t HasDynamicFields(const EdfType_t* t)
 	switch (t->Type)
 	{
 	case Struct:
-		if (t->Childs.Item && t->Childs.Count)
+		if (t->Fields.Item && t->Fields.Count)
 		{
-			for (uint32_t i = 0; i < t->Childs.Count; i++)
-				if (HasDynamicFields(&t->Childs.Item[i]))
+			for (uint32_t i = 0; i < t->Fields.Count; i++)
+				if (HasDynamicFields(&t->Fields.Item[i]))
 					return 1;
 		}
 		break;
@@ -302,7 +302,7 @@ int IsVarName(const EdfSchema_t* r, const char* varName)
 	return IsVar(r, 0, varName);
 }
 //-----------------------------------------------------------------------------
-size_t GetTotalElements(const Dims_t* const dim)
+size_t GetTotalElements(const EdfDims_t* const dim)
 {
 	size_t totalElement = 1;
 	if (dim && dim->Count && dim->Item)

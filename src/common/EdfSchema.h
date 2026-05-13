@@ -8,20 +8,20 @@ typedef struct
 {
 	uint8_t Count;
 	uint32_t* Item;
-} Dims_t;
+} EdfDims_t;
 
 typedef struct
 {
 	uint8_t Count;
 	struct EdfType* Item;
-} Childs_t;
+} EdfField_t;
 
 typedef struct EdfType
 {
 	uint8_t Type; /// PoType 
 	char* Name;
-	Dims_t Dims;
-	Childs_t Childs;
+	EdfDims_t Dims;
+	EdfField_t Fields;
 } EdfType_t;
 
 typedef struct
@@ -34,7 +34,7 @@ typedef struct
 
 int IsVar(const EdfSchema_t* r, int32_t varId, const char* varName);
 int IsVarName(const EdfSchema_t* r, const char* varName);
-size_t GetTotalElements(const Dims_t* const dims);
+size_t GetTotalElements(const EdfDims_t* const dims);
 
 
 uint32_t GetTypeCSize(const EdfType_t* t);

@@ -144,7 +144,7 @@ static const EdfType_t FileDescriptionType =
 //-----------------------------------------------------------------------------
 static const EdfType_t FileTypeIdType =
 {
-	.Type = Struct, .Name = "FileTypeId", .Dims = { 0, NULL }, .Childs =
+	.Type = Struct, .Name = "FileTypeId", .Dims = { 0, NULL }, .Fields =
 	{
 		.Count = 2,
 		.Item = (EdfType_t[])
@@ -164,7 +164,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t DateTimeType =
 {
-	.Type = Struct, .Name = "DateTime", .Dims = { 0, NULL }, .Childs =
+	.Type = Struct, .Name = "DateTime", .Dims = { 0, NULL }, .Fields =
 	{
 		.Count = 8,
 		.Item = (EdfType_t[])
@@ -195,7 +195,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t DeviceInfoType =
 {
-	.Type = Struct, .Name = "DeviceInfo", .Dims = { 0, NULL }, .Childs =
+	.Type = Struct, .Name = "DeviceInfo", .Dims = { 0, NULL }, .Fields =
 	{
 		.Count = 6,
 		.Item = (EdfType_t[])
@@ -223,7 +223,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t PositionType =
 {
-	.Type = Struct, .Name = "Position", .Dims = { 0, NULL }, .Childs =
+	.Type = Struct, .Name = "Position", .Dims = { 0, NULL }, .Fields =
 	{
 		.Count = 6,
 		.Item = (EdfType_t[])
@@ -250,7 +250,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t OmegaDataType =
 {
-	.Type = Struct, .Name = "OMEGA_DATA_V1_1", .Dims = { 0, NULL }, .Childs =
+	.Type = Struct, .Name = "OMEGA_DATA_V1_1", .Dims = { 0, NULL }, .Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])

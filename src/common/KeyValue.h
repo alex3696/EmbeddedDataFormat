@@ -8,7 +8,7 @@
 static const EdfType_t UInt16ValueType =
 {
 	Struct, "UInt16Value", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])
@@ -36,7 +36,7 @@ int UnpackUInt16KeyVal(MemStream_t* src, MemStream_t* dst,
 static const EdfType_t UInt32ValueType =
 {
 	Struct, "UInt32Value", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])
@@ -64,7 +64,7 @@ int UnpackUInt32KeyVal(MemStream_t* src, MemStream_t* dst,
 static const EdfType_t DoubleValueType =
 {
 	Struct, "DoubleValue", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])

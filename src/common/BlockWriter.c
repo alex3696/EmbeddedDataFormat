@@ -74,13 +74,13 @@ static int WriteElement(const EdfType_t* t,
 	{
 		if (Struct == t->Type)
 		{
-			if (t->Childs.Count)
+			if (t->Fields.Count)
 			{
 				if ((err = EdfWriteSep(dw->BeginStruct, ppdst, dstLen, skip, wqty, writed)))
 					return err;
-				for (size_t j = 0; j < t->Childs.Count; j++)
+				for (size_t j = 0; j < t->Fields.Count; j++)
 				{
-					const EdfType_t* s = &t->Childs.Item[j];
+					const EdfType_t* s = &t->Fields.Item[j];
 					if ((err = WriteElement(s, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed, dw)))
 						return err;
 				}

@@ -63,9 +63,9 @@ static int ReadStruct(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, vo
 		*presult = ti;
 	}
 
-	for (size_t j = 0; j < t->Childs.Count; j++)
+	for (size_t j = 0; j < t->Fields.Count; j++)
 	{
-		const EdfType_t* s = &t->Childs.Item[j];
+		const EdfType_t* s = &t->Fields.Item[j];
 		size_t childCLen = GetTypeCSize(s);
 		if ((err = EdfReadBin(s, src, mem, (void**)&ti, resultPrimOffset, primReaded)))
 			return err;

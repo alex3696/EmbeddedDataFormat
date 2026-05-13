@@ -92,7 +92,7 @@ static int PackUnpack()
 			.Type = Struct,
 			.Name = "KeyValue",
 			.Dims = {1, (uint32_t[]) { 2 } } ,
-			.Childs =
+			.Fields =
 			{
 				.Count = (uint8_t)3,
 				.Item = (EdfType_t[])
@@ -101,7 +101,7 @@ static int PackUnpack()
 					{ String, "Value" },
 					{
 						.Type = Struct, .Name = "Internal",
-						.Childs =
+						.Fields =
 						{
 							.Count = 1,
 							.Item = (EdfType_t[])
@@ -179,7 +179,7 @@ static int CharArrayWriteRead()
 		.Type =
 		{
 			.Type = Struct, .Dims = {0, NULL},
-			.Childs =
+			.Fields =
 			{
 				.Count = 3,
 				.Item = (EdfType_t[])
@@ -283,7 +283,7 @@ static int WriteSample(EdfWriter_t* dw)
 		.Type =
 		{
 			.Type = Struct, .Name = "KeyValue", .Dims = {0, NULL},
-			.Childs =
+			.Fields =
 			{
 				.Count = 2,
 				.Item = (EdfType_t[])
@@ -349,7 +349,7 @@ static int WriteSample(EdfWriter_t* dw)
 	EdfType_t comlexChar =
 	{
 		.Type = Struct, .Name = "Chat10Test", .Dims = {0, NULL},
-		.Childs =
+		.Fields =
 		{
 			.Count = 3,
 			.Item = (EdfType_t[])
@@ -370,7 +370,7 @@ static int WriteSample(EdfWriter_t* dw)
 	EdfType_t comlexVarType =
 	{
 		.Type = Struct, .Name = "ComplexVariable", .Dims = {0, NULL},
-		.Childs =
+		.Fields =
 		{
 			.Count = 2,
 			.Item = (EdfType_t[])
@@ -382,7 +382,7 @@ static int WriteSample(EdfWriter_t* dw)
 				(EdfType_t)
 				{
 					Struct, "State", { 1, (uint32_t[]) { 3 }} ,
-					.Childs =
+					.Fields =
 					{
 						.Count = 3,
 						.Item = (EdfType_t[])
@@ -394,7 +394,7 @@ static int WriteSample(EdfWriter_t* dw)
 							(EdfType_t)
 							{
 								Struct, "Pos",{0, NULL} ,
-								.Childs =
+								.Fields =
 								{
 									.Count = 2,
 									.Item = (EdfType_t[])
