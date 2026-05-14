@@ -168,7 +168,6 @@
     <ClCompile Include="..\common\BinReader.c" />
     <ClCompile Include="..\common\EdfUtils.c" />
     <ClCompile Include="..\common\KeyValue.c" />
-    <ClCompile Include="..\common\MbCrc.c" />
     <ClCompile Include="..\common\MemStream.c" />
     <ClCompile Include="..\converter\ConverterDat.c" />
     <ClCompile Include="..\converter\ConverterDyn.c" />
@@ -182,6 +181,7 @@
     <ClCompile Include="..\common\EdfWriter.c" />
     <ClCompile Include="..\converter\ConverterEdf.c" />
     <ClCompile Include="..\converter\FileStreamImplWin.c" />
+    <ClCompile Include="..\converter\MbCrc.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Charts.h" />

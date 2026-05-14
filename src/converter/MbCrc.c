@@ -1,6 +1,3 @@
-#ifdef PCH_H
-#include "_pch.h"
-#endif
 #include <stdint.h>
 
 static const uint8_t aucCRCHi[] = {
