@@ -42,17 +42,13 @@ extern "C" {
 #include "EdfWriter.h"
 #pragma pack(pop)
 //-----------------------------------------------------------------------------
+// инициализация и создание экземпляра EdfWriter_t необходимого для
+// хранения конфигурациоонных и промежуточных данных.
 int EdfInit(EdfWriter_t* pEdf, uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg);
 EdfWriter_t* EdfCreate(uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg, int* pErr);
  
-// mode 
-// "wb" - Write Binary file
-// "wt" - Write Text file
-// "ab" - Append existing Binary file
-// "at" - Append existing Text file
-// "rb" - Read Binary file
-// "rt" - Read Text file
 // Открыть поток для чтения (до)записи, поток может быть файловым или память
+// Режимы: "wb"/"rb" — бинарные, "wt"/"rt" — текстовые, "ab"/"at" — дозапись
 int EdfOpenStream(EdfWriter_t* w, Stream_t* stream, const char* mode);
 // Открыть файл для чтения (до)записи, внутри обращается к EdfOpenStream
 int EdfOpenWithFs(EdfWriter_t* w, const char* file, const char* mode, FileStreamOpenFn fnOpen);

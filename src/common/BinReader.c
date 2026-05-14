@@ -68,6 +68,23 @@ static int ReadStruct(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, vo
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	int err = 0;
+	uint8_t* ti = *presult;
+
+	for (size_t j = 0; j < t->Fields.Count; j++)
+	{
+		const EdfType_t* s = &t->Fields.Item[j];
+		if ((err = EdfReadBin(s, src, mem, &ti, resultPrimOffset, primReaded)))
+			return err;
+		size_t childCLen = GetTypeCSize(s);
+		ti += childCLen;
+	}
+	return err;
+}
+//-----------------------------------------------------------------------------
+static int ReadElement(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+	size_t* resultPrimOffset, size_t* primReaded)
+{
+	int err = 0;
 	// alloc mem
 	size_t c_items_len = GetTypeCSize(t);
 	uint8_t* ti = NULL;
@@ -79,21 +96,6 @@ static int ReadStruct(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, vo
 			return err;
 		*presult = ti;
 	}
-
-	for (size_t j = 0; j < t->Fields.Count; j++)
-	{
-		const EdfType_t* s = &t->Fields.Item[j];
-		size_t childCLen = GetTypeCSize(s);
-		if ((err = EdfReadBin(s, src, mem, (void**)&ti, resultPrimOffset, primReaded)))
-			return err;
-		ti += childCLen;
-	}
-	return err;
-}
-//-----------------------------------------------------------------------------
-static int ReadElement(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
-	size_t* resultPrimOffset, size_t* primReaded)
-{
 	if (Struct == t->Type)
 		return ReadStruct(t, src, mem, presult, resultPrimOffset, primReaded);
 	return ReadPrimitive(t, src, mem, presult, resultPrimOffset, primReaded);

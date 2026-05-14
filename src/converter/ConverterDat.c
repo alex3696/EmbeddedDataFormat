@@ -163,6 +163,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 			break;
 		case btSchema:
 		{
+			msDst.WPos = 0;
 			bdfr->SchemaPtr = NULL;
 			EdfSchema_t* typeRec = NULL;
 			err = WriteSchemaBinToCBin(bdfr->Blk->Conent.Schema.Data, GetContentLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->BufMaxLen, NULL, &typeRec);
