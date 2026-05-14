@@ -182,7 +182,7 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 			srcLen = xsrcLen;
 		}
 
-		size_t skip = dw->Blk->Conent.Record.PrmOffset;
+		size_t skip = dw->PrimSkip;
 		size_t r = 0, w = 0, wqty = 0;
 		wr = WriteSingleValue(dw, &src, &srcLen, &dst, &dstLen, &skip, &wqty, &r, &w);
 
@@ -217,21 +217,20 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 		default:
 		case ERR_WRONG_TYPE: return ERR_WRONG_TYPE;
 		case ERR_SRC_SHORT:
-			dw->Blk->Conent.Record.PrmOffset += (uint16_t)wqty;
+			dw->PrimSkip += (uint16_t)wqty;
 			break;
 		case ERR_NO:
-			dw->Blk->Conent.Record.PrmOffset = 0;
-			dw->Blk->Conent.Record.RecId++;
+			dw->PrimSkip = 0;
+			dw->RecordId++;
 			if (0 == xsrcLen)
 				return ERR_NO;
 			break;
 		case ERR_DST_SHORT:
-			if ((wr == EdfFlushData(dw, &w)))
-				return wr;
-			dstLen = dw->RecMaxLen;
-			dst = dw->Blk->Conent.Record.Data;
-			dw->Blk->Conent.Record.PrmOffset = (uint16_t)wqty;
-			wr = 0;
+			//dstLen = dw->RecMaxLen;
+			//dst = dw->Blk->Conent.Record.Data;
+			//dw->PrimSkip = (uint16_t)wqty;
+			//wr = 0;
+			return ERR_DST_SHORT;
 			break;
 		}
 	} while (ERR_SRC_SHORT != wr && 0 < srcLen);

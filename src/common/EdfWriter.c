@@ -24,10 +24,7 @@ int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
 	dw->Cfg = *h;
 	int err = (*dw->impl->WriteConfig)(dw, h, writed);
 	if (err)
-	{
-		LOG_ERR();
 		return err;
-	}
 	dw->Blk->Len = 0;
 	return err;
 }
@@ -60,10 +57,7 @@ int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed)
 		return ERR_FN_NOT_EXIST;
 	err = (*dw->impl->WriteSchema)(dw, t, writed);
 	if (err)
-	{
-		LOG_ERR();
 		return err;
-	}
 	dw->SchemaPtr = t;
 	dw->BufLen = 0;
 	return err;
@@ -82,8 +76,8 @@ static int EdfWriteSchemaBin(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writ
 	if ((err = EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk->Type, writed)))
 		return err;
 	dw->Blk->Conent.Record.SchId = t->Id;
-	dw->Blk->Conent.Record.PrmOffset = 0;
-	dw->Blk->Conent.Record.RecId = 0;
+	dw->PrimSkip = dw->Blk->Conent.Record.PrmOffset = 0;
+	dw->RecordId = dw->Blk->Conent.Record.RecId = 0;
 	dw->Blk->Len = 0;
 	return 0;
 }
@@ -101,10 +95,7 @@ int EdfFlushData(EdfWriter_t* dw, size_t* writed)
 		return 0;
 	int err = (*dw->impl->FlushData)(dw, writed);
 	if (err)
-	{
-		LOG_ERR();
 		return err;
-	}
 	dw->Blk->Len = 0;
 	return err;
 }
@@ -115,8 +106,15 @@ static int StreamWriteBlockDataBin(EdfWriter_t* dw, size_t* writed)
 	if (btData == dw->Blk->Type)
 	{
 		dw->Blk->Len += offsetof(EdfRecordContent_t, Data);
+		//dw->Blk->Conent.Record.SchId = dw->SchemaPtr->Id;
 	}
-	return EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk->Type, writed);
+	int err = EdfWriteBlockBin(&dw->Stream, &dw->Cfg, (EdfBlock_t*)&dw->Blk->Type, writed);
+	if (err)
+		return err;
+	//dw->Blk->Conent.Record.SchId = dw->SchemaPtr->Id;
+	dw->Blk->Conent.Record.PrmOffset = dw->PrimSkip;
+	dw->Blk->Conent.Record.RecId = dw->RecordId;
+	return err;
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataTxt(EdfWriter_t* dw, size_t* writed)
@@ -145,11 +143,6 @@ static int SeekEnd(EdfWriter_t* f)
 		}
 		break;
 		}//switch
-		if (0 != err)
-		{
-			LOG_ERR();
-			break;
-		}
 	}//while
 	if (ERR_EOF == err)
 		err = 0;

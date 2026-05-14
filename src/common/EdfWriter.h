@@ -66,6 +66,9 @@ typedef struct EdfWriter
 	const EdfSchema_t* SchemaPtr;
 	Stream_t Stream;
 
+	uint16_t PrimSkip;
+	uint32_t RecordId;
+
 	const size_t RecMaxLen;
 	const size_t SchMaxLen;
 	EdfBlock_t* const Blk;

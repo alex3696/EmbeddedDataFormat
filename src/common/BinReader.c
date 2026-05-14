@@ -10,10 +10,10 @@ uint16_t GetContentLen(const EdfBlock_t* blk)
 		default: break;
 		case btConfig:
 		case btSchema:
-			len = blk->Len; //- offsetof(EdfBlock_t, Conent);
+			len = blk->Len;
 			break;
 		case btData:
-			len = blk->Len /* - offsetof(EdfBlock_t, Conent) */ - offsetof(EdfRecordContent_t, Data);
+			len = blk->Len - offsetof(EdfRecordContent_t, Data);
 			break;
 	}
 	return len;
