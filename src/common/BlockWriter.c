@@ -8,6 +8,10 @@ static int EdfWriteSep(EdfWriter_t* dw,
 	size_t* skip, size_t* wqty,
 	size_t* writed)
 {
+	// игнорируем любые разделители, если мы не в текстовом режиме
+	if(!dw->impl->BeginStruct)
+		return 0;
+
 	if (0 < (*skip))
 	{
 		(*skip)--;
