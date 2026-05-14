@@ -1,6 +1,5 @@
 using NetEdf.Base;
 using System.Text.RegularExpressions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NetEdf.src;
 
@@ -315,7 +314,3 @@ public class TextReader : BaseDisposable
             return;
     }
 }
-
-
-
-

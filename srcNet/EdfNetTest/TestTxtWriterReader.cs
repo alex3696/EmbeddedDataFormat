@@ -95,8 +95,8 @@ public class TestTxtWriterReader
         };
         long[] bigNums = new long[1000];
 
-        for(int i = 0; i < bigNums.Length; ++i)
-            bigNums[i] = i * 10;
+        for (int i = 0; i < bigNums.Length; ++i)
+            bigNums[i] = i;
 
         using (var file = new FileStream(txtFile, FileMode.Create))
         using (var writer = new TxtWriter(file))
@@ -118,11 +118,14 @@ public class TestTxtWriterReader
 
         using (var file = new FileStream(txtFile, FileMode.Open))
         using (var reader = new NetEdf.src.TextReader(file))
+        using (var writer = new StreamWriter(GetTestFilePath("BigData.txt")))
         {
             var rec = reader.ReadInfo();
             Assert.IsTrue(bigData.Inf.Equals(rec.Inf));
             reader.TryRead(out long[]? data);
             Assert.IsTrue(bigNums.SequenceEqual(data));
+            for (int i = 0; i < data.Length; i++)
+                writer.Write($"{data[i]} ");
         }
     }
 
@@ -194,12 +197,43 @@ public class TestTxtWriterReader
         }
         Assert.IsTrue(File.Exists(txtFile));
 
+        string outputFilePath = "output_results.txt";
+
         using (var file = new FileStream(txtFile, FileMode.Open))
         using (var reader = new NetEdf.src.TextReader(file))
+        using (var writer = new StreamWriter(GetTestFilePath(outputFilePath), false, System.Text.Encoding.UTF8))
         {
             var rec = reader.ReadInfo();
             Assert.IsTrue(comlexVarInf.Equals(rec.Inf));
             reader.TryRead(out ComplexVariable? ret);
+            var result = ret.Value;
+
+            Assert.AreEqual(cv.Time, result.Time);
+            Assert.IsNotNull(result.State);
+            Assert.AreEqual(cv.State.Length, result.State.Length);
+
+            writer.WriteLine($"Time: {result.Time}");
+            writer.WriteLine($"States Count: {result.State.Length}");
+            writer.WriteLine(new string('-', 20));
+
+            for (int i = 0; i < cv.State.Length; i++)
+            {
+                var expectedState = cv.State[i];
+                var actualState = result.State[i];
+
+                Assert.AreEqual(expectedState.Text, actualState.Text);
+                Assert.AreEqual(expectedState.Pos.x, actualState.Pos.x);
+                Assert.AreEqual(expectedState.Pos.y, actualState.Pos.y);
+                Assert.IsNotNull(actualState.Temp);
+                CollectionAssert.AreEqual(expectedState.Temp, actualState.Temp);
+
+                writer.WriteLine($"State #{i}:");
+                writer.WriteLine($"  Text: {actualState.Text}");
+                writer.WriteLine($"  Position: X={actualState.Pos.x}, Y={actualState.Pos.y}");
+                writer.WriteLine($"  Temperatures: {string.Join(", ", actualState.Temp)}");
+                writer.WriteLine();
+            }
         }
     }
 }
+
