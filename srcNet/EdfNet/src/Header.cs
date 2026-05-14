@@ -12,7 +12,7 @@ public enum Options : uint
     UseCrc = 1,
     MaskUseCrc = 0xFE,
 };
-
+// Заголовок, который содержит информацию о версии, кодировке, размере блока и флагах
 public class Header : IEquatable<Header>
 {
     public byte VersMajor = 0x01;

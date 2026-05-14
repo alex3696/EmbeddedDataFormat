@@ -4,7 +4,7 @@ public class TxtWriter : BaseWriter
 {
     readonly Stream _st;
 
-    public TxtWriter(Stream stream, Header? cfg = null)
+    public TxtWriter(Stream stream, Header? cfg = null) // конструктор, принимает поток для записи и необязательную конфигурацию заголовка
         : base(cfg ?? Header.Default)
     {
         _st = stream;
@@ -18,97 +18,107 @@ public class TxtWriter : BaseWriter
         if(0 == stream.Position)
             Write(Cfg);
     }
-    protected override void Dispose(bool disposing)
+    protected override void Dispose(bool disposing) // освобождение ресурсов, при этом записываем все оставшиеся данные в блоке и очищаем буфер
     {
-        Flush();
-        _st.Flush();
-        base.Dispose(disposing);
+        Flush(); // записываем все оставшиеся данные в блоке
+        _st.Flush(); // очищаем буфер потока
+        base.Dispose(disposing); // вызываем базовый метод Dispose для освобождения ресурсов
     }
+    // метод для записи блока данных, принимает данные и тип блока,
     public override void Flush()
     {
-        _st.Write(_blkData.AsSpan(0, _blkQty));
-        _blkQty = 0;
+        _st.Write(_blkData.AsSpan(0, _blkQty)); // записываем данные блока в поток
+        _blkQty = 0; // сбрасываем количество байт в текущем блоке
     }
+    // метод для записи.
     protected void Write(string? str)
     {
-        if (!string.IsNullOrEmpty(str))
-            _st.Write(Encoding.UTF8.GetBytes(str));
+        if (!string.IsNullOrEmpty(str)) // если строка не пустая, то записываем ее в поток
+            _st.Write(Encoding.UTF8.GetBytes(str)); // записываем строку в поток в виде байтов UTF-8
     }
-    protected static string GetOffset(int noffset)
+    // метод для получения отступа в виде строки, которая состоит из определенного количества пробелов, умноженного на количество отступов
+    protected static string GetOffset(int noffset) // примнимает количество отступов
     {
-        string offset = "";
-        for (int i = 0; i < noffset; i++)
-            offset += "  ";
-        return offset;
+        string offset = ""; // инициализируем строку отступа как пустую
+        for (int i = 0; i < noffset; i++) // добавляем по два пробела для каждого уровня отступа
+            offset += "  "; // добавляем по два пробела для каждого уровня отступа
+        return offset; // возвращаем строку отступа
     }
+    // метод для записи заголовка
     public override void Write(Header h)
     {
-        Flush();
-        Write($"<~ {{version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags}; }} >\n");
+        Flush(); // записываем все оставшиеся данные в блоке перед записью заголовка
+        //записываем заголовок в виде строки, которая содержит информацию о версии, размере блока, кодировке и флагах
+        Write($"<~ {{version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags}; }} >\n"); 
         //Write($"// ? - struct @ - data // - comment");
-        _currDataType = null;
-        _blkQty = 0;
+        _currDataType = null; // сбрасываем текущий тип данных, так как мы только что записали заголовок
+        _blkQty = 0; // сбрасываем количество байт в текущем блоке, так как мы только что записали заголовок
     }
+    // метод для записи схемы, принимает тип данных и его описание
     public override void Write(TypeRec t)
     {
-        Flush();
-        Write($"\n\n<? {{");
-        Write($"{t.Id};\"{t.Name}\"");
-        if (!string.IsNullOrEmpty(t.Desc))
-            Write($";\"{t.Desc}\"");
-        Write($"}} ");
-        ToString(t.Inf);
-        Write($">");
-        _currDataType = t.Inf;
-        _blkQty = 0;
+        Flush(); // записываем все оставшиеся данные в блоке перед записью схемы
+        Write($"\n\n<? {{"); // записываем начало схемы в виде строки, которая содержит информацию о типе данных, его идентификаторе, имени и описании
+        Write($"{t.Id};\"{t.Name}\"");  // записываем идентификатор и имя типа данных в виде строки
+        if (!string.IsNullOrEmpty(t.Desc)) // если описание не пустое, то записываем его в виде строки
+            Write($";\"{t.Desc}\""); // записываем описание типа данных в виде строки
+        Write($"}} "); // записываем конец схемы
+        ToString(t.Inf); // записываем описание типа данных в виде строки, используя рекурсивный метод ToString
+        Write($">"); // записываем конец схемы
+        _currDataType = t.Inf; // устанавливаем текущий тип данных, так как мы только что записали его описание
+        _blkQty = 0; // сбрасываем количество байт в текущем блоке, так как мы только что записали описание типа данных
     }
+    // рекурсивный метод для записи описания типа данных в виде строки, принимает описание типа данных и количество отступов
     protected void ToString(TypeInf t, int noffset = 0)
     {
-        string offset = GetOffset(noffset);
-        Write(offset);
-        Write(t.Type.ToString());
-        if (null != t.Dims)
+        string offset = GetOffset(noffset); // получаем строку отступа для текущего уровня вложенности
+        Write(offset);// записываем отступ для текущего уровня вложенности
+        Write(t.Type.ToString()); // записываем тип данных
+        if (null != t.Dims) // если размерности не пустые, то записываем их
         {
-            foreach (var d in t.Dims)
+            foreach (var d in t.Dims) // записываем каждую размерность, заключая в квадратные скобки
                 Write($"[{d}]");
         }
-        if (!string.IsNullOrEmpty(t.Name))
-            Write($" \"{t.Name}\"");
-        if (PoType.Struct == t.Type && null != t.Childs && 0 < t.Childs.Length)
+        if (!string.IsNullOrEmpty(t.Name)) // если имя не пустое, то записываем его 
+            Write($" \"{t.Name}\"");// записываем имя типа данных в виде строки
+        if (PoType.Struct == t.Type && null != t.Childs && 0 < t.Childs.Length) // если тип данных является структурой и у нее есть поля, то записываем их
         {
-            Write($"\n{offset}{{");
-            foreach (var it in t.Childs)
+            Write($"\n{offset}{{"); // записываем начало структуры в виде строки, которая содержит отступ для текущего уровня вложенности
+            foreach (var it in t.Childs) // записываем каждое поле структуры, используя рекурсивный метод ToString для каждого поля
             {
-                Write($"\n");
-                ToString(it, noffset + 1);
+                Write($"\n"); // записываем перевод строки перед каждым полем структуры
+                ToString(it, noffset + 1); // записываем описание поля структуры в виде строки, используя рекурсивный метод ToString для каждого поля,
+                                           // увеличивая количество отступов на 1 для каждого уровня вложенности
             }
-            Write($"\n{offset}}}");
+            Write($"\n{offset}}}"); // записываем конец структуры в виде строки, которая содержит отступ для текущего уровня вложенности
         }
-        else
+        else // если тип данных не является структурой или у него нет полей, то просто записываем точку с запятой для обозначения конца описания типа данных
             Write(";");
     }
 
+    // метод для преобразования данных в текстовый формат
     protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w)
         => Primitives.TrySrcToTxt(t, obj, dst, out w);
+    // метод для записи данных, принимает данные в виде байтового массива и записывает их в поток, учитывая отступы и разделители
     protected override EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
     {
-        if (0 < skip)
+        if (0 < skip) // если есть отступы, то пропускаем их, уменьшая счетчик отступов на 1 
         {
             skip--;
             return EdfErr.IsOk;
         }
-        if (0 == src.Length)
+        if (0 == src.Length) // если данные для записи пустые, то просто увеличиваем счетчик записанных байт на 1
         {
             wqty++;
             return EdfErr.IsOk;
         }
-        if (src.Length > dst.Length)
-            return EdfErr.DstBufOverflow;
-        src.CopyTo(dst);
-        wqty++;
-        writed += src.Length;
-        dst = dst.Slice(src.Length);
-        return EdfErr.IsOk;
+        if (src.Length > dst.Length) // если данные для записи превышают размер доступного буфера
+            return EdfErr.DstBufOverflow; // возвращаем ошибку переполнения буфера
+        src.CopyTo(dst); // копируем данные для записи в доступный буфер
+        wqty++; // увеличиваем счетчик записанных байт на 1
+        writed += src.Length; // увеличиваем счетчик записанных байт на количество байт, которые мы только что записали
+        dst = dst.Slice(src.Length); // сдвигаем доступный буфер на количество байт, которые мы только что записали,
+        return EdfErr.IsOk; // возвращаем успешный результат записи
     }
 
 }

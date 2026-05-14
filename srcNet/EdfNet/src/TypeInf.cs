@@ -1,5 +1,5 @@
 namespace NetEdf.src;
-
+// Класс, который описывает тип данных
 [DebuggerDisplay("{DebugString(),nq}")]
 public class TypeInf : IEquatable<TypeInf>
 {

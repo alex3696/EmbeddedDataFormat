@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace NetEdf.src;
 
 public static class Primitives
@@ -11,7 +13,7 @@ public static class Primitives
     /// <returns>writed bytes count</returns>
     /// <exception cref="OverflowException"></exception>
     /// <exception cref="NotSupportedException"></exception>
-    public static int SrcToBin(this Stream dst, PoType t, object obj)
+    public static int SrcToBin(this Stream dst, PoType t, object obj) // write primitive to stream
     {
         Span<byte> b = stackalloc byte[t.GetSizeOf()];
         var w = SrcToBin(b, t, obj);
@@ -42,6 +44,7 @@ public static class Primitives
     /// <param name="obj"></param>
     /// <param name="dst"></param>
     /// <returns>error code, 0 when OK</returns>
+    // Конвертировать примитив в бинарный вид
     public static EdfErr TrySrcToBin(PoType t, object obj, Span<byte> dst, out int w)
     {
         w = t.GetSizeOf();
@@ -79,6 +82,7 @@ public static class Primitives
         }
         return EdfErr.IsOk;
     }
+    // Конвертировать бинарные данные в примитив
     public static EdfErr TryBinToSrc(PoType t, ReadOnlySpan<byte> src, out int r, out object? obj)
     {
         obj = default;
@@ -110,7 +114,7 @@ public static class Primitives
         }
         return EdfErr.IsOk;
     }
-
+    //Попытаться отформатировать примитив в текстовый вид
     public static EdfErr TryFormat<T>(PoType t, T obj, Span<byte> dst, out int w)
         where T : IUtf8SpanFormattable
     {
@@ -118,6 +122,7 @@ public static class Primitives
             return EdfErr.IsOk;
         return EdfErr.DstBufOverflow;
     }
+    // Конвертировать примитив в текстовый вид
     public static EdfErr TrySrcToTxt(PoType t, object obj, Span<byte> dst, out int w)
     {
         switch (t)
@@ -165,6 +170,56 @@ public static class Primitives
                 }
         }
         return EdfErr.WrongType;
+    }
+
+    public static bool TryParse<T>(PoType t, ReadOnlySpan<byte> src, out T result)
+        where T : IUtf8SpanParsable<T>
+    {
+        return T.TryParse(src, CultureInfo.InvariantCulture, out result);
+    }
+
+    public static EdfErr TryTxtToSrc(PoType t, ReadOnlySpan<byte> src, out object obj)
+    {
+        obj = default;
+        switch (t)
+        {
+            case PoType.Struct:
+            return EdfErr.WrongType;
+            case PoType.Char:
+                string ch = Encoding.UTF8.GetString(src).TrimStart('\'').TrimEnd('\'');
+                char sym = Convert.ToChar(ch);
+                obj = sym;
+                break;
+            case PoType.Int8:
+                if(TryParse(t, src, out sbyte resSbyte)) obj = resSbyte; break;
+            case PoType.UInt8:
+                if(TryParse(t, src, out byte resByte)) obj = resByte; break;
+            case PoType.Int16:
+                if(TryParse(t, src, out short resInt16)) obj = resInt16; break;
+            case PoType.UInt16:
+                if(TryParse(t, src, out ushort resUInt16)) obj = resUInt16; break;
+            case PoType.Int32:
+                if(TryParse(t, src, out int resInt32)) obj = resInt32; break;
+            case PoType.UInt32:
+                if (TryParse(t, src, out uint resUInt32)) obj = resUInt32; break;
+            case PoType.Int64:
+                if (TryParse(t, src, out long resInt64)) obj = resInt64; break;
+            case PoType.UInt64:
+                if (TryParse(t, src, out ulong resUInt64)) obj = resUInt64; break;
+            case PoType.Half:
+                if (TryParse(t, src, out Half resHalf)) obj = resHalf; break;
+            case PoType.Single:
+                if (TryParse(t, src, out Single resSingle)) obj = resSingle; break;
+            case PoType.Double:
+                if (TryParse(t, src, out Double resDouble)) obj = resDouble; break;
+            case PoType.String:
+                string str = Encoding.UTF8.GetString(src).Trim();
+                if(str.StartsWith('"') && str.EndsWith('"'))
+                    str = str.Substring(1, str.Length - 2);
+                obj = str;
+                break;
+        }
+        return EdfErr.IsOk;
     }
 }
 
