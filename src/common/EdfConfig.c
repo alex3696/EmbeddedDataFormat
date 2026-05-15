@@ -2,7 +2,7 @@
 #include "edf.h"
 
 
-const EdfConfig_t EdfDefaultConfig = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, BLOCK_SIZE, Default };
+const EdfConfig_t EdfCfg256 = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, MIN_BLOCK_SIZE, Default };
 
 ////-----------------------------------------------------------------------------
 //EdfConfig_t MakeDefaultConfig(void)
@@ -11,10 +11,10 @@ const EdfConfig_t EdfDefaultConfig = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING
 //	return h;
 //}
 //-----------------------------------------------------------------------------
-int MakeConfigFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h)
-{
-	if (sizeof(EdfConfig_t) > srcSize)
-		return ERR_SRC_SHORT;
-	memcpy(h, b, sizeof(EdfConfig_t));
-	return ERR_NO;
-}
+//int MakeConfigFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h)
+//{
+//	if (sizeof(EdfConfig_t) > srcSize)
+//		return ERR_SRC_SHORT;
+//	memcpy(h, b, sizeof(EdfConfig_t));
+//	return ERR_NO;
+//}

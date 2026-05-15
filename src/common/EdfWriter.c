@@ -17,12 +17,11 @@ static int EdfWriteBlockBin(Stream_t* st, const EdfConfig_t* cfg, const EdfBlock
 
 // Write Config
 //-----------------------------------------------------------------------------
-int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed)
+int EdfWriteConfig(EdfWriter_t* dw, size_t* writed)
 {
-	if (!dw->impl->WriteConfig || !h)
+	if (!dw->impl->WriteConfig)
 		return ERR_FN_NOT_EXIST;
-	dw->Cfg = *h;
-	int err = (*dw->impl->WriteConfig)(dw, h, writed);
+	int err = (*dw->impl->WriteConfig)(dw, &dw->Cfg, writed);
 	if (err)
 		return err;
 	dw->Blk->Len = 0;
@@ -149,7 +148,7 @@ static int SeekEnd(EdfWriter_t* f)
 	return err;
 }
 //-----------------------------------------------------------------------------
-EdfWriter_t* EdfCreate(uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg, int* pErr)
+EdfWriter_t* EdfCreate(uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg, int* pErr)
 {
 	EdfWriter_t* pEdf;
 	pEdf = (EdfWriter_t*)pMem;
@@ -162,18 +161,21 @@ EdfWriter_t* EdfCreate(uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg, int* pEr
 	return pEdf;
 }
 //-----------------------------------------------------------------------------
-int EdfInit(EdfWriter_t* pEdf, uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg)
-{
+int EdfInit(EdfWriter_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg)
+{ 
 	int err = 0;
 	if (NULL == pEdf)
 		return ERR_WRONG_PARAMETERS;
 	if (NULL == pMem)
 		return ERR_WRONG_PARAMETERS;
-	const size_t bufLen = (NULL == pCfg) ? EdfDefaultConfig.Blocksize : pCfg->Blocksize;
-	if ((size_t)pEdf->Cfg.Blocksize * 2 > memLen)
+	if (NULL == pCfg)
+		return ERR_WRONG_PARAMETERS;
+	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, MIN_BLOCK_SIZE, Default };
+	const size_t bufLen = (NULL == pCfg) ? cfg.Blocksize : pCfg->Blocksize;
+	if (bufLen * 2 > memLen)
 		return ERR_WRONG_PARAMETERS;
 
-	pEdf->Cfg = (NULL == pCfg)? EdfDefaultConfig : *pCfg;
+	pEdf->Cfg = (NULL == pCfg)? cfg : *pCfg;
 
 	*(size_t*)&pEdf->SchMaxLen = bufLen - offsetof(EdfBlock_t, Conent) - 2;
 	*(size_t*)&pEdf->RecMaxLen = bufLen - offsetof(EdfBlock_t, Conent) - 2 - offsetof(EdfRecordContent_t, Data);

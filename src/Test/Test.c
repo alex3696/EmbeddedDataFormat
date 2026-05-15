@@ -118,8 +118,8 @@ static int PackUnpack()
 	size_t primReaded = 0;
 	size_t skip = 0;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	uint8_t binBuf[1024] = { 0 };
 	MemStream_t memStream = { 0 };
@@ -197,8 +197,8 @@ static int CharArrayWriteRead()
 	uint8_t binBuf[256] = { 0 };
 	MemStream_t memStream = { 0 };
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	if ((err = MemStreamOutOpen(&memStream, binBuf, sizeof(binBuf))))
 		return err;
@@ -207,7 +207,7 @@ static int CharArrayWriteRead()
 	uint8_t test[30] = { 0 };
 	size_t len = 0;
 	writed = 0;
-	err = EdfWriteConfig(edf, &EdfDefaultConfig, & writed);
+	err = EdfWriteConfig(edf, &writed);
 	err = EdfWriteSchema(edf, &charStructSch, &writed);
 	if(ERR_SRC_SHORT != EdfWriteData(edf, &(uint8_t){8}, sizeof(uint8_t)))
 		return ERR_BASE;
@@ -270,7 +270,7 @@ static int WriteSample(EdfWriter_t* dw)
 	size_t writed = 0;
 	int err = 0;
 
-	err = EdfWriteConfig(dw, &EdfDefaultConfig, &writed);
+	err = EdfWriteConfig(dw, &writed);
 
 #pragma pack(push,1)
 	typedef struct KeyValue
@@ -415,7 +415,8 @@ static int WriteSample(EdfWriter_t* dw)
 			}
 		}
 	};
-	err = EdfWriteSchema(dw, &(EdfSchema_t){.Type=comlexVarType}, & writed);
+	if ((err = EdfWriteSchema(dw, &(EdfSchema_t){.Type = comlexVarType}, & writed)))
+		return err;
 #pragma pack(push,1)
 	struct ComplexVariable
 	{
@@ -453,8 +454,9 @@ static int Test_WriteSample()
 	char* txtConvFile = GetTestFilePath("t_writeConv.tdf");
 	int err = 0;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = {0};
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[sizeof(EdfWriter_t)+300*2] = {0};
+	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, 300, Default };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &cfg, &err);
 	
 	// TEXT write
 	err = EdfOpenFile(edf, txtFile, "wt");
@@ -489,9 +491,9 @@ static void WriteBigVar(EdfWriter_t* dw)
 {
 	int err = 0;
 	size_t writed = 0;
-	err = EdfWriteConfig(dw, &EdfDefaultConfig, &writed);
+	err = EdfWriteConfig(dw, &writed);
 
-	size_t arrLen = (size_t)(BLOCK_SIZE / sizeof(uint32_t) * 2.5);
+	size_t arrLen = (size_t)(dw->Cfg.Blocksize / sizeof(uint32_t) * 2.5);
 	EdfSchema_t t = { 0xF1F2 , NULL, NULL, {.Type = Int32, .Name = "variable", .Dims = { 1, (uint32_t[]) { arrLen }} } };
 	err = EdfWriteSchema(dw, &t, &writed);
 
@@ -514,8 +516,8 @@ static void Test_WriteBigVar()
 	char* txtConvFile = GetTestFilePath("t_bigConv.tdf");
 	int err = 0;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	err = EdfOpenFile(edf, binFile, "wb");
 	WriteBigVar(edf);

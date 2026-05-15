@@ -35,12 +35,13 @@ int ChangeExt(char* file, const char* ext)
 int BinToText(const char* src, const char* dst)
 {
 	int err = 0;
-	uint8_t edfMemReader[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* br = EdfCreate(edfMemReader, sizeof(edfMemReader), NULL, &err);
+	uint8_t edfMemReader[MEM_BLOCK_SIZE_512];
+	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, 512, Default };
+	EdfWriter_t* br = EdfCreate(edfMemReader, sizeof(edfMemReader), &cfg, &err);
 	if (err)
 		return err;
-	uint8_t edfMemWriter[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* tw = EdfCreate(edfMemWriter, sizeof(edfMemWriter), NULL, &err);
+	uint8_t edfMemWriter[MEM_BLOCK_SIZE_512];
+	EdfWriter_t* tw = EdfCreate(edfMemWriter, sizeof(edfMemWriter), &cfg, &err);
 	if (err)
 		return err;
 

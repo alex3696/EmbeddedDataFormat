@@ -7,9 +7,15 @@
 #define EDF_VERSMINOR	3
 #define EDF_ENCODING	65001	//UTF-8
 
-#define DEFAULT_MEM_BLOCK_SIZE	(sizeof(EdfWriter_t) + BLOCK_SIZE*2)
 #define MIN_BLOCK_SIZE	256
 #define MAX_BLOCK_SIZE	4096
+
+#define MEM_BLOCK_SIZE_256	(sizeof(EdfWriter_t) + MIN_BLOCK_SIZE*2)
+#define MEM_BLOCK_SIZE_512	(sizeof(EdfWriter_t) + 512*2)
+#define MEM_BLOCK_SIZE_1024	(sizeof(EdfWriter_t) + 1024*2)
+#define MEM_BLOCK_SIZE_2084	(sizeof(EdfWriter_t) + 2048*2)
+#define MEM_BLOCK_SIZE_4096	(sizeof(EdfWriter_t) + MAX_BLOCK_SIZE*2)
+
 #define MAX_STR_LEN		255
 
 #define EDF_CONSTSTR(val) &(const char*){val}
@@ -44,8 +50,8 @@ extern "C" {
 //-----------------------------------------------------------------------------
 // инициализация и создание экземпляра EdfWriter_t необходимого для
 // хранения конфигурациоонных и промежуточных данных.
-int EdfInit(EdfWriter_t* pEdf, uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg);
-EdfWriter_t* EdfCreate(uint8_t* pMem, size_t memLen, EdfConfig_t* pCfg, int* pErr);
+int EdfInit(EdfWriter_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg);
+EdfWriter_t* EdfCreate(uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg, int* pErr);
  
 // Открыть поток для чтения (до)записи, поток может быть файловым или память
 // Режимы: "wb"/"rb" — бинарные, "wt"/"rt" — текстовые, "ab"/"at" — дозапись
@@ -56,7 +62,7 @@ int EdfOpenFile(EdfWriter_t* w, const char* file, const char* mode);
 // освобождает фнутренние буферы и закрывает файли или поток, 
 int EdfClose(EdfWriter_t* dw);
 // запись конфигурации
-int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed);
+int EdfWriteConfig(EdfWriter_t* dw, size_t* writed);
 // запись схемы данных
 int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed);
 // запись данных

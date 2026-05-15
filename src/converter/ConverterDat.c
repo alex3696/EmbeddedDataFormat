@@ -29,14 +29,14 @@ int DatToEdf(const char* src, const char* edfFile, char mode)
 	else
 		return ERR_WRONG_PARAMETERS;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	size_t writed = 0;
 	if ((err = EdfOpenFile(edf, edfFile, edfMode)))
 		return err;
 
-	if ((err = EdfWriteConfig(edf, &EdfDefaultConfig, &writed)))
+	if ((err = EdfWriteConfig(edf, &writed)))
 		return err;
 
 	//EdfWritePrimSchData(edf, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
@@ -111,8 +111,8 @@ int EdfToDat(const char* edfFile, const char* datFile)
 {
 	int err = 0;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	size_t writed = 0;
 	if ((err = EdfOpenFile(bdfr, edfFile, "rb")))

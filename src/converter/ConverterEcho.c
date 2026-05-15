@@ -78,8 +78,8 @@ int EchoToEdf(const char* src, const char* edfFile, char mode)
 	if (1 != fread(&dat, sizeof(ECHO_FILE_V2_0), 1, f))
 		return ERR_FREAD;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	size_t writed = 0;
 
@@ -99,7 +99,7 @@ int EchoToEdf(const char* src, const char* edfFile, char mode)
 	float speed = (float)dat.Speed / 10;
 	float xDiscrete = speed / 341;
 
-	if ((err = EdfWriteConfig(edf, &EdfDefaultConfig, &writed)))
+	if ((err = EdfWriteConfig(edf, &writed)))
 		return err;
 
 	//EdfWritePrimSchData(edf, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
@@ -190,8 +190,8 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 {
 	int err = 0;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	size_t writed = 0;
 	if ((err = EdfOpenFile(bdfr, edfFile, "rb")))

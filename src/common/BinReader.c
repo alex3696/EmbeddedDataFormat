@@ -155,7 +155,7 @@ int EdfReadBlock(EdfWriter_t* dw)
 	// read Block Length
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Len, 2)))
 		return err;
-	if (MAX_BLOCK_SIZE < dw->Blk->Len || BLOCK_SIZE < dw->Blk->Len)
+	if (dw->Cfg.Blocksize < dw->Blk->Len)
 		return ERR_BLK_WRONG_SIZE;
 	// read Block Content
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Conent.Schema, dw->Blk->Len)))
@@ -172,10 +172,9 @@ int EdfReadBlock(EdfWriter_t* dw)
 	// try read cfg
 	if (btConfig == dw->Blk->Type)
 	{
-		if ((err = MakeConfigFromBytes((const uint8_t*)&dw->Blk->Conent.Config, dw->Blk->Len, &dw->Cfg)))
-			return err;
-		if (dw->Cfg.Blocksize < BLOCK_SIZE)
+		if(dw->Cfg.Blocksize < dw->Blk->Conent.Config.Blocksize)
 			return ERR_BLOCK_SIZE_LARGE;
+		dw->Cfg = dw->Blk->Conent.Config;
 	}
 	return 0;
 }

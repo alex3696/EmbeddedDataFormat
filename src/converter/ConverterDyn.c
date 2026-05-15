@@ -29,8 +29,8 @@ int DynToEdf(const char* src, const char* edfFile, char mode)
 	if (1 != fread(&dat, sizeof(DYN_FILE_V2_0), 1, f))
 		return ERR_FREAD;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 	size_t writed = 0;
 
 	if ('t' == mode)
@@ -42,7 +42,7 @@ int DynToEdf(const char* src, const char* edfFile, char mode)
 	if (err)
 		return err;
 
-	if ((err = EdfWriteConfig(edf, &EdfDefaultConfig, &writed)))
+	if ((err = EdfWriteConfig(edf, &writed)))
 		return err;
 
 	//EdfWritePrimSchData(edf, String,0, "Comment", NULL, "ResearchTypeId={ECHOGRAM-5, DYNAMOGRAM-6, SAMT-11}");
@@ -134,8 +134,8 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 {
 	int err = 0;
 
-	uint8_t edfMem[DEFAULT_MEM_BLOCK_SIZE] = { 0 };
-	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), NULL, &err);
+	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
+	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	size_t writed = 0;
 	if ((err = EdfOpenFile(bdfr, edfFile, "rb")))
