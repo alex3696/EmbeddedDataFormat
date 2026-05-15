@@ -49,8 +49,8 @@ static int MemStreamWriteFormatImpl(void* stream, size_t* writed, const char* fo
 static int MemStreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)
 {
 	MemStream_t* s = (MemStream_t*)stream;
-	if (len > s->WPos - s->RPos)
-		return ERR_DST_SHORT;
+	if (StreamLen(stream) < len)
+		return ERR_SRC_SHORT;
 	memcpy(dst, &s->Buffer[s->RPos], len);
 	s->RPos += len;
 	if (readed)
@@ -72,7 +72,7 @@ int MemAlloc(MemStream_t* s, size_t len, void** pptr)
 		*pptr = NULL;
 		return ERR_NO;
 	}
-	if (len > s->Size - s->WPos)
+	if (StreamEmptyLen(s) < len)
 		return ERR_DST_SHORT;
 	*pptr = &s->Buffer[s->WPos];
 	memset(&s->Buffer[s->WPos], 0, len);
