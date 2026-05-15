@@ -187,33 +187,12 @@ int EdfInit(EdfWriter_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* 
 	return err;
 }
 //-----------------------------------------------------------------------------
-const EdfImpl_t writeBinToBin =
-{
-	.WritePrimitive = BinToBin,
-	.WriteConfig = EdfWriteConfigBin,
-	.WriteSchema = EdfWriteSchemaBin,
-	.FlushData = StreamWriteBlockDataBin
-};
 const EdfImpl_t writeCBinToBin =
 {
 	.WritePrimitive = CBinToBin,
 	.WriteConfig = EdfWriteConfigBin,
 	.WriteSchema = EdfWriteSchemaBin,
 	.FlushData = StreamWriteBlockDataBin
-};
-const EdfImpl_t writeBinToTxt =
-{
-	.WritePrimitive = BinToStr,
-	.WriteConfig = EdfWriteConfigTxt,
-	.WriteSchema = EdfWriteSchemaTxt,
-	.FlushData = StreamWriteBlockDataTxt,
-	.BeginStruct = SepBeginStruct,
-	.EndStruct = SepEndStruct,
-	.BeginArray = SepBeginArray,
-	.EndArray = SepEndArray,
-	.SepVarEnd = SepVarEnd,
-	.RecBegin = SepRecBegin,
-	.RecEnd = SepRecEnd,
 };
 const EdfImpl_t writeCBinToTxt =
 {
@@ -250,7 +229,7 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	{
 		f->Stream = *stream;
 		f->BufLen = 0;
-		f->impl = strchr(mode, 'c') ? &writeBinToBin : &writeCBinToBin;
+		f->impl = &writeCBinToBin;
 		if (strchr(mode, 'a'))
 		{
 			err = SeekEnd(f);
@@ -260,7 +239,7 @@ int EdfOpenStream(EdfWriter_t* f, Stream_t* stream, const char* mode)
 	{
 		f->Stream = *stream;
 		f->BufLen = 0;
-		f->impl = strchr(mode, 'c') ? &writeBinToTxt : &writeCBinToTxt;
+		f->impl = &writeCBinToTxt;
 		if (strchr(mode, 'a'))
 		{
 			err = StreamSeek(stream, 0, FSEEK_END);
