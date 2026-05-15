@@ -6,11 +6,11 @@
 #include "EdfSchema.h"
 #include "Primitives.h"
 
-typedef struct EdfWriter EdfWriter_t;
+typedef struct EdfContext EdfContext_t;
 
-typedef int (*FlushDataFn)(EdfWriter_t* w, size_t* writed);
-typedef int (*WriteConfigFn)(EdfWriter_t* w, const EdfConfig_t* h, size_t* writed);
-typedef int (*WriteSchemaFn)(EdfWriter_t* w, const EdfSchema_t* t, size_t* writed);
+typedef int (*FlushDataFn)(EdfContext_t* w, size_t* writed);
+typedef int (*WriteConfigFn)(EdfContext_t* w, const EdfConfig_t* h, size_t* writed);
+typedef int (*WriteSchemaFn)(EdfContext_t* w, const EdfSchema_t* t, size_t* writed);
 
 //-----------------------------------------------------------------------------
 typedef struct
@@ -57,29 +57,31 @@ typedef struct EdfImpl
 } EdfImpl_t;
 //typedef struct EdfImpl EdfImpl_t;
 
-uint16_t GetContentLen(const EdfBlock_t* blk);
+uint16_t GetContentMaxLen(const EdfContext_t* pEdf, EdfBlockType bt);
+uint16_t GetContentDataLen(const EdfBlock_t* blk);
 
 //-----------------------------------------------------------------------------
-typedef struct EdfWriter
+typedef struct EdfContext
 {
-	EdfConfig_t Cfg;
-	const EdfSchema_t* SchemaPtr;
-	Stream_t Stream;
+	EdfConfig_t Cfg;				// конфигурация
+	const EdfSchema_t* SchemaPtr;	// текущая схема, при записи кешируем схему в Buf
+	Stream_t Stream;				// поток в который пишем или читаем
 
-	uint16_t PrimSkip;
-	uint32_t RecordId;
+	uint16_t PrimSkip;	/** <Смещение примитива внутри текущей записи (0-65535).
+							Используется при разрыве примитива между блоками.
+                            Сбрасывается в 0 при вызове EdfWriteSchema.> */
+	uint32_t RecordId;	/** <Номер текущей записи (счетчик успешно завершенных записей).
+							Инкрементируется после каждой полной записи.
+							Сбрасывается в 0 при вызове EdfWriteSchema. */
 
-	const size_t RecMaxLen;
-	const size_t SchMaxLen;
-	EdfBlock_t* const Blk;
+	EdfBlock_t* const Blk;	// буфер блока
 
-	const size_t BufMaxLen;
 	size_t BufLen;
 	uint8_t* const Buf;
 
 	const EdfImpl_t* impl;
 
-} EdfWriter_t;
+} EdfContext_t;
 
 
 //-----------------------------------------------------------------------------

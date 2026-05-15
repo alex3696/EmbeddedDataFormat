@@ -10,11 +10,11 @@
 #define MIN_BLOCK_SIZE	256
 #define MAX_BLOCK_SIZE	4096
 
-#define MEM_BLOCK_SIZE_256	(sizeof(EdfWriter_t) + MIN_BLOCK_SIZE*2)
-#define MEM_BLOCK_SIZE_512	(sizeof(EdfWriter_t) + 512*2)
-#define MEM_BLOCK_SIZE_1024	(sizeof(EdfWriter_t) + 1024*2)
-#define MEM_BLOCK_SIZE_2084	(sizeof(EdfWriter_t) + 2048*2)
-#define MEM_BLOCK_SIZE_4096	(sizeof(EdfWriter_t) + MAX_BLOCK_SIZE*2)
+#define MEM_BLOCK_SIZE_256	(sizeof(EdfContext_t) + MIN_BLOCK_SIZE*2)
+#define MEM_BLOCK_SIZE_512	(sizeof(EdfContext_t) + 512*2)
+#define MEM_BLOCK_SIZE_1024	(sizeof(EdfContext_t) + 1024*2)
+#define MEM_BLOCK_SIZE_2084	(sizeof(EdfContext_t) + 2048*2)
+#define MEM_BLOCK_SIZE_4096	(sizeof(EdfContext_t) + MAX_BLOCK_SIZE*2)
 
 #define MAX_STR_LEN		255
 
@@ -50,34 +50,34 @@ extern "C" {
 //-----------------------------------------------------------------------------
 // инициализация и создание экземпляра EdfWriter_t необходимого для
 // хранения конфигурациоонных и промежуточных данных.
-int EdfInit(EdfWriter_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg);
-EdfWriter_t* EdfCreate(uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg, int* pErr);
+int EdfInit(EdfContext_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg);
+EdfContext_t* EdfCreate(uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg, int* pErr);
  
 // Открыть поток для чтения (до)записи, поток может быть файловым или память
 // Режимы: "wb"/"rb" — бинарные, "wt"/"rt" — текстовые, "ab"/"at" — дозапись
-int EdfOpenStream(EdfWriter_t* w, Stream_t* stream, const char* mode);
+int EdfOpenStream(EdfContext_t* w, Stream_t* stream, const char* mode);
 // Открыть файл для чтения (до)записи, внутри обращается к EdfOpenStream
-int EdfOpenWithFs(EdfWriter_t* w, const char* file, const char* mode, FileStreamOpenFn fnOpen);
-int EdfOpenFile(EdfWriter_t* w, const char* file, const char* mode);
+int EdfOpenWithFs(EdfContext_t* w, const char* file, const char* mode, FileStreamOpenFn fnOpen);
+int EdfOpenFile(EdfContext_t* w, const char* file, const char* mode);
 // освобождает фнутренние буферы и закрывает файли или поток, 
-int EdfClose(EdfWriter_t* dw);
+int EdfClose(EdfContext_t* dw);
 // запись конфигурации
-int EdfWriteConfig(EdfWriter_t* dw, size_t* writed);
+int EdfWriteConfig(EdfContext_t* dw, size_t* writed);
 // запись схемы данных
-int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed);
+int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed);
 // запись данных
-int EdfWriteData(EdfWriter_t* dw, const void* src, size_t srcLen);
+int EdfWriteData(EdfContext_t* dw, const void* src, size_t srcLen);
 // закрывает и скидывает текущий блок на диск  
-int EdfFlushData(EdfWriter_t* dw, size_t* writed);
+int EdfFlushData(EdfContext_t* dw, size_t* writed);
 // Чтение данных используя схему 
 int EdfReadBin(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded);
 // чтение блока
-int EdfReadBlock(EdfWriter_t* dr);
+int EdfReadBlock(EdfContext_t* dr);
 
 //shortcut: запись схемы + данных
-int EdfWriteSchemaData(EdfWriter_t* dw, const EdfSchema_t* ir, const void* d, size_t len);
-int EdfWritePrimSchData(EdfWriter_t* dw, PoType pt, uint16_t schId, char* schName, char* schDesc, const void* d);
+int EdfWriteSchemaData(EdfContext_t* dw, const EdfSchema_t* ir, const void* d, size_t len);
+int EdfWritePrimSchData(EdfContext_t* dw, PoType pt, uint16_t schId, char* schName, char* schDesc, const void* d);
 //-----------------------------------------------------------------------------
 #ifdef __cplusplus
 }

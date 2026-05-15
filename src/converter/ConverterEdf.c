@@ -37,12 +37,12 @@ int BinToText(const char* srcFile, const char* dstFile)
 	int err = 0;
 	size_t writed = 0;
 	uint8_t edfMemReader[MEM_BLOCK_SIZE_512];
-	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, 512, Default };
-	EdfWriter_t* br = EdfCreate(edfMemReader, sizeof(edfMemReader), &cfg, &err);
+	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, 512, 0, Default };
+	EdfContext_t* br = EdfCreate(edfMemReader, sizeof(edfMemReader), &cfg, &err);
 	if (err)
 		return err;
 	uint8_t edfMemWriter[MEM_BLOCK_SIZE_512];
-	EdfWriter_t* tw = EdfCreate(edfMemWriter, sizeof(edfMemWriter), &cfg, &err);
+	EdfContext_t* tw = EdfCreate(edfMemWriter, sizeof(edfMemWriter), &cfg, &err);
 	if (err)
 		return err;
 
@@ -79,7 +79,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 		case btSchema:
 		{
 			tw->SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(br->Blk->Conent.Schema.Data, GetContentLen(br->Blk), NULL, br->Buf, br->BufMaxLen, NULL, &tw->SchemaPtr);
+			err = WriteSchemaBinToCBin(br->Blk->Conent.Schema.Data, GetContentDataLen(br->Blk), NULL, br->Buf, br->Cfg.Blocksize, NULL, &tw->SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -101,7 +101,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 		{
 			/*
 			MemStream_t src;
-			if ((err = MemStreamInOpen(&src, br->Blk->Conent.Record.Data, GetContentLen(br->Blk))))
+			if ((err = MemStreamInOpen(&src, br->Blk->Conent.Record.Data, GetContentDataLen(br->Blk))))
 				return err;
 			size_t primReaded = 0;
 			do
@@ -124,7 +124,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 					return err;
 			} while (primReaded && StreamLen(&src));
 			*/
-			EdfWriteData(tw, br->Blk->Conent.Record.Data, GetContentLen(br->Blk));
+			EdfWriteData(tw, br->Blk->Conent.Record.Data, GetContentDataLen(br->Blk));
 		}
 		break;
 		}

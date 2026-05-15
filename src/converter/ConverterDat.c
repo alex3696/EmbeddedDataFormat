@@ -30,7 +30,7 @@ int DatToEdf(const char* src, const char* edfFile, char mode)
 		return ERR_WRONG_PARAMETERS;
 
 	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
+	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	size_t writed = 0;
 	if ((err = EdfOpenFile(edf, edfFile, edfMode)))
@@ -112,7 +112,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	int err = 0;
 
 	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
-	EdfWriter_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
+	EdfContext_t* bdfr = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	size_t writed = 0;
 	if ((err = EdfOpenFile(bdfr, edfFile, "rb")))
@@ -146,27 +146,20 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	while (!(err = EdfReadBlock(bdfr)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamInOpen(&src, bdfr->Blk->Conent.Record.Data, GetContentLen(bdfr->Blk))))
+		if ((err = MemStreamInOpen(&src, bdfr->Blk->Conent.Record.Data, GetContentDataLen(bdfr->Blk))))
 			return err;
 
 		switch (bdfr->Blk->Type)
 		{
 		default: break;
 		case btConfig:
-			if (16 == bdfr->Blk->Len)
-			{
-				//EdfConfig_t h = { 0 };
-				//err = MakeConfigFromBytes(br.Blk.Data, br.Blk->Len, &h);
-				//if (!err)
-				//	err = EdfWriteConfig(&tw, &h, &writed);
-			}
 			break;
 		case btSchema:
 		{
 			msDst.WPos = 0;
 			bdfr->SchemaPtr = NULL;
 			EdfSchema_t* typeRec = NULL;
-			err = WriteSchemaBinToCBin(bdfr->Blk->Conent.Schema.Data, GetContentLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->BufMaxLen, NULL, &typeRec);
+			err = WriteSchemaBinToCBin(bdfr->Blk->Conent.Schema.Data, GetContentDataLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->Cfg.Blocksize, NULL, &typeRec);
 			if (!err)
 			{
 				bdfr->SchemaPtr = typeRec;

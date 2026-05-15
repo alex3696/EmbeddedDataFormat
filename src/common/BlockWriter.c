@@ -2,7 +2,7 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
-static int EdfWriteSep(EdfWriter_t* dw,
+static int EdfWriteSep(EdfContext_t* dw,
 	const char* const src,
 	uint8_t** dst, size_t* dstSize,
 	size_t* skip, size_t* wqty,
@@ -30,7 +30,7 @@ static int EdfWriteSep(EdfWriter_t* dw,
 		if ((err = EdfFlushData(dw, writed)))
 			return err;
 		*writed = 0;
-		*dstSize = dw->RecMaxLen;
+		*dstSize = GetContentMaxLen(dw, btData);
 		*dst = dw->Blk->Conent.Record.Data;
 		if (srcLen > *dstSize)
 			return ERR_DST_SHORT;
@@ -44,7 +44,7 @@ static int EdfWriteSep(EdfWriter_t* dw,
 }
 //-----------------------------------------------------------------------------
 // 
-static int WriteOnePrimitive(EdfWriter_t* dw, const EdfType_t* t,
+static int WriteOnePrimitive(EdfContext_t* dw, const EdfType_t* t,
 	const uint8_t** ppsrc, size_t* srcLen,
 	uint8_t** ppdst, size_t* dstLen,
 	size_t* skip, size_t* wqty,
@@ -74,14 +74,17 @@ static int WriteOnePrimitive(EdfWriter_t* dw, const EdfType_t* t,
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
+		// Сбрасываем блок
 		dw->Blk->Len += (uint16_t)(*writed);
 		if ((err = EdfFlushData(dw, &w)))
 			return err;
+		// Сбрасываем счетчики для нового блока
 		*writed = 0;
-		*dstLen = dw->RecMaxLen;
+		*dstLen = GetContentMaxLen(dw, btData);
 		*ppdst = dw->Blk->Conent.Record.Data;
+		// Пытаемся записать ЕЩЕ РАЗ
 		if ((err = (*dw->impl->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
-			return err;
+			return err;// если снова ошибка, выходим
 	}
 	(*wqty)++;
 	*readed += r;
@@ -96,7 +99,7 @@ static int WriteElement(const EdfType_t* t,
 	uint8_t** ppdst, size_t *dstLen,
 	size_t* skip, size_t* wqty,
 	size_t* readed, size_t* writed,
-	EdfWriter_t* dw)
+	EdfContext_t* dw)
 {
 	int err = ERR_NO;
 	if (Char == t->Type)
@@ -145,7 +148,7 @@ static int WriteElement(const EdfType_t* t,
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int WriteSingleValue(EdfWriter_t* dw,
+static int WriteSingleValue(EdfContext_t* dw,
 	const uint8_t** src, size_t* srcLen,
 	uint8_t** dst, size_t* dstLen,
 	size_t* skip, size_t* wqty,
@@ -161,16 +164,18 @@ static int WriteSingleValue(EdfWriter_t* dw,
 	return err;
 }
 //-----------------------------------------------------------------------------
-int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
+int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen)
 {
 	if (NULL == dw->SchemaPtr)
 		return ERR_WRONG_TYPE;
+	if (dw->impl->WritePrimitive == NULL)  // режим чтения
+		return ERR_WRONG_PARAMETERS;
 
 	const uint8_t* xsrc = (const uint8_t*)vsrc;
 	const uint8_t* src = xsrc;
 	size_t srcLen = xsrcLen;
 
-	size_t dstLen = dw->RecMaxLen - dw->Blk->Len;
+	size_t dstLen = GetContentMaxLen(dw, btData) - dw->Blk->Len;
 	uint8_t* dst = dw->Blk->Conent.Record.Data + dw->Blk->Len;
 
 	int wr;
@@ -179,7 +184,7 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 		if (dw->BufLen)
 		{
 			// copy xsrc data to buffer
-			size_t len = MIN(dw->BufMaxLen - dw->BufLen, xsrcLen);
+			size_t len = MIN(dw->Cfg.Blocksize - dw->BufLen, xsrcLen);
 			if (0 < len)
 			{
 				memcpy(dw->Buf + dw->BufLen, xsrc, len);
@@ -241,7 +246,7 @@ int EdfWriteData(EdfWriter_t* dw, const void* vsrc, size_t xsrcLen)
 				return ERR_NO;
 			break;
 		case ERR_DST_SHORT:
-			//dstLen = dw->RecMaxLen;
+			//dstLen = GetContentMaxLen(dw, btData);
 			//dst = dw->Blk->Conent.Record.Data;
 			//dw->PrimSkip = (uint16_t)wqty;
 			//wr = 0;

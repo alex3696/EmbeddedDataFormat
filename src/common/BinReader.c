@@ -1,8 +1,22 @@
 #include "_pch.h"
 #include "edf.h"
-
 //-----------------------------------------------------------------------------
-uint16_t GetContentLen(const EdfBlock_t* blk)
+uint16_t GetContentMaxLen(const EdfContext_t* pEdf, EdfBlockType bt)
+{
+	switch (bt)
+	{
+	default: break;
+	case btConfig:
+		return sizeof(EdfConfig_t);
+	case btSchema:
+		return (uint16_t)pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Conent) - 2;
+	case btData:
+		return pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Conent) - 2 - offsetof(EdfRecordContent_t, Data);
+	}
+	return 0;
+}
+//-----------------------------------------------------------------------------
+uint16_t GetContentDataLen(const EdfBlock_t* blk)
 {
 	uint16_t len = 0;
 	switch (blk->Type)
@@ -140,7 +154,7 @@ int EdfReadBin(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** pr
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-int EdfReadBlock(EdfWriter_t* dw)
+int EdfReadBlock(EdfContext_t* dw)
 {
 	int err = 0;
 	size_t readed = 0;
@@ -155,7 +169,7 @@ int EdfReadBlock(EdfWriter_t* dw)
 	// read Block Length
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Len, 2)))
 		return err;
-	if (dw->Cfg.Blocksize < dw->Blk->Len)
+	if (dw->Blk->Len > GetContentMaxLen(dw, dw->Blk->Type))
 		return ERR_BLK_WRONG_SIZE;
 	// read Block Content
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Conent.Schema, dw->Blk->Len)))

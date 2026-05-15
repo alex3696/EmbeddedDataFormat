@@ -119,7 +119,7 @@ static int PackUnpack()
 	size_t skip = 0;
 
 	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
+	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	uint8_t binBuf[1024] = { 0 };
 	MemStream_t memStream = { 0 };
@@ -198,7 +198,7 @@ static int CharArrayWriteRead()
 	MemStream_t memStream = { 0 };
 
 	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
+	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	if ((err = MemStreamOutOpen(&memStream, binBuf, sizeof(binBuf))))
 		return err;
@@ -237,14 +237,14 @@ static int CharArrayWriteRead()
 		return err;
 	if ((err = EdfReadBlock(edf))) // read Schema
 		return err;
-	if ((err = WriteSchemaBinToCBin(edf->Blk->Conent.Schema.Data, GetContentLen(edf->Blk), NULL, edf->Buf, edf->BufMaxLen, NULL, &edf->SchemaPtr)))
+	if ((err = WriteSchemaBinToCBin(edf->Blk->Conent.Schema.Data, GetContentDataLen(edf->Blk), NULL, edf->Buf, edf->Cfg.Blocksize, NULL, &edf->SchemaPtr)))
 		return err;
 	if ((err = EdfReadBlock(edf))) // read Data
 		return err;
 	Char10Test_t* item = NULL;
 	// открываем поток чтения данных в блоке
 	MemStream_t blkStream = { 0 };
-	if ((err = MemStreamInOpen(&blkStream, edf->Blk->Conent.Record.Data, GetContentLen(edf->Blk))))
+	if ((err = MemStreamInOpen(&blkStream, edf->Blk->Conent.Record.Data, GetContentDataLen(edf->Blk))))
 		return err;
 	// читаем данные используя схему считанную в блоке Schema
 	if ((err = EdfReadBin(&edf->SchemaPtr->Type, &blkStream, &mem, &item, &resultPrimOffset, &primReaded)))
@@ -265,7 +265,7 @@ static int CharArrayWriteRead()
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int WriteSample(EdfWriter_t* dw)
+static int WriteSample(EdfContext_t* dw)
 {
 	size_t writed = 0;
 	int err = 0;
@@ -454,9 +454,9 @@ static int Test_WriteSample()
 	char* txtConvFile = GetTestFilePath("t_writeConv.tdf");
 	int err = 0;
 
-	uint8_t edfMem[sizeof(EdfWriter_t)+300*2] = {0};
-	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, 300, Default };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &cfg, &err);
+	uint8_t edfMem[sizeof(EdfContext_t)+300*2] = {0};
+	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, 300, 0, Default };
+	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &cfg, &err);
 	
 	// TEXT write
 	err = EdfOpenFile(edf, txtFile, "wt");
@@ -487,7 +487,7 @@ static int Test_WriteSample()
 	return err;
 }
 //-----------------------------------------------------------------------------
-static void WriteBigVar(EdfWriter_t* dw)
+static void WriteBigVar(EdfContext_t* dw)
 {
 	int err = 0;
 	size_t writed = 0;
@@ -517,7 +517,7 @@ static void Test_WriteBigVar()
 	int err = 0;
 
 	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
-	EdfWriter_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
+	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
 	err = EdfOpenFile(edf, binFile, "wb");
 	WriteBigVar(edf);
