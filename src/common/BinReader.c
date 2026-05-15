@@ -97,8 +97,8 @@ static int ReadElement(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, v
 		*presult = ti;
 	}
 	if (Struct == t->Type)
-		return ReadStruct(t, src, mem, presult, resultPrimOffset, primReaded);
-	return ReadPrimitive(t, src, mem, presult, resultPrimOffset, primReaded);
+		return ReadStruct(t, src, mem, (void**)&ti, resultPrimOffset, primReaded);
+	return ReadPrimitive(t, src, mem, (void**)&ti, resultPrimOffset, primReaded);
 }
 //-----------------------------------------------------------------------------
 static int ReadArray(const EdfType_t* t, MemStream_t* src, size_t totalElement, MemStream_t* mem, void** presult,
