@@ -5,9 +5,9 @@
 static int EdfWriteBlockBin(Stream_t* st, EdfBlock_t* blk, size_t* writed)
 {
 	int err = 0;
-	uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + 3 + blk->Len);
-	*blkCrc = MbCrc16(blk, 3 + blk->Len);
-	if ((err = StreamWrite(st, NULL, blk, 3 + blk->Len + 2)))
+	uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + EDF_HEADER_SIZE + blk->Len);
+	*blkCrc = MbCrc16(blk, EDF_HEADER_SIZE + blk->Len);
+	if ((err = StreamWrite(st, NULL, blk, EDF_HEADER_SIZE + blk->Len + EDF_CRC_SIZE)))
 		return err;
 	*writed = blk->Len;
 	return 0;

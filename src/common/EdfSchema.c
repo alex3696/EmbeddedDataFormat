@@ -12,8 +12,8 @@ static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 	{
 		if ((err = StreamWrite(s, writed, &t->Dims.Count, 1)))
 			return err;
-		for (uint32_t i = 0; i < t->Dims.Count; i++)
-			if ((err = StreamWrite(s, writed, &t->Dims.Item[i], sizeof(uint32_t))))
+		for (uint8_t i = 0; i < t->Dims.Count; i++)
+			if ((err = StreamWrite(s, writed, &t->Dims.Item[i], sizeof(uint16_t))))
 				return err;
 	}
 	else
@@ -93,7 +93,7 @@ static int StreamWriteTypeTxt(Stream_t* s, const EdfType_t* t, int noffset, size
 	if (t->Dims.Count && t->Dims.Item)
 	{
 		for (size_t i = 0; i < t->Dims.Count; i++)
-			if ((err = StreamWriteFmt(s, writed, "[%lu]", t->Dims.Item[i])))
+			if ((err = StreamWriteFmt(s, writed, "[%u]", t->Dims.Item[i])))
 				return err;
 	}
 	// NAME
@@ -168,12 +168,12 @@ static int StreamBinToCBin(MemStream_t* src, LineAlloc_t* mem, EdfType_t** t)
 	if (ti->Dims.Count)
 	{
 		// allocate array
-		const size_t dimsSize = sizeof(uint32_t) * ti->Dims.Count;
+		const size_t dimsSize = sizeof(uint16_t) * ti->Dims.Count;
 		if ((err = MemAlloc(mem, dimsSize, (void**)&ti->Dims.Item)))
 			return err;
 		for (uint8_t i = 0; i < ti->Dims.Count; i++)
 		{
-			if ((err = StreamRead(src, &readed, &ti->Dims.Item[i], sizeof(uint32_t))))
+			if ((err = StreamRead(src, &readed, &ti->Dims.Item[i], sizeof(uint16_t))))
 				return err;
 		}
 	}
@@ -249,7 +249,7 @@ uint32_t GetTypeCSize(const EdfType_t* t)
 	case Struct:
 		if (t->Fields.Item && t->Fields.Count)
 		{
-			for (uint32_t i = 0; i < t->Fields.Count; i++)
+			for (uint8_t i = 0; i < t->Fields.Count; i++)
 				sz += GetTypeCSize(&t->Fields.Item[i]);
 		}
 		break;
@@ -261,7 +261,7 @@ uint32_t GetTypeCSize(const EdfType_t* t)
 		break;
 	}//switch
 	if (t->Dims.Item && t->Dims.Count)
-		for (uint32_t i = 0; i < t->Dims.Count; i++)
+		for (uint8_t i = 0; i < t->Dims.Count; i++)
 			sz *= t->Dims.Item[i];
 	return sz;
 }
@@ -273,7 +273,7 @@ int8_t HasDynamicFields(const EdfType_t* t)
 	case Struct:
 		if (t->Fields.Item && t->Fields.Count)
 		{
-			for (uint32_t i = 0; i < t->Fields.Count; i++)
+			for (uint8_t i = 0; i < t->Fields.Count; i++)
 				if (HasDynamicFields(&t->Fields.Item[i]))
 					return 1;
 		}

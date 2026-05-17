@@ -7,7 +7,7 @@
 typedef struct
 {
 	uint8_t Count;
-	uint32_t* Item;
+	uint16_t* Item;
 } EdfDims_t;
 
 typedef struct

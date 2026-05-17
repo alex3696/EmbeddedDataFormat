@@ -90,7 +90,7 @@ static int PackUnpack()
 		{
 			.Type = Struct,
 			.Name = "KeyValue",
-			.Dims = {1, (uint32_t[]) { 2 } } ,
+			.Dims = {1, (uint16_t[]) { 2 } } ,
 			.Fields =
 			{
 				.Count = (uint8_t)3,
@@ -105,7 +105,7 @@ static int PackUnpack()
 							.Count = 1,
 							.Item = (EdfType_t[])
 							{
-								{ UInt8, "Test", .Dims = {1, (uint32_t[]) { 3 } } },
+								{ UInt8, "Test", .Dims = {1, (uint16_t[]) { 3 } } },
 							}
 						}
 					}
@@ -185,7 +185,7 @@ static int CharArrayWriteRead()
 				.Item = (EdfType_t[])
 				{
 					(EdfType_t) { .Type = UInt8 },
-					(EdfType_t) { .Type = Char, .Dims = {1, (uint32_t[]) { 10 }} },
+					(EdfType_t) { .Type = Char, .Dims = {1, (uint16_t[]) { 10 }} },
 					(EdfType_t) { .Type = UInt16 },
 				}
 			}
@@ -339,7 +339,7 @@ static int WriteSample(EdfContext_t* dw)
 	dd = 3.1;
 	EdfWriteData(dw, &dd, sizeof(double));
 
-	EdfSchema_t tchar = { .Id=0, .Name="Char Text", .Desc=NULL, .Type={.Type = Char, .Dims = { 1, (uint32_t[]) { 20 } } } };
+	EdfSchema_t tchar = { .Id=0, .Name="Char Text", .Desc=NULL, .Type={.Type = Char, .Dims = { 1, (uint16_t[]) { 20 } } } };
 	err = EdfWriteSchema(dw, &tchar, &writed);
 	size_t len = 0;
 	len += GetCString("Char", 20, test + len, sizeof(test));
@@ -356,7 +356,7 @@ static int WriteSample(EdfContext_t* dw)
 			.Item = (EdfType_t[])
 			{
 				(EdfType_t) { .Type = UInt8 },
-				(EdfType_t) { .Type = Char, .Dims = {1, (uint32_t[]) { 10 }} },
+				(EdfType_t) { .Type = Char, .Dims = {1, (uint16_t[]) { 10 }} },
 				(EdfType_t) { .Type = UInt16 },
 			}
 		}
@@ -382,7 +382,7 @@ static int WriteSample(EdfContext_t* dw)
 				},
 				(EdfType_t)
 				{
-					Struct, "State", { 1, (uint32_t[]) { 3 }} ,
+					Struct, "State", { 1, (uint16_t[]) { 3 }} ,
 					.Fields =
 					{
 						.Count = 3,
@@ -407,7 +407,7 @@ static int WriteSample(EdfContext_t* dw)
 							},
 							(EdfType_t)
 							{
-								Double, "Temp",{ 2, (uint32_t[]) { 2,2 }},
+								Double, "Temp",{ 2, (uint16_t[]) { 2,2 }},
 							},
 						}
 					}
@@ -493,8 +493,8 @@ static void WriteBigVar(EdfContext_t* dw)
 	size_t writed = 0;
 	err = EdfWriteConfig(dw, &writed);
 
-	uint32_t arrLen = (uint32_t)(dw->Cfg.Blocksize / sizeof(uint32_t) * 2.5);
-	EdfSchema_t t = { 0xF1F2 , NULL, NULL, {.Type = Int32, .Name = "variable", .Dims = { 1, (uint32_t[]) { arrLen }} } };
+	uint16_t arrLen = (uint16_t)(dw->Cfg.Blocksize / sizeof(uint32_t) * 2.5);
+	EdfSchema_t t = { 0xF1F2 , NULL, NULL, {.Type = Int32, .Name = "variable", .Dims = { 1, (uint16_t[]) { arrLen }} } };
 	err = EdfWriteSchema(dw, &t, &writed);
 
 	uint32_t test[1000] = { 0 };

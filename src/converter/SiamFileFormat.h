@@ -138,7 +138,7 @@ static const char FileDescMt[] = "OMEGA SAMT DATA V1.1";
 static const EdfType_t FileDescriptionType =
 {
 	.Type = Char, .Name = "FileDescription",
-	.Dims = { 1, (uint32_t[]) { FIELD_SIZEOF(DYN_FILE_V2_0, FileDescription) } }
+	.Dims = { 1, (uint16_t[]) { FIELD_SIZEOF(DYN_FILE_V2_0, FileDescription) } }
 };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
