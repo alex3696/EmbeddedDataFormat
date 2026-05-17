@@ -310,7 +310,7 @@ static int WriteSample(EdfContext_t* dw)
 
 	// тест нулевой строки
 	EdfWritePrimSchData(dw, String, 0, "test NULL string", NULL, EDF_CONSTSTR(""));
-	// тест строки длиннее 255 - должна быть обрезана на 255 символов
+	// тест строки длиннее 255 - будет обрезана до 255 байт
 	const char chBegin = '0'; const char chEnd = '9';
 	char ch = chBegin;
 	char tctArr260[260];
