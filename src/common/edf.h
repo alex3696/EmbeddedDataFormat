@@ -7,13 +7,19 @@
 #define EDF_VERSMINOR	3
 #define EDF_ENCODING	65001	//UTF-8
 
+#define EDF_CRC_SIZE       2
+#define EDF_TYPE_SIZE      1
+#define EDF_LEN_SIZE       2
+#define EDF_CONTENTRECORDHDR_SIZE       8 // == offsetof(EdfRecordContent_t, Data)
+#define EDF_HEADER_SIZE    (EDF_TYPE_SIZE + EDF_LEN_SIZE)
+
 #define MIN_BLOCK_SIZE	256
 #define MAX_BLOCK_SIZE	4096
 
 #define MEM_BLOCK_SIZE_256	(sizeof(EdfContext_t) + MIN_BLOCK_SIZE*2)
 #define MEM_BLOCK_SIZE_512	(sizeof(EdfContext_t) + 512*2)
 #define MEM_BLOCK_SIZE_1024	(sizeof(EdfContext_t) + 1024*2)
-#define MEM_BLOCK_SIZE_2084	(sizeof(EdfContext_t) + 2048*2)
+#define MEM_BLOCK_SIZE_2048	(sizeof(EdfContext_t) + 2048*2)
 #define MEM_BLOCK_SIZE_4096	(sizeof(EdfContext_t) + MAX_BLOCK_SIZE*2)
 
 #define MAX_STR_LEN		255

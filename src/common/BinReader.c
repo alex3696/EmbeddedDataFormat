@@ -4,7 +4,8 @@
 //-----------------------------------------------------------------------------
 uint16_t GetContentMaxLen(const EdfContext_t* pEdf)
 {
-	return pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Conent) - 2;
+	//return pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Conent) - 2;
+	return pEdf->Cfg.Blocksize - EDF_HEADER_SIZE - EDF_CRC_SIZE;
 }
 //-----------------------------------------------------------------------------
 uint16_t GetContentDataMaxLen(const EdfContext_t* pEdf, EdfBlockType bt)
@@ -15,9 +16,9 @@ uint16_t GetContentDataMaxLen(const EdfContext_t* pEdf, EdfBlockType bt)
 	case btConfig:
 		return sizeof(EdfConfig_t);
 	case btSchema:
-		return (uint16_t)pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Conent) - 2;
+		return (uint16_t)pEdf->Cfg.Blocksize - EDF_HEADER_SIZE - EDF_CRC_SIZE;
 	case btData:
-		return pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Conent) - 2 - offsetof(EdfRecordContent_t, Data);
+		return pEdf->Cfg.Blocksize - EDF_HEADER_SIZE - EDF_CRC_SIZE - offsetof(EdfRecordContent_t, Data);
 	}
 	return 0;
 }

@@ -16,7 +16,7 @@ typedef int (*WriteSchemaFn)(EdfContext_t* w, const EdfSchema_t* t, size_t* writ
 typedef struct
 {
 	//uint16_t SchId;			// Id - идентификатор СХЕМЫ
-	uint8_t Data[MAX_BLOCK_SIZE - 3 - 2];
+	uint8_t Data[MAX_BLOCK_SIZE - EDF_HEADER_SIZE - EDF_CRC_SIZE];
 } EdfSchemaContent_t;
 
 typedef struct
@@ -24,7 +24,7 @@ typedef struct
 	uint16_t SchId;			// SchemaId - идентификатор схемы (0-65535)
 	uint16_t PrmOffset;		// PrimitiveOffset - смещение примитива от начала ЗАПИСИ внутри ЗАПИСИ(0-65535)
 	uint32_t RecId;			// RecordId - номер ЗАПИСИ с которой начинается блок 
-	uint8_t Data[MAX_BLOCK_SIZE - 3 - 8 - 2];
+	uint8_t Data[MAX_BLOCK_SIZE - EDF_HEADER_SIZE - EDF_CONTENTRECORDHDR_SIZE - EDF_CRC_SIZE];
 } EdfRecordContent_t;
 
 typedef struct
@@ -33,7 +33,7 @@ typedef struct
 	uint16_t Len;
 	union
 	{
-		uint8_t Raw[MAX_BLOCK_SIZE - 3 - 2];
+		uint8_t Raw[MAX_BLOCK_SIZE - EDF_HEADER_SIZE - EDF_CRC_SIZE];
 		EdfConfig_t Config;
 		EdfSchemaContent_t Schema;
 		EdfRecordContent_t Record;

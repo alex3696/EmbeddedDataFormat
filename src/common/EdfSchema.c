@@ -18,7 +18,7 @@ static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 	}
 	else
 	{
-		if ((err = StreamWrite(s, writed, &err, 1)))//val=0
+		if ((err = StreamWrite(s, writed, &(uint8_t){0}, 1)))//val=0
 			return err;
 	}
 

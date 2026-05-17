@@ -272,10 +272,13 @@ int StreamReadString(MemStream_t* tsrc, LineAlloc_t* tmem, char** ti)
 			return ERR_SRC_SHORT;
 		if ('\0' != pstr[sLen - 1])
 		{
+			// линейный аллокатор добавит '\0' в конце 
+			// т.к. при выделении памяти происходит обнуление выделенной памяти
+			// следовательно выделенный 1 элемент будет равен '\0' в конце 
 			uint8_t* pStrEnd = NULL;
 			if ((err = MemAlloc(&mem, 1, (void**)&pStrEnd)))
 				return ERR_DST_SHORT;
-			//pStrEnd[0] = '\0';
+			pStrEnd[0] = '\0';// на всякий случай, если аллокатор станет без обнуления
 		}
 	}
 	*ti = pstr;
