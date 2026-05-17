@@ -65,21 +65,6 @@ static int MemStreamClose(void* stream)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int MemAlloc(MemStream_t* s, size_t len, void** pptr)
-{
-	if (0 == len)
-	{
-		*pptr = NULL;
-		return ERR_NO;
-	}
-	if (StreamEmptyLen(s) < len)
-		return ERR_DST_SHORT;
-	*pptr = &s->Buffer[s->WPos];
-	memset(&s->Buffer[s->WPos], 0, len);
-	s->WPos += len;
-	return ERR_NO;
-}
-//-----------------------------------------------------------------------------
 size_t StreamLen(const MemStream_t* s)
 {
 	return s->WPos - s->RPos;
@@ -149,3 +134,35 @@ int MemStreamOpen(MemStream_t* s, uint8_t* buf, size_t size, size_t datalen, con
 	}
 	return ERR_WRONG_PARAMETERS;
 }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//Memory Linear Allocator
+int LineAllocInit(LineAlloc_t* w, uint8_t* buf, size_t size)
+{
+	w->Buffer = buf;
+	w->Size = size;
+	w->WPos = 0;
+	return ERR_NO;
+}
+//-----------------------------------------------------------------------------
+size_t MemGetAvailableLen(LineAlloc_t* w)
+{
+	return w->Size - w->WPos;
+}
+//-----------------------------------------------------------------------------
+int MemAlloc(LineAlloc_t* m, size_t len, void** pptr)
+{
+	if (0 == len)
+	{
+		*pptr = NULL;
+		return ERR_NO;
+	}
+	if (MemGetAvailableLen(m) < len)
+		return ERR_DST_SHORT;
+	*pptr = &m->Buffer[m->WPos];
+	memset(&m->Buffer[m->WPos], 0, len);
+	m->WPos += len;
+	return ERR_NO;
+}
+//-----------------------------------------------------------------------------

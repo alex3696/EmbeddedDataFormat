@@ -70,7 +70,7 @@ int EdfWriteData(EdfContext_t* dw, const void* src, size_t srcLen);
 // закрывает и скидывает текущий блок на диск  
 int EdfFlushData(EdfContext_t* dw, size_t* writed);
 // Чтение данных используя схему 
-int EdfReadBin(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+int EdfReadBin(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded);
 // чтение блока
 int EdfReadBlock(EdfContext_t* dr);

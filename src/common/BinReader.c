@@ -1,7 +1,13 @@
 #include "_pch.h"
 #include "edf.h"
+
 //-----------------------------------------------------------------------------
-uint16_t GetContentMaxLen(const EdfContext_t* pEdf, EdfBlockType bt)
+uint16_t GetContentMaxLen(const EdfContext_t* pEdf)
+{
+	return pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Conent) - 2;
+}
+//-----------------------------------------------------------------------------
+uint16_t GetContentDataMaxLen(const EdfContext_t* pEdf, EdfBlockType bt)
 {
 	switch (bt)
 	{
@@ -33,7 +39,7 @@ uint16_t GetContentDataLen(const EdfBlock_t* blk)
 	return len;
 }
 //-----------------------------------------------------------------------------
-static int ReadPrimitive(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadPrimitive(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	if (0 < (*resultPrimOffset))
@@ -78,7 +84,7 @@ static int ReadPrimitive(const EdfType_t* t, MemStream_t* src, MemStream_t* mem,
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int ReadStruct(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadStruct(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	int err = 0;
@@ -95,7 +101,7 @@ static int ReadStruct(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, vo
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int ReadElement(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+static int ReadElement(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	int err = 0;
@@ -115,7 +121,7 @@ static int ReadElement(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, v
 	return ReadPrimitive(t, src, mem, (void**)&ti, resultPrimOffset, primReaded);
 }
 //-----------------------------------------------------------------------------
-static int ReadArray(const EdfType_t* t, MemStream_t* src, size_t totalElement, MemStream_t* mem, void** presult,
+static int ReadArray(const EdfType_t* t, MemStream_t* src, size_t totalElement, LineAlloc_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	int err = 0;
@@ -141,7 +147,7 @@ static int ReadArray(const EdfType_t* t, MemStream_t* src, size_t totalElement, 
 	return err;
 }
 //-----------------------------------------------------------------------------
-int EdfReadBin(const EdfType_t* t, MemStream_t* src, MemStream_t* mem, void** presult,
+int EdfReadBin(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, void** presult,
 	size_t* resultPrimOffset, size_t* primReaded)
 {
 	if (t->Type == Char)
@@ -169,7 +175,7 @@ int EdfReadBlock(EdfContext_t* dw)
 	// read Block Length
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Len, 2)))
 		return err;
-	if (dw->Blk->Len > GetContentMaxLen(dw, dw->Blk->Type))
+	if (dw->Blk->Len > GetContentMaxLen(dw))
 		return ERR_BLK_WRONG_SIZE;
 	// read Block Content
 	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Conent.Schema, dw->Blk->Len)))

@@ -146,7 +146,7 @@ int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int StreamBinToCBin(MemStream_t* src, MemStream_t* mem, EdfType_t** t)
+static int StreamBinToCBin(MemStream_t* src, LineAlloc_t* mem, EdfType_t** t)
 {
 	int err = 0;
 	size_t readed = 0;
@@ -211,8 +211,8 @@ int WriteSchemaBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	MemStream_t mssrc = { 0 };
 	if ((err = MemStreamInOpen(&mssrc, src, srcLen)) || !mssrc.Impl)
 		return err;
-	MemStream_t msdst = { 0 };
-	if ((err = MemStreamOutOpen(&msdst, dst, dstLen)))
+	LineAlloc_t msdst = { 0 };
+	if ((err = LineAllocInit(&msdst, dst, dstLen)))
 		return err;
 
 	EdfSchema_t* tr = NULL;

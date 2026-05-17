@@ -84,7 +84,7 @@ static int EdfWriteSchemaBin(EdfContext_t* dw, const EdfSchema_t* t, size_t* wri
 	dw->Blk->Type = (uint8_t)btSchema;
 	MemStream_t ms = { 0 };
 	size_t w = 0;
-	if ((err = MemStreamOutOpen(&ms, dw->Blk->Conent.Schema.Data, GetContentMaxLen(dw, btSchema))) ||
+	if ((err = MemStreamOutOpen(&ms, dw->Blk->Conent.Schema.Data, GetContentDataMaxLen(dw, btSchema))) ||
 		(err = WriteSchemaBinToStream((Stream_t*)&ms, t, &w)))
 		return err;
 	dw->Blk->Len = (uint16_t)w;// (uint16_t)ms.WPos;

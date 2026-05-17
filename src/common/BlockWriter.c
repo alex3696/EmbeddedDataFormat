@@ -30,7 +30,7 @@ static int EdfWriteSep(EdfContext_t* dw,
 		if ((err = EdfFlushData(dw, writed)))
 			return err;
 		*writed = 0;
-		*dstSize = GetContentMaxLen(dw, btData);
+		*dstSize = GetContentDataMaxLen(dw, btData);
 		*dst = dw->Blk->Conent.Record.Data;
 		if (srcLen > *dstSize)
 			return ERR_DST_SHORT;
@@ -80,7 +80,7 @@ static int WriteOnePrimitive(EdfContext_t* dw, const EdfType_t* t,
 			return err;
 		// Сбрасываем счетчики для нового блока
 		*writed = 0;
-		*dstLen = GetContentMaxLen(dw, btData);
+		*dstLen = GetContentDataMaxLen(dw, btData);
 		*ppdst = dw->Blk->Conent.Record.Data;
 		// Пытаемся записать ЕЩЕ РАЗ
 		if ((err = (*dw->impl->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
@@ -175,7 +175,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen)
 	const uint8_t* src = xsrc;
 	size_t srcLen = xsrcLen;
 
-	size_t dstLen = GetContentMaxLen(dw, btData) - dw->Blk->Len;
+	size_t dstLen = GetContentDataMaxLen(dw, btData) - dw->Blk->Len;
 	uint8_t* dst = dw->Blk->Conent.Record.Data + dw->Blk->Len;
 
 	int wr;
@@ -246,7 +246,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen)
 				return ERR_NO;
 			break;
 		case ERR_DST_SHORT:
-			//dstLen = GetContentMaxLen(dw, btData);
+			//dstLen = GetContentDataMaxLen(dw, btData);
 			//dst = dw->Blk->Conent.Record.Data;
 			//dw->PrimSkip = (uint16_t)wqty;
 			//wr = 0;

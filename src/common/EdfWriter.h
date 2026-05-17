@@ -57,7 +57,8 @@ typedef struct EdfImpl
 } EdfImpl_t;
 //typedef struct EdfImpl EdfImpl_t;
 
-uint16_t GetContentMaxLen(const EdfContext_t* pEdf, EdfBlockType bt);
+uint16_t GetContentMaxLen(const EdfContext_t* pEdf);
+uint16_t GetContentDataMaxLen(const EdfContext_t* pEdf, EdfBlockType bt);
 uint16_t GetContentDataLen(const EdfBlock_t* blk);
 
 //-----------------------------------------------------------------------------

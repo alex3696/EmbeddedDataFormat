@@ -139,8 +139,8 @@ static int PackUnpack()
 	if ((err = MemStreamInOpen(&mssrc, &binBuf[3 + 8], 100)))
 		return err;
 	uint8_t buf[1024] = { 0 };
-	MemStream_t mem = { 0 };
-	if ((err = MemStreamOutOpen(&mem, buf, sizeof(buf))))
+	LineAlloc_t mem = { 0 };
+	if ((err = LineAllocInit(&mem, buf, sizeof(buf))))
 		return err;
 
 	TestStruct_t* kv = NULL;
@@ -229,8 +229,8 @@ static int CharArrayWriteRead()
 		return err;
 	size_t resultPrimOffset = 0, primReaded = 0;
 	uint8_t dstBuf[256] = { 0 };
-	MemStream_t mem = { 0 };
-	if ((err = MemStreamOutOpen(&mem, dstBuf, sizeof(dstBuf))))
+	LineAlloc_t mem = { 0 };
+	if ((err = LineAllocInit(&mem, dstBuf, sizeof(dstBuf))))
 		return err;
 	// поблочно читаем
 	if ((err = EdfReadBlock(edf))) // read Config
@@ -493,7 +493,7 @@ static void WriteBigVar(EdfContext_t* dw)
 	size_t writed = 0;
 	err = EdfWriteConfig(dw, &writed);
 
-	size_t arrLen = (size_t)(dw->Cfg.Blocksize / sizeof(uint32_t) * 2.5);
+	uint32_t arrLen = (uint32_t)(dw->Cfg.Blocksize / sizeof(uint32_t) * 2.5);
 	EdfSchema_t t = { 0xF1F2 , NULL, NULL, {.Type = Int32, .Name = "variable", .Dims = { 1, (uint32_t[]) { arrLen }} } };
 	err = EdfWriteSchema(dw, &t, &writed);
 

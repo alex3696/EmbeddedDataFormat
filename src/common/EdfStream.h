@@ -87,9 +87,22 @@ int MemStreamOpen(MemStream_t* s, uint8_t* buf, size_t size, size_t datalen, con
 int MemStreamInOpen(MemStream_t* s, uint8_t* buf, size_t size);
 int MemStreamOutOpen(MemStream_t* s, uint8_t* buf, size_t size);
 
-int MemAlloc(MemStream_t* s, size_t len, void** pptr);
 size_t StreamLen(const MemStream_t* s);
 size_t StreamEmptyLen(const MemStream_t* s);
 int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len);
 //-----------------------------------------------------------------------------
+//Memory Linear Allocator
+typedef struct LineAlloc
+{
+	uint8_t* Buffer;
+	size_t Size;
+	size_t WPos;
+} LineAlloc_t;
+
+int LineAllocInit(LineAlloc_t* w, uint8_t* buf, size_t size);
+size_t MemGetAvailableLen(LineAlloc_t* w);
+int MemAlloc(LineAlloc_t* w, size_t len, void** dst);
+
+
+
 #endif //EDFSTREAM_H

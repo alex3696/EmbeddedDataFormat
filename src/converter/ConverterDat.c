@@ -139,8 +139,8 @@ int EdfToDat(const char* edfFile, const char* datFile)
 
 	size_t skip = 0;
 	uint8_t bDst[3 * 256 + 8] = { 0 };
-	MemStream_t msDst = { 0 };
-	if ((err = MemStreamOpen(&msDst, bDst, sizeof(bDst), 0, "w")))
+	LineAlloc_t msDst = { 0 };
+	if ((err = LineAllocInit(&msDst, bDst, sizeof(bDst))))
 		return err;
 
 	while (!(err = EdfReadBlock(bdfr)))

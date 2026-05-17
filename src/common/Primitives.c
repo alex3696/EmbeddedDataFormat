@@ -255,10 +255,10 @@ int StreamWriteString(Stream_t* s, const char* str, size_t* writed)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int StreamReadString(MemStream_t* tsrc, MemStream_t* tmem, char** ti)
+int StreamReadString(MemStream_t* tsrc, LineAlloc_t* tmem, char** ti)
 {
 	MemStream_t src = *tsrc;
-	MemStream_t mem = *tmem;
+	LineAlloc_t mem = *tmem;
 	int err = 0;
 	uint8_t sLen;
 	char* pstr = NULL;
