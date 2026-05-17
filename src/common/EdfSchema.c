@@ -209,7 +209,7 @@ int WriteSchemaBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 {
 	int err = 0;
 	MemStream_t mssrc = { 0 };
-	if ((err = MemStreamInOpen(&mssrc, src, srcLen)) || !mssrc.Impl)
+	if ((err = MemStreamReadOpen(&mssrc, src, srcLen)) || !mssrc.Impl)
 		return err;
 	LineAlloc_t msdst = { 0 };
 	if ((err = LineAllocInit(&msdst, dst, dstLen)))

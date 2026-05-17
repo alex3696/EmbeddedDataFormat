@@ -84,8 +84,8 @@ typedef struct MemStream
 } MemStream_t;
 
 int MemStreamOpen(MemStream_t* s, uint8_t* buf, size_t size, size_t datalen, const char* mode);
-int MemStreamInOpen(MemStream_t* s, uint8_t* buf, size_t size);
-int MemStreamOutOpen(MemStream_t* s, uint8_t* buf, size_t size);
+int MemStreamReadOpen(MemStream_t* s, uint8_t* buf, size_t size);
+int MemStreamWriteOpen(MemStream_t* s, uint8_t* buf, size_t size);
 
 size_t StreamLen(const MemStream_t* s);
 size_t StreamEmptyLen(const MemStream_t* s);

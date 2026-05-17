@@ -123,7 +123,7 @@ static int PackUnpack()
 
 	uint8_t binBuf[1024] = { 0 };
 	MemStream_t memStream = { 0 };
-	if ((err = MemStreamOutOpen(&memStream, binBuf, sizeof(binBuf))))
+	if ((err = MemStreamWriteOpen(&memStream, binBuf, sizeof(binBuf))))
 		return err;
 	err = EdfOpenStream(edf, (Stream_t*)&memStream, "wb");
 	err = EdfWriteSchema(edf, &TestStructSch, &writed);
@@ -136,7 +136,7 @@ static int PackUnpack()
 	EdfClose(edf);
 
 	MemStream_t mssrc = { 0 };
-	if ((err = MemStreamInOpen(&mssrc, &binBuf[3 + 8], 100)))
+	if ((err = MemStreamReadOpen(&mssrc, &binBuf[3 + 8], 100)))
 		return err;
 	uint8_t buf[1024] = { 0 };
 	LineAlloc_t mem = { 0 };
@@ -200,7 +200,7 @@ static int CharArrayWriteRead()
 	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
 	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
 
-	if ((err = MemStreamOutOpen(&memStream, binBuf, sizeof(binBuf))))
+	if ((err = MemStreamWriteOpen(&memStream, binBuf, sizeof(binBuf))))
 		return err;
 	if ((err = EdfOpenStream(edf, (Stream_t*)&memStream, "wb")))
 		return err;
@@ -223,7 +223,7 @@ static int CharArrayWriteRead()
 	EdfClose(edf);
 	//StreamClose((Stream_t*)&memStream); // переписывает буфер нулями
 	// переоткрываем записанный буфер
-	if ((err = MemStreamInOpen(&memStream, binBuf, sizeof(binBuf))))
+	if ((err = MemStreamReadOpen(&memStream, binBuf, sizeof(binBuf))))
 		return err;
 	if ((err = EdfOpenStream(edf, (Stream_t*)&memStream, "rb")))
 		return err;
@@ -244,7 +244,7 @@ static int CharArrayWriteRead()
 	Char10Test_t* item = NULL;
 	// открываем поток чтения данных в блоке
 	MemStream_t blkStream = { 0 };
-	if ((err = MemStreamInOpen(&blkStream, edf->Blk->Conent.Record.Data, GetContentDataLen(edf->Blk))))
+	if ((err = MemStreamReadOpen(&blkStream, edf->Blk->Conent.Record.Data, GetContentDataLen(edf->Blk))))
 		return err;
 	// читаем данные используя схему считанную в блоке Schema
 	if ((err = EdfReadBin(&edf->SchemaPtr->Type, &blkStream, &mem, &item, &resultPrimOffset, &primReaded)))

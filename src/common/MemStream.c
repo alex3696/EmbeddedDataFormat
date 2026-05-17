@@ -88,12 +88,12 @@ int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int MemStreamInOpen(MemStream_t* s, uint8_t* buf, size_t size)
+int MemStreamReadOpen(MemStream_t* s, uint8_t* buf, size_t size)
 {
 	return MemStreamOpen(s, buf, size, size, "r");
 }
 //-----------------------------------------------------------------------------
-int MemStreamOutOpen(MemStream_t* s, uint8_t* buf, size_t size)
+int MemStreamWriteOpen(MemStream_t* s, uint8_t* buf, size_t size)
 {
 	return MemStreamOpen(s, buf, size, 0, "w");
 }

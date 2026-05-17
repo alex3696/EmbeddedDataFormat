@@ -62,7 +62,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 	void* dst = NULL;
 	MemStream_t mem;
 	uint8_t edfMem[4096] = { 0 };
-	if ((err = MemStreamOutOpen(&mem, edfMem, sizeof(edfMem))))
+	if ((err = MemStreamWriteOpen(&mem, edfMem, sizeof(edfMem))))
 		return err;
 	*/
 
@@ -101,7 +101,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 		{
 			/*
 			MemStream_t src;
-			if ((err = MemStreamInOpen(&src, br->Blk->Conent.Record.Data, GetContentDataLen(br->Blk))))
+			if ((err = MemStreamReadOpen(&src, br->Blk->Conent.Record.Data, GetContentDataLen(br->Blk))))
 				return err;
 			size_t primReaded = 0;
 			do
