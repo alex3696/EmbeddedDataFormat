@@ -26,7 +26,7 @@ typedef struct EdfType
 
 typedef struct
 {
-	int16_t Id;		// Schema id
+	uint16_t Id;	// Schema id
 	char* Name;		// Schema name
 	char* Desc;		// Schema description
 	EdfType_t Type; // Schema type

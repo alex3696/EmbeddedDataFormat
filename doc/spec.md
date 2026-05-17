@@ -39,7 +39,7 @@
 | Type | 1 | Тип блока (см. раздел 3) |
 | Len  | 2 | Длина поля Content ( Content ≤ BlockSize - sizeof(Type)- sizeof(Len)- sizeof(CRC) ) |
 | Content | Len | Данные блока |
-| CRC  | 2 | CRC16 (Modbus), вычисляется от Type + Len + Data |
+| CRC  | 2 | CRC16 (Modbus), вычисляется от Type + Len + Content |
 
 **Примечание**: В текстовом режиме поле CRC отсутствует, блок завершается символом `>`.
 
@@ -63,7 +63,7 @@ typedef struct{
     uint16_t Blocksize;     // 512
     uint16_t Reserved;      // 0
     uint32_t Flags;         // 0
-} EdfHeader_t;
+} EdfConfig_t;
 ```
 Бинарный вид:
 | Type | Len   | Content                            | CRC  |
@@ -81,7 +81,7 @@ typedef struct{
 
 | Поле | Размер | Описание |
 |------|--------|----------|
-| Id | 2 | Идентификатор схемы |
+| Id | 2 | Идентификатор схемы (0..65535) |
 | Name | переменный | Имя схемы (String, см. раздел 6) |
 | Desc | переменный | Описание схемы (String, опционально) |
 | EdfType_t | переменный | Рекурсивное описание типа схемы (см. раздел 5.2) |
@@ -104,8 +104,9 @@ typedef struct{
 
 ## 5.3 Примитивные типы PoType 
 
-| Тип | Код | Размер (байт) | C-тип | Примечание
+| Тип   |Код| Размер (байт) | C-тип | Примечание
 |-------|---|--------|---------------|------------|
+|Struct |0  | -      | -             | Составной тип (не примитив) |
 |Char	|1	| 1      |  char[N]	     |Фиксированный массив ANSI-строк
 |Int8	|2	| 1      | 	int8_t	     |
 |UInt8	|3	| 1      | 	uint8_t	     |
@@ -250,26 +251,36 @@ EdfRecordContent_t
 
 ## 8. API Reference
 ```c
-// Открытие/закрытие
+// инициализация и создание экземпляра EdfWriter_t необходимого для
+// хранения конфигурациоонных и промежуточных данных.
+int EdfInit(EdfContext_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg);
+EdfContext_t* EdfCreate(uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg, int* pErr);
+ 
+// Открыть поток для чтения (до)записи, поток может быть файловым или память
 // Режимы: "wb"/"rb" — бинарные, "wt"/"rt" — текстовые, "ab"/"at" — дозапись
-int EdfOpen(EdfWriter_t* edf, const char* file, const char* mode);
-int EdfClose(EdfWriter_t* dw);
+int EdfOpenStream(EdfContext_t* w, Stream_t* stream, const char* mode);
+// Открыть файл для чтения (до)записи, внутри обращается к EdfOpenStream
+int EdfOpenWithFs(EdfContext_t* w, const char* file, const char* mode, FileStreamOpenFn fnOpen);
+int EdfOpenFile(EdfContext_t* w, const char* file, const char* mode);
+// освобождает фнутренние буферы и закрывает файли или поток, 
+int EdfClose(EdfContext_t* dw);
+// запись конфигурации
+int EdfWriteConfig(EdfContext_t* dw, size_t* writed);
+// запись схемы данных
+int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed);
+// запись данных
+int EdfWriteData(EdfContext_t* dw, const void* src, size_t srcLen);
+// закрывает и скидывает текущий блок на диск  
+int EdfFlushData(EdfContext_t* dw, size_t* writed);
+// Чтение данных используя схему 
+int EdfReadBin(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, void** presult,
+	size_t* resultPrimOffset, size_t* primReaded);
+// чтение блока
+int EdfReadBlock(EdfContext_t* dr);
 
-// Запись
-int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed);
-int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed);
-int EdfWriteData(EdfWriter_t* dw, const void* src, size_t srcLen);
-int EdfFlushData(EdfWriter_t* dw, size_t* writed);
-
-// Чтение
-int EdfReadBlock(EdfWriter_t* dr);
-int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, 
-               void** presult, size_t* resultPrimOffset, size_t* primReaded);
-
-// Утилиты
 //shortcut: запись схемы + данных
-int EdfWriteSchData(EdfWriter_t* dw, const EdfSchema_t* ir, const void* d, size_t len);
-int EdfWritePrimitiveSchData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d);
+int EdfWriteSchemaData(EdfContext_t* dw, const EdfSchema_t* ir, const void* d, size_t len);
+int EdfWritePrimSchData(EdfContext_t* dw, PoType pt, uint16_t schId, char* schName, char* schDesc, const void* d);
 ```
 
 Для примитивных типов (Int32, Single, etc.) передавайте указатель на значение:
@@ -283,3 +294,21 @@ int EdfWritePrimitiveSchData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name
    const char* str = "hello";
    EdfWritePrimitiveSchData(dw, String, 0, "key", NULL, &str);
 ```
+
+## 9. Коды ошибок
+
+| Код  | Значение | Описание |
+|------|----------|----------|
+| 0    | ERR_NO | Успешное выполнение |
+| -1   | ERR_EOF | Конец файла (при чтении) |
+| 1001 | ERR_SRC_SHORT | Недостаточно данных в источнике |
+| 1002 | ERR_DST_SHORT | Недостаточно места в приемнике |
+| 1003 | ERR_WRONG_TYPE | Неверный тип данных |
+| 1004 | ERR_WRONG_PARAMETERS | Неверные параметры функции |
+| 1005 | ERR_FREAD | Ошибка чтения файла |
+| 1006 | ERR_FWRITE | Ошибка записи файла |
+| 1007 | ERR_FN_NOT_EXIST | Функция не реализована |
+| 1120 | ERR_BLK_WRONG_TYPE | Неверный тип блока |
+| 1121 | ERR_BLK_WRONG_SIZE | Неверный размер блока |
+| 1122 | ERR_BLK_WRONG_CRC | Ошибка CRC блока |
+| 1123 | ERR_BLOCK_SIZE_LARGE | Размер блока превышает допустимый |
