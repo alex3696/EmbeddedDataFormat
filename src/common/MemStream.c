@@ -17,7 +17,7 @@ static int MemStreamWriteImpl(void* stream, size_t* writed, void const* data, si
 	size_t rempty = s->RPos;
 	size_t wempty = s->Size - s->WPos;
 	if (len > rempty + wempty)
-		return EOF;
+		return ERR_DST_SHORT;
 	if (len > wempty)
 		MemStreamMove(s);
 	memcpy(&s->Buffer[s->WPos], data, len);
@@ -33,13 +33,13 @@ static int MemStreamWriteFormatImpl(void* stream, size_t* writed, const char* fo
 	MemStreamMove(s);
 	size_t bufFreeLen = s->Size - s->WPos;
 	if (0 == bufFreeLen)
-		return EOF;
+		return ERR_DST_SHORT;
 	va_list arglist;
 	va_start(arglist, format);
 	size_t ret = vsnprintf((char*)&s->Buffer[s->WPos], bufFreeLen - 1, format, arglist);
 	va_end(arglist);
 	if (bufFreeLen < ret)
-		return EOF;
+		return ERR_DST_SHORT;
 	s->WPos += ret;
 	if (writed)
 		*writed += ret;
@@ -49,8 +49,8 @@ static int MemStreamWriteFormatImpl(void* stream, size_t* writed, const char* fo
 static int MemStreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)
 {
 	MemStream_t* s = (MemStream_t*)stream;
-	if (len > s->WPos - s->RPos)
-		return EOF;
+	if (StreamLen(stream) < len)
+		return ERR_SRC_SHORT;
 	memcpy(dst, &s->Buffer[s->RPos], len);
 	s->RPos += len;
 	if (readed)
@@ -62,21 +62,6 @@ static int MemStreamClose(void* stream)
 {
 	MemStream_t* s = (MemStream_t*)stream;
 	memset(s, 0, sizeof(MemStream_t));
-	return 0;
-}
-//-----------------------------------------------------------------------------
-int MemAlloc(MemStream_t* s, size_t len, void** pptr)
-{
-	if (0 == len)
-	{
-		*pptr = NULL;
-		return 0;
-	}
-	if (len > s->Size - s->WPos)
-		return (size_t)-1;
-	*pptr = &s->Buffer[s->WPos];
-	memset(&s->Buffer[s->WPos], 0, len);
-	s->WPos += len;
 	return 0;
 }
 //-----------------------------------------------------------------------------
@@ -93,9 +78,9 @@ size_t StreamEmptyLen(const MemStream_t* s)
 int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len)
 {
 	if (StreamLen(src) < len)
-		return -1;
+		return ERR_SRC_SHORT;
 	if (StreamEmptyLen(dst) < len)
-		return 1;
+		return ERR_DST_SHORT;
 	MemStreamMove(dst);
 	memcpy(&dst->Buffer[dst->WPos], &src->Buffer[src->RPos], len);
 	dst->WPos += len;
@@ -103,12 +88,12 @@ int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int MemStreamInOpen(MemStream_t* s, uint8_t* buf, size_t size)
+int MemStreamReadOpen(MemStream_t* s, uint8_t* buf, size_t size)
 {
 	return MemStreamOpen(s, buf, size, size, "r");
 }
 //-----------------------------------------------------------------------------
-int MemStreamOutOpen(MemStream_t* s, uint8_t* buf, size_t size)
+int MemStreamWriteOpen(MemStream_t* s, uint8_t* buf, size_t size)
 {
 	return MemStreamOpen(s, buf, size, 0, "w");
 }
@@ -147,5 +132,37 @@ int MemStreamOpen(MemStream_t* s, uint8_t* buf, size_t size, size_t datalen, con
 		s->WPos = size;
 		return 0;
 	}
-	return -1;
+	return ERR_WRONG_PARAMETERS;
 }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//Memory Linear Allocator
+int LineAllocInit(LineAlloc_t* w, uint8_t* buf, size_t size)
+{
+	w->Buffer = buf;
+	w->Size = size;
+	w->WPos = 0;
+	return ERR_NO;
+}
+//-----------------------------------------------------------------------------
+size_t MemGetAvailableLen(LineAlloc_t* w)
+{
+	return w->Size - w->WPos;
+}
+//-----------------------------------------------------------------------------
+int MemAlloc(LineAlloc_t* m, size_t len, void** pptr)
+{
+	if (0 == len)
+	{
+		*pptr = NULL;
+		return ERR_NO;
+	}
+	if (MemGetAvailableLen(m) < len)
+		return ERR_DST_SHORT;
+	*pptr = &m->Buffer[m->WPos];
+	memset(&m->Buffer[m->WPos], 0, len);
+	m->WPos += len;
+	return ERR_NO;
+}
+//-----------------------------------------------------------------------------

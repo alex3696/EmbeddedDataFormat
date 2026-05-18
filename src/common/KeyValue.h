@@ -1,17 +1,17 @@
 #ifndef KEYVALUE_H
 #define KEYVALUE_H
 
-#include "_pch.h"
+#include "edf.h"
 //-----------------------------------------------------------------------------
 #pragma pack(push,1)
 //-----------------------------------------------------------------------------
-static const TypeInfo_t UInt16ValueInf =
+static const EdfType_t UInt16ValueType =
 {
 	Struct, "UInt16Value", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 4,
-		.Item = (TypeInfo_t[])
+		.Item = (EdfType_t[])
 		{
 			{ String, "Name" },
 			{ UInt16, "Value" },
@@ -30,16 +30,16 @@ typedef struct UInt16Value
 
 typedef void (*DoOnItemUInt16)(UInt16Value_t* s, void* state);
 
-int UnpackUInt16KeyVal(MemStream_t* src, MemStream_t* dst,
-	int* skip, DoOnItemUInt16 DoOnItem, void* state);
+int UnpackUInt16KeyVal(MemStream_t* src, LineAlloc_t* dst,
+	size_t* skip, DoOnItemUInt16 DoOnItem, void* state);
 //-----------------------------------------------------------------------------
-static const TypeInfo_t UInt32ValueInf =
+static const EdfType_t UInt32ValueType =
 {
 	Struct, "UInt32Value", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 4,
-		.Item = (TypeInfo_t[])
+		.Item = (EdfType_t[])
 		{
 			{ String, "Name" },
 			{ UInt32, "Value" },
@@ -58,16 +58,16 @@ typedef struct UInt32Value
 
 typedef void (*DoOnItemUInt32Fn)(UInt32Value_t* s, void* state);
 
-int UnpackUInt32KeyVal(MemStream_t* src, MemStream_t* dst,
-	int* skip, DoOnItemUInt32Fn DoOnItem, void* state);
+int UnpackUInt32KeyVal(MemStream_t* src, LineAlloc_t* dst,
+	size_t* skip, DoOnItemUInt32Fn DoOnItem, void* state);
 //-----------------------------------------------------------------------------
-static const TypeInfo_t DoubleValueInf =
+static const EdfType_t DoubleValueType =
 {
 	Struct, "DoubleValue", { 0, NULL },
-	.Childs =
+	.Fields =
 	{
 		.Count = 4,
-		.Item = (TypeInfo_t[])
+		.Item = (EdfType_t[])
 		{
 			{ String, "Name" },
 			{ Double, "Value" },
@@ -85,8 +85,8 @@ typedef struct DoubleValue
 } DoubleValue_t;
 
 typedef void (*DoOnItemDoubleFn)(DoubleValue_t* s, void* state);
-int UnpackDoubleKeyVal(MemStream_t* src, MemStream_t* dst,
-	int* skip, DoOnItemDoubleFn DoOnItem, void* state);
+int UnpackDoubleKeyVal(MemStream_t* src, LineAlloc_t* dst,
+	size_t* skip, DoOnItemDoubleFn DoOnItem, void* state);
 //-----------------------------------------------------------------------------
 #pragma pack(pop)
 //-----------------------------------------------------------------------------

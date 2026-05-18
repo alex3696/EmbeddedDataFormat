@@ -52,6 +52,13 @@ public static class Primitives
             case PoType.Struct:
             default: w = 0; return EdfErr.WrongType;
             case PoType.Char:
+                if (obj is not byte[] arr)
+                    return EdfErr.WrongType;
+                if (0 > arr.Length)
+                    return EdfErr.DstBufOverflow;
+                w = arr.Length;
+                ((byte[])obj).CopyTo(dst);
+                break;
             case PoType.UInt8: MemoryMarshal.Write(dst, (byte)obj); break;
             case PoType.Int8: MemoryMarshal.Write(dst, (sbyte)obj); break;
             case PoType.UInt16: MemoryMarshal.Write(dst, (ushort)obj); break;
@@ -118,15 +125,21 @@ public static class Primitives
             case PoType.Struct:
             default: w = 0; break;
             case PoType.Char:
+                if (obj is byte[] ba && 254 > ba.Length)
                 {
-                    w = 3;
-                    if (w > dst.Length)
+                    w = 2 + ba.Length;
+                    if (w > ba.Length + 2)
                         return EdfErr.DstBufOverflow;
                     dst[0] = (byte)'\'';
-                    Encoding.UTF8.GetBytes([(char)(byte)obj], dst.Slice(1, 1));
-                    dst[2] = (byte)'\'';
+                    ba.CopyTo(dst.Slice(1));
+                    dst[ba.Length + 1] = (byte)'\'';
+                    return EdfErr.IsOk;
                 }
-                return EdfErr.IsOk;
+                else
+                {
+                    w = 0;
+                    return EdfErr.WrongType;
+                }
             case PoType.UInt8: return TryFormat(t, (byte)obj, dst, out w);
             case PoType.Int8: return TryFormat(t, (sbyte)obj, dst, out w);
             case PoType.UInt16: return TryFormat(t, (ushort)obj, dst, out w);
