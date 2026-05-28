@@ -196,24 +196,24 @@ EdfContext_t* EdfCreate(uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg, i
 //-----------------------------------------------------------------------------
 int EdfInit(EdfContext_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg)
 { 
-	int err = 0;
+	//int err = 0;
 	if (NULL == pEdf)
 		return ERR_WRONG_PARAMETERS;
 	if (NULL == pMem)
 		return ERR_WRONG_PARAMETERS;
-	if (NULL == pCfg)
+	const EdfConfig_t* const cfg = (NULL == pCfg) ? &EdfCfg256 : pCfg;
+	if (cfg->VersMajor != EDF_VERSMAJOR || cfg->VersMinor != EDF_VERSMINOR)
 		return ERR_WRONG_PARAMETERS;
-	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, MIN_BLOCK_SIZE, 0, Default };
-	const size_t bufLen = (NULL == pCfg) ? cfg.Blocksize : pCfg->Blocksize;
-	if (bufLen * 2 > memLen)
+	if (cfg->Blocksize < MIN_BLOCK_SIZE || cfg->Blocksize > MAX_BLOCK_SIZE)
 		return ERR_WRONG_PARAMETERS;
-
-	pEdf->Cfg = (NULL == pCfg)? cfg : *pCfg;
-
+	const size_t bufLen = cfg->Blocksize;
+	if (bufLen > memLen / 2)
+		return ERR_WRONG_PARAMETERS;
+	memset((void*)pEdf, 0, sizeof(EdfContext_t));
+	pEdf->Cfg = *cfg;
 	*(EdfBlock_t**)&pEdf->Blk = (EdfBlock_t*)pMem;
 	*(uint8_t**)&pEdf->Buf = (uint8_t*)(pMem + bufLen);
-
-	return err;
+	return 0;
 }
 //-----------------------------------------------------------------------------
 const EdfImpl_t writeCBinToBin =
@@ -335,11 +335,10 @@ int EdfOpenWithFs(EdfContext_t* edf, const char* file, const char* mode, FileStr
 //-----------------------------------------------------------------------------
 int EdfClose(EdfContext_t* dw)
 {
-	int err = 0;
 	size_t w = 0;
-	if ((err = EdfFlushData(dw, &w)))
-		return err;
-	return StreamClose(&dw->Stream);
+	int err0 = EdfFlushData(dw, &w);
+	int err1 = StreamClose(&dw->Stream);
+	return 0 != err0? err0 : err1;
 }
 //-----------------------------------------------------------------------------
 int EdfWriteSchemaData(EdfContext_t* dw, const EdfSchema_t* ir, const void* d, size_t len)
