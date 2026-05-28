@@ -31,7 +31,7 @@ static int EdfWriteConfigBin(EdfContext_t* dw, const EdfConfig_t* h, size_t* wri
 {
 	dw->Blk->Type = (uint8_t)btConfig;
 	dw->Blk->Len = (uint16_t)sizeof(EdfConfig_t);
-	memcpy(&dw->Blk->Conent.Config, h, sizeof(EdfConfig_t));
+	memcpy(&dw->Blk->Content.Config, h, sizeof(EdfConfig_t));
 	return EdfWriteBlockBin(&dw->Stream, dw->Blk, writed);
 }
 //-----------------------------------------------------------------------------
@@ -84,7 +84,7 @@ static int EdfWriteSchemaBin(EdfContext_t* dw, const EdfSchema_t* t, size_t* wri
 	dw->Blk->Type = (uint8_t)btSchema;
 	MemStream_t ms = { 0 };
 	size_t w = 0;
-	if ((err = MemStreamWriteOpen(&ms, dw->Blk->Conent.Schema.Data, GetContentDataMaxLen(dw, btSchema))) ||
+	if ((err = MemStreamWriteOpen(&ms, dw->Blk->Content.Schema.Data, GetContentDataMaxLen(dw, btSchema))) ||
 		(err = WriteSchemaBinToStream((Stream_t*)&ms, t, &w)))
 		return err;
 	dw->Blk->Len = (uint16_t)w;// (uint16_t)ms.WPos;
@@ -92,11 +92,11 @@ static int EdfWriteSchemaBin(EdfContext_t* dw, const EdfSchema_t* t, size_t* wri
 		return err;
 	// --- ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ ДЛЯ СЛЕДУЮЩИХ БЛОКОВ ДАННЫХ ---
 	  // Устанавливаем Id схемы в заголовок для будущих блоков данных
-	dw->Blk->Conent.Record.SchId = t->Id;
+	dw->Blk->Content.Record.SchId = t->Id;
 	// Сброс счетчика примитивов (начинаем с первого примитива новой записи)
-	dw->PrimSkip = dw->Blk->Conent.Record.PrmOffset = 0;
+	dw->PrimSkip = dw->Blk->Content.Record.PrmOffset = 0;
 	// Сброс номера записи (первая запись будет иметь номер 0)
-	dw->RecordId = dw->Blk->Conent.Record.RecId = 0;
+	dw->RecordId = dw->Blk->Content.Record.RecId = 0;
 	// Сброс длины данных для нового блока
 	dw->Blk->Len = 0;
 	return 0;
@@ -143,15 +143,15 @@ static int StreamWriteBlockDataBin(EdfContext_t* dw, size_t* writed)
 	int err = EdfWriteBlockBin(&dw->Stream, dw->Blk, writed);
 	if (err)
 		return err;
-	//dw->Blk->Conent.Record.SchId = dw->SchemaPtr->Id;
-	dw->Blk->Conent.Record.PrmOffset = dw->PrimSkip;
-	dw->Blk->Conent.Record.RecId = dw->RecordId;
+	//dw->Blk->Content.Record.SchId = dw->SchemaPtr->Id;
+	dw->Blk->Content.Record.PrmOffset = dw->PrimSkip;
+	dw->Blk->Content.Record.RecId = dw->RecordId;
 	return err;
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataTxt(EdfContext_t* dw, size_t* writed)
 {
-	return StreamWrite((Stream_t*)&dw->Stream, writed, dw->Blk->Conent.Record.Data, dw->Blk->Len);
+	return StreamWrite((Stream_t*)&dw->Stream, writed, dw->Blk->Content.Record.Data, dw->Blk->Len);
 }
 
 //-----------------------------------------------------------------------------

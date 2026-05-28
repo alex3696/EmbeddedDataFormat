@@ -237,14 +237,14 @@ static int CharArrayWriteRead()
 		return err;
 	if ((err = EdfReadBlock(edf))) // read Schema
 		return err;
-	if ((err = WriteSchemaBinToCBin(edf->Blk->Conent.Schema.Data, GetContentDataLen(edf->Blk), NULL, edf->Buf, edf->Cfg.Blocksize, NULL, &edf->SchemaPtr)))
+	if ((err = WriteSchemaBinToCBin(edf->Blk->Content.Schema.Data, GetContentDataLen(edf->Blk), NULL, edf->Buf, edf->Cfg.Blocksize, NULL, &edf->SchemaPtr)))
 		return err;
 	if ((err = EdfReadBlock(edf))) // read Data
 		return err;
 	Char10Test_t* item = NULL;
 	// открываем поток чтения данных в блоке
 	MemStream_t blkStream = { 0 };
-	if ((err = MemStreamReadOpen(&blkStream, edf->Blk->Conent.Record.Data, GetContentDataLen(edf->Blk))))
+	if ((err = MemStreamReadOpen(&blkStream, edf->Blk->Content.Record.Data, GetContentDataLen(edf->Blk))))
 		return err;
 	// читаем данные используя схему считанную в блоке Schema
 	if ((err = EdfReadBin(&edf->SchemaPtr->Type, &blkStream, &mem, &item, &resultPrimOffset, &primReaded)))

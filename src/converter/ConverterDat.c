@@ -146,7 +146,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	while (!(err = EdfReadBlock(bdfr)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamReadOpen(&src, bdfr->Blk->Conent.Record.Data, GetContentDataLen(bdfr->Blk))))
+		if ((err = MemStreamReadOpen(&src, bdfr->Blk->Content.Record.Data, GetContentDataLen(bdfr->Blk))))
 			return err;
 
 		switch (bdfr->Blk->Type)
@@ -159,7 +159,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 			msDst.WPos = 0;
 			bdfr->SchemaPtr = NULL;
 			EdfSchema_t* typeRec = NULL;
-			err = WriteSchemaBinToCBin(bdfr->Blk->Conent.Schema.Data, GetContentDataLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->Cfg.Blocksize, NULL, &typeRec);
+			err = WriteSchemaBinToCBin(bdfr->Blk->Content.Schema.Data, GetContentDataLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->Cfg.Blocksize, NULL, &typeRec);
 			if (!err)
 			{
 				bdfr->SchemaPtr = typeRec;
@@ -180,12 +180,12 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)bdfr->Blk->Conent.Record.Data)->Type)
+					if (dat.FileType != ((FileTypeId_t*)bdfr->Blk->Content.Record.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t t = *((DateTime_t*)bdfr->Blk->Conent.Record.Data);
+					DateTime_t t = *((DateTime_t*)bdfr->Blk->Content.Record.Data);
 					dat.Year = (uint8_t)(t.Year - 2000);
 					dat.Month = t.Month;
 					dat.Day = t.Day;
@@ -249,7 +249,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 						if (1 != fwrite(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
 							return ERR_FWRITE;
 					}
-					uint8_t* pblock = bdfr->Blk->Conent.Record.Data;
+					uint8_t* pblock = bdfr->Blk->Content.Record.Data;
 					size_t blkDatLen = src.Size;
 
 					while (0 < blkDatLen)
@@ -273,11 +273,11 @@ int EdfToDat(const char* edfFile, const char* datFile)
 
 			}
 			else if (IsVarName(bdfr->SchemaPtr, "Shop"))
-				dat.Id.Shop = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+				dat.Id.Shop = *((uint16_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "PlaceId"))
-				dat.Id.PlaceId = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+				dat.Id.PlaceId = *((uint16_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "Depth"))
-				dat.Id.Depth = *((int32_t*)bdfr->Blk->Conent.Record.Data);
+				dat.Id.Depth = *((int32_t*)bdfr->Blk->Content.Record.Data);
 
 		}//case btData:
 		break;

@@ -161,7 +161,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 	while (!(err = EdfReadBlock(bdfr)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamReadOpen(&src, bdfr->Blk->Conent.Record.Data, GetContentDataLen(bdfr->Blk))))
+		if ((err = MemStreamReadOpen(&src, bdfr->Blk->Content.Record.Data, GetContentDataLen(bdfr->Blk))))
 			return err;
 
 		switch (bdfr->Blk->Type)
@@ -174,7 +174,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 			skip = 0;
 			msDst.WPos = 0;
 			bdfr->SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(bdfr->Blk->Conent.Schema.Data, GetContentDataLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->Cfg.Blocksize, NULL, &bdfr->SchemaPtr);
+			err = WriteSchemaBinToCBin(bdfr->Blk->Content.Schema.Data, GetContentDataLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->Cfg.Blocksize, NULL, &bdfr->SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -194,12 +194,12 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)bdfr->Blk->Conent.Record.Data)->Type)
+					if (dat.FileType != ((FileTypeId_t*)bdfr->Blk->Content.Record.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t* t = (DateTime_t*)bdfr->Blk->Conent.Record.Data;
+					DateTime_t* t = (DateTime_t*)bdfr->Blk->Content.Record.Data;
 					dat.Id.Time.Year = (uint8_t)(t->Year - 2000);
 					dat.Id.Time.Month = t->Month;
 					dat.Id.Time.Day = t->Day;
@@ -259,45 +259,45 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				}//switch
 			}//if (bdfr->SchemaPtr->Id)
 			else if (IsVarName(bdfr->SchemaPtr, "Oper"))
-				dat.Id.Oper = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+				dat.Id.Oper = *((uint16_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "TravelStep"))
-				dat.TravelStep = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+				dat.TravelStep = *(uint16_t*)bdfr->Blk->Content.Record.Data;
 			else if (IsVarName(bdfr->SchemaPtr, "LoadStep"))
-				dat.LoadStep = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+				dat.LoadStep = *(uint16_t*)bdfr->Blk->Content.Record.Data;
 			else if (IsVarName(bdfr->SchemaPtr, "TimeStep"))
-				dat.TimeStep = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+				dat.TimeStep = *(uint16_t*)bdfr->Blk->Content.Record.Data;
 			else if (IsVarName(bdfr->SchemaPtr, "Rod"))
-				dat.Rod = (uint16_t)(*(float*)bdfr->Blk->Conent.Record.Data * 10);
+				dat.Rod = (uint16_t)(*(float*)bdfr->Blk->Content.Record.Data * 10);
 			else if (IsVarName(bdfr->SchemaPtr, "Aperture"))
-				dat.Aperture = (*(uint16_t*)bdfr->Blk->Conent.Record.Data);
+				dat.Aperture = (*(uint16_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "MaxWeight"))
-				dat.MaxWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.LoadStep);
+				dat.MaxWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Content.Record.Data / dat.LoadStep);
 			else if (IsVarName(bdfr->SchemaPtr, "MinWeight"))
-				dat.MinWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.LoadStep);
+				dat.MinWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Content.Record.Data / dat.LoadStep);
 			else if (IsVarName(bdfr->SchemaPtr, "TopWeight"))
-				dat.TopWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.LoadStep);
+				dat.TopWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Content.Record.Data / dat.LoadStep);
 			else if (IsVarName(bdfr->SchemaPtr, "BotWeight"))
-				dat.BotWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.LoadStep);
+				dat.BotWeight = (uint16_t)(*(uint32_t*)bdfr->Blk->Content.Record.Data / dat.LoadStep);
 			else if (IsVarName(bdfr->SchemaPtr, "Travel"))
-				dat.Travel = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0 / dat.TravelStep);
+				dat.Travel = (uint16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0 / dat.TravelStep);
 			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
-				dat.BeginPos = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0 / dat.TravelStep);
+				dat.BeginPos = (uint16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0 / dat.TravelStep);
 			else if (IsVarName(bdfr->SchemaPtr, "Period"))
-				dat.Period = (uint16_t)(*(uint32_t*)bdfr->Blk->Conent.Record.Data / dat.TimeStep);
+				dat.Period = (uint16_t)(*(uint32_t*)bdfr->Blk->Content.Record.Data / dat.TimeStep);
 			else if (IsVarName(bdfr->SchemaPtr, "Cycles"))
-				dat.Cycles = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+				dat.Cycles = *(uint16_t*)bdfr->Blk->Content.Record.Data;
 			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
-				dat.Pressure = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0);
+				dat.Pressure = (uint16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
 			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
-				dat.BufPressure = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0);
+				dat.BufPressure = (uint16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
 			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
-				dat.LinePressure = (uint16_t)(*(double*)bdfr->Blk->Conent.Record.Data * 10.0);
+				dat.LinePressure = (uint16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
 			else if (IsVarName(bdfr->SchemaPtr, "PumpType"))
-				dat.PumpType = *(uint16_t*)bdfr->Blk->Conent.Record.Data;
+				dat.PumpType = *(uint16_t*)bdfr->Blk->Content.Record.Data;
 			else if (IsVarName(bdfr->SchemaPtr, "Acc"))
-				dat.Acc = (uint16_t)(*(float*)bdfr->Blk->Conent.Record.Data * 10);
+				dat.Acc = (uint16_t)(*(float*)bdfr->Blk->Content.Record.Data * 10);
 			else if (IsVarName(bdfr->SchemaPtr, "Temp"))
-				dat.Temp = (uint16_t)(*(float*)bdfr->Blk->Conent.Record.Data * 10);
+				dat.Temp = (uint16_t)(*(float*)bdfr->Blk->Content.Record.Data * 10);
 
 			else if (IsVarName(bdfr->SchemaPtr, "DynChart"))
 			{

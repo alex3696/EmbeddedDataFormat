@@ -79,7 +79,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 		case btSchema:
 		{
 			tw->SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(br->Blk->Conent.Schema.Data, GetContentDataLen(br->Blk), NULL, br->Buf, br->Cfg.Blocksize, NULL, &tw->SchemaPtr);
+			err = WriteSchemaBinToCBin(br->Blk->Content.Schema.Data, GetContentDataLen(br->Blk), NULL, br->Buf, br->Cfg.Blocksize, NULL, &tw->SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -101,7 +101,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 		{
 			/*
 			MemStream_t src;
-			if ((err = MemStreamReadOpen(&src, br->Blk->Conent.Record.Data, GetContentDataLen(br->Blk))))
+			if ((err = MemStreamReadOpen(&src, br->Blk->Content.Record.Data, GetContentDataLen(br->Blk))))
 				return err;
 			size_t primReaded = 0;
 			do
@@ -124,7 +124,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 					return err;
 			} while (primReaded && StreamLen(&src));
 			*/
-			EdfWriteData(tw, br->Blk->Conent.Record.Data, GetContentDataLen(br->Blk));
+			EdfWriteData(tw, br->Blk->Content.Record.Data, GetContentDataLen(br->Blk));
 		}
 		break;
 		}
