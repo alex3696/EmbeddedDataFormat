@@ -79,6 +79,20 @@ static int WriteStringCBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst,
 	return 0;
 }
 //-----------------------------------------------------------------------------
+static int WriteCharAnyBinToStr(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
+	size_t* r, size_t* w)
+{
+	size_t actual_len = strnlength((const char*)src, srcLen);
+	if (dstLen < actual_len + 2)
+		return ERR_DST_SHORT;
+	*r = srcLen;
+	*w = actual_len + 2;
+	dst[0] = '"';
+	memcpy(dst + 1, src, actual_len);
+	dst[actual_len + 2 - 1] = '"';
+	return ERR_NO;
+}
+//-----------------------------------------------------------------------------
 static size_t xprint(const uint8_t* buf, size_t bufLen, char* format, ...)
 {
 	va_list arglist;
@@ -215,16 +229,7 @@ static int AnyBinToStr(PoType t,
 		*w = xprint(dst, dstLen, "%.16g", alignedVal);
 	}
 	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
-	case Char:
-		size_t actual_len = strnlength((const char*)src, srcLen);
-		if (dstLen < actual_len + 2)
-			return ERR_DST_SHORT;
-		*r = srcLen;
-		*w = actual_len + 2;
-		dst[0] = '"';
-		memcpy(dst + 1, src, actual_len);
-		dst[actual_len + 2 - 1] = '"';
-		return 0;
+	case Char: return WriteCharAnyBinToStr(src, srcLen, dst, dstLen, r, w);
 	case String: return (*WriteString)(src, srcLen, dst, dstLen, r, w);
 	}//switch (t)
 }
