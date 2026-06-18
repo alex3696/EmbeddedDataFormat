@@ -297,6 +297,9 @@ static int WriteSample(EdfContext_t* dw)
 	};
 #pragma pack(pop)
 
+	int len0 = GetEdfSchemaCBinLen(&keyValueType);
+	if (93 != len0)
+		return ERR_BASE;
 	err = EdfWriteSchema(dw, &keyValueType, &writed);
 	EdfWriteData(dw, &((KeyValue_t) { "Key1", "Value1" }), sizeof(KeyValue_t));
 	EdfWriteData(dw, &((KeyValue_t) { "Key2", "Value2" }), sizeof(KeyValue_t));

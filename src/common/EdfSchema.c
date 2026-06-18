@@ -2,14 +2,41 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
-static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed)
+size_t GetEdfTypeCBinLen(const EdfType_t* t)
+{
+	size_t nameLen = t->Name ? strnlength(t->Name, MAX_STR_LEN) + 1 : 0;
+	size_t sz = sizeof(EdfType_t) + nameLen;
+	if (t->Dims.Count)
+	{
+		sz += sizeof(uint16_t) * t->Dims.Count;
+	}
+	if (Struct == t->Type && t->Fields.Item && t->Fields.Count)
+	{
+		for (uint8_t i = 0; i < t->Fields.Count; i++)
+			sz += GetEdfTypeCBinLen(&t->Fields.Item[i]);
+	}
+	return sz;
+}
+//-----------------------------------------------------------------------------
+size_t GetEdfSchemaCBinLen(const EdfSchema_t* sch)
+{
+	size_t typeCBinLen = sizeof(EdfSchema_t) - sizeof(EdfType_t) ;
+	typeCBinLen += sch->Name ? strnlength(sch->Name, MAX_STR_LEN) + 1 : 0;
+	typeCBinLen += sch->Desc ? strnlength(sch->Desc, MAX_STR_LEN) + 1 : 0;
+	return typeCBinLen + GetEdfTypeCBinLen(&sch->Type);
+}
+//-----------------------------------------------------------------------------
+static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed, size_t* typeCBinLen)
 {
 	int err = 0;
+	*typeCBinLen += sizeof(EdfType_t); // расчитываем размер,типа в памяти
+	*typeCBinLen += t->Name ? strnlength(t->Name, MAX_STR_LEN) + 1 : 0;
 	// TYPE
 	if ((err = StreamWrite(s, writed, &(uint8_t){ t->Type }, 1)))
 		return err;
 	if (t->Dims.Item && t->Dims.Count)
 	{
+		*typeCBinLen += sizeof(uint16_t) * t->Dims.Count;
 		if ((err = StreamWrite(s, writed, &t->Dims.Count, 1)))
 			return err;
 		for (uint8_t i = 0; i < t->Dims.Count; i++)
@@ -30,7 +57,7 @@ static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 		if ((err = StreamWrite(s, writed, &t->Fields.Count, 1)))
 			return err;
 		for (uint8_t i = 0; i < t->Fields.Count; i++)
-			if ((err = StreamWriteTypeBin(s, &t->Fields.Item[i], writed)))
+			if ((err = StreamWriteTypeBin(s, &t->Fields.Item[i], writed, typeCBinLen)))
 				return err;
 	}
 	return err;
@@ -39,14 +66,19 @@ static int StreamWriteTypeBin(Stream_t* s, const EdfType_t* t, size_t* writed)
 int WriteSchemaBinToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 {
 	int err = 0;
+	size_t typeCBinLen = sizeof(EdfSchema_t) - sizeof(EdfType_t);
+	typeCBinLen += t->Name ? strnlength(t->Name, MAX_STR_LEN) + 1 : 0;
+	typeCBinLen += t->Desc ? strnlength(t->Desc, MAX_STR_LEN) + 1 : 0;
 	if ((err = StreamWrite(st, writed, &t->Id, FIELD_SIZEOF(EdfSchema_t, Id))))
 		return err;
 	if ((err = StreamWriteString(st, t->Name, writed)))
 		return err;
 	if ((err = StreamWriteString(st, t->Desc, writed)))
 		return err;
-	if ((err = StreamWriteTypeBin(st, &t->Type, writed)))
+	if ((err = StreamWriteTypeBin(st, &t->Type, writed, &typeCBinLen)))
 		return err;
+	if (typeCBinLen > st->Inst.Mem.Size)
+		return ERR_DST_SHORT; // невозможно разместить схему в памяти, если придётся кешировать
 	return err;
 }
 //-----------------------------------------------------------------------------
@@ -240,9 +272,9 @@ int WriteSchemaBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	return err;
 }
 //-----------------------------------------------------------------------------
-uint32_t GetTypeCSize(const EdfType_t* t)
+size_t GetTypeCSize(const EdfType_t* t)
 {
-	uint32_t sz = 0;
+	size_t sz = 0;
 
 	switch (t->Type)
 	{

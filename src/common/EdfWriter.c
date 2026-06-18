@@ -56,7 +56,9 @@ int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed)
 	err = (*dw->impl->WriteSchema)(dw, t, writed);
 	if (err)
 		return err;
-	dw->SchemaPtr = t;
+	dw->SchemaPtr = t;	// Если придётся кешировать схему - делаем это тут.
+						// TODO:
+						// однако в EdfWriteData придётся отказаться от буфера и не кэшировать неполные примитивы. 
 	dw->BufLen = 0;
 	return err;
 }

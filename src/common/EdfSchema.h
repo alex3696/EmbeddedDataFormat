@@ -36,8 +36,9 @@ int IsVar(const EdfSchema_t* r, int32_t varId, const char* varName);
 int IsVarName(const EdfSchema_t* r, const char* varName);
 size_t GetTotalElements(const EdfDims_t* const dims);
 
-
-uint32_t GetTypeCSize(const EdfType_t* t);
+size_t GetEdfSchemaCBinLen(const EdfSchema_t* sch);
+size_t GetEdfTypeCBinLen(const EdfType_t* t);
+size_t GetTypeCSize(const EdfType_t* t);
 int8_t HasDynamicFields(const EdfType_t* t);
 int WriteSchemaBinToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed);
 int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed);
