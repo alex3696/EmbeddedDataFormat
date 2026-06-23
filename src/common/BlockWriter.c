@@ -164,15 +164,18 @@ static int WriteSingleValue(EdfContext_t* dw,
 	return err;
 }
 //-----------------------------------------------------------------------------
-int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen)
+int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* srcConsumed)
 {
-	if (NULL == dw->SchemaPtr)
+	if (dw == NULL || NULL == dw->SchemaPtr)
 		return ERR_WRONG_TYPE;
 	if (dw->impl->WritePrimitive == NULL)  // режим чтения
 		return ERR_WRONG_PARAMETERS;
+	if (vsrc == NULL || xsrcLen == 0)
+		return ERR_NO;
+	if (srcConsumed != NULL)
+		*srcConsumed = 0;
 
-	const uint8_t* xsrc = (const uint8_t*)vsrc;
-	const uint8_t* src = xsrc;
+	const uint8_t* src = (const uint8_t*)vsrc;
 	size_t srcLen = xsrcLen;
 
 	size_t dstLen = GetContentDataMaxLen(dw, btData) - dw->Blk->Len;
@@ -181,69 +184,31 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen)
 	int wr;
 	do
 	{
-		if (dw->BufLen)
-		{
-			// copy xsrc data to buffer
-			size_t len = MIN(dw->Cfg.Blocksize - dw->BufLen, xsrcLen);
-			if (0 < len)
-			{
-				memcpy(dw->Buf + dw->BufLen, xsrc, len);
-				xsrc += len;
-				xsrcLen -= len;
-				dw->BufLen += len;
-
-				src = dw->Buf;
-				srcLen = dw->BufLen;
-			}
-		}
-		else
-		{
-			src = xsrc;
-			srcLen = xsrcLen;
-		}
-
 		size_t skip = dw->PrimSkip;
 		size_t r = 0, w = 0, wqty = 0;
 		wr = WriteSingleValue(dw, &src, &srcLen, &dst, &dstLen, &skip, &wqty, &r, &w);
-
-		if (dw->BufLen)
-		{
-			dw->BufLen -= r;
-			if (dw->BufLen)
-			{
-				memcpy(dw->Buf, src + r, dw->BufLen);
-				src = dw->Buf;
-				srcLen = dw->BufLen;
-			}
-			else
-			{
-				src = xsrc;
-				srcLen = xsrcLen;
-			}
-			if (0 > wr && 0 < xsrcLen)
-				wr = 0;
-		}
-		else
-		{
-			xsrc += r;
-			xsrcLen -= r;
-			src = xsrc;
-			srcLen = xsrcLen;
-		}
-
+		// Увеличиваем размер занятых данных в текущем блоке на то, что вернул WriteSingleValue.
+		// (Если внутри происходил EdfFlushData, 'w' содержит корректный остаток для нового блока)
+		if (dw->Blk->Len + w > 0xFFFF)
+			return ERR_WRONG_PARAMETERS;
 		dw->Blk->Len += (uint16_t)w;
+		if (srcConsumed != NULL)
+			*srcConsumed += r;
+
 		switch (wr)
 		{
 		default:
 		case ERR_WRONG_TYPE: return ERR_WRONG_TYPE;
 		case ERR_SRC_SHORT:
+			// Входной буфер оборвался на середине примитива/массива.
+			// Запоминаем позицию в схеме (wqty), чтобы при следующем вызове начать с нужного места.
+			if (dw->PrimSkip + wqty > 0xFFFF)
+				return ERR_WRONG_PARAMETERS;
 			dw->PrimSkip += (uint16_t)wqty;
-			break;
+			return ERR_SRC_SHORT;
 		case ERR_NO:
 			dw->PrimSkip = 0;
 			dw->RecordId++;
-			if (0 == xsrcLen)
-				return ERR_NO;
 			break;
 		case ERR_DST_SHORT:
 			//dstLen = GetContentDataMaxLen(dw, btData);
@@ -253,13 +218,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen)
 			return ERR_DST_SHORT;
 			break;
 		}
-	} while (ERR_SRC_SHORT != wr && 0 < srcLen);
-
-	if (ERR_SRC_SHORT == wr && 0 < srcLen)
-	{
-		dw->BufLen = srcLen;
-		memcpy(dw->Buf, src, dw->BufLen);
-	}
+	} while (0 < srcLen);
 	return wr;
 }
 

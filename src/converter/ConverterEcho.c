@@ -179,7 +179,7 @@ int EchoToEdf(const char* src, const char* edfFile, char mode)
 
 		p.x = xDiscrete * i * maxDepthMult;
 
-		EdfWriteData(edf, &p, sizeof(struct PointXY));
+		EdfWriteData(edf, &p, sizeof(struct PointXY), NULL);
 	}
 	fclose(f);
 	EdfClose(edf);

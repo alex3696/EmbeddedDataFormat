@@ -348,7 +348,7 @@ int EdfWriteSchemaData(EdfContext_t* dw, const EdfSchema_t* ir, const void* d, s
 	int err;
 	size_t writed = 0;
 	if ((err = EdfWriteSchema(dw, ir, &writed)) ||
-		(err = EdfWriteData(dw, d, len)))
+		(err = EdfWriteData(dw, d, len, NULL)))
 		return err;
 	return 0;
 }

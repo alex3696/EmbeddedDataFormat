@@ -124,7 +124,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 					return err;
 			} while (primReaded && StreamLen(&src));
 			*/
-			EdfWriteData(tw, br->Blk->Content.Record.Data, GetContentDataLen(br->Blk));
+			EdfWriteData(tw, br->Blk->Content.Record.Data, GetContentDataLen(br->Blk), NULL);
 		}
 		break;
 		}

@@ -122,7 +122,7 @@ int DynToEdf(const char* src, const char* edfFile, char mode)
 	{
 		p.x += (float)(ExtractTravel(dat.Data[i]) * dat.TravelStep / 1.E4);
 		p.y = (float)((dat.Data[i] & 1023) * dat.LoadStep * 1.0E-3);
-		EdfWriteData(edf, &p, sizeof(struct PointXY));
+		EdfWriteData(edf, &p, sizeof(struct PointXY), NULL);
 	}
 	fclose(f);
 	EdfClose(edf);

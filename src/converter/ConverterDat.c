@@ -96,7 +96,7 @@ int DatToEdf(const char* src, const char* edfFile, char mode)
 	{
 		if (1 == fread(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
 		{
-			if ((err = EdfWriteData(edf, &record, sizeof(OMEGA_DATA_V1_1) - 2)))
+			if ((err = EdfWriteData(edf, &record, sizeof(OMEGA_DATA_V1_1) - 2, NULL)))
 				return err;
 			//EdfFlushData(edf, &writed);
 		}
