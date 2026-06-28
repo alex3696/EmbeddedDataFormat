@@ -13,6 +13,7 @@ namespace NetEdf.src;
 ///3 byte max values:   2097152 + 2byte values  <br/>
 ///4 byte max values: 268435456 + 3byte values  <br/>
 /// </summary>
+/// 
 public static class VarInt
 {
     public const byte maxVarintBytes = 10;

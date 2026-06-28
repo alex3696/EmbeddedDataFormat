@@ -3,6 +3,7 @@ namespace NetEdf.src;
 /// <summary>
 ///  Plain object type
 /// </summary>
+/// // типы данных, которые могут быть записаны в EDF файле
 public enum PoType : byte
 {
     Struct = 0,

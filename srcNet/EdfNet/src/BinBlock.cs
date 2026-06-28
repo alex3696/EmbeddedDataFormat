@@ -1,5 +1,6 @@
 namespace NetEdf.src;
 
+
 public class BinBlock
 {
     public BlockType Type;

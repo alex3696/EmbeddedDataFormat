@@ -45,7 +45,7 @@ public class TestStructSerialize
         return ret;
     }
 
-    class KeyValueStruct : IEquatable<KeyValueStruct>
+    public class KeyValueStruct : IEquatable<KeyValueStruct>
     {
         public string? Key { get; set; }
         public string? Value { get; set; }
@@ -101,8 +101,8 @@ public class TestStructSerialize
             Assert.AreEqual(30, bw.CurrentQty);
         }
         var mssrc = new MemoryStream(binBuf);
-        byte[] buf = new byte[1024];
-        using var mem = new MemoryStream(buf);
+        //byte[] buf = new byte[1024];
+        //using var mem = new MemoryStream(buf);
         using var reader = new BinReader(mssrc);
 
         //if (!reader.ReadBlock())
@@ -151,15 +151,15 @@ public class TestStructSerialize
             Id = 0,
             Name = "VariableKV",
             Desc = "comment",
-            Inf = new()
+            Inf = new TypeInf()
             {
                 Type = PoType.Struct,
                 Name = "KeyValue",
-                Childs =
-                [
-                    new (PoType.String, "Key"),
-                    new (PoType.String, "Value"),
-                ]
+                Childs = new TypeInf[]
+                {
+                    new TypeInf(PoType.String, "Key"),
+                    new TypeInf(PoType.String, "Value"),
+                }
             }
         };
         dw.Write(keyValueType);
@@ -327,10 +327,6 @@ public class TestStructSerialize
     }
 
 
-
-
-
-
     [TestMethod]
     public void TestPrimitiveDecomposer()
     {
@@ -351,13 +347,6 @@ public class TestStructSerialize
         Assert.AreEqual("tag1", flaten2[3]);
         Assert.AreEqual("tag2", flaten2[4]);
     }
-
-
-
-
-
-
-
 
     [TestMethod]
     public void TestTypeInfEquality()
@@ -407,7 +396,6 @@ public class TestStructSerialize
         Assert.AreNotEqual(inf1, inf3);
     }
 
-
     [TestMethod]
     public void TestSourceGenSerialize()
     {
@@ -415,12 +403,7 @@ public class TestStructSerialize
         Span<byte> sa = stackalloc byte[1024];
         kvs.SerializeBin(sa);
         int bc = KeyVal.DeserializeBin(sa, out var okv);
-
-
+        Assert.AreEqual(22, bc);
     }
-
-
-
-
 }
 
