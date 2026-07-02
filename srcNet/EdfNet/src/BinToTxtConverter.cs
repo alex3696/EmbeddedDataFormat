@@ -37,17 +37,17 @@ public class BinToTxtConverter : BaseDisposable
                 switch (_reader.GetBlockType())
                 {
                     default: break;
-                    case BlockType.Header:
+                    case BlockType.Config:
                         var header = _reader.ReadHeader();
                         if (header != null)
                             _writer.Write(header);
                         break;
-                    case BlockType.VarInfo:
-                        var rec = _reader.ReadInfo();
+                    case BlockType.Schema:
+                        var rec = _reader.ReadSchema();
                         if (rec != null)
                             _writer.Write(rec);
                         break;
-                    case BlockType.VarData:
+                    case BlockType.Data:
                         EdfErr err = TryReadPrimitives(out var arr, _reader.GetBlockData());
                         if (0 < arr.Count)
                         {
@@ -70,7 +70,7 @@ public class BinToTxtConverter : BaseDisposable
     EdfErr TryReadPrimitives(out List<object> ret, ReadOnlySpan<byte> src)
     {
         ret = [];
-        ArgumentNullException.ThrowIfNull(_writer.CurrDataType);
+        ArgumentNullException.ThrowIfNull(_writer.CurrentSchema);
         EdfErr err;
         do
         {
@@ -78,7 +78,7 @@ public class BinToTxtConverter : BaseDisposable
             int skip = _skip;
             int readed = 0;
 
-            err = PrimitiveListReader.ReadObjects(_writer.CurrDataType, src, ref skip, ref qty, ref readed, ret);
+            err = PrimitiveListReader.ReadObjects(_writer.CurrentSchema.Type, src, ref skip, ref qty, ref readed, ret);
             src = src.Slice(readed);
             switch (err)
             {

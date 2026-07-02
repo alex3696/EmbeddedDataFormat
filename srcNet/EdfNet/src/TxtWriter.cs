@@ -3,11 +3,17 @@ namespace NetEdf.src;
 public class TxtWriter : BaseWriter
 {
     readonly Stream _st;
+    private readonly byte[] _buf;
+    protected override ushort _DataLen { get; set; }
+    protected override Span<byte> _DataBuffer => _buf;
 
-    public TxtWriter(Stream stream, Header? cfg = null)
-        : base(cfg ?? Header.Default)
+
+    public TxtWriter(Stream stream, Config? cfg = null)
+        : base(cfg ?? Config.Default)
     {
         _st = stream;
+        _buf = new byte[Cfg.Blocksize];
+
         SepBeginStruct = "{"u8.ToArray();
         SepEndStruct = "}"u8.ToArray();
         SepBeginArray = "["u8.ToArray();
@@ -26,8 +32,8 @@ public class TxtWriter : BaseWriter
     }
     public override void Flush()
     {
-        _st.Write(_blkData.AsSpan(0, _blkQty));
-        _blkQty = 0;
+        _st.Write(_DataBuffer.Slice(0, _DataLen));
+        _DataLen = 0;
     }
     protected void Write(string? str)
     {
@@ -41,28 +47,28 @@ public class TxtWriter : BaseWriter
             offset += "  ";
         return offset;
     }
-    public override void Write(Header h)
+    public override void Write(Config h)
     {
         Flush();
         Write($"<~ {{version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags}; }} >\n");
         //Write($"// ? - struct @ - data // - comment");
-        _currDataType = null;
-        _blkQty = 0;
+        CurrentSchema = null;
+        _DataLen = 0;
     }
-    public override void Write(TypeRec t)
+    public override void Write(Schema sch)
     {
         Flush();
         Write($"\n\n<? {{");
-        Write($"{t.Id};\"{t.Name}\"");
-        if (!string.IsNullOrEmpty(t.Desc))
-            Write($";\"{t.Desc}\"");
+        Write($"{sch.Id};\"{sch.Name}\"");
+        if (!string.IsNullOrEmpty(sch.Desc))
+            Write($";\"{sch.Desc}\"");
         Write($"}} ");
-        ToString(t.Inf);
+        ToString(sch.Type);
         Write($">");
-        _currDataType = t.Inf;
-        _blkQty = 0;
+        CurrentSchema = sch;
+        _DataLen = 0;
     }
-    protected void ToString(TypeInf t, int noffset = 0)
+    protected void ToString(EdfType t, int noffset = 0)
     {
         string offset = GetOffset(noffset);
         Write(offset);

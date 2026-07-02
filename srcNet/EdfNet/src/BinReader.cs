@@ -2,25 +2,21 @@ namespace NetEdf.src;
 
 public class BinReader : BaseReader
 {
-    public readonly Header Cfg;
-    readonly BinaryReader _br;
+    public readonly Config Cfg;
+    private readonly BinaryReader _br;
     private readonly BinBlock _current;
-    public UInt16 EqQty;
-    public byte Seq;
+    protected Schema? CurrentSchema;
 
-    public UInt16 Pos;
-    protected TypeInf? _currDataType;
-
-    public BinReader(Stream stream, Header? header = default)
+    public BinReader(Stream stream, Config? header = default)
     {
         _br = new BinaryReader(stream);
-        Cfg = Header.Default;
-        _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
+        Cfg = Config.Default;
+        _current = new(Cfg.Blocksize);
         if (ReadBlock())
         {
             var newCfg = ReadHeader();
             if (newCfg != null)
-                _current = new BinBlock(0, new byte[Cfg.Blocksize], 0);
+                _current = new(Cfg.Blocksize);
         }
     }
 
@@ -33,84 +29,79 @@ public class BinReader : BaseReader
         }
         while (!Enum.IsDefined(t));
 
-        var seq = _br.ReadByte();
         var len = _br.ReadUInt16();
 
         if (0 < len)
         {
             _current.Type = t;
-            _current.Seq = seq;
-            _current.Qty = len;
-            _br.Read(_current._data, 0, len);
-
-            if (Cfg.Flags.HasFlag(Options.UseCrc))
+            _current.DataLen = len;
+            int dataLenAndCrcLen = len + BinBlock.CrcLen;
+            int readed = _br.Read(_current.DataBuffer[..dataLenAndCrcLen]);
+            if (readed != dataLenAndCrcLen)
+                return false;
+            if (!_current.CheckCrc())
+                throw new Exception($"Wrong CRC block");
+            if (_current.Type == BlockType.Schema)
             {
-                ushort fileCrc = _br.ReadUInt16();
-                ushort crc = ModbusCRC.Calc([(byte)_current.Type]);
-                crc = ModbusCRC.Calc([_current.Seq], crc);
-                crc = ModbusCRC.Calc(BitConverter.GetBytes(_current.Qty), crc);
-                crc = ModbusCRC.Calc(_current.Data, crc);
-                if (crc != fileCrc)
-                    throw new Exception($"Wrong CRC block {_current.Seq}");
+                CurrentSchema = ReadSchema();
             }
-            if (_current.Type != BlockType.VarData)
-                _currDataType = ReadInfo()?.Inf;
-            Pos = 0;
             return true;
         }
-
         return false;
     }
     public BlockType GetBlockType() => _current.Type;
-    public byte GetBlockSeq() => _current.Seq;
-    public ushort GetBlockLen() => _current.Qty;
-    public Span<byte> GetBlockData() => _current._data.AsSpan(0, _current.Qty);
+    public ushort GetBlockLen() => _current.Len;
+    public ReadOnlySpan<byte> GetBlockData() => _current.CurrentData;
 
-    public Header? ReadHeader()
+    public Config? ReadHeader()
     {
-        if (_current.Type == BlockType.Header)
-            return Header.Parse(_current.Data);
-        return null;
-    }
-    public TypeRec? ReadInfo()
-    {
-        if (_current.Type == BlockType.VarInfo)
+        if (_current.Type != BlockType.Config)
+            return null;
+        var b = _current.CurrentData;
+        return new Config()
         {
-            TypeRec rec = new();
-            EdfErr err;
-            if (EdfErr.IsOk != (err = Primitives.TryBinToSrc(PoType.UInt32, _current._data, out var r, out var retObj)))
-                return null;
-            rec.Id = (uint)(retObj ?? 0);
-            rec.Inf = ParseInf(_current._data.AsSpan(r), out var rest);
-
-            if (EdfErr.IsOk != (err = Primitives.TryBinToSrc(PoType.String, rest, out r, out retObj)))
-                return null;
-            rec.Name = (string?)retObj;
-            rest = rest.Slice(r);
-            if (EdfErr.IsOk != (err = Primitives.TryBinToSrc(PoType.String, rest, out r, out retObj)))
-                return null;
-            rec.Desc = (string?)retObj;
-
-            return rec;
-        }
-        return null;
+            VersMajor = b[0],
+            VersMinor = b[1],
+            Encoding = MemoryMarshal.Read<ushort>(b[2..]),
+            Blocksize = MemoryMarshal.Read<ushort>(b[4..]),
+            Flags = MemoryMarshal.Read<Options>(b[8..]),
+        };
+    }
+    public Schema? ReadSchema()
+    {
+        if (_current.Type != BlockType.Schema)
+            return null;
+        var b = _current.CurrentData;
+        int pos = 0;
+        ushort id = MemoryMarshal.Read<ushort>(b[..sizeof(ushort)]);
+        pos += sizeof(ushort);
+        pos += EdfBinString.ReadBin(b[pos..], out string? name);
+        pos += EdfBinString.ReadBin(b[pos..], out string? desc);
+        var type = ParseType(b[pos..], out _);
+        return new Schema()
+        {
+            Id = id,
+            Name = name,
+            Desc = desc,
+            Type = type
+        };
     }
 
 
-    public static EdfErr ReadObject(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
+    public static EdfErr ReadObject(EdfType t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
     {
         uint totalElement = t.GetTotalElements();
         if (1 < totalElement)
             return ReadArray(t, src, totalElement, ref skip, ref qty, ref readed, ref ret);
         return ReadElement(t, src, ref skip, ref qty, ref readed, ref ret);
     }
-    public static EdfErr ReadElement(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
+    public static EdfErr ReadElement(EdfType t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
     {
         if (PoType.Struct == t.Type)
             return ReadStruct(t, src, ref skip, ref qty, ref readed, ref ret);
         return ReadPrimitive(t, src, ref skip, ref qty, ref readed, ref ret);
     }
-    static EdfErr ReadArray(TypeInf t, ReadOnlySpan<byte> src, uint totalElement, ref int skip, ref int qty, ref int readed, ref object ret)
+    static EdfErr ReadArray(EdfType t, ReadOnlySpan<byte> src, uint totalElement, ref int skip, ref int qty, ref int readed, ref object ret)
     {
         EdfErr err = EdfErr.IsOk;
         Type csType = ret.GetType();
@@ -133,7 +124,7 @@ public class BinReader : BaseReader
         }
         return err;
     }
-    static EdfErr ReadStruct(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
+    static EdfErr ReadStruct(EdfType t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
     {
         EdfErr err = EdfErr.IsOk;
         if (null == t.Childs || 0 == t.Childs.Length)
@@ -152,7 +143,7 @@ public class BinReader : BaseReader
         }
         return err;
     }
-    static EdfErr ReadPrimitive(TypeInf t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
+    static EdfErr ReadPrimitive(EdfType t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
     {
         if (0 < skip)
         {
@@ -167,20 +158,20 @@ public class BinReader : BaseReader
         return err;
     }
 
-    public static EdfErr ReadObject(TypeInf t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
+    public static EdfErr ReadObject(EdfType t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
     {
         uint totalElement = t.GetTotalElements();
         if (1 < totalElement)
             return ReadArray(t, src, csType, totalElement, ref skip, ref qty, ref readed, out ret);
         return ReadElement(t, src, csType, ref skip, ref qty, ref readed, out ret);
     }
-    public static EdfErr ReadElement(TypeInf t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
+    public static EdfErr ReadElement(EdfType t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
     {
         if (PoType.Struct == t.Type)
             return ReadStruct(t, src, csType, ref skip, ref qty, ref readed, out ret);
         return ReadPrimitive(t, src, csType, ref skip, ref qty, ref readed, out ret);
     }
-    static EdfErr ReadArray(TypeInf t, ReadOnlySpan<byte> src, Type csType, uint totalElement, ref int skip, ref int qty, ref int readed, out object? ret)
+    static EdfErr ReadArray(EdfType t, ReadOnlySpan<byte> src, Type csType, uint totalElement, ref int skip, ref int qty, ref int readed, out object? ret)
     {
         EdfErr err = EdfErr.IsOk;
         if (!csType.IsArray)
@@ -199,7 +190,7 @@ public class BinReader : BaseReader
         }
         return err;
     }
-    static EdfErr ReadStruct(TypeInf t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
+    static EdfErr ReadStruct(EdfType t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
     {
         EdfErr err = EdfErr.IsOk;
         ret = default;
@@ -219,7 +210,7 @@ public class BinReader : BaseReader
         }
         return err;
     }
-    static EdfErr ReadPrimitive(TypeInf t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
+    static EdfErr ReadPrimitive(EdfType t, ReadOnlySpan<byte> src, Type csType, ref int skip, ref int qty, ref int readed, out object? ret)
     {
         if (0 < skip)
         {
@@ -241,10 +232,10 @@ public class BinReader : BaseReader
     object? _ret;
     public EdfErr TryRead<T>(out T? ret)
     {
-        ArgumentNullException.ThrowIfNull(_currDataType);
+        ArgumentNullException.ThrowIfNull(CurrentSchema);
         EdfErr err;
         ret = default;
-        Span<byte> src = _current._data.AsSpan(_readed, _current.Qty - _readed);
+        ReadOnlySpan<byte> src = _current.CurrentData.Slice(_readed, _current.DataLen - _readed);
         do
         {
             int qty = 0;
@@ -252,9 +243,9 @@ public class BinReader : BaseReader
             int readed = 0;
 
             if (null != _ret)
-                err = ReadObject(_currDataType, src, ref skip, ref qty, ref readed, ref _ret);
+                err = ReadObject(CurrentSchema.Type, src, ref skip, ref qty, ref readed, ref _ret);
             else
-                err = ReadObject(_currDataType, src, typeof(T), ref skip, ref qty, ref readed, out _ret);
+                err = ReadObject(CurrentSchema.Type, src, typeof(T), ref skip, ref qty, ref readed, out _ret);
             src = src.Slice(readed);
             switch (err)
             {
@@ -283,7 +274,7 @@ public class BinReader : BaseReader
             return;
     }
 
-    static TypeInf ParseInf(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
+    static EdfType ParseType(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
     {
         rest = b;
         if (2 > rest.Length)
@@ -296,33 +287,29 @@ public class BinReader : BaseReader
         // dim
         var dimsCount = rest[0];
         rest = rest.Slice(1);
-        uint[]? dims = null;
+        ushort[]? dims = null;
         if (0 < dimsCount)
         {
-            dims = new uint[dimsCount];
+            dims = new ushort[dimsCount];
             for (int i = 0; i < dimsCount; i++)
             {
-                dims[i] = BinaryPrimitives.ReadUInt32LittleEndian(rest);
-                rest = rest.Slice(sizeof(UInt32));
+                dims[i] = BinaryPrimitives.ReadUInt16LittleEndian(rest);
+                rest = rest.Slice(sizeof(UInt16));
             }
         }
         // name
-        byte bNameSize = rest[0];
-        rest = rest.Slice(1);
-        if (255 < bNameSize)
-            throw new ArgumentException("name len mismatch");
-        var name = Encoding.UTF8.GetString(rest.Slice(0, bNameSize));
-        rest = rest.Slice(bNameSize);
+        var nameLen = EdfBinString.ReadBin(rest, out string? name);
+        rest = rest.Slice(nameLen);
         // childs
-        List<TypeInf>? childs = null;
+        List<EdfType>? childs = null;
         if (PoType.Struct == type && 0 < rest.Length)
         {
             byte childsCount = rest[0];
             rest = rest.Slice(1);
-            childs = new List<TypeInf>(childsCount);
+            childs = new List<EdfType>(childsCount);
             for (int i = 0; i < childsCount; i++)
-                childs.Add(ParseInf(rest, out rest));
+                childs.Add(ParseType(rest, out rest));
         }
-        return new TypeInf(name, type, dims, childs?.ToArray());
+        return new EdfType(name, type, dims, childs?.ToArray());
     }
 }

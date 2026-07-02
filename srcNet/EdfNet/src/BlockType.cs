@@ -5,7 +5,7 @@ namespace NetEdf.src;
 /// </summary>
 public enum BlockType : byte
 {
-    Header = 126, //0xB0, ~
-    VarInfo = 63, //0x3f, ?
-    VarData = 61, //0x3d, =
+    Config = 126, //0xB0, ~
+    Schema = 63, //0x3f, ?
+    Data = 61, //0x3d, =
 }

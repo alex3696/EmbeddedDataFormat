@@ -1,12 +1,12 @@
 namespace NetEdf.src;
 
 [DebuggerDisplay("{DebugString(),nq}")]
-public class TypeInf : IEquatable<TypeInf>
+public class EdfType : IEquatable<EdfType>
 {
     public PoType Type;// { get; set; }
     public string? Name;// { get; set; }
-    public uint[]? Dims;// { get; set; }
-    public TypeInf[]? Childs;// { get; set; }
+    public ushort[]? Dims;// { get; set; }
+    public EdfType[]? Childs;// { get; set; }
 
     protected static string GetOffset(int noffset)
     {
@@ -32,29 +32,29 @@ public class TypeInf : IEquatable<TypeInf>
         }
         return $"{Type} \"{Name}\"{dims}{childs}";
     }
-    public TypeInf(PoType type, string? name = default, uint[]? dims = default, TypeInf[]? childs = default)
+    public EdfType(PoType type, string? name = default, ushort[]? dims = default, EdfType[]? childs = default)
     {
         Name = name;
         Type = type;
         Dims = dims ?? [];
         Childs = (PoType.Struct == type) ? (Childs = childs ?? []) : [];
     }
-    public TypeInf(string? name, PoType type, uint[]? dims = default, TypeInf[]? childs = default)
+    public EdfType(string? name, PoType type, ushort[]? dims = default, EdfType[]? childs = default)
     {
         Name = name;
         Type = type;
         Dims = dims ?? [];
         Childs = (PoType.Struct == type) ? (Childs = childs ?? []) : [];
     }
-    public TypeInf(string? name, uint[]? dims = null, TypeInf[]? childs = null)
+    public EdfType(string? name, ushort[]? dims = null, EdfType[]? childs = null)
         : this(name, PoType.Struct, dims, childs)
     {
     }
-    public TypeInf()
+    public EdfType()
         : this(string.Empty, PoType.Int32)
     {
     }
-    public bool Equals(TypeInf? y)
+    public bool Equals(EdfType? y)
     {
         if (y is null)
             return false;
@@ -70,7 +70,7 @@ public class TypeInf : IEquatable<TypeInf>
             return false;
         return true;
     }
-    public override bool Equals(object? obj) => Equals(obj as TypeInf);
+    public override bool Equals(object? obj) => Equals(obj as EdfType);
     public override int GetHashCode()
     {
         var hash = new HashCode();

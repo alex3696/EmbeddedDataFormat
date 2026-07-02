@@ -71,9 +71,9 @@ public class TestStructSerialize
     [TestMethod]
     public void TestPackUnpack()
     {
-        TypeRec TestStructInf = new()
+        Schema TestStructInf = new()
         {
-            Inf = new()
+            Type = new()
             {
                 Type = PoType.Struct,
                 Name = "KeyValue",
@@ -98,7 +98,7 @@ public class TestStructSerialize
             bw.Write(kvArr);
             //bw.Write(TestStructInf.Inf, val1);
             //bw.Write(TestStructInf.Inf, val2);
-            Assert.AreEqual(30, bw.CurrentQty);
+            Assert.AreEqual(30, bw.CurrentDataLen);
         }
         var mssrc = new MemoryStream(binBuf);
         byte[] buf = new byte[1024];
@@ -110,7 +110,7 @@ public class TestStructSerialize
         //var header = reader.ReadHeader();
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
-        var rec = reader.ReadInfo();
+        var rec = reader.ReadSchema();
         Assert.IsNotNull(rec);
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
@@ -146,12 +146,12 @@ public class TestStructSerialize
     };
     static int WriteSample(BaseWriter dw)
     {
-        TypeRec keyValueType = new()
+        Schema keyValueType = new()
         {
             Id = 0,
             Name = "VariableKV",
             Desc = "comment",
-            Inf = new()
+            Type = new()
             {
                 Type = PoType.Struct,
                 Name = "KeyValue",
@@ -169,23 +169,23 @@ public class TestStructSerialize
 
         Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ", "String Value"));
 
-        TypeRec t = new() { Inf = new(PoType.Int32), Id = 0, Name = "weight variable" };
+        Schema t = new() { Type = new(PoType.Int32), Id = 0, Name = "weight variable" };
         dw.Write(t);
         Assert.AreEqual(EdfErr.IsOk, dw.Write(unchecked((int)0xFFFFFFFF)));
 
-        TypeRec td = new() { Inf = new(PoType.Double), Id = 0, Name = "TestDouble" };
+        Schema td = new() { Type = new(PoType.Double), Id = 0, Name = "TestDouble" };
         dw.Write(td);
         Assert.AreEqual(EdfErr.IsOk, dw.Write(1.1d));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(2.1d));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(3.1d));
 
-        TypeRec tchar = new() { Inf = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
+        Schema tchar = new() { Type = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
         dw.Write(tchar);
         Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Char", 20)));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Value", 20)));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Array     Value", 20)));
 
-        TypeInf comlexVarInf = new()
+        EdfType comlexVarInf = new()
         {
             Type = PoType.Struct,
             Name = "ComplexVariable",
@@ -211,7 +211,7 @@ public class TestStructSerialize
                 }
             ]
         };
-        dw.Write(new TypeRec() { Inf = comlexVarInf });
+        dw.Write(new Schema() { Type = comlexVarInf });
         var cv = new ComplexVariable()
         {
             Time = -123,
@@ -233,14 +233,14 @@ public class TestStructSerialize
         string txtConvFile = GetTestFilePath("t_writeConv.tdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
-        using (var w = new BinWriter(file, new Header() { Blocksize = 512 }))
+        using (var w = new BinWriter(file, new Config() { Blocksize = 512 }))
         {
             WriteSample(w);
         }
         // BIN append
         using (var file = new FileStream(binFile, FileMode.Open))
         {
-            Header cfg;
+            Config cfg;
             byte seq = 0;
             using (var edf = new BinReader(file))
             {
@@ -249,7 +249,9 @@ public class TestStructSerialize
                 try
                 {
                     while (edf.ReadBlock())
-                        seq = edf.GetBlockSeq();
+                    {
+
+                    }
                 }
                 catch (EndOfStreamException ex)
                 {
@@ -260,7 +262,6 @@ public class TestStructSerialize
             using (var edf = new BinWriter(file, cfg))
             {
                 seq++;
-                edf.Seq = seq;
                 edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
             }
         }
@@ -285,10 +286,10 @@ public class TestStructSerialize
     static int WriteBigVar(BaseWriter dw)
     {
         int arrLen = (int)(dw.Cfg.Blocksize / sizeof(uint) * 2.5);
-        TypeRec rec = new()
+        Schema rec = new()
         {
-            Inf = new() { Type = PoType.Int32, Name = "variable", Dims = [(uint)arrLen], },
-            Id = 0xF0F1F2F3
+            Type = new() { Type = PoType.Int32, Name = "variable", Dims = [(ushort)arrLen], },
+            Id = 0xF0F1
         };
         dw.Write(rec);
         int[] test = new int[arrLen];
@@ -362,7 +363,7 @@ public class TestStructSerialize
     [TestMethod]
     public void TestTypeInfEquality()
     {
-        TypeInf inf1 = new()
+        EdfType inf1 = new()
         {
             Type = PoType.Struct,
             Name = "KeyValue",
@@ -374,7 +375,7 @@ public class TestStructSerialize
                 new (PoType.UInt8, "Test", [3]),
             ]
         };
-        TypeInf inf2 = new()
+        EdfType inf2 = new()
         {
             Type = PoType.Struct,
             Name = "KeyValue",
@@ -386,7 +387,7 @@ public class TestStructSerialize
                 new (PoType.UInt8, "Test", [3]),
             ]
         };
-        TypeInf inf3 = new()
+        EdfType inf3 = new()
         {
             Type = PoType.Struct,
             Name = "KeyValue",
@@ -399,9 +400,9 @@ public class TestStructSerialize
                 new (PoType.String, "Key3"),
             ]
         };
-        TypeInf? nullInf = default; // null
+        EdfType? nullInf = default; // null
         Assert.AreEqual(nullInf, nullInf);
-        Assert.AreNotEqual<TypeInf?>(inf3, nullInf);
+        Assert.AreNotEqual<EdfType?>(inf3, nullInf);
         Assert.IsFalse(inf3.Equals(nullInf));
         Assert.AreEqual(inf1, inf2);
         Assert.AreNotEqual(inf1, inf3);

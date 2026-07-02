@@ -55,9 +55,9 @@ public class Test1
     }
     public static int TestPackUnpack()
     {
-        TypeRec TestStructInf = new()
+        Schema TestStructInf = new()
         {
-            Inf = new()
+            Type = new()
             {
                 Type = PoType.Struct,
                 Name = "KeyValue",
@@ -82,7 +82,7 @@ public class Test1
             bw.Write(kvArr);
             //bw.Write(TestStructInf.Inf, val1);
             //bw.Write(TestStructInf.Inf, val2);
-            Assert.AreEqual(30, bw.CurrentQty);
+            Assert.AreEqual(30, bw.CurrentDataLen);
         }
         var mssrc = new MemoryStream(binBuf);
         byte[] buf = new byte[1024];
@@ -92,12 +92,10 @@ public class Test1
         //if (!reader.ReadBlock())
         //    Assert.Fail("there are no block");
         //var header = reader.ReadHeader();
-        if (!reader.ReadBlock())
-            Assert.Fail("there are no block");
-        var rec = reader.ReadInfo();
-        Assert.IsNotNull(rec);
-        if (!reader.ReadBlock())
-            Assert.Fail("there are no block");
+        ArgumentOutOfRangeException.ThrowIfEqual(reader.ReadBlock(), false, "there are no block");
+        var schema = reader.ReadSchema();
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentOutOfRangeException.ThrowIfEqual(reader.ReadBlock(), false, "there are no block");
 
         reader.TryRead(out KeyValueStruct[]? data);
 

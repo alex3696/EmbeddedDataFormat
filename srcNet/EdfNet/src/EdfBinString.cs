@@ -2,11 +2,13 @@ namespace NetEdf;
 
 public static class EdfBinString
 {
+    public const int MaxLen = 0xFE;
+
     public static int SizeOf(string? str)
     {
         if (string.IsNullOrEmpty(str))
             return 1;
-        return (byte)int.Min(0xFE, Encoding.UTF8.GetByteCount(str));
+        return (byte)int.Min(MaxLen, Encoding.UTF8.GetByteCount(str));
     }
     public static int WriteBin(string? str, Stream dst)
     {
@@ -27,7 +29,7 @@ public static class EdfBinString
             dst[0] = 0;
             return 1;
         }
-        var len = (byte)int.Min(0xFE, Encoding.UTF8.GetByteCount(str));
+        var len = (byte)int.Min(MaxLen, Encoding.UTF8.GetByteCount(str));
         if (len > dst.Length)
             return dst.Length - len;
         Encoding.UTF8.GetBytes(str, dst.Slice(1, len));
@@ -53,3 +55,4 @@ public static class EdfBinString
         return 1 + len;
     }
 }
+
