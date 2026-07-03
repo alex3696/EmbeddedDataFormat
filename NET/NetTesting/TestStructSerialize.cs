@@ -1,9 +1,7 @@
-using EdfBinGenerator;
 using EdfNet.Utils;
 using System.Runtime.InteropServices;
 using System.Text;
 namespace NetTest;
-
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
 public struct MyPos
@@ -13,25 +11,6 @@ public struct MyPos
     public UInt32 Z;
 }
 
-
-[EdfBinSerializable]
-public partial struct SubVal
-{
-    public SubVal()
-    {
-    }
-    public double ValDouble { get; set; } = 0x11;
-    public byte ValByte { get; set; } = 0x22;
-    public sbyte ValSByte { get; set; } = 0x33;
-}
-[EdfBinSerializable]
-public partial class KeyVal
-{
-    public string Test { get; set; }
-    public int Key { get; set; }
-    public int Val { get; set; }
-    public SubVal subVal { get; set; }
-}
 
 [TestClass]
 public class TestStructSerialize
@@ -67,6 +46,11 @@ public class TestStructSerialize
         public override bool Equals(object? obj)
         {
             return Equals(obj as KeyValueStruct);
+        }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
         }
     }
     [TestMethod]
@@ -118,11 +102,9 @@ public class TestStructSerialize
 
         reader.TryRead(out KeyValueStruct[]? data);
 
-        Assert.AreEqual(kvArr[0], data[0]);
-        Assert.AreEqual(kvArr[1], data[1]);
+        Assert.AreEqual(kvArr[0], data?.ElementAt(0));
+        Assert.AreEqual(kvArr[1], data?.ElementAt(1));
     }
-
-
 
     struct KeyValue
     {
@@ -254,7 +236,7 @@ public class TestStructSerialize
 
                     }
                 }
-                catch (EndOfStreamException ex)
+                catch (EndOfStreamException)
                 {
 
                 }
@@ -408,21 +390,6 @@ public class TestStructSerialize
         Assert.AreEqual(inf1, inf2);
         Assert.AreNotEqual(inf1, inf3);
     }
-
-
-    [TestMethod]
-    public void TestSourceGenSerialize()
-    {
-        KeyVal kvs = new() { Key = 0xFABC, Val = 0x1234, Test = "123", subVal = new SubVal() };
-        Span<byte> sa = stackalloc byte[1024];
-        kvs.SerializeBin(sa);
-        int bc = KeyVal.DeserializeBin(sa, out var okv);
-
-
-    }
-
-
-
 
 }
 

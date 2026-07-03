@@ -9,9 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!--
-	<ProjectReference Include="..\..\EdfBinGenerator\EdfBinGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-	-->
     <ProjectReference Include="..\EdfBinGenerator\EdfBinGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
   </ItemGroup>

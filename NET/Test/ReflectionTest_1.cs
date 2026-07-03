@@ -52,6 +52,11 @@ public class ReflectionTest_1
         {
             return Equals(obj as KeyValueStruct);
         }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
     }
     public static int TestPackUnpack()
     {
@@ -99,8 +104,8 @@ public class ReflectionTest_1
 
         reader.TryRead(out KeyValueStruct[]? data);
 
-        Assert.AreEqual(kvArr[0], data[0]);
-        Assert.AreEqual(kvArr[1], data[1]);
+        Assert.AreEqual(kvArr[0], data?.ElementAt(0));
+        Assert.AreEqual(kvArr[1], data?.ElementAt(1));
 
         return 0;
     }

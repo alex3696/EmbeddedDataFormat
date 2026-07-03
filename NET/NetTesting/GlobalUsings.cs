@@ -1,3 +1,4 @@
+global using EdfNet;
 global using EdfNet.Core;
 global using Microsoft.VisualStudio.TestTools.UnitTesting;
 global using System;

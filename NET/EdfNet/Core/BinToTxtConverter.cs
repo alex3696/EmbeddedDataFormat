@@ -56,7 +56,7 @@ public class BinToTxtConverter : BaseDisposable
                 }
             }
         }
-        catch (EndOfStreamException ex)
+        catch (EndOfStreamException)
         {
 
         }

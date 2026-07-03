@@ -8,7 +8,7 @@ public static class EdfBinString
     {
         if (string.IsNullOrEmpty(str))
             return 1;
-        return (byte)int.Min(MaxLen, Encoding.UTF8.GetByteCount(str));
+        return 1 + int.Min(MaxLen, Encoding.UTF8.GetByteCount(str));
     }
     public static int WriteBin(string? str, Stream dst)
     {
