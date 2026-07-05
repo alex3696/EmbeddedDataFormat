@@ -91,11 +91,14 @@ using System.Buffers.Binary;
 using System.Text;
 using EdfNet;
 using EdfNet.Core;
+using EdfNet.Core.Gen;
 
 {namespaceName}
 
 partial {strOrCls} {classSymbol.Name}
 {{
+    public IEdfByteEnumerator GetPrimitiveEnumerator() => new {classSymbol.Name}ByteEnumerator(this);
+
     public int GetSize()
     {{
         int size = 0;
@@ -389,12 +392,14 @@ partial {strOrCls} {classSymbol.Name}
         {
             // Используем FullName (ToDisplayString), чтобы избежать проблем с пространствами имен
             string typeName = prop.Type.ToDisplayString();
-            sb.AppendLine($"{Tab(2)}len = {typeName}.DeserializeBin(source.Slice(offset), out var obj{prop.Name});");
-            sb.AppendLine($"{Tab(2)}if(0 < len && obj{prop.Name} is not null)");
             sb.AppendLine($"{Tab(2)}{{");
+            sb.AppendLine($"{Tab(3)}var len = {typeName}.DeserializeBin(source.Slice(offset), out {typeName} obj{prop.Name});");
+            sb.AppendLine($"{Tab(3)}if(0 < len)");
+            sb.AppendLine($"{Tab(3)}{{");
             // Присваиваем напрямую, без .Value, так как метод возвращает сам объект или структуру
-            sb.AppendLine($"{Tab(3)}{pname} = obj{prop.Name};");
-            sb.AppendLine($"{Tab(3)}offset += len;");
+            sb.AppendLine($"{Tab(4)}{pname} = obj{prop.Name};");
+            sb.AppendLine($"{Tab(4)}offset += len;");
+            sb.AppendLine($"{Tab(3)}}}");
             sb.AppendLine($"{Tab(2)}}}");
         }
     }

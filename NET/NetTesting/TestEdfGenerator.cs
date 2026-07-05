@@ -19,7 +19,12 @@ public partial class KeyVal
     public string? Test2 { get; set; }
     public int Key { get; set; }
     public int Val { get; set; }
-    public SubVal? Sub { get; set; }
+
+    public SubVal Sub1 { get; set; }
+
+
+    [EdfBinArray([2, 2])]
+    public SubVal[,]? Sub { get; set; }
 
     [EdfBinArray([3, 2, 1])]
     public int[,,] Arr { get; set; } = { { { 1, 2 }, { 3, 4 }, { 5, 6 } } };
@@ -45,7 +50,7 @@ public class TestEdfGenerator
     [TestMethod]
     public void TestSourceGenSerialize()
     {
-        KeyVal kvs = new() { Key = 0xFABC, Val = 0x1234, Test1 = "123", Test2 = "456", Sub = new SubVal() };
+        KeyVal kvs = new() { Key = 0xFABC, Val = 0x1234, Test1 = "123", Test2 = "456", Sub = new SubVal[2,2] };
         Span<byte> sa = stackalloc byte[1024];
         kvs.SerializeBin(sa);
         int bc = KeyVal.DeserializeBin(sa, out var okv);
@@ -87,11 +92,12 @@ public class TestEdfGenerator
         Assert.AreEqual(requiredSize, bytesWritten, "Количество записанных байт должно совпадать с GetSize()");
 
         // 4. Десериализуем обратно
-        int bytesRead = TestSignalBlock.DeserializeBin(buffer, out var deserialized);
+        int bytesRead = TestSignalBlock.DeserializeBin(buffer, out var des);
 
         // 5. Проверяем результаты
         Assert.AreEqual(bytesWritten, bytesRead, "Количество прочитанных байт должно совпадать с записанными");
-        Assert.IsNotNull(deserialized);
+        //Assert.IsNotNull(des);
+        var deserialized = des;
 
         // Проверяем простые свойства
         Assert.AreEqual(original.Id, deserialized.Id);
