@@ -120,30 +120,37 @@ public class BinWriter : BaseWriter
     /// Высокопроизводительный метод, куда в итоге проваливается запись.
     /// Сюда передается конкретный СГЕНЕРИРОВАННЫЙ энумератор-структура.
     /// </summary>
-    public void WriteData<TEnumerator>(TEnumerator enumerator)
+    public EdfErr WriteData<TEnumerator>(TEnumerator enumerator)
         where TEnumerator : struct, IEdfByteEnumerator
     {
+        // Берем срез свободного места в текущем буфере блока
+        // BinBlock.HeaderLen + _blk.DataLen — это указатель на первый свободный байт контента
+        Span<byte> _blockDataBuffer = _blk.DataBuffer.Slice(_blk.DataLen);
         while (enumerator.MoveNext())
         {
-            int primitiveLength = enumerator.CurrentPoLen;
-
-            // Попримитивный разрыв: проверяем границы блока
-            if (_blk.FreeDataLen < primitiveLength)
+            // Пробуем записать примитив в доступный остаток блока
+            int bytesWritten = enumerator.Write(_blockDataBuffer);
+            if (0 >= bytesWritten)// Если вернулся меньше 0, значит примитив целиком не поместился (попримитивный разрыв).
             {
-                Flush();
+                Flush();// Сбрасываем (Flush) текущий блок на диск/в поток и очищаем буфер
+                // Подготавливаем новый блок, записывая в заголовок SchId, RecId и тип текущего примитива
                 PrepareNewBlock(enumerator.CurrentPoType);
+                // Пересчитываем срез свободного места для абсолютно нового, чистого блока
+                _blockDataBuffer = _blk.DataBuffer.Slice(BinBlock.HeaderLen + _blk.DataLen);
+                // Пробуем записать примитив еще раз, теперь уже в начало нового блока
+                bytesWritten = enumerator.Write(_blockDataBuffer);
+                if (0 >= bytesWritten) // Защита от бесконечного цикла (если примитив физически больше размера блока)
+                    return EdfErr.DstBufOverflow;
             }
-
-            // Выделяем срез прямо в буфере блока
-            Span<byte> targetSlice = _blk.DataBuffer.Slice(BinBlock.HeaderLen + _blk.DataLen);
-
-            // Сгенерированный энумератор сам пишет байты напрямую в буфер
-            enumerator.Write(targetSlice);
-
-            _blk.DataLen += (ushort)primitiveLength;
             _prmOffset++;
+            // Фиксируем, сколько байт реально записал энумератор в буфер блока
+            _blk.DataLen += (ushort)bytesWritten;
+
+            // Сдвигаем наш Span вперед, отрезая уже заполненную часть памяти
+            _blockDataBuffer = _blockDataBuffer.Slice(bytesWritten);
         }
         _recId++;
+        return EdfErr.IsOk;
     }
 
     /// <summary>
@@ -152,18 +159,23 @@ public class BinWriter : BaseWriter
     /// </summary>
     private static Action<BinWriter, object> CreateWriterDelegate(Type type)
     {
-        // 1. Ищем сгенерированный энумератор по имени (например, Position -> PositionByteEnumerator)
+        // 1. Ищем сгенерированный энумератор по имени
         string enumeratorTypeName = $"{type.FullName}ByteEnumerator";
         Type enumeratorType = type.Assembly.GetType(enumeratorTypeName)
             ?? throw new InvalidOperationException($"Enumerator for type {type.Name} not found. Did you forget [EdfSerializable]?");
 
-        // 2. Ищем метод WriteData в BinWriter и делаем его generic-версию под наш энумератор
+        // 2. Ищем метод WriteData в BinWriter
         MethodInfo writeDataMethod = typeof(BinWriter)
             .GetMethod(nameof(BinWriter.WriteData))!
             .MakeGenericMethod(enumeratorType);
 
-        // 3. Строим Expression Tree, чтобы превратить это в сверхбыстрый делегат
-        // Код эквивалентен: (writer, obj) => writer.WriteData(new PositionByteEnumerator((Position)obj));
+        ConstructorInfo ctor = enumeratorType.GetConstructor(
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance,
+            binder: null,
+            types: new[] { type.MakeByRefType() },
+            modifiers: null)!;
+
+        // 3. Строим Expression Tree
         var writerParam = System.Linq.Expressions.Expression.Parameter(typeof(BinWriter), "writer");
         var objParam = System.Linq.Expressions.Expression.Parameter(typeof(object), "obj");
 
@@ -171,13 +183,12 @@ public class BinWriter : BaseWriter
         var castObj = System.Linq.Expressions.Expression.Convert(objParam, type);
 
         // Создание энумератора: new PositionByteEnumerator(castObj)
-        ConstructorInfo ctor = enumeratorType.GetConstructor(new[] { type })!;
+        // Expression.New сам разберется, как передать структуру в ByRef конструктор
         var createEnumerator = System.Linq.Expressions.Expression.New(ctor, castObj);
 
         // Вызов метода: writer.WriteData(...)
         var callWriteData = System.Linq.Expressions.Expression.Call(writerParam, writeDataMethod, createEnumerator);
 
-        // Компилируем дерево выражений в готовый машинный код
         var lambda = System.Linq.Expressions.Expression.Lambda<Action<BinWriter, object>>(callWriteData, writerParam, objParam);
         return lambda.Compile();
     }
@@ -190,8 +201,8 @@ public class BinWriter : BaseWriter
     {
         ArgumentNullException.ThrowIfNull(CurrentSchema);
         _blk.Reset();
-        _blk.Append(CurrentSchema.Id);
-        _blk.Append(_recId);
-        _blk.Append(_prmOffset);
+        //_blk.Append(CurrentSchema.Id);
+        //_blk.Append(_recId);
+        //_blk.Append(_prmOffset);
     }
 }

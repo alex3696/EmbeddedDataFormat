@@ -1,3 +1,5 @@
+using EdfNet.Core.Gen;
+
 namespace EdfNet.Core;
 
 public class BinReader : BaseReader
@@ -311,5 +313,26 @@ public class BinReader : BaseReader
                 childs.Add(ParseType(rest, out rest));
         }
         return new EdfType(name, type, dims, childs?.ToArray());
+    }
+
+
+    public EdfErr ReadData<TEnumerator>(ref TEnumerator enumerator)
+           where TEnumerator : struct, IEdfByteEnumerator
+    {
+        ReadOnlySpan<byte> _blockDataBuffer = [];
+        while (enumerator.MoveNext())
+        {
+            int bytesRead = enumerator.Read(_blockDataBuffer);
+            if (0 >= bytesRead)
+            {
+                bool isReaded = ReadBlock();
+                if (!isReaded)
+                    return EdfErr.SrcDataRequred;
+                _blockDataBuffer = _current.CurrentData;
+                bytesRead = enumerator.Read(_blockDataBuffer);
+            }
+            _blockDataBuffer = _blockDataBuffer.Slice(bytesRead);
+        }
+        return EdfErr.IsOk;
     }
 }

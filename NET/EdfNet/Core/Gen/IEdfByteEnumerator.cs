@@ -16,3 +16,8 @@ public interface IEdfByteEnumerator
     int Read(ReadOnlySpan<byte> src);
     object Result { get; }
 }
+
+public interface IEdfByteEnumerator<T>: IEdfByteEnumerator
+{
+    new T Result { get; }
+}

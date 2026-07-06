@@ -1,4 +1,4 @@
-namespace EdfNet.Base;
+namespace EdfNet.Utils;
 // https://habr.com/ru/articles/721050/
 public static class SynchronousWaitExt
 {
