@@ -82,7 +82,7 @@ namespace EdfNet.Core.Gen
 
             _isElementActive = false;
             _arrayIndex++;
-            return true;
+            return false;
         }
 
         public int CurrentIndex => _currentElementEnum.CurrentIndex;

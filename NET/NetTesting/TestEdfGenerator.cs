@@ -17,11 +17,16 @@ public partial class KeyVal
     public string? Key { get; set; }
     public int Val { get; set; }
     [EdfArray([3, 2, 1])]
-    public int[,,] Arr { get; set; } = { { { 1, 2 }, { 3, 4 }, { 5, 6 } } };
+    public int[,,] Arr { get; set; } =
+        {
+            {{ 1 }, { 2 }},
+            {{ 3 }, { 4 }},
+            {{ 5 }, { 6 }}
+        };
     public SubVal? Sub0 { get; set; }
     public SubVal Sub1 { get; set; }
     [EdfArray([2, 2])]
-    public SubVal[,]? Sub { get; set; }
+    public SubVal[,]? Sub { get; set; } = new SubVal[2, 2];
 }
 
 [TestClass]
@@ -40,9 +45,9 @@ public class EdfBinarySerializationTests
             // Трехмерный массив примитивов int[,,] размерностью 3х2х1
             Arr = new int[3, 2, 1]
             {
-                    { { 10 }, { 20 } },
-                    { { 30 }, { 40 } },
-                    { { 50 }, { 60 } }
+                { { 10 }, { 20 } },
+                { { 30 }, { 40 } },
+                { { 50 }, { 60 } }
             },
 
             // Вложенная Nullable-структура (значение заполнено)
@@ -54,19 +59,20 @@ public class EdfBinarySerializationTests
             // Двухмерный массив вложенных объектов SubVal[,] размерностью 2х2
             Sub = new SubVal[2, 2]
             {
-                    {
-                        new SubVal { ValDouble = 1.1, ValByte = 11, ValSByte = 12 },
-                        new SubVal { ValDouble = 1.2, ValByte = 13, ValSByte = 14 }
-                    },
-                    {
-                        new SubVal { ValDouble = 2.1, ValByte = 21, ValSByte = 22 },
-                        new SubVal { ValDouble = 2.2, ValByte = 23, ValSByte = 24 }
-                    }
+                {
+                    new SubVal { ValDouble = 1.1, ValByte = 11, ValSByte = 12 },
+                    new SubVal { ValDouble = 1.2, ValByte = 13, ValSByte = 14 }
+                },
+                {
+                    new SubVal { ValDouble = 2.1, ValByte = 21, ValSByte = 22 },
+                    new SubVal { ValDouble = 2.2, ValByte = 23, ValSByte = 24 }
+                }
             }
         };
         var sch = new Schema()
         {
-            Id = 0, Name = "KeyValSchema",
+            Id = 0,
+            Name = "KeyValSchema",
             Desc = "Schema for KeyVal class",
             Type = new()
             {
