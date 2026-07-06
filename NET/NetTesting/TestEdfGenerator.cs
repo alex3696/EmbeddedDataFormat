@@ -1,5 +1,11 @@
 namespace NetTest;
 
+
+public struct PlainStruct
+{
+    public int Val;
+}
+
 [EdfSerializable]
 public partial struct SubVal
 {
@@ -13,9 +19,11 @@ public partial struct SubVal
 [EdfSerializable]
 public partial class KeyVal
 {
+    public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }
     public string? Key { get; set; }
     public int Val { get; set; }
+    public int? NVal { get; set; }
     [EdfArray([3, 2, 1])]
     public int[,,] Arr { get; set; } =
         {
@@ -41,6 +49,7 @@ public class EdfBinarySerializationTests
             Test1 = "Первая тестовая строка с UTF-8 символами №123",
             Key = "Уникальный Ключ Скважины А-40",
             Val = 987654321,
+            NVal = 1230456,
 
             // Трехмерный массив примитивов int[,,] размерностью 3х2х1
             Arr = new int[3, 2, 1]
@@ -83,6 +92,7 @@ public class EdfBinarySerializationTests
                     new (PoType.String, "Test1"),
                     new (PoType.String, "Key"),
                     new (PoType.Int32, "Val"),
+                    new (PoType.Int32, "NVal"),
                     new (PoType.Int32, "Arr", [3, 2, 1]),
                     new (PoType.Struct, "Sub0")
                     {
@@ -145,6 +155,7 @@ public class EdfBinarySerializationTests
         Assert.AreEqual(original.Test1, restored.Test1);
         Assert.AreEqual(original.Key, restored.Key);
         Assert.AreEqual(original.Val, restored.Val);
+        Assert.AreEqual(original.NVal, restored.NVal);
 
         // Проверка трехмерного числового массива int[,,]
         Assert.IsNotNull(restored.Arr);

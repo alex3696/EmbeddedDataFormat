@@ -313,7 +313,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
             else if (fType.SpecialType == SpecialType.System_String)
                 sb.AppendLine($"                    case {i + 1}: return EdfBinString.SizeOf(_instance.{f.Name});");
             else
-                sb.AppendLine($"                    case {i + 1}: return {f.Type.GetPrimitiveSize()};");
+                sb.AppendLine($"                    case {i + 1}: return {fType.GetPrimitiveSize()};");
         }
         sb.AppendLine("                }");
         sb.AppendLine("            }");
@@ -339,7 +339,9 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
 
         for (int i = 0; i < fields.Count; i++)
         {
-            var f = fields[i]; var fType = f.Type.UnwrapNullable();
+            var f = fields[i];
+            var fType = f.Type.UnwrapNullable();
+            bool isNullable = f.Type.IsNullableValueType();
             if (fType is IArrayTypeSymbol || fType.IsNestedSerializable())
                 continue;
             if (fType.SpecialType == SpecialType.System_String)
@@ -348,7 +350,14 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
             {
                 int size = fType.GetPrimitiveSize();
                 sb.AppendLine($"                case {i + 1}: if (destination.Length < {size}) return 0;");
-                sb.AppendLine($"                    MemoryMarshal.Write(destination, _instance.{f.Name});");
+                if (isNullable)// Nullable-структура 
+                {
+                    sb.AppendLine($"                    MemoryMarshal.Write(destination, _instance.{f.Name}.GetValueOrDefault());");
+                }
+                else // Обычная структура (struct SubVal)
+                {
+                    sb.AppendLine($"                    MemoryMarshal.Write(destination, _instance.{f.Name});");
+                }
                 sb.AppendLine($"                    return {size};");
             }
         }
@@ -396,7 +405,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
             else
             {
                 sb.AppendLine($"                case {i + 1}: _instance.{f.Name} = MemoryMarshal.Read<{fType.ToDisplayString()}>(src);");
-                sb.AppendLine($"                     return {f.Type.GetPrimitiveSize()};");
+                sb.AppendLine($"                     return {fType.GetPrimitiveSize()};");
             }
         }
         sb.AppendLine("            }");
