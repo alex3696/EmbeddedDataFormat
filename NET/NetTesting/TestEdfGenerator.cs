@@ -37,6 +37,7 @@ public partial class KeyVal
     public SubVal[,]? Sub { get; set; } = new SubVal[2, 2];
 }
 
+
 [TestClass]
 public class EdfBinarySerializationTests
 {
@@ -92,7 +93,7 @@ public class EdfBinarySerializationTests
     public void GetEdfSchema_Should_Generate_Correct_Binary_Schema_Structure()
     {
         // 1. ACT: Получаем сгенерированную бинарную схему напрямую без создания объектов
-        Schema schema = KeyValByteEnumerator.GetEdfSchema();
+        Schema schema = KeyVal.GetEdfSchema();
 
         // 2. ASSERT: Базовые проверки корневого контейнера схемы
         Assert.IsNotNull(schema, "Схема не должна быть null");
@@ -225,7 +226,7 @@ public class EdfBinarySerializationTests
         var writer = new BinWriter(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
-        writer.Write(KeyValByteEnumerator.GetEdfSchema());
+        writer.Write(KeyVal.GetEdfSchema());
         EdfErr writeResult = writer.WriteGen(original);
         writer.Flush(); // Сбрасываем остатки буфера в поток
 

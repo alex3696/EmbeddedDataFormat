@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 using System.Linq;
 
-namespace EdfBinGenerator;
+namespace EdfGenerator;
 
 public static class TypeSymbolUtils
 {
@@ -61,18 +61,18 @@ public static class TypeSymbolUtils
         return string.IsNullOrEmpty(type.MapToPoType()) && type is INamedTypeSymbol;
     }
 
-
-    public const string Attribute = "Attribute";
-    public const string Namespace = "EdfNet";
-
-    public static bool IsAttribute(this string? str, string attribute)
-    {
-        return str != null && (str.Contains(attribute) || str.Contains(attribute.Replace(Attribute, string.Empty)));
-    }
     public static bool HasAttribute(this ITypeSymbol ntype, string attribute)
     {
         return ntype.GetAttributes().Any(a =>
-            a.AttributeClass?.ToDisplayString() == $"{Namespace}.{attribute}");
+            a.AttributeClass?.ToDisplayString() == $"{Common.Namespace}.{attribute}");
+    }
+    public static bool IsCompatibleType(this ITypeSymbol ntype)
+    {
+        if (ntype == null) return false;
+        ntype = ntype.UnwrapNullable();
+        bool hasAttribute = ntype.HasAttribute(Common.SerializeAttribute)
+            || ntype.HasAttribute(Common.ArrayAttribute);
+        return hasAttribute || !string.IsNullOrWhiteSpace(TypeSymbolUtils.MapToPoType(ntype));
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public static class TypeSymbolUtils
     public static string ExtractArrayDimensions(this IPropertySymbol property)
     {
         var arrayAttr = property.GetAttributes().FirstOrDefault(a =>
-            IsAttribute(a.AttributeClass?.Name, EdfEnumeratorGenerator.ArrayAttribute));
+            Common.IsAttribute(a.AttributeClass?.Name, Common.ArrayAttribute));
 
         if (arrayAttr != null && arrayAttr.ConstructorArguments.Length > 0)
         {

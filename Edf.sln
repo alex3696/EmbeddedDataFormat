@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTest", "NET\NetTesting\N
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "NET\Test\Test.csproj", "{EDC790D9-041C-6541-7B05-2578BE49EDC1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdfBinGenerator", "NET\EdfBinGenerator\EdfBinGenerator.csproj", "{27324F68-AFD8-9D45-4584-F23D9BA0560C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdfGenerator", "NET\EdfBinGenerator\EdfGenerator.csproj", "{27324F68-AFD8-9D45-4584-F23D9BA0560C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
