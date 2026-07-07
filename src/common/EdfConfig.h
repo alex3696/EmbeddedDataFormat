@@ -18,7 +18,6 @@ typedef struct
 	uint32_t Flags; //Options_t
 } EdfConfig_t;
 
-EdfConfig_t MakeDefaultConfig(void);
-int MakeConfigFromBytes(const uint8_t* b, size_t srcSize, EdfConfig_t* h);
+extern const EdfConfig_t EdfCfg256;
 
 #endif

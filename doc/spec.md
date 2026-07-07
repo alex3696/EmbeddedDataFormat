@@ -15,15 +15,22 @@
 - Контроль целостности CRC16 для блоков (в текстовом режиме CRC не используется)
 - Восстановление последовательности при повреждении блоков
 - Бинарное и текстовое представление (конвертируемы)
-- Little-endian, UTF-8
+- предназначено только для Little-endian платформ, т.к. современных big-endian - не существует
+- строки в UTF-8
 - Макс. длина строки: 255 байт (обрезается без предупреждения)
 - Размер блока: 256-4096 байт (задаётся в заголовке)
-
 
 для фукционирования требуется реализовать для своей платформы
 - FileStreamImpl.c, FileStreamOpen основная функция для определения, 
     которая инициализирует имплементацию StreamFnImpl_t: Write, Read, WriteFmt, Close, Seek
 - MbCrc.c, MbCrc16acc - табличный расчёт контрольной суммы модбас
+
+Термин	Описание
+Блок (Block)	Минимальная единица хранения, содержит Type, Len, Content, CRC
+Запись (Record)	Один экземпляр данных, соответствующий схеме. Может занимать несколько блоков
+Примитив (Primitive)	Базовый тип данных (Int32, String и т.д.). Не может быть разорван между блоками
+Схема (Schema)	Описание структуры данных (EdfSchema_t)
+
 
 ## 2. Типы блоков (EdfBlockType)
 
@@ -37,33 +44,51 @@
 | Поле | Размер | Описание |
 |------|------  |----------|
 | Type | 1 | Тип блока (см. раздел 3) |
-| Len  | 2 | Длина поля Data (0 ≤ Len ≤ BlockSize) |
-| Data | Len | Данные блока |
-| CRC  | 2 | CRC16 (Modbus), вычисляется от Type + Len + Data |
+| Len  | 2 | Длина поля Content ( Content ≤ BlockSize - sizeof(Type)- sizeof(Len)- sizeof(CRC) ) |
+| Content | Len | Данные блока |
+| CRC  | 2 | CRC16 (Modbus), вычисляется от Type + Len + Content |
 
-**Примечание**: В текстовом режиме поле CRC отсутствует, блок завершается символом `>`.
+**Примечание**: В текстовом режиме поле CRC отсутствует, принципиально не требуется, блок завершается символом `>`.
 
-## 4. Структура Конфигурации 
+## 4. Структура данных блока конфигурации 
+Для блока данных EdfBlock_t (т.е. когда Type==0x7E) данные (Content) заполняем простым последовательным копирование.
+
+| Тип     | Размер (байт)| Имя       | Описание |
+|---------|--------------|-----------|----------|
+|uint8_t  | 1            | VersMajor | Версия основная 
+|uint8_t  | 1            | VersMinor | Версия патчей
+|uint16_t | 2            | Encoding  | кодировка строк (65001 = UTF-8) 
+|uint16_t | 2            | Blocksize | максимальный размер блока (256-4096 байт)
+|uint16_t | 2            | Reserved  | зарезервировано, должен быть 0
+|uint32_t | 4            | Flags     | зарезервировано, должен быть 0
 
 ```c
 typedef struct{
-    uint8_t VersMajor;      // 1
-    uint8_t VersMinor;      // 0
-    uint16_t Encoding;      // 65001 = UTF-8
-    uint16_t Blocksize;     // размер блока (256-4096)
-    uint16_t Reserved;      // зарезервировано, должен быть 0
-    uint32_t Flags;         // зарезервировано, должен быть 0
-} EdfHeader_t;
+    uint8_t VersMajor;      // 0
+    uint8_t VersMinor;      // 3
+    uint16_t Encoding;      // 65001
+    uint16_t Blocksize;     // 512
+    uint16_t Reserved;      // 0
+    uint32_t Flags;         // 0
+} EdfConfig_t;
+```
+Бинарный вид:
+| Type | Len   | Content                            | CRC  |
+|------|--------------------------------------------|------|
+| 7E   | 0C 00 | 00 03 E9 FD 00 02 00 00 00 00 00 00|16 FA |
+Текстовый вид:
+```
+<~ {version=1.0; bs=512; encoding=65001; flags=0; } >
 ```
 Конфиг всегда находится в первом блоке файла
 
-## 5. Структура Схемы данных
+## 5. Структура данных блока Схемы
 
 ## 5.1 Бинарный формат EdfSchema_t
 
 | Поле | Размер | Описание |
 |------|--------|----------|
-| Id | 2 | Идентификатор схемы |
+| Id | 2 | Идентификатор схемы (0..65535) |
 | Name | переменный | Имя схемы (String, см. раздел 6) |
 | Desc | переменный | Описание схемы (String, опционально) |
 | EdfType_t | переменный | Рекурсивное описание типа схемы (см. раздел 5.2) |
@@ -74,21 +99,23 @@ typedef struct{
 |------|--------|----------|
 | Type | 1 | Примитивный или составной тип PoType (см. раздел 5.3) |
 | DimsCount | 1 | Количество измерений (0-255) |
-| Dims | DimsCount × 4 | Размеры каждого измерения (uint32_t, little-endian) |
+| Dims | DimsCount × 2 | Размеры каждого измерения (uint16_t) |
 | Name | переменный | Имя типа (String, см. раздел 6) |
-| ChildsCount | 1 | Количество дочерних полей (только если Type == Struct) |
-| Childs | переменный | Элементы структуры (массив EdfType_t, только если ChildsCount > 0) |
+| FieldsCount | 1 | Количество дочерних полей (только если Type == Struct) |
+| Fields | переменный | Элементы структуры (массив EdfType_t, только если FieldsCount > 0) |
 
 Примечания:
-- ChildsCount присутствует только если Type == Struct и ChildsCount > 0
-- Поля структуры располагаются последовательно в том же порядке, что и в Childs
+- FieldsCount присутствует только если Type == Struct и FieldsCount > 0
+- Поля структуры располагаются последовательно в том же порядке, что и в Fields
+- Количество полей в структуре — не более 255 (уже ограничено uint8_t FieldsCount)
 - Общее количество примитивов(элементов) в стркутуре включая элементы массивов - не более 65535
 
 ## 5.3 Примитивные типы PoType 
-| Тип | Код | Размер (байт) | C-тип | Примечание
+
+| Тип   |Код| Размер (байт) | C-тип | Примечание
 |-------|---|--------|---------------|------------|
-|Struct |0  |	-	 | -             |Составной тип
-|Char	|1	| 1      | char[N]	     |Фиксированный массив ANSI-строк
+|Struct |0  | -      | -             | Составной тип (не примитив) |
+|Char	|1	| 1      |  char[N]	     |Фиксированный массив ANSI-строк
 |Int8	|2	| 1      | 	int8_t	     |
 |UInt8	|3	| 1      | 	uint8_t	     |
 |Int16	|4	| 2      | 	int16_t	     |
@@ -100,7 +127,7 @@ typedef struct{
 |Half	|10	| 2      | 	16-битный float (IEEE 754-2008) |
 |Single	|11	| 4      | 	float	     |
 |Double	|12	| 8	     |  double	     |
-|String	|13	| var    | 	char*	     | Динамическая строка (см. раздел 6) |
+|String	|13	| var    | 	char*	     | Динамическая строка Len (1 байт) + Data (Len байт) Len ≤ 255, Data может не содержать '\0'|
 Особенности типов:
 
 - Char — используется для строк фиксированной длины (например, char[10]). В бинарном виде хранится как сырые байты. В текстовом виде заключается в кавычки.
@@ -108,19 +135,7 @@ typedef struct{
 - String — динамическая строка, в бинарном виде имеет префикс длины (1 байт).
 
 ## 5.4 Текстовый формат схемы
-## 5.4 Конфиг файла
-Текстовый вид:
-```
-<~ {version=1.0; bs=512; encoding=65001; flags=0; } >
-```
 
-где значения в [] необязательные
-```
-<? {EdfSchema.Id, EdfSchema.Name[, EdfSchema.Desc]}
-   EdfType_t.Type [EdfType_t.Name] [ [EdfType_t.Dims.Item[0]...[EdfType_t.Dims.Item[EdfType_t.Dims.Count]]
-   [{ тут поля структуры рекурсивно, если тип Struct }]
-   >
-```
 Примеры:
 ```
 // Простая переменная
@@ -150,22 +165,40 @@ typedef struct{
 } >
 ```
 
-## 6. Формат данных
+### EdfWriteSchema
 
-Строго использовать #pragma pack(push,1) для всех структур
+Записывает блок схемы. **Важно:** После вызова этой функции внутреннее состояние 
+`EdfWriter_t` автоматически сбрасывается для записи новых данных:
+- `SchId` устанавливается в соответствии с переданной схемой
+- `PrimOffset` и `RecordId` обнуляются
+- Счетчик длины блока данных сбрасывается
 
-## 6.1 Бинарный формат
+Это гарантирует, что следующие вызовы `EdfWriteData` будут начинать 
+новую последовательность записей с корректными заголовками.
+
+## 6. Структура блока Данных
+
+Для блока данных EdfBlock_t (т.е. когда Type==0x3D) данные (Content) - сэто структура
+EdfRecordContent_t
+| Поле      | Размер      | Описание |
+|-----------|-------------|----------|
+| SchId     | 2(uint16_t) | SchemaId - идентификатор схемы (0-65535) |
+| PrmOffset | 2(uint16_t) | PrimitiveOffset - смещение примитива от начала ЗАПИСИ внутри ЗАПИСИ(0-65535) |
+| RecId     | 4(uint32_t) | RecordId - номер ЗАПИСИ с которой начинается блок |
+| Data      | переменный  | структуры данных рекурсивно разложенные на примитивы |
+Непосредственно перед данными (Content)в размещены: SchId,PrmOffset,RecId - используются для восстановления последовательности данных.
+Для всех структур которые планируете записывать строго использовать #pragma pack(push,1)
+
+## формат сериализации данных Data
+
 | Тип | Формат | Размер | Примечание |
 |-----|--------|--------|------------|
-| UInt8, Int8, Char | прямая запись | 1 | Char — фиксированный массив ANSI-строк |
-| UInt16, Int16, Half | прямая запись, LE | 2 | Half — 16-битный float (IEEE 754-2008) |
-| UInt32, Int32, Single | прямая запись, LE | 4 | |
-| UInt64, Int64, Double | прямая запись, LE | 8 | |
-| String | Len (1 байт) + Data (Len байт) | переменный | Len ≤ 255, Data может не содержать '\0' |
-| Struct | поля последовательно | сумма размеров полей | В порядке объявления в Childs |
+| Примитив | прямая запись | - | см 5.3 |
+| Struct | поля последовательно рекурсивно | сумма размеров полей | В порядке объявления в Fields |
 | Массивы | элементы последовательно | элемент × totalElements | Row-major order |
 
 Правила сериализации:
+- Примитив прямая запись, LE
 - Примитив не может быть разорван между блоками
 - Элемент массива может переходить в следующий блок
 - Строки обрезаются до 255 байт (без предупреждения)
@@ -224,46 +257,43 @@ typedef struct{
 2. Обнулять указатель на схему (`br.t = NULL`)
 3. Использовать один и тот же буфер для последовательного чтения
 
-Пример корректной обработки:
-
-```c
-MemStream_t msDst = {0};
-MemStreamOutOpen(&msDst, buffer, buffer_size);
-
-while (!EdfReadBlock(&br)) {
-    if (br.Blk.Type == btSchema) {
-        msDst.WPos = 0;     // ← сброс позиции
-        br.t = NULL;        // ← сброс указателя
-        StreamWriteBinToCBin(br.Block, br.DatLen, NULL,
-                              buffer, buffer_size, NULL, &br.t);
-        // Обработка схемы...
-    }
-}
-```
-
+При ошибке ERR_BLK_WRONG_CRC блок считается поврежденным. Для восстановления последовательности:
+- Пропустить текущий блок (позиционирование на следующий)
+- Продолжить чтение со следующего блока
+- Поля SchId, PrmOffset, RecId позволяют определить, какие данные потеряны, и восстановить частичную запись.
 
 ## 8. API Reference
 ```c
-// Открытие/закрытие
+// инициализация и создание экземпляра EdfWriter_t необходимого для
+// хранения конфигурациоонных и промежуточных данных.
+int EdfInit(EdfContext_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg);
+EdfContext_t* EdfCreate(uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg, int* pErr);
+ 
+// Открыть поток для чтения (до)записи, поток может быть файловым или память
 // Режимы: "wb"/"rb" — бинарные, "wt"/"rt" — текстовые, "ab"/"at" — дозапись
-int EdfOpen(EdfWriter_t* edf, const char* file, const char* mode);
-int EdfClose(EdfWriter_t* dw);
+int EdfOpenStream(EdfContext_t* w, Stream_t* stream, const char* mode);
+// Открыть файл для чтения (до)записи, внутри обращается к EdfOpenStream
+int EdfOpenWithFs(EdfContext_t* w, const char* file, const char* mode, FileStreamOpenFn fnOpen);
+int EdfOpenFile(EdfContext_t* w, const char* file, const char* mode);
+// освобождает фнутренние буферы и закрывает файли или поток, 
+int EdfClose(EdfContext_t* dw);
+// запись конфигурации
+int EdfWriteConfig(EdfContext_t* dw, size_t* writed);
+// запись схемы данных
+int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed);
+// запись данных
+int EdfWriteData(EdfContext_t* dw, const void* src, size_t srcLen);
+// закрывает и скидывает текущий блок на диск  
+int EdfFlushData(EdfContext_t* dw, size_t* writed);
+// Чтение данных используя схему 
+int EdfReadBin(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, void** presult,
+	size_t* resultPrimOffset, size_t* primReaded);
+// чтение блока
+int EdfReadBlock(EdfContext_t* dr);
 
-// Запись
-int EdfWriteConfig(EdfWriter_t* dw, const EdfConfig_t* h, size_t* writed);
-int EdfWriteSchema(EdfWriter_t* dw, const EdfSchema_t* t, size_t* writed);
-int EdfWriteData(EdfWriter_t* dw, const void* src, size_t srcLen);
-int EdfFlushData(EdfWriter_t* dw, size_t* writed);
-
-// Чтение
-int EdfReadBlock(EdfWriter_t* dr);
-int EdfReadBin(const TypeInfo_t* t, MemStream_t* src, MemStream_t* mem, 
-               void** presult, size_t* resultPrimOffset, size_t* primReaded);
-
-// Утилиты
 //shortcut: запись схемы + данных
-int EdfWriteSchData(EdfWriter_t* dw, const EdfSchema_t* ir, const void* d, size_t len);
-int EdfWritePrimitiveSchData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name, char* desc, const void* d);
+int EdfWriteSchemaData(EdfContext_t* dw, const EdfSchema_t* ir, const void* d, size_t len);
+int EdfWritePrimSchData(EdfContext_t* dw, PoType pt, uint16_t schId, char* schName, char* schDesc, const void* d);
 ```
 
 Для примитивных типов (Int32, Single, etc.) передавайте указатель на значение:
@@ -277,3 +307,21 @@ int EdfWritePrimitiveSchData(EdfWriter_t* dw, PoType pt, uint32_t id, char* name
    const char* str = "hello";
    EdfWritePrimitiveSchData(dw, String, 0, "key", NULL, &str);
 ```
+
+## 9. Коды ошибок
+
+| Код  | Значение | Описание |
+|------|----------|----------|
+| 0    | ERR_NO | Успешное выполнение |
+| -1   | ERR_EOF | Конец файла (при чтении) |
+| 1001 | ERR_SRC_SHORT | Недостаточно данных в источнике |
+| 1002 | ERR_DST_SHORT | Недостаточно места в приемнике |
+| 1003 | ERR_WRONG_TYPE | Неверный тип данных |
+| 1004 | ERR_WRONG_PARAMETERS | Неверные параметры функции |
+| 1005 | ERR_FREAD | Ошибка чтения файла |
+| 1006 | ERR_FWRITE | Ошибка записи файла |
+| 1007 | ERR_FN_NOT_EXIST | Функция не реализована |
+| 1120 | ERR_BLK_WRONG_TYPE | Неверный тип блока |
+| 1121 | ERR_BLK_WRONG_SIZE | Неверный размер блока |
+| 1122 | ERR_BLK_WRONG_CRC | Ошибка CRC блока |
+| 1123 | ERR_BLOCK_SIZE_LARGE | Размер блока превышает допустимый |

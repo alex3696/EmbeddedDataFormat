@@ -2,7 +2,7 @@
 #include "KeyValue.h"
 
 //-----------------------------------------------------------------------------
-int UnpackUInt16KeyVal(MemStream_t* src, MemStream_t* dst,
+int UnpackUInt16KeyVal(MemStream_t* src, LineAlloc_t* dst,
 	size_t* skip, DoOnItemUInt16 DoOnItem, void* state)
 {
 	size_t primReaded = 0;
@@ -18,7 +18,7 @@ int UnpackUInt16KeyVal(MemStream_t* src, MemStream_t* dst,
 	return err;
 }
 //-----------------------------------------------------------------------------
-int UnpackUInt32KeyVal(MemStream_t* src, MemStream_t* dst,
+int UnpackUInt32KeyVal(MemStream_t* src, LineAlloc_t* dst,
 	size_t* skip, DoOnItemUInt32Fn DoOnItem, void* state)
 {
 	size_t primReaded = 0;
@@ -34,7 +34,7 @@ int UnpackUInt32KeyVal(MemStream_t* src, MemStream_t* dst,
 	return err;
 }
 //-----------------------------------------------------------------------------
-int UnpackDoubleKeyVal(MemStream_t* src, MemStream_t* dst,
+int UnpackDoubleKeyVal(MemStream_t* src, LineAlloc_t* dst,
 	size_t* skip, DoOnItemDoubleFn DoOnItem, void* state)
 {
 	size_t primReaded = 0;
