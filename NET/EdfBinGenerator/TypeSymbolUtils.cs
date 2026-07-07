@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using System.Linq;
 
 namespace EdfBinGenerator;
 
@@ -25,8 +26,8 @@ public static class TypeSymbolUtils
     {
         return typeSymbol.SpecialType switch
         {
-            SpecialType.System_Byte => "Int8",
-            SpecialType.System_SByte => "UInt8",
+            SpecialType.System_Byte => "UInt8",
+            SpecialType.System_SByte => "Int8",
             SpecialType.System_Int16 => "Int16",
             SpecialType.System_UInt16 => "UInt16",
             SpecialType.System_Int32 => "Int32",
@@ -58,5 +59,39 @@ public static class TypeSymbolUtils
         // Используем ваше новое расширение TypeSymbolUtils.MapToPoType()
         // Если это не примитив, но у типа есть имя — значит, это вложенный объект (класс или структура)
         return string.IsNullOrEmpty(type.MapToPoType()) && type is INamedTypeSymbol;
+    }
+
+
+    public const string Attribute = "Attribute";
+    public const string Namespace = "EdfNet";
+
+    public static bool IsAttribute(this string? str, string attribute)
+    {
+        return str != null && (str.Contains(attribute) || str.Contains(attribute.Replace(Attribute, string.Empty)));
+    }
+    public static bool HasAttribute(this ITypeSymbol ntype, string attribute)
+    {
+        return ntype.GetAttributes().Any(a =>
+            a.AttributeClass?.ToDisplayString() == $"{Namespace}.{attribute}");
+    }
+
+    /// <summary>
+    /// Вспомогательный метод для извлечения размерностей массива из атрибута [EdfArray]
+    /// </summary>
+    public static string ExtractArrayDimensions(this IPropertySymbol property)
+    {
+        var arrayAttr = property.GetAttributes().FirstOrDefault(a =>
+            IsAttribute(a.AttributeClass?.Name, EdfEnumeratorGenerator.ArrayAttribute));
+
+        if (arrayAttr != null && arrayAttr.ConstructorArguments.Length > 0)
+        {
+            var arg = arrayAttr.ConstructorArguments[0];
+            if (arg.Kind == TypedConstantKind.Array)
+            {
+                var values = arg.Values.Select(v => v.Value?.ToString()).ToArray();
+                return string.Join(", ", values); // Вернет строку "3, 2, 1"
+            }
+        }
+        return string.Empty;
     }
 }

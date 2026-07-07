@@ -60,7 +60,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
             {
                 // Быстрая текстовая проверка, чтобы зря не нагружать семантическую модель
                 string attrName = attribute.Name.ToString();
-                if (attrName != "EdfSerializable" && attrName != SerializeAttribute)
+                if (!TypeSymbolUtils.IsAttribute(attrName, SerializeAttribute))
                     continue;
 
                 if (context.SemanticModel.GetSymbolInfo(attribute).Symbol is IMethodSymbol attributeSymbol &&
@@ -72,25 +72,11 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         }
         return null;
     }
-    private static bool IsComatibleType(ITypeSymbol ntype)
+    private static bool IsCompatibleType(ITypeSymbol ntype)
     {
         if (ntype == null) return false;
-
-        // 1. Если это Nullable-структура (например, SubVal?), достаем её реальный внутренний тип
-        if (ntype.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
-            && ntype is INamedTypeSymbol namedType)
-        {
-            if (namedType.TypeArguments.Length > 0)
-            {
-                ntype = namedType.TypeArguments[0]; // Перезаписываем ntype на чистый SubVal
-            }
-        }
-
-        // 2. Теперь спокойно проверяем атрибуты у реального типа данных
-        bool hasAttribute = ntype.GetAttributes().Any(a =>
-            a.AttributeClass?.ToDisplayString() == $"EdfNet.{SerializeAttribute}"
-            || a.AttributeClass?.ToDisplayString() == $"EdfNet.{ArrayAttribute}"); // Используйте ваше точное имя константы
-
+        ntype = ntype.UnwrapNullable();
+        bool hasAttribute = ntype.HasAttribute(SerializeAttribute) || ntype.HasAttribute(ArrayAttribute);
         return hasAttribute || !string.IsNullOrWhiteSpace(TypeSymbolUtils.MapToPoType(ntype));
     }
 
@@ -106,7 +92,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         var fields = structSymbol.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(f => !f.IsStatic
-                        && (IsComatibleType(f.Type) || f.Type is IArrayTypeSymbol)
+                        && (IsCompatibleType(f.Type) || f.Type is IArrayTypeSymbol)
                         && (f.DeclaredAccessibility == Accessibility.Public || f.DeclaredAccessibility == Accessibility.Internal))
             .ToList();
 
@@ -135,6 +121,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         GenerateWrite(sb, fields);
         GenerateRead(sb, fields);
         GenerateResult(sb, structName);
+        GenerateSchema(sb, fields, structName);
 
         sb.AppendLine("    }");
         sb.AppendLine("}");
@@ -419,6 +406,74 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         sb.AppendLine($"        public {structName} Result => _instance;");
     }
     // --- Вспомогательные методы-утилиты для проверки типов ---
+    private static void GenerateSchema(StringBuilder sb, List<IPropertySymbol> fields, string structName)
+    {
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine("        /// Возвращает автоматически сгенерированный бинарный объект Schema для данного типа.");
+        sb.AppendLine("        /// </summary>");
+        sb.AppendLine($"        public static Schema GetEdfSchema()");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return new Schema()");
+        sb.AppendLine("            {");
+        sb.AppendLine("                Id = 0,");
+        sb.AppendLine($"                Name = \"{structName}Schema\",");
+        sb.AppendLine($"                Desc = \"Schema for {structName} class\",");
+        sb.AppendLine("                Type = new()");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    Type = PoType.Struct,");
+        sb.AppendLine($"                    Name = \"{structName}\",");
+        sb.AppendLine("                    Childs =");
+        sb.AppendLine("                    [");
+        // Перебираем поля структуры/класса
+        for (int i = 0; i < fields.Count; i++)
+        {
+            var f = fields[i];
+            var fType = f.Type.UnwrapNullable();
+            if (fType is IArrayTypeSymbol arraySymbol)
+            {
+                // Сценарий 1: Свойства-массивы (примитивы или вложенные объекты)
+                string dimensionsStr = TypeSymbolUtils.ExtractArrayDimensions(f);
+                string elemPoType = arraySymbol.ElementType.MapToPoType();
+
+                if (!string.IsNullOrEmpty(elemPoType))
+                {
+                    // Массив примитивов, например: new (PoType.Int32, "Arr", [3, 2, 1])
+                    sb.AppendLine($"                        new (PoType.{elemPoType}, \"{f.Name}\", [{dimensionsStr}]),");
+                }
+                else
+                {
+                    // Массив объектов: рекурсивно вытаскиваем Childs из энумератора вложенного типа
+                    // Вид: new (PoType.Struct, "Sub", [2, 2]) { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
+                    string nestedEnumName = $"{arraySymbol.ElementType.Name}ByteEnumerator";
+                    sb.AppendLine($"                        new (PoType.Struct, \"{f.Name}\", [{dimensionsStr}])");
+                    sb.AppendLine("                        {");
+                    sb.AppendLine($"                            Childs = {nestedEnumName}.GetEdfSchema().Type.Childs");
+                    sb.AppendLine("                        },");
+                }
+            }
+            else if (fType.IsNestedSerializable())
+            {
+                // Сценарий 2: Одиночный вложенный сериализуемый объект (класс или структура)
+                // Вид: new (PoType.Struct, "Sub0") { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
+                string nestedEnumName = $"{fType.Name}ByteEnumerator";
+                sb.AppendLine($"                        new (PoType.Struct, \"{f.Name}\")");
+                sb.AppendLine("                        {");
+                sb.AppendLine($"                            Childs = {nestedEnumName}.GetEdfSchema().Type.Childs");
+                sb.AppendLine("                        },");
+            }
+            else
+            {
+                // Сценарий 3: Обычный плоский базовый примитив
+                // Вид: new (PoType.String, "Test1"),
+                sb.AppendLine($"                        new (PoType.{fType.MapToPoType()}, \"{f.Name}\"),");
+            }
+        }
+        sb.AppendLine("                    ]");
+        sb.AppendLine("                }");
+        sb.AppendLine("            };");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+    }
 
 
 }
