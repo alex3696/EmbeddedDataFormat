@@ -1,7 +1,7 @@
 namespace EdfNet.Core.Gen
 {
     public struct EdfArrayObjectsEnumerator<T, TEnumerator> : IEdfByteEnumerator
-        where T : struct
+        where T : class, new()
         where TEnumerator : struct, IEdfByteEnumerator<T>
     {
         private readonly Array _array;
@@ -66,12 +66,10 @@ namespace EdfNet.Core.Gen
 
             // 3. Обновляем индексы многомерного массива для следующего шага
             UpdateIndices(_arrayIndex);
-            T? currentObj = (T?)_array.GetValue(_indices);
-            if (currentObj == null)
-                return false;
+            T currentObj = (T?)_array.GetValue(_indices) ?? new T();
 
             // 4. Мгновенно создаем энумератор через переданную фабрику СТРОГО без рефлексии!
-            _currentElementEnum = _factory(currentObj.Value);
+            _currentElementEnum = _factory(currentObj);
             _isElementActive = true;
 
             // Важнейший шаг: СРАЗУ делаем первый шаг по примитивам нового элемента.

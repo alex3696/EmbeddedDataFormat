@@ -29,7 +29,7 @@ public static class Common
                     continue;
 
                 if (context.SemanticModel.GetSymbolInfo(attribute).Symbol is IMethodSymbol attributeSymbol &&
-                    attributeSymbol.ContainingType.ToDisplayString() == $"EdfNet.{SerializeAttribute}")
+                    attributeSymbol.ContainingType.ToDisplayString() == $"{Namespace}.{SerializeAttribute}")
                 {
                     return context.SemanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
                 }

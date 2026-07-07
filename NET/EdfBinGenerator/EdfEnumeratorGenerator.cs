@@ -34,7 +34,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         // 2. Поиск классов с атрибутом [EdfSerializable]
         var classDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (s, _) => s is TypeDeclarationSyntax { AttributeLists.Count: > 0 },
+                predicate: static (s, _) => s is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
                 transform: static (ctx, _) => Common.GetSemanticTargetForGeneration(ctx))
             .Where(static m => m is not null);
 
@@ -142,17 +142,18 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
                 string elemPoType = arraySymbol.ElementType.MapToPoType();
                 string elemTypeName = arraySymbol.ElementType.ToDisplayString();
                 string elemShortName = arraySymbol.ElementType.Name;
-
+                var dims = f.ExtractArrayDimensions();
                 if (!string.IsNullOrEmpty(elemPoType))
                 {
-                    // Для массивов примитивов (чисел) оставляем как было
-                    sb.AppendLine($"            _arrayEnum{i + 1} = instance.{f.Name} != null ? new EdfArrayPrimitivesEnumerator<{elemTypeName}>(instance.{f.Name}, PoType.{elemPoType}) : default;");
+                    sb.AppendLine($"            _arrayEnum{i + 1} = " +
+                        $"new EdfArrayPrimitivesEnumerator<{elemTypeName}>" +
+                        $"(null==instance.{f.Name} ? new {elemTypeName}[{dims}] : instance.{f.Name}, PoType.{elemPoType});");
                 }
                 else
                 {
-                    // ПРАВКА: Для массивов объектов передаем третьим аргументом лямбду-фабрику
-                    // Вид: obj => new SubValByteEnumerator(obj)
-                    sb.AppendLine($"            _arrayEnum{i + 1} = instance.{f.Name} != null ? new EdfArrayObjectsEnumerator<{elemTypeName}, {elemShortName}ByteEnumerator>(instance.{f.Name}, obj => new {elemShortName}ByteEnumerator(obj)) : default;");
+                    sb.AppendLine($"            _arrayEnum{i + 1} = " +
+                        $"new EdfArrayObjectsEnumerator<{elemTypeName}, {elemShortName}ByteEnumerator>" +
+                        $"(null==instance.{f.Name} ? new {elemTypeName}[{dims}] : instance.{f.Name}, obj => new {elemShortName}ByteEnumerator(obj));");
                 }
                 sb.AppendLine($"            _inArray{i + 1} = false;");
             }
@@ -160,13 +161,13 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
             {
                 if (isNullable)
                 {
-                    // Nullable-структура (SubVal?)
-                    sb.AppendLine($"            _nestedEnum{i + 1} = instance.{f.Name}.HasValue ? new {fType.Name}ByteEnumerator(instance.{f.Name}.Value) : default;");
+                    // Nullable-класс (SubVal?)
+                    sb.AppendLine($"            _nestedEnum{i + 1} = new {fType.Name}ByteEnumerator(instance.{f.Name}.HasValue? instance.{f.Name}.HasValue : new {fType.Name}());");
                 }
                 else if (fType.IsReferenceType)
                 {
                     // Обычный класс (class KeyVal)
-                    sb.AppendLine($"            _nestedEnum{i + 1} = instance.{f.Name} != null ? new {fType.Name}ByteEnumerator(instance.{f.Name}) : default;");
+                    sb.AppendLine($"            _nestedEnum{i + 1} = new {fType.Name}ByteEnumerator(instance.{f.Name} ?? new {fType.Name}());");
                 }
                 else
                 {

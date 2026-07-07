@@ -7,7 +7,7 @@ public struct PlainStruct
 }
 
 [EdfSerializable]
-public partial struct SubVal
+public class SubVal
 {
     public SubVal()
     {
@@ -17,7 +17,7 @@ public partial struct SubVal
     public sbyte ValSByte { get; set; } = 0x33;
 }
 [EdfSerializable]
-public partial class KeyVal
+public class KeyVal
 {
     public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }
@@ -32,7 +32,7 @@ public partial class KeyVal
             {{ 5 }, { 6 }}
         };
     public SubVal? Sub0 { get; set; }
-    public SubVal Sub1 { get; set; }
+    public SubVal Sub1 { get; set; } = new();
     [EdfArray([2, 2])]
     public SubVal[,]? Sub { get; set; } = new SubVal[2, 2];
 }
@@ -262,10 +262,10 @@ public class EdfBinarySerializationTests
                     Assert.AreEqual(original.Arr[i, j, k], restored.Arr[i, j, k]);
 
         // Проверка вложенной Nullable-структуры Sub0
-        Assert.IsTrue(restored.Sub0.HasValue);
-        Assert.AreEqual(original.Sub0.Value.ValDouble, restored.Sub0.Value.ValDouble);
-        Assert.AreEqual(original.Sub0.Value.ValByte, restored.Sub0.Value.ValByte);
-        Assert.AreEqual(original.Sub0.Value.ValSByte, restored.Sub0.Value.ValSByte);
+        Assert.IsNotNull(restored.Sub0);
+        Assert.AreEqual(original.Sub0.ValDouble, restored.Sub0.ValDouble);
+        Assert.AreEqual(original.Sub0.ValByte, restored.Sub0.ValByte);
+        Assert.AreEqual(original.Sub0.ValSByte, restored.Sub0.ValSByte);
 
         // Проверка обычной структуры Sub1
         Assert.AreEqual(original.Sub1.ValDouble, restored.Sub1.ValDouble);

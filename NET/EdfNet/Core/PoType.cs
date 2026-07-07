@@ -41,5 +41,22 @@ public static class PoTypeExt
             _ => 0,
         };
     }
-
+    public static PoType GetPoType(this Type t)
+    {
+        var typeCode = Type.GetTypeCode(t);
+        return typeCode switch
+        {
+            TypeCode.Byte => PoType.UInt8,
+            TypeCode.SByte => PoType.Int8,
+            TypeCode.Int16 => PoType.Int16,
+            TypeCode.UInt16 => PoType.UInt16,
+            TypeCode.Int32 => PoType.Int32,
+            TypeCode.UInt32 => PoType.UInt32,
+            TypeCode.Int64 => PoType.Int64,
+            TypeCode.UInt64 => PoType.UInt64,
+            TypeCode.Single => PoType.Single,
+            TypeCode.Double => PoType.Double,
+            _ => throw new ArgumentOutOfRangeException(nameof(t), t, "Unsupported type"),
+        };
+    }
 }
