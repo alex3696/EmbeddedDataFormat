@@ -98,10 +98,5 @@ namespace EdfNet.Core.Gen
             return readLen;
         }
 
-        public object Result => _array;
-
-        // Открываем свойства для генератора кода, чтобы он знал текущее состояние массива
-        public int CurrentArrayIndex => _arrayIndex;
-        public bool IsElementActive => _isElementActive;
     }
 }

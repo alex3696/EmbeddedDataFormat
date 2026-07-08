@@ -223,7 +223,7 @@ public class EdfBinarySerializationTests
 
         // Создаем буфер в памяти (имитация файла/флеш-блока)
         using var memoryStream = new MemoryStream(1024);
-        var writer = new BinWriter(memoryStream);
+        using var writer = new BinWriter(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
         writer.Write(KeyVal.GetEdfSchema());
@@ -240,11 +240,10 @@ public class EdfBinarySerializationTests
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
         reader.ReadSchema();
-        var readEnumerator = new KeyValByteEnumerator(new KeyVal());
+        KeyVal restored = new();
+        var readEnumerator = new KeyValByteEnumerator(restored);
         EdfErr readResult = reader.ReadData(ref readEnumerator);
-
         Assert.AreEqual(EdfErr.IsOk, readResult);
-        KeyVal restored = readEnumerator.Result; // Забираем готовый объект из энумератора
 
         // 4. ASSERT: Проверяем идентичность всех полей (в MSTest сначала идет Expected, потом Actual)
         Assert.IsNotNull(restored);
@@ -301,7 +300,7 @@ public class EdfBinarySerializationTests
         };
 
         using var memoryStream = new MemoryStream();
-        var writer = new BinWriter(memoryStream);
+        using var writer = new BinWriter(memoryStream);
 
         EdfErr writeResult = writer.WriteGen(original);
         writer.Flush();

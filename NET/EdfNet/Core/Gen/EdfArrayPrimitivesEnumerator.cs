@@ -56,7 +56,6 @@ public struct EdfArrayPrimitivesEnumerator<T> : IEdfByteEnumerator
     public readonly PoType CurrentPoType => _poType;
     public readonly int CurrentPoLen => _poType.GetSizeOf();
 
-    public readonly object Result => _array;
 
     public readonly int Write(Span<byte> destination)
     {

@@ -367,7 +367,6 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
     // 9. Result
     private static void GenerateResult(StringBuilder sb, string structName)
     {
-        sb.AppendLine($"        object IEdfByteEnumerator.Result => _instance;");
         sb.AppendLine($"        public {structName} Result => _instance;");
     }
 

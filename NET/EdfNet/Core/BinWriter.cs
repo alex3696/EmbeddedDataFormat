@@ -116,15 +116,10 @@ public class BinWriter : BaseWriter
         return EdfErr.IsOk;
     }
 
-    /// <summary>
-    /// Высокопроизводительный метод, куда в итоге проваливается запись.
-    /// Сюда передается конкретный СГЕНЕРИРОВАННЫЙ энумератор-структура.
-    /// </summary>
-    public EdfErr WriteData<TEnumerator>(TEnumerator enumerator)
+    public EdfErr WriteData<TEnumerator>(ref TEnumerator enumerator)
         where TEnumerator : struct, IEdfByteEnumerator
     {
         // Берем срез свободного места в текущем буфере блока
-        // BinBlock.HeaderLen + _blk.DataLen — это указатель на первый свободный байт контента
         Span<byte> _blockDataBuffer = _blk.DataBuffer.Slice(_blk.DataLen);
         while (enumerator.MoveNext())
         {

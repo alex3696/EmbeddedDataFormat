@@ -14,10 +14,9 @@ public interface IEdfByteEnumerator
     int Write(Span<byte> destination);
     // Чтение сырых байт из Span в примитив напрямую
     int Read(ReadOnlySpan<byte> src);
-    object Result { get; }
 }
 
 public interface IEdfByteEnumerator<T>: IEdfByteEnumerator
 {
-    new T Result { get; }
+    T Result { get; }
 }
