@@ -97,7 +97,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
     private static void GenerateFieldsAndDeclarations(StringBuilder sb, List<IPropertySymbol> fields, string structName)
     {
         sb.AppendLine($"        private const int FieldCount = {fields.Count};");
-        sb.AppendLine($"        private {structName} _instance;");
+        sb.AppendLine($"        private readonly {structName} _instance;");
         sb.AppendLine("        private int _state;");
         sb.AppendLine();
 
@@ -126,7 +126,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
     // 2. Конструктор
     private static void GenerateConstructor(StringBuilder sb, List<IPropertySymbol> fields, string structName, string enumeratorName)
     {
-        sb.AppendLine($"        public {enumeratorName}(in {structName} instance)");
+        sb.AppendLine($"        public {enumeratorName}({structName} instance)");
         sb.AppendLine("        {");
         sb.AppendLine("            _instance = instance;");
         sb.AppendLine("            _state = 0;");

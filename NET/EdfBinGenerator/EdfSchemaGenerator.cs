@@ -50,37 +50,36 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("using EdfNet.Core;");
         sb.AppendLine("using EdfNet.Core.Gen;");
         sb.AppendLine();
-        sb.AppendLine($"namespace {namespaceName}");
+        sb.AppendLine($"namespace {namespaceName};");
+        sb.AppendLine($"public static class {enumeratorName}");
         sb.AppendLine("{");
-        sb.AppendLine($"    public static class {enumeratorName}");
-        sb.AppendLine("    {");
-
         // Вызываем раздельные методы генерации
         GenerateSchema(sb, fields, structName);
-
-        sb.AppendLine("    }");
         sb.AppendLine("}");
+
+        sb.AppendLine();
+        GeneratePartialEdfSerializable(sb, structName);
 
         context.AddSource($"{structName}_EdfExtension.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
     private static void GenerateSchema(StringBuilder sb, List<IPropertySymbol> fields, string structName)
     {
-        sb.AppendLine("        /// <summary>");
-        sb.AppendLine("        /// Возвращает автоматически сгенерированный бинарный объект Schema для данного типа.");
-        sb.AppendLine("        /// </summary>");
-        sb.AppendLine($"        public static Schema GetEdfSchema{structName}()");
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Возвращает автоматически сгенерированный бинарный объект Schema для данного типа.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine($"    public static Schema GetEdfSchema{structName}()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return new Schema()");
         sb.AppendLine("        {");
-        sb.AppendLine("            return new Schema()");
+        sb.AppendLine("            Id = 0,");
+        sb.AppendLine($"            Name = \"{structName}Schema\",");
+        sb.AppendLine($"            Desc = \"Schema for {structName} class\",");
+        sb.AppendLine("             Type = new()");
         sb.AppendLine("            {");
-        sb.AppendLine("                Id = 0,");
-        sb.AppendLine($"                Name = \"{structName}Schema\",");
-        sb.AppendLine($"                Desc = \"Schema for {structName} class\",");
-        sb.AppendLine("                Type = new()");
-        sb.AppendLine("                {");
-        sb.AppendLine("                    Type = PoType.Struct,");
-        sb.AppendLine($"                    Name = \"{structName}\",");
-        sb.AppendLine("                    Childs =");
-        sb.AppendLine("                    [");
+        sb.AppendLine("                Type = PoType.Struct,");
+        sb.AppendLine($"                Name = \"{structName}\",");
+        sb.AppendLine("                Childs =");
+        sb.AppendLine("                [");
         // Перебираем поля структуры/класса
         for (int i = 0; i < fields.Count; i++)
         {
@@ -95,45 +94,69 @@ public class EdfSchemaGenerator : IIncrementalGenerator
                 if (!string.IsNullOrEmpty(elemPoType))
                 {
                     // Массив примитивов, например: new (PoType.Int32, "Arr", [3, 2, 1])
-                    sb.AppendLine($"                        new (PoType.{elemPoType}, \"{f.Name}\", [{dimensionsStr}]),");
+                    sb.AppendLine($"                    new (PoType.{elemPoType}, \"{f.Name}\", [{dimensionsStr}]),");
                 }
                 else
                 {
                     // Массив объектов: рекурсивно вытаскиваем Childs из энумератора вложенного типа
                     // Вид: new (PoType.Struct, "Sub", [2, 2]) { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
-                    sb.AppendLine($"                        new (PoType.Struct, \"{f.Name}\", [{dimensionsStr}])");
-                    sb.AppendLine("                        {");
-                    sb.AppendLine($"                            Childs = {arraySymbol.ElementType.Name}.GetEdfSchema().Type.Childs");
-                    sb.AppendLine("                        },");
+                    sb.AppendLine($"                    new (PoType.Struct, \"{f.Name}\", [{dimensionsStr}])");
+                    sb.AppendLine("                    {");
+                    sb.AppendLine($"                        Childs = {arraySymbol.ElementType.Name}.GetEdfSchema().Type.Childs");
+                    sb.AppendLine("                    },");
                 }
             }
             else if (fType.IsNestedSerializable())
             {
                 // Сценарий 2: Одиночный вложенный сериализуемый объект (класс или структура)
                 // Вид: new (PoType.Struct, "Sub0") { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
-                sb.AppendLine($"                        new (PoType.Struct, \"{f.Name}\")");
-                sb.AppendLine("                        {");
-                sb.AppendLine($"                            Childs = {fType.Name}.GetEdfSchema().Type.Childs");
-                sb.AppendLine("                        },");
+                sb.AppendLine($"                    new (PoType.Struct, \"{f.Name}\")");
+                sb.AppendLine("                    {");
+                sb.AppendLine($"                        Childs = {fType.Name}.GetEdfSchema().Type.Childs");
+                sb.AppendLine("                    },");
             }
             else
             {
                 // Сценарий 3: Обычный плоский базовый примитив
                 // Вид: new (PoType.String, "Test1"),
-                sb.AppendLine($"                        new (PoType.{fType.MapToPoType()}, \"{f.Name}\"),");
+                sb.AppendLine($"                    new (PoType.{fType.MapToPoType()}, \"{f.Name}\"),");
             }
         }
-        sb.AppendLine("                    ]");
-        sb.AppendLine("                }");
-        sb.AppendLine("            };");
-        sb.AppendLine("        }");
+        sb.AppendLine("                ]");
+        sb.AppendLine("            }");
+        sb.AppendLine("        };");
+        sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine($"        extension({structName})");
-        sb.AppendLine("        {");
+        sb.AppendLine($"    extension({structName})");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        public static Schema GetEdfSchema() => GetEdfSchema{structName}();");
+        sb.AppendLine("    }");
+        //sb.AppendLine();
+        //sb.AppendLine($"        extension({structName} instance)");
+        //sb.AppendLine("        {");
+        //sb.AppendLine($"            public IEdfByteEnumerator<{structName}> GetByteEnumerator() => new {structName}ByteEnumerator(instance);");
+        //sb.AppendLine("        }");
 
-        sb.AppendLine($"            public static Schema GetEdfSchema() => GetEdfSchema{structName}();");
-        sb.AppendLine("        }");
+    }
+    private static void GeneratePartialEdfSerializable(StringBuilder sb, string structName)
+    {
+        //sb.AppendLine($"public partial class {structName}: IEdfSerializable<{structName}ByteEnumerator>");
+        sb.AppendLine($"public partial class {structName}: IEdfSerializable");
+        sb.AppendLine("{");
+        //sb.AppendLine($"    public {structName}ByteEnumerator GetByteEnumerator() " +
+        //sb.AppendLine($"    public {structName}ByteEnumerator GetByteEnumerator() " +
+        sb.AppendLine($"    public IEdfByteEnumerator GetByteEnumerator() " +
+                      $"=> new {structName}ByteEnumerator(this);");
 
+        sb.AppendLine($"    public static IEdfByteEnumerator GetByteEnumerator({structName} val) " +
+                      $"=> new {structName}ByteEnumerator(val);");
 
+        sb.AppendLine("    public EdfErr WriteTo<TWriter>(TWriter writer) where TWriter : IWriter");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        var enm = new {structName}ByteEnumerator(this);");
+        sb.AppendLine($"        return writer.WriteEnumerator(ref enm);");
+        sb.AppendLine("    }");
+
+        sb.AppendLine("}");
     }
 }

@@ -116,7 +116,13 @@ public class BinWriter : BaseWriter
         return EdfErr.IsOk;
     }
 
-    public EdfErr WriteData<TEnumerator>(ref TEnumerator enumerator)
+    public EdfErr WriteValue<T>(T val)
+        where T : IEdfSerializable
+    {
+        return val.WriteTo(this);
+    }
+
+    public EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
         where TEnumerator : struct, IEdfByteEnumerator
     {
         // Берем срез свободного места в текущем буфере блока
@@ -161,13 +167,13 @@ public class BinWriter : BaseWriter
 
         // 2. Ищем метод WriteData в BinWriter
         MethodInfo writeDataMethod = typeof(BinWriter)
-            .GetMethod(nameof(BinWriter.WriteData))!
+            .GetMethod(nameof(BinWriter.WriteEnumerator))!
             .MakeGenericMethod(enumeratorType);
 
         ConstructorInfo ctor = enumeratorType.GetConstructor(
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance,
             binder: null,
-            types: new[] { type.MakeByRefType() },
+            types: new[] { type },
             modifiers: null)!;
 
         // 3. Строим Expression Tree

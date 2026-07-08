@@ -1,5 +1,6 @@
-namespace NetTest;
+using EdfNet.Core.Gen;
 
+namespace NetTest;
 
 public struct PlainStruct
 {
@@ -7,7 +8,7 @@ public struct PlainStruct
 }
 
 [EdfSerializable]
-public class SubVal
+public partial class SubVal
 {
     public SubVal()
     {
@@ -17,7 +18,7 @@ public class SubVal
     public sbyte ValSByte { get; set; } = 0x33;
 }
 [EdfSerializable]
-public class KeyVal
+public partial class KeyVal : IEdfSerializable
 {
     public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }
@@ -294,7 +295,7 @@ public class EdfBinarySerializationTests
             Test1 = null,
             Key = null,
             Val = 0,
-            Arr = null,
+            Arr = null!,
             Sub0 = null,
             Sub = null
         };
@@ -303,6 +304,11 @@ public class EdfBinarySerializationTests
         using var writer = new BinWriter(memoryStream);
 
         EdfErr writeResult = writer.WriteGen(original);
+
+        var enumerator = (KeyValByteEnumerator)original.GetByteEnumerator();
+        writer.WriteEnumerator(ref enumerator);
+        writer.WriteValue(original);
+
         writer.Flush();
 
         Assert.AreEqual(EdfErr.IsOk, writeResult);
