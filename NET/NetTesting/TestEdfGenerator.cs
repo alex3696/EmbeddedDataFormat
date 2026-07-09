@@ -40,7 +40,7 @@ public partial class KeyVal : IEdfSerializable
 
 
 [TestClass]
-public class EdfBinarySerializationTests
+public class GenSerializationTests
 {
     readonly Schema _sch = new()
     {
@@ -224,18 +224,18 @@ public class EdfBinarySerializationTests
 
         // Создаем буфер в памяти (имитация файла/флеш-блока)
         using var memoryStream = new MemoryStream(1024);
-        using var writer = new BinWriter(memoryStream);
+        using var writer = new EdfNet.Core.Gen.BinWriter(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
         writer.Write(KeyVal.GetEdfSchema());
-        EdfErr writeResult = writer.WriteGen(original);
+        EdfErr writeResult = writer.Write(original);
         writer.Flush(); // Сбрасываем остатки буфера в поток
 
         Assert.AreEqual(EdfErr.IsOk, writeResult);
 
         // Сбрасываем поток в начало для чтения
         memoryStream.Position = 0;
-        var reader = new BinReader(memoryStream);
+        var reader = new EdfNet.Core.Gen.BinReader(memoryStream);
 
         // 3. ACT (READ): Читаем объект обратно из бинарного потока
         if (!reader.ReadBlock())
@@ -301,9 +301,9 @@ public class EdfBinarySerializationTests
         };
 
         using var memoryStream = new MemoryStream();
-        using var writer = new BinWriter(memoryStream);
+        using var writer = new EdfNet.Core.Gen.BinWriter(memoryStream);
 
-        EdfErr writeResult = writer.WriteGen(original);
+        EdfErr writeResult = writer.Write(original);
 
         var enumerator = (KeyValByteEnumerator)original.GetByteEnumerator();
         writer.WriteEnumerator(ref enumerator);

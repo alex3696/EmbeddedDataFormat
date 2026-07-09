@@ -6,11 +6,9 @@ namespace EdfNet.Core.Gen
     {
         private readonly Array _array;
         private int _arrayIndex;
-        private readonly int _totalElements;
         private TEnumerator _currentElementEnum;
         private bool _isElementActive;
         private readonly Func<T, TEnumerator> _factory; // Фабрика для создания без рефлексии
-
         private readonly int[] _indices;
         private readonly int[] _dims;
 
@@ -18,7 +16,6 @@ namespace EdfNet.Core.Gen
         {
             _array = array;
             _arrayIndex = 0;
-            _totalElements = array?.Length ?? 0;
             _isElementActive = false;
             _currentElementEnum = default;
             _factory = factory;
@@ -34,8 +31,8 @@ namespace EdfNet.Core.Gen
             }
             else
             {
-                _indices = Array.Empty<int>();
-                _dims = Array.Empty<int>();
+                _indices = [];
+                _dims = [];
             }
         }
 
@@ -62,13 +59,13 @@ namespace EdfNet.Core.Gen
             }
 
             // 2. Если весь массив закончился — выходим
-            if (_arrayIndex >= _totalElements) return false;
+            if (_arrayIndex >= _array.Length) return false;
 
             // 3. Обновляем индексы многомерного массива для следующего шага
             UpdateIndices(_arrayIndex);
             T currentObj = (T?)_array.GetValue(_indices) ?? new T();
 
-            // 4. Мгновенно создаем энумератор через переданную фабрику СТРОГО без рефлексии!
+            // 4. создаем энумератор через переданную фабрику 
             _currentElementEnum = _factory(currentObj);
             _isElementActive = true;
 

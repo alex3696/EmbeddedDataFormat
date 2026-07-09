@@ -11,21 +11,18 @@ public class BinBlock
         get => (BlockType)_buffer[0];
         set => _buffer[0] = (byte)value;
     }
-    public ushort Len => (ushort)(HeaderLen + DataLen + CrcLen);
-    public ushort FreeDataLen => (ushort)(MaxPayloadLen - DataLen);
-    public ushort DataLen
+    public ushort TotalLen => (ushort)(HeaderLen + ContentLen + CrcLen);
+    //public ushort FreeDataLen => (ushort)(MaxPayloadLen - DataLen);
+    public ushort ContentLen
     {
         get => MemoryMarshal.Read<ushort>(_buffer.AsSpan(1, 2));
         set => MemoryMarshal.Write(_buffer.AsSpan(1, 2), value);
     }
-    public ushort Crc
-    {
-        get => MemoryMarshal.Read<ushort>(_buffer.AsSpan(HeaderLen + DataLen, CrcLen));
-    }
+    public ushort Crc => MemoryMarshal.Read<ushort>(_buffer.AsSpan(HeaderLen + ContentLen, CrcLen));
     public ReadOnlySpan<byte> Buffer => _buffer.AsSpan();
-    public ReadOnlySpan<byte> BinaryBlock => _buffer.AsSpan(0, OverheadLen + DataLen);
-    public Span<byte> DataBuffer => _buffer.AsSpan(HeaderLen, MaxPayloadLen);
-    public ReadOnlySpan<byte> CurrentData => _buffer.AsSpan(HeaderLen, DataLen);
+    public ReadOnlySpan<byte> BinaryBlock => _buffer.AsSpan(0, OverheadLen + ContentLen);
+    public Span<byte> ContentBuffer => _buffer.AsSpan(HeaderLen, MaxPayloadLen);
+    public ReadOnlySpan<byte> CurrentContent => _buffer.AsSpan(HeaderLen, ContentLen);
 
     public BinBlock(byte[] buf)
     {
@@ -35,31 +32,32 @@ public class BinBlock
         : this(new byte[len])
     {
     }
+    public int Clear() => ContentLen = 0;
     public void Reset()
     {
         Type = 0;
-        DataLen = 0;
+        Clear();
     }
-    public int Clear() => DataLen = 0;
+    
     public int Append<T>(T val)
         where T : struct
     {
         //var valLen = Marshal.SizeOf<T>(); //return sizeof(T);
         var valLen = Unsafe.SizeOf<T>();
-        MemoryMarshal.Write(_buffer.AsSpan(HeaderLen + DataLen, valLen), val);
-        DataLen += (ushort)valLen;
+        MemoryMarshal.Write(_buffer.AsSpan(HeaderLen + ContentLen, valLen), val);
+        ContentLen += (ushort)valLen;
         return valLen;
     }
     public int Append(string? str)
     {
-        int writed = EdfBinString.WriteBin(str, _buffer.AsSpan(HeaderLen + DataLen));
+        int writed = EdfBinString.WriteBin(str, _buffer.AsSpan(HeaderLen + ContentLen));
         ArgumentOutOfRangeException.ThrowIfLessThan(writed, 1);
-        DataLen += (ushort)writed;
+        ContentLen += (ushort)writed;
         return writed;
     }
     public ushort UpdateCrc()
     {
-        int blockLenWithoutCrc = HeaderLen + DataLen;
+        int blockLenWithoutCrc = HeaderLen + ContentLen;
         var blkSpan = _buffer.AsSpan(0, blockLenWithoutCrc);
         var crcSpan = _buffer.AsSpan(blockLenWithoutCrc, CrcLen);
         ushort crc = ModbusCRC.Calc(blkSpan);
@@ -68,15 +66,16 @@ public class BinBlock
     }
     public bool CheckCrc()
     {
-        int blockLenWithoutCrc = HeaderLen + DataLen;
+        int blockLenWithoutCrc = HeaderLen + ContentLen;
         var blkSpan = _buffer.AsSpan(0, blockLenWithoutCrc);
         return ModbusCRC.Calc(blkSpan) == Crc;
     }
 
     #region Privates
-    private readonly byte[] _buffer;
+    protected readonly byte[] _buffer;
     #endregion
 }
+
 
 public static class EdfBinBlockExt
 {
@@ -84,7 +83,7 @@ public static class EdfBinBlockExt
     {
         if (!Enum.IsDefined(block.Type))
             throw new ArgumentException(nameof(block.Type));
-        ArgumentOutOfRangeException.ThrowIfEqual(block.DataLen, 0);
+        ArgumentOutOfRangeException.ThrowIfEqual(block.ContentLen, 0);
         block.UpdateCrc();
         var bb = block.BinaryBlock;
         stream.Write(bb);

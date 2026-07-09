@@ -86,8 +86,6 @@ public class TestStructSerialize
             Assert.AreEqual(30, bw.CurrentDataLen);
         }
         var mssrc = new MemoryStream(binBuf);
-        byte[] buf = new byte[1024];
-        using var mem = new MemoryStream(buf);
         using var reader = new BinReader(mssrc);
 
         //if (!reader.ReadBlock())
@@ -224,7 +222,6 @@ public class TestStructSerialize
         using (var file = new FileStream(binFile, FileMode.Open))
         {
             Config cfg;
-            byte seq = 0;
             using (var edf = new BinReader(file))
             {
 
@@ -244,7 +241,6 @@ public class TestStructSerialize
             file.Seek(0, SeekOrigin.End);
             using (var edf = new BinWriter(file, cfg))
             {
-                seq++;
                 edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
             }
         }

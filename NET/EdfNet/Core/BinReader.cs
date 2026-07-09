@@ -1,25 +1,41 @@
-using EdfNet.Core.Gen;
-
 namespace EdfNet.Core;
 
 public class BinReader : BaseReader
 {
     public readonly Config Cfg;
     private readonly BinaryReader _br;
-    private readonly BinBlock _current;
-    protected Schema? CurrentSchema;
 
-    public BinReader(Stream stream, Config? header = default)
+    private readonly byte[] _blkBuf;
+    private readonly BinBlock _current;
+    private readonly BinDataBlock _blkData;
+
+
+    protected Schema? CurrentSchema;
+    private uint _recId = 0;
+    private ushort _prmOffset = 0;  
+
+    public BinReader(Stream stream, Config? cfg = default)
     {
         _br = new BinaryReader(stream);
-        Cfg = Config.Default;
-        _current = new(Cfg.Blocksize);
+        Cfg = cfg ?? Config.Default;
+        _current = new BinBlock(new byte[32]);
         if (ReadBlock())
         {
             var newCfg = ReadHeader();
             if (newCfg != null)
-                _current = new(Cfg.Blocksize);
+                Cfg = newCfg;
         }
+        _blkBuf = new byte[Cfg.Blocksize];
+        _current = new(_blkBuf);
+        _blkData = new(_blkBuf);
+    }
+
+    private void ReadDatBlockHeader()
+    {
+        ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
+        ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.SchemaId, CurrentSchema.Id , nameof(BinDataBlock.SchemaId));
+        ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.RecordId, _recId, nameof(BinDataBlock.RecordId));
+        ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.PrimOffset, _prmOffset, nameof(BinDataBlock.PrimOffset));
     }
 
     public bool ReadBlock()
@@ -36,30 +52,34 @@ public class BinReader : BaseReader
         if (0 < len)
         {
             _current.Type = t;
-            _current.DataLen = len;
+            _current.ContentLen = len;
             int dataLenAndCrcLen = len + BinBlock.CrcLen;
-            int readed = _br.Read(_current.DataBuffer[..dataLenAndCrcLen]);
+            int readed = _br.Read(_current.ContentBuffer[..dataLenAndCrcLen]);
             if (readed != dataLenAndCrcLen)
                 return false;
             if (!_current.CheckCrc())
                 throw new Exception($"Wrong CRC block");
-            if (_current.Type == BlockType.Schema)
+
+            switch(_current.Type)
             {
-                CurrentSchema = ReadSchema();
+                default: throw new Exception($"Wrong block Type: {_current.Type}");
+                case BlockType.Config: break;
+                case BlockType.Schema: CurrentSchema = ReadSchema(); break;
+                case BlockType.Data: ReadDatBlockHeader(); break;
             }
             return true;
         }
         return false;
     }
     public BlockType GetBlockType() => _current.Type;
-    public ushort GetBlockLen() => _current.Len;
-    public ReadOnlySpan<byte> GetBlockData() => _current.CurrentData;
+    public ushort GetBlockLen() => _current.TotalLen;
+    public ReadOnlySpan<byte> GetBlockData() => _blkData.CurrentData;
 
     public Config? ReadHeader()
     {
         if (_current.Type != BlockType.Config)
             return null;
-        var b = _current.CurrentData;
+        var b = _current.CurrentContent;
         return new Config()
         {
             VersMajor = b[0],
@@ -73,13 +93,15 @@ public class BinReader : BaseReader
     {
         if (_current.Type != BlockType.Schema)
             return null;
-        var b = _current.CurrentData;
+        var b = _current.CurrentContent;
         int pos = 0;
         ushort id = MemoryMarshal.Read<ushort>(b[..sizeof(ushort)]);
         pos += sizeof(ushort);
         pos += EdfBinString.ReadBin(b[pos..], out string? name);
         pos += EdfBinString.ReadBin(b[pos..], out string? desc);
-        var type = ParseType(b[pos..], out _);
+        var type = EdfType.Parse(b[pos..]);
+        _recId = 0;
+        _prmOffset = 0;
         return new Schema()
         {
             Id = id,
@@ -237,7 +259,7 @@ public class BinReader : BaseReader
         ArgumentNullException.ThrowIfNull(CurrentSchema);
         EdfErr err;
         ret = default;
-        ReadOnlySpan<byte> src = _current.CurrentData.Slice(_readed, _current.DataLen - _readed);
+        ReadOnlySpan<byte> src = _blkData.CurrentData.Slice(_readed, _blkData.DataLen - _readed);
         do
         {
             int qty = 0;
@@ -276,63 +298,4 @@ public class BinReader : BaseReader
             return;
     }
 
-    static EdfType ParseType(ReadOnlySpan<byte> b, out ReadOnlySpan<byte> rest)
-    {
-        rest = b;
-        if (2 > rest.Length)
-            throw new ArgumentException($"array is too small {b.Length}");
-        if (!Enum.IsDefined(typeof(PoType), b[0]))
-            throw new ArgumentException("type mismatch");
-        // type
-        var type = (PoType)b[0];
-        rest = rest.Slice(1);
-        // dim
-        var dimsCount = rest[0];
-        rest = rest.Slice(1);
-        ushort[]? dims = null;
-        if (0 < dimsCount)
-        {
-            dims = new ushort[dimsCount];
-            for (int i = 0; i < dimsCount; i++)
-            {
-                dims[i] = BinaryPrimitives.ReadUInt16LittleEndian(rest);
-                rest = rest.Slice(sizeof(UInt16));
-            }
-        }
-        // name
-        var nameLen = EdfBinString.ReadBin(rest, out string? name);
-        rest = rest.Slice(nameLen);
-        // childs
-        List<EdfType>? childs = null;
-        if (PoType.Struct == type && 0 < rest.Length)
-        {
-            byte childsCount = rest[0];
-            rest = rest.Slice(1);
-            childs = new List<EdfType>(childsCount);
-            for (int i = 0; i < childsCount; i++)
-                childs.Add(ParseType(rest, out rest));
-        }
-        return new EdfType(name, type, dims, childs?.ToArray());
-    }
-
-
-    public EdfErr ReadData<TEnumerator>(ref TEnumerator enumerator)
-           where TEnumerator : struct, IEdfByteEnumerator
-    {
-        ReadOnlySpan<byte> _blockDataBuffer = [];
-        while (enumerator.MoveNext())
-        {
-            int bytesRead = enumerator.Read(_blockDataBuffer);
-            if (0 >= bytesRead)
-            {
-                bool isReaded = ReadBlock();
-                if (!isReaded)
-                    return EdfErr.SrcDataRequred;
-                _blockDataBuffer = _current.CurrentData;
-                bytesRead = enumerator.Read(_blockDataBuffer);
-            }
-            _blockDataBuffer = _blockDataBuffer.Slice(bytesRead);
-        }
-        return EdfErr.IsOk;
-    }
 }
