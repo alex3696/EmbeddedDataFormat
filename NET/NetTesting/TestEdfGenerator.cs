@@ -302,7 +302,7 @@ public class GenSerializationTests
 
         using var memoryStream = new MemoryStream();
         using var writer = new EdfNet.Core.Gen.BinWriter(memoryStream);
-
+        writer.Write(KeyVal.GetEdfSchema());
         EdfErr writeResult = writer.Write(original);
 
         var enumerator = (KeyValByteEnumerator)original.GetByteEnumerator();

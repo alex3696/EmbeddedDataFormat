@@ -7,7 +7,9 @@ public class BinWriter : BaseDisposable, IWriter
     private readonly Config _cfg;
     private Schema? _currentSchema;
     private readonly Stream _bw;
+    private readonly byte[] _blkBuf;
     private readonly BinBlock _blk;
+    private readonly BinDataBlock _blkData;
     private uint _recId = 0;
     private ushort _prmOffset = 0;
 
@@ -16,7 +18,9 @@ public class BinWriter : BaseDisposable, IWriter
     {
         _cfg = cfg ?? Config.Default;
         _bw = stream;
-        _blk = new(_cfg.Blocksize);
+        _blkBuf = new byte[_cfg.Blocksize];
+        _blk = new(_blkBuf);
+        _blkData = new(_blkBuf);
         if (0 == stream.Position)
             Write(_cfg);
     }
@@ -28,15 +32,30 @@ public class BinWriter : BaseDisposable, IWriter
     }
     public void Flush()
     {
-        if (null != _currentSchema && 0 != _blk.ContentLen)
+        switch (_blk.Type)
         {
-            _bw.Write(_blk);
+            default: break;
+            case BlockType.Config:
+            case BlockType.Schema:
+                if (0 < _blk.ContentLen)
+                {
+                    _bw.Write(_blk);
+                    _blk.Reset();
+                }
+                break;
+            case BlockType.Data:
+                if (null != _currentSchema && 0 != _blkData.DataLen)
+                {
+                    _bw.Write(_blk);
+                    PrepareNewBlock();
+                }
+                break;
         }
-        _blk.Clear();
     }
     public void Write(Config h)
     {
         Flush();
+        _blk.Reset();
         _blk.Type = BlockType.Config;
         _blk.Append(h.VersMajor);
         _blk.Append(h.VersMinor);
@@ -51,6 +70,7 @@ public class BinWriter : BaseDisposable, IWriter
     public void Write(Schema sch)
     {
         Flush();
+        _blk.Reset();
         _blk.Type = BlockType.Schema;
         _blk.Append(sch.Id);
         _blk.Append(sch.Name);
@@ -116,7 +136,7 @@ public class BinWriter : BaseDisposable, IWriter
         where TEnumerator : struct, IEdfByteEnumerator
     {
         // Берем срез свободного места в текущем буфере блока
-        Span<byte> _blockDataBuffer = _blk.ContentBuffer.Slice(_blk.ContentLen);
+        Span<byte> _blockDataBuffer = _blkData.DataBuffer.Slice(_blkData.DataLen);
         while (enumerator.MoveNext())
         {
             // Пробуем записать примитив в доступный остаток блока
@@ -127,7 +147,7 @@ public class BinWriter : BaseDisposable, IWriter
                 // Подготавливаем новый блок, записывая в заголовок SchId, RecId и тип текущего примитива
                 PrepareNewBlock();
                 // Пересчитываем срез свободного места для абсолютно нового, чистого блока
-                _blockDataBuffer = _blk.ContentBuffer.Slice(BinBlock.HeaderLen + _blk.ContentLen);
+                _blockDataBuffer = _blkData.DataBuffer;
                 // Пробуем записать примитив еще раз, теперь уже в начало нового блока
                 bytesWritten = enumerator.Write(_blockDataBuffer);
                 if (0 >= bytesWritten) // Защита от бесконечного цикла (если примитив физически больше размера блока)
@@ -135,7 +155,7 @@ public class BinWriter : BaseDisposable, IWriter
             }
             _prmOffset++;
             // Фиксируем, сколько байт реально записал энумератор в буфер блока
-            _blk.ContentLen += (ushort)bytesWritten;
+            _blkData.DataLen += (ushort)bytesWritten;
 
             // Сдвигаем наш Span вперед, отрезая уже заполненную часть памяти
             _blockDataBuffer = _blockDataBuffer.Slice(bytesWritten);
@@ -184,12 +204,12 @@ public class BinWriter : BaseDisposable, IWriter
         return lambda.Compile();
     }
 
-    private void PrepareNewBlock()
+    void PrepareNewBlock()
     {
         ArgumentNullException.ThrowIfNull(_currentSchema);
-        _blk.Clear();
-        _blk.Append(_currentSchema.Id);
-        _blk.Append(_recId);
-        _blk.Append(_prmOffset);
+        _blkData.Clear();
+        _blkData.SchemaId = _currentSchema.Id;
+        _blkData.RecordId = _recId;
+        _blkData.PrimOffset = _prmOffset;
     }
 }

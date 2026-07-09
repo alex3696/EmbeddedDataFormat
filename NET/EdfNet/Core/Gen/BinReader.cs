@@ -6,7 +6,9 @@ public class BinReader : BaseReader
 {
     public readonly Config Cfg;
     private readonly BinaryReader _br;
+    private readonly byte[] _blkBuf;
     private readonly BinBlock _current;
+    private readonly BinDataBlock _blkData;
     protected Schema? CurrentSchema;
 
     public BinReader(Stream stream, Config? cfg = default)
@@ -18,8 +20,11 @@ public class BinReader : BaseReader
         {
             var newCfg = ReadHeader();
             if (newCfg != null)
-                _current = new(Cfg.Blocksize);
+                Cfg = newCfg;
         }
+        _blkBuf = new byte[Cfg.Blocksize];
+        _current = new(_blkBuf);
+        _blkData = new(_blkBuf);
     }
 
     public bool ReadBlock()
@@ -101,7 +106,7 @@ public class BinReader : BaseReader
                 bool isReaded = ReadBlock();
                 if (!isReaded)
                     return EdfErr.SrcDataRequred;
-                _blockDataBuffer = _current.CurrentContent;
+                _blockDataBuffer = _blkData.DataBuffer;
                 bytesRead = enumerator.Read(_blockDataBuffer);
             }
             _blockDataBuffer = _blockDataBuffer.Slice(bytesRead);
