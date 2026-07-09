@@ -1,5 +1,3 @@
-using EdfNet.Utils;
-
 namespace EdfNet.Base;
 
 public class BaseDisposable : IAnyDisposable

@@ -43,7 +43,15 @@ public class BinWriter : BaseWriter
     {
         switch(_blk.Type)
         {
-            default: _bw.Write(_blk); _blk.Reset(); break;
+            default: break;
+            case BlockType.Config:
+            case BlockType.Schema:
+                if (0 < _blk.ContentLen)
+                {
+                    _bw.Write(_blk);
+                    _blk.Reset();
+                }
+                break;
             case BlockType.Data:
                 if (null != CurrentSchema && 0 != _blkData.DataLen)
                 {
@@ -56,6 +64,7 @@ public class BinWriter : BaseWriter
     public override void Write(Config h)
     {
         Flush();
+        _blk.Reset();
         _blk.Type = BlockType.Config;
         _blk.Append(h.VersMajor);
         _blk.Append(h.VersMinor);
@@ -70,6 +79,7 @@ public class BinWriter : BaseWriter
     public override void Write(Schema sch)
     {
         Flush();
+        _blk.Reset();
         _blk.Type = BlockType.Schema;
         _blk.Append(sch.Id);
         _blk.Append(sch.Name);
@@ -112,8 +122,8 @@ public class BinWriter : BaseWriter
     {
         ArgumentNullException.ThrowIfNull(CurrentSchema);
         _blkData.Clear();
-        _blk.Append(CurrentSchema.Id);
-        _blk.Append(_recId);
-        _blk.Append(_prmOffset);
+        _blkData.SchemaId = CurrentSchema.Id;
+        _blkData.RecordId = _recId;
+        _blkData.PrimOffset = _prmOffset;
     }
 }

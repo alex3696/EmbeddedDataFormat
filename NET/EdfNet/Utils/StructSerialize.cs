@@ -1,4 +1,4 @@
-namespace EdfNet.Base;
+namespace EdfNet.Utils;
 
 public static class StructSerialize
 {
