@@ -91,7 +91,7 @@ public class GenSerializationTests
 
 
     [TestMethod]
-    public void GetEdfSchema_Should_Generate_Correct_Binary_Schema_Structure()
+    public void Generate_Schema()
     {
         // 1. ACT: Получаем сгенерированную бинарную схему напрямую без создания объектов
         Schema schema = KeyVal.GetEdfSchema();
@@ -190,7 +190,7 @@ public class GenSerializationTests
         var original = new KeyVal
         {
             Test1 = "Первая тестовая строка с UTF-8 символами №123",
-            Key = "Уникальный Ключ Скважины А-40",
+            Key = "Уникальный Ключ А-40",
             Val = 987654321,
             NVal = 1230456,
 
@@ -228,7 +228,7 @@ public class GenSerializationTests
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
         writer.Write(KeyVal.GetEdfSchema());
-        EdfErr writeResult = writer.Write(original);
+        EdfErr writeResult = writer.WriteValue(original);
         writer.Flush(); // Сбрасываем остатки буфера в поток
 
         Assert.AreEqual(EdfErr.IsOk, writeResult);

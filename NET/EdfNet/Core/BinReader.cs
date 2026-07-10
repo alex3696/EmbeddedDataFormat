@@ -12,7 +12,7 @@ public class BinReader : BaseReader
 
     protected Schema? CurrentSchema;
     private uint _recId = 0;
-    private ushort _prmOffset = 0;  
+    private ushort _prmOffset = 0;
 
     public BinReader(Stream stream, Config? cfg = default)
     {
@@ -33,7 +33,7 @@ public class BinReader : BaseReader
     private void ReadDatBlockHeader()
     {
         ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
-        ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.SchemaId, CurrentSchema.Id , nameof(BinDataBlock.SchemaId));
+        ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.SchemaId, CurrentSchema.Id, nameof(BinDataBlock.SchemaId));
         ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.RecordId, _recId, nameof(BinDataBlock.RecordId));
         ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.PrimOffset, _prmOffset, nameof(BinDataBlock.PrimOffset));
     }
@@ -60,7 +60,7 @@ public class BinReader : BaseReader
             if (!_current.CheckCrc())
                 throw new Exception($"Wrong CRC block");
 
-            switch(_current.Type)
+            switch (_current.Type)
             {
                 default: throw new Exception($"Wrong block Type: {_current.Type}");
                 case BlockType.Config: break;
@@ -174,9 +174,12 @@ public class BinReader : BaseReader
             skip--;
             return EdfErr.IsOk;
         }
-        EdfErr err = EdfErr.IsOk;
-        if (0 != (err = Primitives.TryBinToSrc(t.Type, src, out var r, out ret)))
+        EdfErr err;
+        if (0 != (err = Primitives.TryBinToSrc(t.Type, src, out var r, out var result)))
             return err;
+        if (result is null)
+            return EdfErr.WrongType;
+        ret = result;
         readed += r;
         qty++;
         return err;

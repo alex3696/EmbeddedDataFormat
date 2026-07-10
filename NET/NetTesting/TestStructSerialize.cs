@@ -117,8 +117,8 @@ public class TestStructSerialize
             public sbyte Text { get; set; }
             public struct PosT
             {
-                public int x { get; set; }
-                public int y { get; set; }
+                public int X { get; set; }
+                public int Y { get; set; }
             };
             public PosT Pos { get; set; }
             public double[,] Temp { get; set; }
@@ -198,9 +198,9 @@ public class TestStructSerialize
             Time = -123,
             State =
             [
-                new(){ Text = 1,Pos = new (){x=11,y=12 },Temp = new double[2,2]{ {1.1,1.2 },{1.3,1.4 } }  },
-                new(){ Text = 2,Pos = new (){x=21,y=22 },Temp = new double[2,2]{ {2.1,2.2 },{2.3,2.4 } }  },
-                new(){ Text = 3,Pos = new (){x=31,y=32 },Temp = new double[2,2]{ {3.1,3.2 },{3.3,3.4 } }  },
+                new(){ Text = 1,Pos = new (){X=11,Y=12 },Temp = new double[2,2]{ {1.1,1.2 },{1.3,1.4 } }  },
+                new(){ Text = 2,Pos = new (){X=21,Y=22 },Temp = new double[2,2]{ {2.1,2.2 },{2.3,2.4 } }  },
+                new(){ Text = 3,Pos = new (){X=31,Y=32 },Temp = new double[2,2]{ {3.1,3.2 },{3.3,3.4 } }  },
             ]
         };
         Assert.AreEqual(EdfErr.IsOk, dw.Write(cv));
@@ -306,16 +306,12 @@ public class TestStructSerialize
         Assert.IsTrue(isEqual);
     }
 
-
-
-
-
-
     [TestMethod]
     public void TestPrimitiveDecomposer()
     {
         int val0 = 123;
         var flaten0 = new PrimitiveDecomposer(val0).ToArray();
+        Assert.HasCount(1, flaten0, "flaten0.Length not equal 1");
         Assert.AreEqual(123, flaten0[0]);
 
         var data = new
@@ -325,19 +321,14 @@ public class TestStructSerialize
             Tags = new[] { "tag1", "tag2" }
         };
         var flaten2 = new PrimitiveDecomposer(data).ToArray();
+        Assert.HasCount(5, flaten2, "flaten2.Length not equal 5");
+
         Assert.AreEqual(1, flaten2[0]);
         Assert.AreEqual("A1", flaten2[1]);
         Assert.IsTrue((bool?)flaten2[2]);
         Assert.AreEqual("tag1", flaten2[3]);
         Assert.AreEqual("tag2", flaten2[4]);
     }
-
-
-
-
-
-
-
 
     [TestMethod]
     public void TestTypeInfEquality()
