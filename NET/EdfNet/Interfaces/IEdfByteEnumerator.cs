@@ -1,4 +1,4 @@
-namespace EdfNet.Core.Gen;
+namespace EdfNet.Interfaces;
 
 public interface IEdfByteEnumerator
 {

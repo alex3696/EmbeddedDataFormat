@@ -1,8 +1,8 @@
 using System.Collections;
 
-namespace EdfNet.Core;
+namespace EdfNet.Ref;
 
-public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
+public struct PrimitiveDecomposer : IEnumerable<object>, IEnumerable
 {
     private readonly object _source;
 

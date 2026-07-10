@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace EdfNet.Base;
 // https://habr.com/ru/articles/721050/
 public static class SynchronousWaitExt

@@ -1,4 +1,4 @@
-namespace EdfNet.Core.Gen
+namespace EdfNet.Gen
 {
     public struct EdfArrayObjectsEnumerator<T, TEnumerator> : IEdfByteEnumerator
         where T : class, new()

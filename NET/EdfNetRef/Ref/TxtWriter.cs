@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Ref;
 
 public class TxtWriter : BaseWriter
 {
@@ -94,8 +94,17 @@ public class TxtWriter : BaseWriter
             Write(";");
     }
 
-    protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w)
-        => Primitives.TrySrcToTxt(t, obj, dst, out w);
+    public override EdfErr Write(object obj)
+    {
+        var enm = new ObjTextEnumerator(obj);
+        return WriteEnumerator(ref enm);
+    }
+    protected override EdfErr TrySrcToX<TEnumerator>(PoType t, ref TEnumerator flatObj, Span<byte> dst, out int w)
+    {
+        return Primitives.TrySrcToTxt(t, ref flatObj, dst, out w);
+    }
+
+
     protected override EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
     {
         if (0 < skip)

@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Ref;
 
 public class BinWriter : BaseWriter
 {
@@ -18,8 +18,11 @@ public class BinWriter : BaseWriter
     }
     protected override Span<byte> _DataBuffer => _blkData.DataBuffer;
 
-    protected override EdfErr TrySrcToX(PoType t, object obj, Span<byte> dst, out int w)
-        => Primitives.TrySrcToBin(t, obj, dst, out w);
+    protected override EdfErr TrySrcToX<TEnumerator>(PoType t, ref TEnumerator flatObj, Span<byte> dst, out int w)
+    {
+        return Primitives.TrySrcToBin(t, ref flatObj, dst, out w);
+    }
+
     protected override EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
         => EdfErr.IsOk;
 
@@ -41,7 +44,7 @@ public class BinWriter : BaseWriter
     }
     public override void Flush()
     {
-        switch(_blk.Type)
+        switch (_blk.Type)
         {
             default: break;
             case BlockType.Config:
@@ -92,6 +95,11 @@ public class BinWriter : BaseWriter
         _recId = 0;
         _prmOffset = 0;
         PrepareNewBlock();
+    }
+    public override EdfErr Write(object obj)
+    {
+        var enm = new ObjByteEnumerator(obj);
+        return WriteEnumerator(ref enm);
     }
 
     private static void Append(BinBlock blk, EdfType t)

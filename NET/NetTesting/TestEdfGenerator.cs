@@ -1,4 +1,4 @@
-using EdfNet.Core.Gen;
+using EdfNet.Interfaces;
 
 namespace NetTest;
 
@@ -224,7 +224,7 @@ public class GenSerializationTests
 
         // Создаем буфер в памяти (имитация файла/флеш-блока)
         using var memoryStream = new MemoryStream(1024);
-        using var writer = new EdfNet.Core.Gen.BinWriter(memoryStream);
+        using var writer = new EdfNet.Gen.BinWriter(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
         writer.Write(KeyVal.GetEdfSchema());
@@ -235,7 +235,7 @@ public class GenSerializationTests
 
         // Сбрасываем поток в начало для чтения
         memoryStream.Position = 0;
-        var reader = new EdfNet.Core.Gen.BinReader(memoryStream);
+        var reader = new EdfNet.Gen.BinReader(memoryStream);
 
         // 3. ACT (READ): Читаем объект обратно из бинарного потока
         if (!reader.ReadBlock())
@@ -301,7 +301,7 @@ public class GenSerializationTests
         };
 
         using var memoryStream = new MemoryStream();
-        using var writer = new EdfNet.Core.Gen.BinWriter(memoryStream);
+        using var writer = new EdfNet.Gen.BinWriter(memoryStream);
         writer.Write(KeyVal.GetEdfSchema());
         EdfErr writeResult = writer.Write(original);
 

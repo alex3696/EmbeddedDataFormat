@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
+using System.Reflection;
 
-namespace EdfNet.Core.Gen;
+namespace EdfNet.Gen;
 
 public class BinWriter : BaseDisposable, IWriter
 {

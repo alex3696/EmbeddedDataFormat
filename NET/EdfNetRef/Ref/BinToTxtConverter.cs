@@ -1,5 +1,6 @@
-namespace EdfNet.Core;
+using EdfNet.Base;
 
+namespace EdfNet.Ref;
 
 public class BinToTxtConverter : BaseDisposable
 {

@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace EdfNet.Base;
 
 public class BaseDisposable : IAnyDisposable

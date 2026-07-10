@@ -1,4 +1,4 @@
-namespace EdfNet.Core.Gen;
+namespace EdfNet.Gen;
 
 public struct EdfArrayPrimitivesEnumerator<T> : IEdfByteEnumerator
     where T : struct // unmanaged заменили на struct, так как мы safe

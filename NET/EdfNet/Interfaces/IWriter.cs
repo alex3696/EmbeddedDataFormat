@@ -1,7 +1,4 @@
-using EdfNet.Core;
-using EdfNet.Core.Gen;
-
-namespace EdfNet;
+namespace EdfNet.Interfaces;
 
 public interface IWriter
 {

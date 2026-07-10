@@ -1,6 +1,4 @@
-using EdfNet.Core.Gen;
-
-namespace EdfNet.Core.Gen;
+namespace EdfNet.Gen;
 
 public class BinReader : BaseReader
 {

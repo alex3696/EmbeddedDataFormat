@@ -19,7 +19,7 @@ public class BinBlock
         set => MemoryMarshal.Write(_buffer.AsSpan(1, 2), value);
     }
     public ushort Crc => MemoryMarshal.Read<ushort>(_buffer.AsSpan(HeaderLen + ContentLen, CrcLen));
-    public ReadOnlySpan<byte> Buffer => _buffer.AsSpan();
+    public Span<byte> Buffer => _buffer.AsSpan();
     public ReadOnlySpan<byte> BinaryBlock => _buffer.AsSpan(0, OverheadLen + ContentLen);
     public Span<byte> ContentBuffer => _buffer.AsSpan(HeaderLen, MaxPayloadLen);
     public ReadOnlySpan<byte> CurrentContent => _buffer.AsSpan(HeaderLen, ContentLen);
@@ -38,7 +38,7 @@ public class BinBlock
         Type = 0;
         Clear();
     }
-    
+
     public int Append<T>(T val)
         where T : struct
     {
@@ -88,5 +88,62 @@ public static class EdfBinBlockExt
         var bb = block.BinaryBlock;
         stream.Write(bb);
         return bb.Length;
+    }
+
+    public static int Read(this Stream stream, BinBlock block)
+    {
+        do
+        {
+            if (1 != stream.Read(block.Buffer[..1]))
+                throw new EndOfStreamException();
+        }
+        while (!Enum.IsDefined(block.Type));
+        var spanContentLen = block.Buffer.Slice(1, 2);
+
+        if (2 != stream.Read(spanContentLen))
+            throw new EndOfStreamException();
+        if (0 < block.ContentLen)
+        {
+            int dataLenAndCrcLen = block.ContentLen + BinBlock.CrcLen;
+            int readed = stream.Read(block.ContentBuffer[..dataLenAndCrcLen]);
+            if (readed != dataLenAndCrcLen)
+                throw new EndOfStreamException();
+            if (!block.CheckCrc())
+                throw new Exception($"Wrong CRC block");
+        }
+        return BinBlock.OverheadLen + block.ContentLen;
+    }
+    public static Config? ReadConfig(this BinBlock block)
+    {
+        if (block.Type != BlockType.Config)
+            return null;
+        var b = block.CurrentContent;
+        return new Config()
+        {
+            VersMajor = b[0],
+            VersMinor = b[1],
+            Encoding = MemoryMarshal.Read<ushort>(b[2..]),
+            Blocksize = MemoryMarshal.Read<ushort>(b[4..]),
+            Flags = MemoryMarshal.Read<Options>(b[8..]),
+        };
+    }
+    public static Schema? ReadSchema(this BinBlock block)
+    {
+        if (block.Type != BlockType.Schema)
+            return null;
+        var b = block.CurrentContent;
+        int pos = 0;
+        ushort id = MemoryMarshal.Read<ushort>(b[..sizeof(ushort)]);
+        pos += sizeof(ushort);
+        pos += EdfBinString.ReadBin(b[pos..], out string? name);
+        pos += EdfBinString.ReadBin(b[pos..], out string? desc);
+        var type = EdfType.Parse(b[pos..]);
+        return new Schema()
+        {
+            Id = id,
+            Name = name,
+            Desc = desc,
+            Type = type
+        };
     }
 }

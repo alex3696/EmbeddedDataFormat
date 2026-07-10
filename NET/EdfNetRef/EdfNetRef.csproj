@@ -4,11 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>false</ImplicitUsings>
     <Nullable>enable</Nullable>
-	<IsAotCompatible>true</IsAotCompatible>
-	<PublishAot>true</PublishAot>
-	<VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
+	<PublishAot>false</PublishAot>
+	<IsAotCompatible>false</IsAotCompatible>
+	<RootNamespace>EdfNet</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+     <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
+  </ItemGroup>
 
 
 </Project>

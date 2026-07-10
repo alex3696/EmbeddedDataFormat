@@ -1,4 +1,5 @@
 using EdfNet.Utils;
+using EdfNet.Ref;
 using System.Runtime.InteropServices;
 using System.Text;
 namespace NetTest;
