@@ -7,16 +7,18 @@
     <Nullable>enable</Nullable>
 <!--
 	<PublishTrimmed>true</PublishTrimmed>
-	<TrimMode>partial</TrimMode>
--->	  
+	
+-->
+	<TrimMode>full</TrimMode>
 	<PublishAot>true</PublishAot>
-	
-	
+	<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+	<EnableAotAnalyzer>true</EnableAotAnalyzer>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
+    <ProjectReference Include="..\NetTesting\NetTest.csproj" />
   </ItemGroup>
 
 </Project>
