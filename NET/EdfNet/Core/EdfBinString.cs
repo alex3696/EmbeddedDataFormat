@@ -1,8 +1,11 @@
+using System.Buffers;
+using System.Text.Unicode;
+
 namespace EdfNet.Core;
 
 public static class EdfBinString
 {
-    public const int MaxLen = 0xFE;
+    public const int MaxLen = 255;
 
     public static int SizeOf(string? str)
     {
@@ -32,7 +35,7 @@ public static class EdfBinString
         var len = (byte)int.Min(MaxLen, Encoding.UTF8.GetByteCount(str));
         if (len > dst.Length)
             return dst.Length - len;
-        Encoding.UTF8.GetBytes(str, dst.Slice(1, len));
+        CopyStringToSpan(str, dst.Slice(1, len));
         dst[0] = len;
         return 1 + len;
     }
@@ -44,7 +47,7 @@ public static class EdfBinString
             return -1;
         }
         var len = b[0];
-        if (byte.MaxValue == len)
+        if (MaxLen < len)
             throw new ArgumentException("BString overflow");
         if (len > b.Length)
         {
@@ -53,6 +56,23 @@ public static class EdfBinString
         }
         str = Encoding.UTF8.GetString(b.Slice(1, len));
         return 1 + len;
+    }
+    public static int CopyStringToSpan(string? str, Span<byte> dst)
+    {
+        if (string.IsNullOrEmpty(str) || dst.IsEmpty)
+        {
+            return 0;
+        }
+        // Безопасно конвертирует строку в UTF-8, пока в dst есть место
+        OperationStatus status = Utf8.FromUtf16(
+            str.AsSpan(),
+            dst,
+            out int charsRead,
+            out int bytesWritten,
+            replaceInvalidSequences: false
+        );
+        // bytesWritten вернет точное число успешно записанных байт
+        return bytesWritten;
     }
 }
 
