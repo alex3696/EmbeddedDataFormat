@@ -6,7 +6,7 @@ namespace EdfGenerator;
 public static class Common
 {
     public const string Attribute = "Attribute";
-    public const string Namespace = "EdfNet";
+    public const string Namespace = "EdfNet.Interfaces";
     public const string SerializeAttribute = "EdfSerializableAttribute";
     public const string ArrayAttribute = "EdfArrayAttribute";
 

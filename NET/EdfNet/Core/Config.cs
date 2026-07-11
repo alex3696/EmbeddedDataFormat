@@ -54,6 +54,10 @@ public class Config : IEquatable<Config>
     {
         //Name = "bdf ".ToCharArray();
     }
+    public Config(ushort blocksize)
+    {
+        Blocksize = blocksize;
+    }
 
     public static readonly Config Default = new();
 
