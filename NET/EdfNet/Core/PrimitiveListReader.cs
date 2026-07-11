@@ -5,6 +5,8 @@ public static class PrimitiveListReader
 {
     public static EdfErr ReadObjects(EdfType t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, List<object> ret)
     {
+        if (PoType.Char == t.Type)
+            return ReadPrimitive(t, src, ref skip, ref qty, ref readed, ret);
         uint totalElement = t.GetTotalElements();
         if (1 < totalElement)
             return ReadArray(t, src, totalElement, ref skip, ref qty, ref readed, ret);
@@ -50,7 +52,7 @@ public static class PrimitiveListReader
             return EdfErr.IsOk;
         }
         EdfErr err = EdfErr.IsOk;
-        if (0 != (err = Primitives.TryBinToSrc(t.Type, src, out var r, out var retVal)))
+        if (0 != (err = Primitives.TryBinToSrc(t, src, out var r, out var retVal)))
             return err;
         if (null != retVal)
             ret.Add(retVal);

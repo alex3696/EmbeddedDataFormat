@@ -99,11 +99,13 @@ public class TxtWriter : BaseWriter
         var enm = new ObjTextEnumerator(obj);
         return WriteEnumerator(ref enm);
     }
-    protected override EdfErr TrySrcToX<TEnumerator>(PoType t, ref TEnumerator flatObj, Span<byte> dst, out int w)
+    protected override EdfErr TrySrcToX<TEnumerator>(EdfType et, ref TEnumerator flatObj, Span<byte> dst, out int w)
     {
-        return Primitives.TrySrcToTxt(t, ref flatObj, dst, out w);
+        w = flatObj.Write(dst);
+        if (0 > w)
+            return EdfErr.DstBufOverflow;
+        return EdfErr.IsOk;
     }
-
 
     protected override EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
     {

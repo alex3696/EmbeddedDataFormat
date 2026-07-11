@@ -57,7 +57,7 @@ public abstract class BaseWriter : BaseDisposable, IWriter
                     break;
                 case EdfErr.IsOk:
                     _skip = 0;
-                    if (null == _currObj && !flatObj.MoveNext())
+                    if (null == _currObj && !flatObj.MoveNext(CurrentSchema.Type))
                     {
                         return (int)EdfErr.IsOk;
                     }
@@ -122,7 +122,7 @@ public abstract class BaseWriter : BaseDisposable, IWriter
         {
             if (null == _currObj)
             {
-                if (!flatObj.MoveNext())
+                if (!flatObj.MoveNext(inf))
                     return EdfErr.SrcDataRequred;
                 _currObj = flatObj.CurrentIndex;
             }

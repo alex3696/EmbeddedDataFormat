@@ -3,7 +3,7 @@ namespace EdfNet.Interfaces;
 public interface IEdfByteEnumerator
 {
     // Продвижение к следующему примитиву
-    bool MoveNext();
+    bool MoveNext(EdfType? et = default);
     // Получение порядкового номера текущего примитива 
     int CurrentIndex { get; }
     // Получение Тип текущего примитива 

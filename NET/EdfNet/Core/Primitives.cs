@@ -2,17 +2,32 @@ namespace EdfNet.Core;
 
 public static class Primitives
 {
-    public static EdfErr TryBinToSrc(PoType t, ReadOnlySpan<byte> src, out int r, out object? obj)
+    public static EdfErr TryBinToSrc(EdfType et, ReadOnlySpan<byte> src, out int r, out object? obj)
     {
+        if (PoType.Char == et.Type)
+        {
+            var edfLen = null == et.Dims ? 0 : et.Dims[0];
+            if (src.Length < edfLen)
+            {
+                r = 0;
+                obj = null;
+                return EdfErr.SrcDataRequred;
+            }
+            var dst = new byte[edfLen];
+            src.Slice(0, edfLen).CopyTo(dst);
+            r = edfLen;
+            obj = dst;
+            return EdfErr.IsOk;
+        }
+
         obj = default;
-        r = t.GetSizeOf();
+        r = et.Type.GetSizeOf();
         if (r > src.Length)
             return EdfErr.SrcDataRequred;
-        switch (t)
+        switch (et.Type)
         {
             case PoType.Struct:
             default: r = 0; return EdfErr.WrongType;
-            case PoType.Char:
             case PoType.UInt8: obj = MemoryMarshal.Read<byte>(src); break;
             case PoType.Int8: obj = MemoryMarshal.Read<sbyte>(src); break;
             case PoType.UInt16: obj = MemoryMarshal.Read<ushort>(src); break;

@@ -56,6 +56,7 @@ public static class PoTypeExt
             TypeCode.UInt64 => PoType.UInt64,
             TypeCode.Single => PoType.Single,
             TypeCode.Double => PoType.Double,
+            TypeCode.String => PoType.String,
             _ => throw new ArgumentOutOfRangeException(nameof(t), t, "Unsupported type"),
         };
     }

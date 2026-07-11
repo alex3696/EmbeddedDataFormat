@@ -131,7 +131,7 @@ public class BinReader : BaseReader
             return EdfErr.IsOk;
         }
         EdfErr err;
-        if (0 != (err = Primitives.TryBinToSrc(t.Type, src, out var r, out var result)))
+        if (0 != (err = Primitives.TryBinToSrc(t, src, out var r, out var result)))
             return err;
         if (result is null)
             return EdfErr.WrongType;
@@ -202,7 +202,7 @@ public class BinReader : BaseReader
             return EdfErr.IsOk;
         }
         EdfErr err = EdfErr.IsOk;
-        if (0 != (err = Primitives.TryBinToSrc(t.Type, src, out var r, out ret)))
+        if (0 != (err = Primitives.TryBinToSrc(t, src, out var r, out ret)))
             return err;
         readed += r;
         qty++;

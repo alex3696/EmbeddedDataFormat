@@ -127,14 +127,6 @@ public class TestStructSerialize
         };
         public StateT[] State { get; set; }
     };
-    // заглушка с возможностью передачи атрибута
-    public class InChar
-    {
-        public InChar(byte[] bytes) => Chars = bytes;
-
-        [EdfCharArray(20)]
-        public byte[] Chars { get; set; }
-    };
 
     static int WriteSample(BaseWriter dw)
     {

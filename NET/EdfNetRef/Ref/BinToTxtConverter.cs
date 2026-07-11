@@ -14,7 +14,7 @@ public class BinToTxtConverter : BaseDisposable
         _srcFile = new FileStream(srcBin, FileMode.Open);
         _dstFile = new FileStream(dstTxt, FileMode.Create);
         _reader = new BinReader(_srcFile);
-        _writer = new TxtWriter(_dstFile);
+        _writer = new TxtWriter(_dstFile, _reader.Cfg);
     }
     protected override void Dispose(bool disposing)
     {

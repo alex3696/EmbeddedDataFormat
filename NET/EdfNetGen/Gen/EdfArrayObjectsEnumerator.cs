@@ -45,13 +45,12 @@ namespace EdfNet.Gen
                 remainder /= _dims[i];
             }
         }
-
-        public bool MoveNext()
+        public bool MoveNext(EdfType? et = default)
         {
             // 1. Если внутренний автомат структуры еще работает — крутим его
             if (_isElementActive)
             {
-                if (_currentElementEnum.MoveNext()) return true;
+                if (_currentElementEnum.MoveNext(et)) return true;
 
                 // Текущий элемент массива закончился
                 _isElementActive = false;
@@ -72,7 +71,7 @@ namespace EdfNet.Gen
             // Важнейший шаг: СРАЗУ делаем первый шаг по примитивам нового элемента.
             // Если у элемента есть поля, он вернет true и мы выйдем из MoveNext() на валидный примитив.
             // Если элемент пустой (хотя у нас [EdfBinSerializable] типы всегда имеют поля), цикл пойдет к следующему элементу массива.
-            if (_currentElementEnum.MoveNext())
+            if (_currentElementEnum.MoveNext(et))
                 return true;
 
             _isElementActive = false;

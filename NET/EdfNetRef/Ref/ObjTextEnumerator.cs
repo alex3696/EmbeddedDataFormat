@@ -1,5 +1,6 @@
 using EdfNet.Interfaces;
 using System.Globalization;
+using System.Linq;
 
 namespace EdfNet.Ref;
 
@@ -7,6 +8,7 @@ public struct ObjTextEnumerator : IEdfByteEnumerator
 {
     // Ссылка на итератор примитивов исходного PrimitiveDecomposer
     private readonly IEnumerator<object> _decomposerEnum;
+    PrimitiveDecomposer _decomposer;
 
     // Скрытый счетчик для отслеживания текущего индекса примитива
     private int _currentIndex;
@@ -20,25 +22,11 @@ public struct ObjTextEnumerator : IEdfByteEnumerator
         {
             ArgumentNullException.ThrowIfNull(_currObj, nameof(_currObj));
             var t = _currObj.GetType();
-            if (t.IsArray && t.GetElementType() == typeof(byte))
+            if (PoType.Char == _decomposer.DstType?.Type && typeof(byte[]) == t)
             {
                 return PoType.Char;
             }
-            return Type.GetTypeCode(t) switch
-            {
-                TypeCode.Byte => PoType.UInt8,
-                TypeCode.SByte => PoType.Int8,
-                TypeCode.UInt16 => PoType.UInt16,
-                TypeCode.Int16 => PoType.Int16,
-                TypeCode.UInt32 => PoType.UInt32,
-                TypeCode.Int32 => PoType.Int32,
-                TypeCode.UInt64 => PoType.UInt64,
-                TypeCode.Int64 => PoType.Int64,
-                TypeCode.Single => PoType.Single,
-                TypeCode.Double => PoType.Double,
-                TypeCode.String => PoType.String,
-                _ => throw new Exception("Unsupported type: " + _currObj.GetType().FullName),
-            };
+            return t.GetPoType();
         }
     }
     public readonly int CurrentPoLen
@@ -47,9 +35,9 @@ public struct ObjTextEnumerator : IEdfByteEnumerator
         {
             ArgumentNullException.ThrowIfNull(_currObj, nameof(_currObj));
             var t = _currObj.GetType();
-            if (t.IsArray && t.GetElementType() == typeof(byte))
+            if (PoType.Char == _decomposer.DstType?.Type && typeof(byte[]) == t)
             {
-                return (_currObj as Array)?.Length ?? 0;
+                return _decomposer.DstType.Dims?.ElementAt(0) ?? 1;
             }
             return Type.GetTypeCode(t) switch
             {
@@ -72,13 +60,17 @@ public struct ObjTextEnumerator : IEdfByteEnumerator
     public ObjTextEnumerator(object source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        var decomposer = new PrimitiveDecomposer(source);
-        _decomposerEnum = decomposer.GetEnumerator();
+        _decomposer = new PrimitiveDecomposer(source);
+        _decomposerEnum = _decomposer.GetEnumerator();
         _currentIndex = -1; // Значение -1 до первого вызова MoveNext()
     }
 
-    public bool MoveNext()
+    // тут надо проанализировать
+    // если  PoType.Char надо брать c# объект весь массив byte[]
+    // иначе по одному элементу
+    public bool MoveNext(EdfType? et = default)
     {
+        _decomposer.DstType = et;
         if (_decomposerEnum.MoveNext())
         {
             _currentIndex++;
@@ -90,17 +82,29 @@ public struct ObjTextEnumerator : IEdfByteEnumerator
 
     public readonly int Write(Span<byte> dst)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(dst.Length, CurrentPoLen);
         ArgumentNullException.ThrowIfNull(_currObj, nameof(_currObj));
         var t = _currObj.GetType();
-        if (t.IsArray && t.GetElementType() == typeof(byte))
+        if (PoType.Char == _decomposer.DstType?.Type)
         {
-            var byteArray = (byte[])_currObj;
-            if (dst.Length < byteArray.Length)
+            if (2 > dst.Length)
                 return -1;
-            byteArray.CopyTo(dst);
-            return byteArray.Length;
+            var src = (byte[])_currObj;
+            int i = 0;
+            dst[0] = 34;
+            var edfLen = null == _decomposer.DstType.Dims ? 0 : _decomposer.DstType.Dims[0];
+            for (; i < int.Min(edfLen, src.Length); i++)
+            {
+                if (i + 1 > dst.Length)
+                    return -1;
+                if (0 == src[i])
+                    break;
+                dst[i + 1] = src[i];
+            }
+            dst[i + 1] = 34;
+            return i + 2;
         }
+        if (dst.Length < CurrentPoLen)
+            return -1;
         return Type.GetTypeCode(t) switch
         {
             TypeCode.Byte => TryFormat((byte)_currObj, dst),
@@ -113,7 +117,7 @@ public struct ObjTextEnumerator : IEdfByteEnumerator
             TypeCode.Int64 => TryFormat((long)_currObj, dst),
             TypeCode.Single => TryFormat((float)_currObj, dst),
             TypeCode.Double => TryFormat((double)_currObj, dst),
-            TypeCode.String => EdfBinString.WriteBin((string?)_currObj, dst),
+            TypeCode.String => TryFormat((string?)_currObj, dst),
             _ => throw new Exception("Unsupported type: " + _currObj.GetType().FullName),
         };
     }
@@ -124,8 +128,29 @@ public struct ObjTextEnumerator : IEdfByteEnumerator
     public static int TryFormat<T>(T obj, Span<byte> dst)
         where T : IUtf8SpanFormattable
     {
-        if (obj.TryFormat(dst, out int w, default, CultureInfo.InvariantCulture))
-            return w;
+        try
+        {
+            if (obj.TryFormat(dst, out int w, default, CultureInfo.InvariantCulture))
+                return w;
+            return -1;
+        }
+        catch (Exception)
+        {
+        }
+        return -1;
+    }
+    public static int TryFormat(string? str, Span<byte> dst)
+    {
+        try
+        {
+            dst[0] = 34;
+            var len = EdfBinString.CopyStringToSpan(str, dst.Slice(1, EdfBinString.MaxLen));
+            dst[len + 1] = 34;
+            return len + 2;
+        }
+        catch (Exception)
+        {
+        }
         return -1;
     }
 }

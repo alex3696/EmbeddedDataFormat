@@ -1,5 +1,5 @@
 using EdfNet.Interfaces;
-using System.Security.Cryptography;
+using System.Linq;
 
 namespace EdfNet.Ref;
 
@@ -7,6 +7,7 @@ public struct ObjByteEnumerator : IEdfByteEnumerator
 {
     // Ссылка на итератор примитивов исходного PrimitiveDecomposer
     private readonly IEnumerator<object> _decomposerEnum;
+    PrimitiveDecomposer _decomposer;
 
     // Скрытый счетчик для отслеживания текущего индекса примитива
     private int _currentIndex;
@@ -20,25 +21,11 @@ public struct ObjByteEnumerator : IEdfByteEnumerator
         {
             ArgumentNullException.ThrowIfNull(_currObj, nameof(_currObj));
             var t = _currObj.GetType();
-            if (t.IsArray && t.GetElementType() == typeof(byte))
+            if (PoType.Char == _decomposer.DstType?.Type && typeof(byte[]) == t)
             {
                 return PoType.Char;
             }
-            return Type.GetTypeCode(t) switch
-            {
-                TypeCode.Byte => PoType.UInt8,
-                TypeCode.SByte => PoType.Int8,
-                TypeCode.UInt16 => PoType.UInt16,
-                TypeCode.Int16 => PoType.Int16,
-                TypeCode.UInt32 => PoType.UInt32,
-                TypeCode.Int32 => PoType.Int32,
-                TypeCode.UInt64 => PoType.UInt64,
-                TypeCode.Int64 => PoType.Int64,
-                TypeCode.Single => PoType.Single,
-                TypeCode.Double => PoType.Double,
-                TypeCode.String => PoType.String,
-                _ => throw new Exception("Unsupported type: " + _currObj.GetType().FullName),
-            };
+            return t.GetPoType();
         }
     }
     public readonly int CurrentPoLen
@@ -47,9 +34,9 @@ public struct ObjByteEnumerator : IEdfByteEnumerator
         {
             ArgumentNullException.ThrowIfNull(_currObj, nameof(_currObj));
             var t = _currObj.GetType();
-            if (t.IsArray && t.GetElementType() == typeof(byte))
+            if (PoType.Char == _decomposer.DstType?.Type && typeof(byte[]) == t)
             {
-                return (_currObj as Array)?.Length ?? 0;
+                return _decomposer.DstType.Dims?.ElementAt(0) ?? 1;
             }
             return Type.GetTypeCode(t) switch
             {
@@ -72,13 +59,14 @@ public struct ObjByteEnumerator : IEdfByteEnumerator
     public ObjByteEnumerator(object source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        var decomposer = new PrimitiveDecomposer(source);
-        _decomposerEnum = decomposer.GetEnumerator();
+        _decomposer = new PrimitiveDecomposer(source);
+        _decomposerEnum = _decomposer.GetEnumerator();
         _currentIndex = -1; // Значение -1 до первого вызова MoveNext()
     }
 
-    public bool MoveNext()
+    public bool MoveNext(EdfType? et = default)
     {
+        _decomposer.DstType = et;
         if (_decomposerEnum.MoveNext())
         {
             _currentIndex++;
@@ -90,17 +78,26 @@ public struct ObjByteEnumerator : IEdfByteEnumerator
 
     public int Write(Span<byte> dst)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(dst.Length, CurrentPoLen);
         ArgumentNullException.ThrowIfNull(_currObj, nameof(_currObj));
         var t = _currObj.GetType();
-        if (t.IsArray && t.GetElementType() == typeof(byte))
+        if (PoType.Char == _decomposer.DstType?.Type)
         {
-            var byteArray = (byte[])_currObj;
-            if (dst.Length < byteArray.Length)
-                return -1;
-            byteArray.CopyTo(dst);
-            return byteArray.Length;
+            var src = (byte[])_currObj;
+            var edfLen = null == _decomposer.DstType.Dims ? 0 : _decomposer.DstType.Dims[0];
+            int i = 0;
+            for (; i < int.Min(edfLen, src.Length); i++)
+            {
+                if (i > dst.Length)
+                    return -1;
+                if (0 == src[i])
+                    break;
+                dst[i] = src[i];
+            }
+            dst.Slice(i, edfLen - i).Clear();
+            return edfLen;
         }
+        if (dst.Length < CurrentPoLen)
+            return -1;
         switch (Type.GetTypeCode(t))
         {
             default: throw new Exception("Unsupported type: " + _currObj.GetType().FullName);
