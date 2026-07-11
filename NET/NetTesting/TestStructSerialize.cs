@@ -1,5 +1,6 @@
-using EdfNet.Utils;
+using EdfNet.Interfaces;
 using EdfNet.Ref;
+using EdfNet.Utils;
 using System.Runtime.InteropServices;
 using System.Text;
 namespace NetTest;
@@ -126,6 +127,15 @@ public class TestStructSerialize
         };
         public StateT[] State { get; set; }
     };
+    // заглушка с возможностью передачи атрибута
+    public class InChar
+    {
+        public InChar(byte[] bytes) => Chars = bytes;
+
+        [EdfCharArray(20)]
+        public byte[] Chars { get; set; }
+    };
+
     static int WriteSample(BaseWriter dw)
     {
         Schema keyValueType = new()
@@ -149,7 +159,22 @@ public class TestStructSerialize
         Assert.AreEqual(EdfErr.IsOk, dw.Write(new KeyValue() { Key = "Key2", Value = "Value2" }));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(new KeyValue() { Key = "Key3", Value = "Value3" }));
 
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ", "String Value"));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ 1", "Value 1"));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ 2", "Value 2"));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ 3", "Value 3"));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "test NULL string", string.Empty));
+
+        const char chBegin = '0'; const char chEnd = '9';
+        char ch = chBegin;
+        StringBuilder sb = new(260);
+        for (int i = 0; i < 260; i++)
+        {
+            sb.Append(ch);
+            ch++;
+            if (chEnd < ch)
+                ch = chBegin;
+        }
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "test 260 string", sb.ToString()));
 
         Schema t = new() { Type = new(PoType.Int32), Id = 0, Name = "weight variable" };
         dw.Write(t);
@@ -166,6 +191,27 @@ public class TestStructSerialize
         Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Char", 20)));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Value", 20)));
         Assert.AreEqual(EdfErr.IsOk, dw.Write(GetCString("Array     Value", 20)));
+
+        Schema schComlexChar = new()
+        {
+            Type = new()
+            {
+                Type = PoType.Struct,
+                Name = "Chat10Test",
+                Childs =
+                [
+                    new (PoType.UInt8),
+                    new (PoType.Char, name: null, dims:[10]),
+                    new (PoType.UInt16),
+                ]
+            }
+        };
+        dw.Write(schComlexChar);
+        dw.Write((byte)8);
+        var schComlexCharBuf = new byte[10];
+        Encoding.UTF8.GetBytes("Char", schComlexCharBuf.AsSpan());
+        dw.Write(schComlexCharBuf);
+        dw.Write((ushort)16);
 
         EdfType comlexVarInf = new()
         {
@@ -215,7 +261,7 @@ public class TestStructSerialize
         string txtConvFile = GetTestFilePath("t_writeConv.tdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
-        using (var w = new BinWriter(file, new Config() { Blocksize = 512 }))
+        using (var w = new BinWriter(file, new Config() { Blocksize = 300 }))
         {
             WriteSample(w);
         }
@@ -247,7 +293,7 @@ public class TestStructSerialize
         }
         // TXT write
         using (var file = new FileStream(txtFile, FileMode.Create))
-        using (var w = new TxtWriter(file))
+        using (var w = new TxtWriter(file, new Config(300)))
         {
             WriteSample(w);
         }
