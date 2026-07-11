@@ -15,7 +15,7 @@ public abstract class BaseWriter : BaseDisposable, IWriter
     }
     //protected override void Dispose(bool disposing) => base.Dispose(disposing);
 
-    protected abstract EdfErr TrySrcToX<TEnumerator>(PoType t, ref TEnumerator flatObj, Span<byte> dst, out int w)
+    protected abstract EdfErr TrySrcToX<TEnumerator>(EdfType t, ref TEnumerator flatObj, Span<byte> dst, out int w)
         where TEnumerator : struct, IEdfByteEnumerator;
 
     protected abstract EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed);
@@ -90,43 +90,15 @@ public abstract class BaseWriter : BaseDisposable, IWriter
         where TEnumerator : struct, IEdfByteEnumerator
     {
         EdfErr err = EdfErr.IsOk;
-        uint totalElement = inf.GetTotalElements();
-
         if (PoType.Char == inf.Type)
         {
-            if (0 < skip)
-            {
-                skip--;
-                return EdfErr.IsOk;
-            }
-            if (null == _currObj)
-            {
-                if (!flatObj.MoveNext())
-                    return EdfErr.WrongType;
-                _currObj = flatObj.CurrentIndex;
-            }
-            if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, ref flatObj, dst, out var w)))
-            {
-                if (EdfErr.DstBufOverflow != err)
-                    return err;
-                _DataLen += (ushort)writed;
-                Flush();
-                _DataLen = 0;
-                writed = 0;
-                dst = _DataBuffer;
-                if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, ref flatObj, dst, out w)))
-                    return err;
-            }
-            _currObj = null;
-            writed += w;
-            wqty++;
-            dst = dst.Slice(w);
-
+            if (EdfErr.IsOk != (err = WritePrimitive(inf, ref dst, ref flatObj, ref skip, ref wqty, ref writed)))
+                return err;
             if (EdfErr.IsOk != (err = WriteSep(SepVarEnd, ref dst, ref skip, ref wqty, ref writed)))
                 return err;
-            return err;
+            return EdfErr.IsOk;
         }
-
+        uint totalElement = inf.GetTotalElements();
         if (1 < totalElement)
             if (EdfErr.IsOk != (err = WriteSep(SepBeginArray, ref dst, ref skip, ref wqty, ref writed)))
                 return err;
@@ -154,7 +126,7 @@ public abstract class BaseWriter : BaseDisposable, IWriter
                     return EdfErr.SrcDataRequred;
                 _currObj = flatObj.CurrentIndex;
             }
-            if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, ref flatObj, dst, out var w)))
+            if (EdfErr.IsOk != (err = TrySrcToX(inf, ref flatObj, dst, out var w)))
             {
                 if (EdfErr.DstBufOverflow != err)
                     return err;
@@ -163,7 +135,7 @@ public abstract class BaseWriter : BaseDisposable, IWriter
                 _DataLen = 0;
                 writed = 0;
                 dst = _DataBuffer;
-                if (EdfErr.IsOk != (err = TrySrcToX(inf.Type, ref flatObj, dst, out w)))
+                if (EdfErr.IsOk != (err = TrySrcToX(inf, ref flatObj, dst, out w)))
                     return err;
             }
             _currObj = null;
