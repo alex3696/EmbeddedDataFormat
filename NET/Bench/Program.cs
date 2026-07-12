@@ -3,15 +3,16 @@
 // -----------------------------------------------------------------------
 
 using BenchmarkDotNet.Running;
+using TestPerfomance;
 
-namespace Bench
+namespace Bench;
+
+internal class Program
 {
-    internal class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            // var _ = BenchmarkRunner.Run(typeof(Program).Assembly);
-            BenchmarkRunner.Run<SortedListVsDictionary>();
-        }
+        // var _ = BenchmarkRunner.Run(typeof(Program).Assembly);
+        //BenchmarkRunner.Run<SortedListVsDictionary>();
+        BenchmarkRunner.Run<PerfCrc16>();
     }
 }

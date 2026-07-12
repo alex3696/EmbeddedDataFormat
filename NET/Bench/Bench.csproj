@@ -10,4 +10,8 @@
     <PackageReference Include="ClrHeapAllocationAnalyzer" Version="3.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.DiagnosticsHub.BenchmarkDotNetDiagnosers" Version="18.7.37220.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
+  </ItemGroup>
 </Project>
