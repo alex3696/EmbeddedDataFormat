@@ -20,10 +20,3 @@ public interface IEdfByteEnumerator<T> : IEdfByteEnumerator
 {
     T Result { get; }
 }
-
-
-public interface IEdfSerializable
-{
-    IEdfByteEnumerator GetByteEnumerator();
-    EdfErr WriteTo<TWriter>(TWriter writer) where TWriter : IWriter;
-}

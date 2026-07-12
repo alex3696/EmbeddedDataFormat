@@ -127,12 +127,6 @@ public class BinWriter : BaseDisposable, IWriter
         return EdfErr.IsOk;
     }
 
-    public EdfErr WriteValue<T>(T val)
-        where T : IEdfSerializable
-    {
-        return val.WriteTo(this);
-    }
-
     public EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
         where TEnumerator : struct, IEdfByteEnumerator
     {

@@ -7,7 +7,7 @@ public struct ObjByteEnumerator : IEdfByteEnumerator
 {
     // Ссылка на итератор примитивов исходного PrimitiveDecomposer
     private readonly IEnumerator<object> _decomposerEnum;
-    PrimitiveDecomposer _decomposer;
+    private readonly PrimitiveDecomposer _decomposer;
 
     // Скрытый счетчик для отслеживания текущего индекса примитива
     private int _currentIndex;

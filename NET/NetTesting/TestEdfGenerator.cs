@@ -18,7 +18,7 @@ public partial class SubVal
     public sbyte ValSByte { get; set; } = 0x33;
 }
 [EdfSerializable]
-public partial class KeyVal : IEdfSerializable
+public partial class KeyVal
 {
     public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }

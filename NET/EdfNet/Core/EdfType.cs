@@ -93,7 +93,7 @@ public class EdfType : IEquatable<EdfType>
         rest = b;
         if (2 > rest.Length)
             throw new ArgumentException($"array is too small {b.Length}");
-        if (!Enum.IsDefined(typeof(PoType), b[0]))
+        if (!Enum.IsDefined((PoType)b[0]))
             throw new ArgumentException("type mismatch");
         // type
         var type = (PoType)b[0];

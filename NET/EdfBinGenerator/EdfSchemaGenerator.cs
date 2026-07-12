@@ -58,7 +58,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("}");
 
         sb.AppendLine();
-        GeneratePartialEdfSerializable(sb, structName);
+        //GeneratePartialEdfSerializable(sb, structName);
 
         context.AddSource($"{structName}_EdfExtension.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
@@ -137,6 +137,15 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         //sb.AppendLine($"            public IEdfByteEnumerator<{structName}> GetByteEnumerator() => new {structName}ByteEnumerator(instance);");
         //sb.AppendLine("        }");
 
+        sb.AppendLine();
+        sb.AppendLine($"    public static {structName}ByteEnumerator GetByteEnumerator(this {structName} val)");
+        sb.AppendLine($"        => new {structName}ByteEnumerator(val);");
+        sb.AppendLine();
+        sb.AppendLine($"    public static EdfErr WriteValue(this IWriter writer, {structName} val)");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        var enm = new {structName}ByteEnumerator(val);");
+        sb.AppendLine($"        return writer.WriteEnumerator(ref enm);");
+        sb.AppendLine("    }");
     }
     private static void GeneratePartialEdfSerializable(StringBuilder sb, string structName)
     {
