@@ -14,20 +14,20 @@ namespace Bench
     //[SimpleJob(RuntimeMoniker.Net10_0, baseline: true)]
     public class Benchmarks
     {
-        private SHA256 sha256 = SHA256.Create();
-        private byte[] data;
+        private SHA256 _sha256 = SHA256.Create();
+        private byte[] _data;
 
         [GlobalSetup]
         public void Setup()
         {
-            data = new byte[10000];
-            new Random(42).NextBytes(data);
+            _data = new byte[10000];
+            new Random(42).NextBytes(_data);
         }
 
         //[Benchmark]
         public byte[] Sha256()
         {
-            return sha256.ComputeHash(data);
+            return _sha256.ComputeHash(_data);
         }
     }
 }

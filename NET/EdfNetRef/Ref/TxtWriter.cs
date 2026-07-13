@@ -23,6 +23,13 @@ public class TxtWriter : BaseWriter
         SepRecEnd = ">"u8.ToArray();
         if (0 == stream.Position)
             Write(Cfg);
+        _rwalker = new()
+        {
+            Flush = RwFlush,
+            GetBuf = RwGetBuf,
+            WriteSep = RwWriteSep,
+            AddWrited = RwAddWrited
+        };
     }
     protected override void Dispose(bool disposing)
     {
@@ -93,6 +100,22 @@ public class TxtWriter : BaseWriter
         else
             Write(";");
     }
+
+
+    private void RwAddWrited(int writed) => _DataLen += (ushort)writed;
+    private void RwFlush() => Flush();
+    Span<byte> RwGetBuf() => _DataBuffer[_DataLen..];
+    EdfErr RwWriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
+        => WriteSep(src, ref dst, ref skip, ref wqty, ref writed);
+
+    readonly EdfTypeRecursiveWalker _rwalker;
+
+    public override EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator flatObj)
+    {
+        ArgumentNullException.ThrowIfNull(CurrentSchema);
+        return _rwalker.Walk(CurrentSchema.Type, ref flatObj);
+    }
+
 
     public override EdfErr Write(object obj)
     {

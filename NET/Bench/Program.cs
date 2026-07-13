@@ -13,6 +13,7 @@ internal class Program
     {
         // var _ = BenchmarkRunner.Run(typeof(Program).Assembly);
         //BenchmarkRunner.Run<SortedListVsDictionary>();
-        BenchmarkRunner.Run<PerfCrc16>();
+        //BenchmarkRunner.Run<PerfCrc16>();
+        BenchmarkRunner.Run<Schema>();
     }
 }

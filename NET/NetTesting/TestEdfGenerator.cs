@@ -1,4 +1,5 @@
 using EdfNet.Interfaces;
+using static EdfNet.Core.EdfTypeFlatExt;
 
 namespace NetTest;
 
@@ -37,7 +38,6 @@ public partial class KeyVal
     [EdfArray([2, 2])]
     public SubVal[,]? Sub { get; set; } = new SubVal[2, 2];
 }
-
 
 [TestClass]
 public class GenSerializationTests
@@ -181,7 +181,29 @@ public class GenSerializationTests
         Assert.AreEqual(PoType.Int8, pSubArray.Childs[2].Type);
     }
 
-
+/*
+| Method                | Runtime        | Mean      | Ratio | Allocated | Alloc Ratio |
+|---------------------- |--------------- |----------:|------:|----------:|------------:|
+| Schema_FlatIRecursive | .NET 10.0      |  61.26 ns |  1.00 |         - |          NA |
+| Schema_FlatEnumerable | .NET 10.0      | 604.88 ns |  9.87 |    1944 B |          NA |
+| Schema_FlatIRecursive | NativeAOT 10.0 | 132.22 ns |  2.16 |         - |          NA |
+| Schema_FlatEnumerable | NativeAOT 10.0 | 831.92 ns | 13.58 |    1944 B |          NA |
+*/
+    [TestMethod]
+    public void Schema_FlatEnumerable()
+    {
+        //Schema schema = KeyVal.GetEdfSchema();
+        Span<EdfType> buf = new EdfType[50];
+        var items = _sch.Type.GetFlatEnumerable(buf);
+        Assert.AreEqual(28, items.Length, "Общее количество плоских элементов схемы должно быть равно 28");
+    }
+    [TestMethod]
+    public void Schema_FlatIRecursive()
+    {
+        Span<EdfType> buf = new EdfType[50];
+        var items = _sch.Type.GetFlatRecursive(buf);
+        Assert.AreEqual(28, items.Length, "Общее количество плоских элементов схемы должно быть равно 28");
+    }
 
     [TestMethod]
     public void KeyVal_Serialization_And_Deserialization_Should_Be_Identical()

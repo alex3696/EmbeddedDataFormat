@@ -1,24 +1,8 @@
 namespace EdfNet.Core;
 
-public abstract class BaseWriter : BaseDisposable, IWriter
+public class EdfTypeRecursiveWalker
+    
 {
-    public readonly Config Cfg;
-    public Schema? CurrentSchema;
-
-    protected abstract ushort _DataLen { get; set; }
-    protected abstract Span<byte> _DataBuffer { get; }
-
-
-    public BaseWriter(Config header)
-    {
-        Cfg = header;
-    }
-    //protected override void Dispose(bool disposing) => base.Dispose(disposing);
-
-    protected abstract EdfErr TrySrcToX<TEnumerator>(EdfType t, ref TEnumerator flatObj, Span<byte> dst, out int w)
-        where TEnumerator : struct, IEdfByteEnumerator;
-
-    protected abstract EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed);
     protected byte[]? SepBeginStruct = null;
     protected byte[]? SepEndStruct = null;
     protected byte[]? SepBeginArray = null;
@@ -27,37 +11,41 @@ public abstract class BaseWriter : BaseDisposable, IWriter
     protected byte[]? SepRecBegin = null;
     protected byte[]? SepRecEnd = null;
 
-    protected int _skip = 0;
+    public delegate EdfErr WriteSepDelegate(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed);
+    public delegate void FlushDelegate();
+    public delegate void SetWritedDelegate(int writed);
+    public delegate Span<byte> GetBufDelegate();
+
+    public required WriteSepDelegate WriteSep;
+    public required FlushDelegate Flush;
+    public required SetWritedDelegate AddWrited;
+    public required GetBufDelegate GetBuf;
+
+    public int PrimitiveOffset { get; set; }
     protected int? _currObj = null;
 
-    public abstract void Write(Config cfg);
-    public abstract void Write(Schema sch);
-    public abstract void Flush();
-
-    public abstract EdfErr Write(object obj);
-    public virtual EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator flatObj)
+    public EdfErr Walk<TEnumerator>(EdfType et, ref TEnumerator flatObj)
         where TEnumerator : struct, IEdfByteEnumerator
     {
-        ArgumentNullException.ThrowIfNull(CurrentSchema);
-        Span<byte> dst = _DataBuffer[_DataLen..];
+        Span<byte> dst = GetBuf();
         EdfErr err;
         do
         {
-            int skip = _skip;
+            int skip = PrimitiveOffset;
             int wqty = 0;
             int writed = 0;
-            err = WriteSingleValue(CurrentSchema.Type, ref dst, ref flatObj, ref skip, ref wqty, ref writed);
-            _DataLen += (ushort)writed;
+            err = WriteSingleValue(et, ref dst, ref flatObj, ref skip, ref wqty, ref writed);
+            AddWrited(writed);
             switch (err)
             {
                 default:
                 case EdfErr.WrongType: return err;
                 case EdfErr.SrcDataRequred:
-                    _skip += wqty;
+                    PrimitiveOffset += wqty;
                     break;
                 case EdfErr.IsOk:
-                    _skip = 0;
-                    if (null == _currObj && !flatObj.MoveNext(CurrentSchema.Type))
+                    PrimitiveOffset = 0;
+                    if (null == _currObj && !flatObj.MoveNext(et))
                     {
                         return (int)EdfErr.IsOk;
                     }
@@ -65,8 +53,8 @@ public abstract class BaseWriter : BaseDisposable, IWriter
                     break;
                 case EdfErr.DstBufOverflow:
                     Flush();
-                    dst = _DataBuffer;
-                    _skip += wqty;
+                    dst = GetBuf();
+                    PrimitiveOffset += wqty;
                     err = EdfErr.IsOk;
                     break;
             }
@@ -112,6 +100,17 @@ public abstract class BaseWriter : BaseDisposable, IWriter
                 return err;
         return err;
     }
+
+
+    protected static EdfErr TrySrcToX<TEnumerator>(EdfType et, ref TEnumerator flatObj, Span<byte> dst, out int w)
+        where TEnumerator : struct, IEdfByteEnumerator
+    {
+        w = flatObj.Write(dst);
+        if (0 > w)
+            return EdfErr.DstBufOverflow;
+        return EdfErr.IsOk;
+    }
+
     private EdfErr WritePrimitive<TEnumerator>(EdfType inf, ref Span<byte> dst, ref TEnumerator flatObj, ref int skip, ref int wqty, ref int writed)
         where TEnumerator : struct, IEdfByteEnumerator
     {
@@ -130,11 +129,10 @@ public abstract class BaseWriter : BaseDisposable, IWriter
             {
                 if (EdfErr.DstBufOverflow != err)
                     return err;
-                _DataLen += (ushort)writed;
+                AddWrited(writed);
                 Flush();
-                _DataLen = 0;
                 writed = 0;
-                dst = _DataBuffer;
+                dst = GetBuf();
                 if (EdfErr.IsOk != (err = TrySrcToX(inf, ref flatObj, dst, out w)))
                     return err;
             }
@@ -175,15 +173,4 @@ public abstract class BaseWriter : BaseDisposable, IWriter
         return err;
     }
 }
-
-public static class BaseWriterExt
-{
-    public static EdfErr WriteInfData(this BaseWriter dw, ushort id, PoType pt, string name, object d)
-    {
-        dw.Write(new Schema() { Id = id, Type = new(pt), Name = name, });
-        ArgumentNullException.ThrowIfNull(dw.CurrentSchema);
-        return dw.Write(d);
-    }
-}
-
 

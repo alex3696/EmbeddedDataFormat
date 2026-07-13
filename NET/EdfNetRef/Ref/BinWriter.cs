@@ -24,43 +24,6 @@ public class BinWriter : BaseWriter
         if (0 > w)
             return EdfErr.DstBufOverflow;
         return EdfErr.IsOk;
-        /*
-        var t = et.Type;
-        if (PoType.Char == t)
-        {
-            w = (int)et.GetTotalElements();
-            if (dst.Length < w)
-                return EdfErr.DstBufOverflow;
-            var sp = dst.Slice(0, w);
-            sp.Clear();
-            flatObj.Write(sp);
-            return EdfErr.IsOk;
-        }
-        w = t.GetSizeOf();
-        if (dst.Length < w)
-            return EdfErr.DstBufOverflow;
-        if (t != flatObj.CurrentPoType)
-            return EdfErr.WrongType;
-        switch (t)
-        {
-            case PoType.Struct:
-            default: w = 0; return EdfErr.WrongType;
-            case PoType.Char: w = flatObj.Write(dst); break;
-            case PoType.UInt8: w = flatObj.Write(dst); break;
-            case PoType.Int8: w = flatObj.Write(dst); break;
-            case PoType.UInt16: w = flatObj.Write(dst); break;
-            case PoType.Int16: w = flatObj.Write(dst); break;
-            case PoType.UInt32: w = flatObj.Write(dst); break;
-            case PoType.Int32: w = flatObj.Write(dst); break;
-            case PoType.UInt64: w = flatObj.Write(dst); break;
-            case PoType.Int64: w = flatObj.Write(dst); break;
-            case PoType.Half: w = flatObj.Write(dst); break;
-            case PoType.Single: w = flatObj.Write(dst); break;
-            case PoType.Double: w = flatObj.Write(dst); break;
-            case PoType.String: w = flatObj.Write(dst); break;
-        }
-        return EdfErr.IsOk;
-        */
     }
 
     protected override EdfErr WriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
@@ -75,6 +38,14 @@ public class BinWriter : BaseWriter
         _blkData = new(_blkBuf);
         if (0 == stream.Position)
             Write(Cfg);
+
+        _rwalker = new()
+        {
+            Flush = RwFlush,
+            GetBuf = RwGetBuf,
+            WriteSep = RwWriteSep,
+            AddWrited = RwAddWrited
+        };
     }
     protected override void Dispose(bool disposing)
     {
@@ -100,6 +71,7 @@ public class BinWriter : BaseWriter
                 {
                     _bw.Write(_blk);
                     PrepareNewBlock();
+                    _DataLen = 0;
                 }
                 break;
         }
@@ -136,6 +108,22 @@ public class BinWriter : BaseWriter
         _prmOffset = 0;
         PrepareNewBlock();
     }
+
+    private void RwAddWrited(int writed) => _DataLen += (ushort)writed;
+    private void RwFlush() => Flush();
+    Span<byte> RwGetBuf() => _blkData.DataBuffer[_DataLen..];
+    static EdfErr RwWriteSep(ReadOnlySpan<byte> src, ref Span<byte> dst, ref int skip, ref int wqty, ref int writed)
+        => EdfErr.IsOk;
+
+    readonly EdfTypeRecursiveWalker _rwalker;
+
+    public override EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator flatObj)
+    {
+        ArgumentNullException.ThrowIfNull(CurrentSchema);
+        return _rwalker.Walk(CurrentSchema.Type, ref flatObj);
+    }
+
+
     public override EdfErr Write(object obj)
     {
         var enm = new ObjByteEnumerator(obj);

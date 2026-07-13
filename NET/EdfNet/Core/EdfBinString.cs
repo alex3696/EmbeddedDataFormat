@@ -7,6 +7,7 @@ public static class EdfBinString
 {
     public const int MaxLen = 255;
 
+    public static int SizeOf(ReadOnlySpan<byte> b) => int.Min(MaxLen, b[0]) + 1;
     public static int SizeOf(string? str)
     {
         if (string.IsNullOrEmpty(str))
