@@ -76,6 +76,7 @@ static int WriteOnePrimitive(EdfContext_t* dw, const EdfType_t* t,
 			return err;
 		// Сбрасываем блок
 		dw->Blk->Len += (uint16_t)(*writed);
+		dw->PrimSkip = (uint16_t)(*wqty);
 		if ((err = EdfFlushData(dw, &w)))
 			return err;
 		// Сбрасываем счетчики для нового блока
@@ -185,7 +186,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 	do
 	{
 		size_t skip = dw->PrimSkip;
-		size_t r = 0, w = 0, wqty = 0;
+		size_t r = 0, w = 0, wqty = dw->PrimSkip;
 		wr = WriteSingleValue(dw, &src, &srcLen, &dst, &dstLen, &skip, &wqty, &r, &w);
 		// Увеличиваем размер занятых данных в текущем блоке на то, что вернул WriteSingleValue.
 		// (Если внутри происходил EdfFlushData, 'w' содержит корректный остаток для нового блока)
@@ -202,9 +203,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 		case ERR_SRC_SHORT:
 			// Входной буфер оборвался на середине примитива/массива.
 			// Запоминаем позицию в схеме (wqty), чтобы при следующем вызове начать с нужного места.
-			if (dw->PrimSkip + wqty > 0xFFFF)
-				return ERR_WRONG_PARAMETERS;
-			dw->PrimSkip += (uint16_t)wqty;
+			dw->PrimSkip = (uint16_t)wqty;
 			return ERR_SRC_SHORT;
 		case ERR_NO:
 			dw->PrimSkip = 0;
