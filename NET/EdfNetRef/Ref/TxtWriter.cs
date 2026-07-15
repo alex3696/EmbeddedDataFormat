@@ -101,6 +101,13 @@ public class TxtWriter : BaseWriter
             Write(";");
     }
 
+    PrimitiveWriterTxt? _writer;
+    public override EdfErr Write(object obj)
+    {
+        _writer ??= new(_st);
+        ArgumentNullException.ThrowIfNull(CurrentSchema);
+        return _writer.DoWrite(CurrentSchema.Type, obj);
+    }
 
     private void RwAddWrited(int writed) => _DataLen += (ushort)writed;
     private void RwFlush() => Flush();
@@ -115,9 +122,7 @@ public class TxtWriter : BaseWriter
         ArgumentNullException.ThrowIfNull(CurrentSchema);
         return _rwalker.Walk(CurrentSchema.Type, ref flatObj);
     }
-
-
-    public override EdfErr Write(object obj)
+    public EdfErr WriteWalker(object obj)
     {
         var enm = new ObjTextEnumerator(obj);
         return WriteEnumerator(ref enm);

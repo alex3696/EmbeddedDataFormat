@@ -1,4 +1,3 @@
-using EdfNet.Interfaces;
 using EdfNet.Ref;
 using EdfNet.Utils;
 using System.Runtime.InteropServices;
@@ -306,8 +305,8 @@ public class TestStructSerialize
         int arrLen = (int)(dw.Cfg.Blocksize / sizeof(uint) * 2.5);
         Schema rec = new()
         {
+            Id = 0xF1F2,
             Type = new() { Type = PoType.Int32, Name = "variable", Dims = [(ushort)arrLen], },
-            Id = 0xF0F1
         };
         dw.Write(rec);
         int[] test = new int[arrLen];

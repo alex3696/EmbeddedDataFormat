@@ -26,6 +26,7 @@ public class BinDataBlock : BinBlock
     public Span<byte> DataBuffer => _buffer.AsSpan(HeaderLen + ServiceLen, MaxPayloadLen - ServiceLen);
     public ReadOnlySpan<byte> CurrentData => _buffer.AsSpan(HeaderLen + ServiceLen, DataLen);
 
+    public Span<byte> GetEmptyBuffer() => _buffer.AsSpan(HeaderLen + ServiceLen + DataLen, MaxPayloadLen - ServiceLen - DataLen);
     public BinDataBlock(byte[] buf)
         : base(buf)
     {

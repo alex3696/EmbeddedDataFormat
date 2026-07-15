@@ -36,7 +36,7 @@ public static class EdfBinString
         var len = (byte)int.Min(MaxLen, Encoding.UTF8.GetByteCount(str));
         if (len > dst.Length)
             return dst.Length - len;
-        CopyStringToSpan(str, dst.Slice(1, len));
+        len = (byte)CopyStringToSpan(str, dst.Slice(1, len));
         dst[0] = len;
         return 1 + len;
     }

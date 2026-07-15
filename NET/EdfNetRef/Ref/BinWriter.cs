@@ -1,3 +1,5 @@
+using EdfNet.Interfaces;
+
 namespace EdfNet.Ref;
 
 public class BinWriter : BaseWriter
@@ -124,11 +126,20 @@ public class BinWriter : BaseWriter
     }
 
 
-    public override EdfErr Write(object obj)
+    public EdfErr WriteWalker(object obj)
     {
         var enm = new ObjByteEnumerator(obj);
         return WriteEnumerator(ref enm);
     }
+
+    PrimitiveWriterBin? _writer;
+    public override EdfErr Write(object obj)
+    {
+        _writer ??= new(new BinDataBlock(_blkBuf), _bw);
+        ArgumentNullException.ThrowIfNull(CurrentSchema);
+        return _writer.DoWrite(CurrentSchema.Type, obj);
+    }
+
 
     private static void Append(BinBlock blk, EdfType t)
     {
