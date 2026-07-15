@@ -3,16 +3,24 @@
   <PropertyGroup>
     <TargetFrameworks>net10.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
+	<Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
-    <PackageReference Include="ClrHeapAllocationAnalyzer" Version="3.0.0" />
+	  <!--
+	  <PackageReference Include="ClrHeapAllocationAnalyzer" Version="3.0.0" />
+	  -->
     <PackageReference Include="Microsoft.VisualStudio.DiagnosticsHub.BenchmarkDotNetDiagnosers" Version="18.7.37220.1" />
+	  
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
+	  <ProjectReference Include="..\EdfBinGenerator\EdfGenerator.csproj"
+						OutputItemType="Analyzer"
+						ReferenceOutputAssembly="false" />
+	  <ProjectReference Include="..\EdfNetGen\EdfNetGen.csproj" />
+	  <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
     <ProjectReference Include="..\NetTesting\NetTest.csproj" />
   </ItemGroup>
 </Project>

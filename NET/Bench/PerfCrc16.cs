@@ -25,7 +25,7 @@ public class PerfCrc16
     public int Size { get; set; }
 
     // Храним данные в виде обычного массива (разрешено для полей класса)
-    private byte[] _currentArray;
+    private byte[]? _currentArray;
     private ushort _expectedCrc;
 
     [GlobalSetup]

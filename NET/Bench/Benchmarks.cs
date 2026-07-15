@@ -15,7 +15,7 @@ namespace Bench
     public class Benchmarks
     {
         private SHA256 _sha256 = SHA256.Create();
-        private byte[] _data;
+        private byte[]? _data;
 
         [GlobalSetup]
         public void Setup()
@@ -27,7 +27,7 @@ namespace Bench
         //[Benchmark]
         public byte[] Sha256()
         {
-            return _sha256.ComputeHash(_data);
+            return _sha256.ComputeHash(_data ?? []);
         }
     }
 }

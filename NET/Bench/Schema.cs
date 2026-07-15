@@ -11,7 +11,7 @@ namespace Bench;
 [SimpleJob(RuntimeMoniker.NativeAot10_0)]
 public class Schema
 {
-    GenSerializationTests _tests;
+    GenSerializationTests? _tests;
 
     [GlobalSetup]
     public void Setup()
@@ -20,8 +20,8 @@ public class Schema
     }
 
     [Benchmark(Baseline = true)]
-    public void Schema_FlatIRecursive() => _tests.Schema_FlatIRecursive();
+    public void Schema_FlatIRecursive() => _tests?.Schema_FlatIRecursive();
     [Benchmark]
-    public void Schema_FlatEnumerable() => _tests.Schema_FlatEnumerable();
+    public void Schema_FlatEnumerable() => _tests?.Schema_FlatEnumerable();
 
 }
