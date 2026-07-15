@@ -49,6 +49,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("using EdfNet.Interfaces;");
         sb.AppendLine("using EdfNet.Core;");
         sb.AppendLine("using EdfNet.Gen;");
+        sb.AppendLine("using EdfSchema = EdfNet.Core.Schema;");
         sb.AppendLine();
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine($"public static class {enumeratorName}");
@@ -67,9 +68,9 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("    /// <summary>");
         sb.AppendLine("    /// Возвращает автоматически сгенерированный бинарный объект Schema для данного типа.");
         sb.AppendLine("    /// </summary>");
-        sb.AppendLine($"    public static Schema GetEdfSchema{structName}()");
+        sb.AppendLine($"    public static EdfSchema GetEdfSchema{structName}()");
         sb.AppendLine("    {");
-        sb.AppendLine("        return new Schema()");
+        sb.AppendLine("        return new EdfSchema()");
         sb.AppendLine("        {");
         sb.AppendLine("            Id = 0,");
         sb.AppendLine($"            Name = \"{structName}Schema\",");
@@ -129,7 +130,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine($"    extension({structName})");
         sb.AppendLine("    {");
-        sb.AppendLine($"        public static Schema GetEdfSchema() => GetEdfSchema{structName}();");
+        sb.AppendLine($"        public static EdfSchema GetEdfSchema() => GetEdfSchema{structName}();");
         sb.AppendLine("    }");
         //sb.AppendLine();
         //sb.AppendLine($"        extension({structName} instance)");

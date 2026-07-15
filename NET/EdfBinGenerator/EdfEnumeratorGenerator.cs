@@ -185,7 +185,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
     // 3. MoveNext
     private static void GenerateMoveNext(StringBuilder sb, List<IPropertySymbol> fields)
     {
-        sb.AppendLine("        public bool MoveNext(EdfType? et = default)");
+        sb.AppendLine("        public bool MoveNext(EdfType et = default)");
         sb.AppendLine("        {");
 
         for (int i = 0; i < fields.Count; i++)

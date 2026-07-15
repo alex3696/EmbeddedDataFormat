@@ -45,7 +45,7 @@ namespace EdfNet.Gen
                 remainder /= _dims[i];
             }
         }
-        public bool MoveNext(EdfType? et = default)
+        public bool MoveNext(EdfType et = default)
         {
             // 1. Если внутренний автомат структуры еще работает — крутим его
             if (_isElementActive)
