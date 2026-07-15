@@ -14,6 +14,8 @@ public class PrimitiveWriterBin : IPrimitiveIo
     public int PrimitivesWritted { get; private set; } = 0;
     public int BytesWritted { get; private set; } = 0;
     public int Skip { get; set; } = 0;
+    public uint RecordId { get; private set; } = 0;
+
     public PrimitiveWriterBin(BinDataBlock blk, Stream dstStream)
     {
         _blk = blk;
@@ -41,6 +43,7 @@ public class PrimitiveWriterBin : IPrimitiveIo
         {
             return EdfErr.DstBufOverflow;
         }
+        RecordId++;
         PrimitivesWritted = 0;
         Skip = 0;
         return EdfErr.IsOk;
@@ -72,6 +75,8 @@ public class PrimitiveWriterBin : IPrimitiveIo
             {
                 _stream.Write(_blk);
                 _blk.DataLen = 0;
+                _blk.PrimOffset = (ushort)PrimitivesWritted;
+                _blk.RecordId = RecordId;
                 continue;
             }
             _blk.DataLen += (ushort)len;

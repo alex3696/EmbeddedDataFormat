@@ -1,5 +1,4 @@
 using EdfNet.Interfaces;
-using static EdfNet.Core.EdfTypeFlatExt;
 
 namespace NetTest;
 
@@ -325,7 +324,7 @@ public class GenSerializationTests
         using var memoryStream = new MemoryStream();
         using var writer = new EdfNet.Gen.BinWriter(memoryStream);
         writer.Write(KeyVal.GetEdfSchema());
-        EdfErr writeResult = writer.Write(original);
+        EdfErr writeResult = writer.WriteValue(original);
 
         var enumerator = (KeyValByteEnumerator)original.GetByteEnumerator();
         writer.WriteEnumerator(ref enumerator);

@@ -112,7 +112,7 @@ public class BinWriter : BaseDisposable, IWriter
     // Потокобезопасный кэш для хранения скомпилированных методов записи под каждый тип
     private static readonly ConcurrentDictionary<Type, Action<BinWriter, object>> _writerCache = new();
 
-    public EdfErr Write(object? obj)
+    public EdfErr Write(object obj)
     {
         throw new NotImplementedException();
     }

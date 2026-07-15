@@ -8,15 +8,15 @@ public class BinDataBlock : BinBlock
         get => MemoryMarshal.Read<ushort>(_buffer.AsSpan(HeaderLen, 2));
         set => MemoryMarshal.Write(_buffer.AsSpan(HeaderLen, 2), value);
     }
-    public uint RecordId
-    {
-        get => MemoryMarshal.Read<uint>(_buffer.AsSpan(HeaderLen + 2, 4));
-        set => MemoryMarshal.Write(_buffer.AsSpan(HeaderLen + 2, 4), value);
-    }
     public ushort PrimOffset
     {
-        get => MemoryMarshal.Read<ushort>(_buffer.AsSpan(HeaderLen + 6, 2));
-        set => MemoryMarshal.Write(_buffer.AsSpan(HeaderLen + 6, 2), value);
+        get => MemoryMarshal.Read<ushort>(_buffer.AsSpan(HeaderLen + 2, 2));
+        set => MemoryMarshal.Write(_buffer.AsSpan(HeaderLen + 2, 2), value);
+    }
+    public uint RecordId
+    {
+        get => MemoryMarshal.Read<uint>(_buffer.AsSpan(HeaderLen + 4, 4));
+        set => MemoryMarshal.Write(_buffer.AsSpan(HeaderLen + 4, 4), value);
     }
     public ushort DataLen
     {
