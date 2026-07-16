@@ -1,6 +1,6 @@
 namespace EdfNet.Ref;
 
-public class PrimitiveWriterTxt : IPrimitiveIo
+public class RecursiveWriterTxt : IPrimitiveIo
 {
     #region Separators
     private void WriteSep(ReadOnlySpan<byte> src)
@@ -10,14 +10,12 @@ public class PrimitiveWriterTxt : IPrimitiveIo
             Skip--;
             return;
         }
-        if (0 == src.Length)
+        if (0 < src.Length)
         {
-            PrimitivesWritted++;
-            return;
+            _stream.Write(src);
+            BytesWritted += src.Length;
         }
-        _stream.Write(src);
         PrimitivesWritted++;
-        BytesWritted += src.Length;
     }
     public void SepRecBegin() => WriteSep(Separator.RecBegin);
     public void SepRecEnd() => WriteSep(Separator.RecEnd);
@@ -30,7 +28,7 @@ public class PrimitiveWriterTxt : IPrimitiveIo
     public int PrimitivesWritted { get; private set; } = 0;
     public int BytesWritted { get; private set; } = 0;
     public int Skip { get; set; } = 0;
-    public PrimitiveWriterTxt(Stream dstStream)
+    public RecursiveWriterTxt(Stream dstStream)
     {
         _stream = dstStream;
     }
@@ -39,26 +37,36 @@ public class PrimitiveWriterTxt : IPrimitiveIo
     {
         _decomposer = new PrimitiveDecomposer(obj);
         _decomposerEnum = _decomposer.GetEnumerator();
-        try
+        _hasCurrent = false;
+        do
         {
-            _walker.Process(edfType, this);
+            try
+            {
+                _walker.Process(edfType, this);
+            }
+            catch (EdfWrongTypeException)
+            {
+                return EdfErr.WrongType;
+            }
+            catch (EdfSrcDataRequredException)
+            {
+                Skip = PrimitivesWritted;
+                return EdfErr.SrcDataRequred;
+            }
+            catch (EdfDstBufOverflowException)
+            {
+                return EdfErr.DstBufOverflow;
+            }
+            PrimitivesWritted = 0;
+            Skip = 0;
+            if (_decomposerEnum.MoveNext())
+            {
+                _hasCurrent = true;
+            }
+            else
+                return EdfErr.IsOk;
         }
-        catch (EdfWrongTypeException)
-        {
-            return EdfErr.WrongType;
-        }
-        catch (EdfSrcDataRequredException)
-        {
-            Skip = PrimitivesWritted;
-            return EdfErr.SrcDataRequred;
-        }
-        catch (EdfDstBufOverflowException)
-        {
-            return EdfErr.DstBufOverflow;
-        }
-        PrimitivesWritted = 0;
-        Skip = 0;
-        return EdfErr.IsOk;
+        while (true);
     }
 
     public void Primitive(EdfType edfType)
@@ -73,22 +81,27 @@ public class PrimitiveWriterTxt : IPrimitiveIo
         ArgumentNullException.ThrowIfNull(edfType, nameof(edfType));
 
         _decomposer.DstType = edfType;
-        if (!_decomposerEnum.MoveNext())
-            throw new EdfSrcDataRequredException();
+        if (!_hasCurrent)
+        {
+            if (!_decomposerEnum.MoveNext())
+                throw new EdfSrcDataRequredException();
+            _hasCurrent = true;
+        }
         var obj = _decomposerEnum.Current;
         ArgumentNullException.ThrowIfNull(obj, nameof(obj));
 
-        var len = PrimitiveWritersTxtStream.TryWritePrimitive(_stream, edfType, obj);
+        var len = PrimitiveWritersTxt.TryWrite(_stream, edfType, obj);
         if (0 > len)
             throw new EdfDstBufOverflowException();
+        _hasCurrent = false;
         BytesWritted += (ushort)len;
         PrimitivesWritted++;
     }
 
 
+    private readonly Stream _stream;
     private readonly EdfTypeWalker _walker = new();
-
     private PrimitiveDecomposer? _decomposer;
     private IEnumerator<object>? _decomposerEnum;
-    private readonly Stream _stream;
+    private bool _hasCurrent;
 }

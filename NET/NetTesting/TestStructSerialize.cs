@@ -1,3 +1,4 @@
+using EdfNet.Interfaces;
 using EdfNet.Ref;
 using EdfNet.Utils;
 using System.Runtime.InteropServices;
@@ -78,7 +79,7 @@ public class TestStructSerialize
 
         byte[] binBuf = new byte[1024];
         using (var memStream = new MemoryStream(binBuf))
-        using (var bw = new BinWriter(memStream))
+        using (var bw = new WriterBin(memStream))
         {
             bw.Write(TestStructInf);
             bw.Write(kvArr);
@@ -127,7 +128,7 @@ public class TestStructSerialize
         public StateT[] State { get; set; }
     };
 
-    static int WriteSample(BaseWriter dw)
+    static int WriteSample(IWriter dw)
     {
         Schema keyValueType = new()
         {
@@ -252,7 +253,7 @@ public class TestStructSerialize
         string txtConvFile = GetTestFilePath("t_writeConv.tdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
-        using (var w = new BinWriter(file, new Config() { Blocksize = 300 }))
+        using (var w = new WriterBin(file, new Config() { Blocksize = 300 }))
         {
             WriteSample(w);
         }
@@ -277,20 +278,20 @@ public class TestStructSerialize
                 }
             }
             file.Seek(0, SeekOrigin.End);
-            using (var edf = new BinWriter(file, cfg))
+            using (var edf = new WriterBin(file, cfg))
             {
                 edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
             }
         }
         // TXT write
         using (var file = new FileStream(txtFile, FileMode.Create))
-        using (var w = new TxtWriter(file, new Config(300)))
+        using (var w = new WriterTxt(file, new Config(300)))
         {
             WriteSample(w);
         }
         // TXT append
         using (var file = new FileStream(txtFile, FileMode.Append))
-        using (var edf = new TxtWriter(file))
+        using (var edf = new WriterTxt(file))
         {
             edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
         }
@@ -300,7 +301,7 @@ public class TestStructSerialize
         Assert.IsTrue(isEqual);
     }
 
-    static int WriteBigVar(BaseWriter dw)
+    static int WriteBigVar(IWriter dw)
     {
         int arrLen = (int)(dw.Cfg.Blocksize / sizeof(uint) * 2.5);
         Schema rec = new()
@@ -327,13 +328,13 @@ public class TestStructSerialize
         string txtConvFile = GetTestFilePath("t_bigConv.tdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
-        using (var w = new BinWriter(file))//dw.Write(Header.Default);
+        using (var w = new WriterBin(file))//dw.Write(Header.Default);
         {
             WriteBigVar(w);
         }
         // TXT write
         using (var file = new FileStream(txtFile, FileMode.Create))
-        using (var w = new TxtWriter(file))
+        using (var w = new WriterTxt(file))
         {
             WriteBigVar(w);
         }

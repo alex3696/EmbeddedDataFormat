@@ -7,14 +7,14 @@ public class BinToTxtConverter : BaseDisposable
     readonly Stream _srcFile;
     readonly Stream _dstFile;
     readonly BinReader _reader;
-    readonly TxtWriter _writer;
+    readonly WriterTxt _writer;
 
     public BinToTxtConverter(string srcBin, string dstTxt)
     {
         _srcFile = new FileStream(srcBin, FileMode.Open);
         _dstFile = new FileStream(dstTxt, FileMode.Create);
         _reader = new BinReader(_srcFile);
-        _writer = new TxtWriter(_dstFile, _reader.Cfg);
+        _writer = new WriterTxt(_dstFile, _reader.Cfg);
     }
     protected override void Dispose(bool disposing)
     {

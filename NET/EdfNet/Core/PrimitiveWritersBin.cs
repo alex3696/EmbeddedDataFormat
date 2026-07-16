@@ -1,8 +1,8 @@
-namespace EdfNet.Ref;
+namespace EdfNet.Core;
 
 public static class PrimitiveWritersBin
 {
-    public static int TryWriteCurrentPrimitive(Span<byte> dst, EdfType edfType, object obj)
+    public static int TryWrite(Span<byte> dst, EdfType edfType, object obj)
     {
         return edfType.Type switch
         {

@@ -1,14 +1,14 @@
 using System.Globalization;
 
-namespace EdfNet.Ref;
+namespace EdfNet.Core;
 
-public class PrimitiveWritersTxtStream
+public class PrimitiveWritersTxt
 {
-    public static int TryWritePrimitive(Stream dst, EdfType edfType, object obj)
+    public static int TryWrite(Stream dst, EdfType edfType, object obj)
     {
         return edfType.Type switch
         {
-            PoType.Char => TryWriteChar(dst, (byte[])obj, null == edfType.Dims ? 0 : edfType.Dims[0]),
+            PoType.Char => PrimitiveWritersTxt.TryWriteChar(dst, (byte[])obj, null == edfType.Dims ? 0 : edfType.Dims[0]),
             PoType.UInt8 => TryWrite(dst, (byte)obj),
             PoType.Int8 => TryWrite(dst, (sbyte)obj),
             PoType.UInt16 => TryWrite(dst, (ushort)obj),

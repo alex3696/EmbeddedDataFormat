@@ -1,4 +1,3 @@
-global using EdfNet.Base;
 global using EdfNet.Core;
 global using EdfNet.Interfaces;
 global using System;

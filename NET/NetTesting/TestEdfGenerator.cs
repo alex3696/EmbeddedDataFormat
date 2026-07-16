@@ -245,7 +245,7 @@ public class GenSerializationTests
 
         // Создаем буфер в памяти (имитация файла/флеш-блока)
         using var memoryStream = new MemoryStream(1024);
-        using var writer = new EdfNet.Gen.BinWriter(memoryStream);
+        using var writer = new EdfNet.Gen.WriterBin(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
         writer.Write(KeyVal.GetEdfSchema());
@@ -322,7 +322,7 @@ public class GenSerializationTests
         };
 
         using var memoryStream = new MemoryStream();
-        using var writer = new EdfNet.Gen.BinWriter(memoryStream);
+        using var writer = new EdfNet.Gen.WriterBin(memoryStream);
         writer.Write(KeyVal.GetEdfSchema());
         EdfErr writeResult = writer.WriteValue(original);
 

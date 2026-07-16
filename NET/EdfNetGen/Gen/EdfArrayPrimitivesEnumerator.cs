@@ -35,7 +35,7 @@ public struct EdfArrayPrimitivesEnumerator<T> : IEdfByteEnumerator
         //    _dims = [];
         //}
     }
-    public bool MoveNext(EdfType et = default)
+    public bool MoveNext(EdfType et = default!)
     {
         if (_index >= _totalLength - 1) return false;
         _index++;

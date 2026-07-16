@@ -38,23 +38,6 @@ public class BinBlock
         Type = 0;
         Clear();
     }
-
-    public int Append<T>(T val)
-        where T : struct
-    {
-        //var valLen = Marshal.SizeOf<T>(); //return sizeof(T);
-        var valLen = Unsafe.SizeOf<T>();
-        MemoryMarshal.Write(_buffer.AsSpan(HeaderLen + ContentLen, valLen), val);
-        ContentLen += (ushort)valLen;
-        return valLen;
-    }
-    public int Append(string? str)
-    {
-        int writed = EdfBinString.WriteBin(str, _buffer.AsSpan(HeaderLen + ContentLen));
-        ArgumentOutOfRangeException.ThrowIfLessThan(writed, 1);
-        ContentLen += (ushort)writed;
-        return writed;
-    }
     public ushort UpdateCrc()
     {
         int blockLenWithoutCrc = HeaderLen + ContentLen;
