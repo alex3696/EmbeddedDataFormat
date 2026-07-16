@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace EdfNet.Ref;
 
@@ -50,7 +49,6 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
         // 3. Если это сложный объект — рекурсивно раскладываем каждое свойство
         else
         {
-            /*
             var props = _propertyCache.GetOrAdd(type, t =>
                 t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.GetIndexParameters().Length == 0)
@@ -59,15 +57,6 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
             foreach (var prop in props)
             {
                 object? value = prop.GetValue(obj);
-                foreach (var subItem in Decompose(value))
-                    yield return subItem;
-            }
-            */
-            var accessors = _propertyAccessorsCache.GetOrAdd(type, CompileAccessors);
-            // Вызов accessor(obj) работает со скоростью нативного C# кода
-            foreach (var accessor in accessors)
-            {
-                object? value = accessor(obj);
                 foreach (var subItem in Decompose(value))
                     yield return subItem;
             }
@@ -82,31 +71,4 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
                type == typeof(decimal);
     }
 
-
-
-    private static readonly ConcurrentDictionary<Type, Func<object, object?>[]> _propertyAccessorsCache = new();
-
-    // Метод генерации и компиляции выражений (вызывается 1 раз для каждого типа)
-    private static Func<object, object?>[] CompileAccessors(Type type)
-    {
-        var props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                        .Where(p => p.GetIndexParameters().Length == 0);
-        var accessors = new List<Func<object, object?>>();
-        // Общий параметр для всех лямбд: (object instance) => ...
-        var instanceParam = Expression.Parameter(typeof(object), "instance");
-        foreach (var prop in props)
-        {
-            // 1. Приведение типа: ((YourTargetType)instance)
-            var castedInstance = Expression.Convert(instanceParam, type);
-            // 2. Обращение к свойству: ((YourTargetType)instance).YourProperty
-            var propertyAccess = Expression.Property(castedInstance, prop);
-            // 3. Приведение результата к object: (object)(((YourTargetType)instance).YourProperty)
-            var castedResult = Expression.Convert(propertyAccess, typeof(object));
-            // 4. Создание лямбды: instance => (object)((TargetType)instance).Property
-            var lambda = Expression.Lambda<Func<object, object?>>(castedResult, instanceParam);
-            // 5. Компиляция в делегат
-            accessors.Add(lambda.Compile());
-        }
-        return accessors.ToArray();
-    }
 }

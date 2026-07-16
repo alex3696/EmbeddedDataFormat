@@ -19,9 +19,5 @@ public class Schema
         _tests = new();
     }
 
-    [Benchmark(Baseline = true)]
-    public void Schema_FlatIRecursive() => _tests?.Schema_FlatIRecursive();
-    [Benchmark]
-    public void Schema_FlatEnumerable() => _tests?.Schema_FlatEnumerable();
 
 }
