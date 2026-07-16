@@ -88,7 +88,7 @@ public class TestStructSerialize
             Assert.AreEqual(30, bw.CurrentDataLen);
         }
         var mssrc = new MemoryStream(binBuf);
-        using var reader = new BinReader(mssrc);
+        var reader = new BinReader(mssrc);
 
         //if (!reader.ReadBlock())
         //    Assert.Fail("there are no block");
@@ -261,21 +261,18 @@ public class TestStructSerialize
         using (var file = new FileStream(binFile, FileMode.Open))
         {
             Config cfg;
-            using (var edf = new BinReader(file))
             {
-
+                var edf = new BinReader(file);
                 cfg = edf.Cfg;
-                try
-                {
-                    while (edf.ReadBlock())
-                    {
-
-                    }
-                }
-                catch (EndOfStreamException)
-                {
-
-                }
+                //try
+                //{
+                //    while (edf.ReadBlock())
+                //    {
+                //    }
+                //}
+                //catch (EndOfStreamException)
+                //{
+                //}
             }
             file.Seek(0, SeekOrigin.End);
             using (var edf = new WriterBin(file, cfg))

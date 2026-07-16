@@ -21,7 +21,6 @@ public class BinToTxtConverter : BaseDisposable
         base.Dispose(disposing);
         if (disposing)
         {
-            _reader.Dispose();
             _writer.Dispose();
             _srcFile.Dispose();
             _dstFile.Dispose();
@@ -37,7 +36,7 @@ public class BinToTxtConverter : BaseDisposable
                 {
                     default: break;
                     case BlockType.Config:
-                        var header = _reader.ReadHeader();
+                        var header = _reader.ReadConfig();
                         if (header != null)
                             _writer.Write(header);
                         break;

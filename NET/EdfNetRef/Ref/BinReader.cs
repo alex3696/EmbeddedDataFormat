@@ -1,71 +1,12 @@
+using EdfNet.Interfaces;
+
 namespace EdfNet.Ref;
 
-public class BinReader : BaseReader
+public class BinReader : BaseReaderBin
 {
-    public readonly Config Cfg;
-    private readonly BinaryReader _br;
-
-    private readonly byte[] _blkBuf;
-    private readonly BinBlock _current;
-    private readonly BinDataBlock _blkData;
-
-
-    protected Schema? CurrentSchema;
-    private uint _recId = 0;
-    private ushort _prmOffset = 0;
-
     public BinReader(Stream stream, Config? cfg = default)
+        :base(stream, cfg)
     {
-        _br = new BinaryReader(stream);
-        Cfg = cfg ?? Config.Default;
-        _current = new BinBlock(new byte[32]);
-        if (ReadBlock())
-        {
-            var newCfg = ReadHeader();
-            if (newCfg != null)
-                Cfg = newCfg;
-        }
-        _blkBuf = new byte[Cfg.Blocksize];
-        _current = new(_blkBuf);
-        _blkData = new(_blkBuf);
-    }
-
-    private void ReadDatBlockHeader()
-    {
-        ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
-        //ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.SchemaId, CurrentSchema.Id, nameof(BinDataBlock.SchemaId));
-        //ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.RecordId, _recId, nameof(BinDataBlock.RecordId));
-        //ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.PrimOffset, _prmOffset, nameof(BinDataBlock.PrimOffset));
-    }
-
-    public bool ReadBlock()
-    {
-        if (0 < _br.BaseStream.Read(_current))
-        {
-            switch (_current.Type)
-            {
-                default: throw new Exception($"Wrong block Type: {_current.Type}");
-                case BlockType.Config: break;
-                case BlockType.Schema: ReadSchema(); break;
-                case BlockType.Data: ReadDatBlockHeader(); break;
-            }
-            return true;
-        }
-        return false;
-    }
-    public BlockType GetBlockType() => _current.Type;
-    public ushort GetBlockLen() => _current.TotalLen;
-    public ReadOnlySpan<byte> GetBlockData() => _blkData.CurrentData;
-
-    public Config? ReadHeader() => _current.ReadConfig();
-    public Schema? ReadSchema()
-    {
-        CurrentSchema = _current.ReadSchema();
-        if (CurrentSchema is null)
-            return null;
-        _recId = 0;
-        _prmOffset = 0;
-        return CurrentSchema;
     }
 
     public static EdfErr ReadObject(EdfType t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
@@ -251,10 +192,5 @@ public class BinReader : BaseReader
         return err;
     }
 
-    protected override void Dispose(bool disposing)
-    {
-        if (!disposing)
-            return;
-    }
 
 }
