@@ -106,7 +106,7 @@ public class RecursiveWriterBin : IPrimitiveIo
 
 
     private readonly Stream _stream;
-    private readonly EdfTypeWalker _walker = new();
+    private readonly EdfTypeWalkerBin _walker = new();
     private readonly BinDataBlock _blk;
     private PrimitiveDecomposer? _decomposer;
     private IEnumerator<object>? _decomposerEnum;
