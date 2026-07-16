@@ -62,7 +62,7 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         _stream.Write(_blk);
         _blk.Reset();
     }
-    public void Write(Schema sch)
+    public virtual void Write(Schema sch)
     {
         Flush();
         _blk.Reset();

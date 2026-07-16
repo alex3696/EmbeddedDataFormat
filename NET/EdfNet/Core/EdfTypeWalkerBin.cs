@@ -1,12 +1,12 @@
 namespace EdfNet.Core;
 
-public class EdfTypeWalkerBin
+public static class EdfTypeWalkerBin
 {
-    public void Process(EdfType et, IPrimitiveIo io)
+    public static void Process(EdfType et, IPrimitiveIo io)
     {
         WriteObj(et, io);
     }
-    private void WriteObj(EdfType inf, IPrimitiveIo io)
+    private static void WriteObj(EdfType inf, IPrimitiveIo io)
     {
         if (PoType.Char == inf.Type)
         {
@@ -17,7 +17,7 @@ public class EdfTypeWalkerBin
         for (int i = 0; i < totalElement; i++)
             WriteObjElement(inf, io);
     }
-    private void WriteObjElement(EdfType inf, IPrimitiveIo io)
+    private static void WriteObjElement(EdfType inf, IPrimitiveIo io)
     {
         if (PoType.Struct == inf.Type)
         {
@@ -34,15 +34,15 @@ public class EdfTypeWalkerBin
     }
 }
 
-public class EdfTypeWalkerBinRef
+public static class EdfTypeWalkerBinRef
 {
-    public void Process<T>(EdfType et, ref T io)
-        where T : struct, IPrimitiveIo
+    public static void Process<T>(EdfType et, ref T io)
+        where T : IPrimitiveIo, allows ref struct
     {
         WriteObj(et, ref io);
     }
-    private void WriteObj<T>(EdfType et, ref T io)
-        where T : struct, IPrimitiveIo
+    private static void WriteObj<T>(EdfType et, ref T io)
+        where T : IPrimitiveIo, allows ref struct
     {
         if (PoType.Char == et.Type)
         {
@@ -53,8 +53,8 @@ public class EdfTypeWalkerBinRef
         for (int i = 0; i < totalElement; i++)
             WriteObjElement(et, ref io);
     }
-    private void WriteObjElement<T>(EdfType et, ref T io)
-        where T : struct, IPrimitiveIo
+    private static void WriteObjElement<T>(EdfType et, ref T io)
+        where T : IPrimitiveIo, allows ref struct
     {
         if (PoType.Struct == et.Type)
         {

@@ -15,6 +15,8 @@ internal class Program
         //BenchmarkRunner.Run<SortedListVsDictionary>();
         //BenchmarkRunner.Run<PerfCrc16>();
         //BenchmarkRunner.Run<Schema>();
-        BenchmarkRunner.Run<ZerroAllocDecomposer>();
+        //BenchmarkRunner.Run<ZerroAllocDecomposer>();
+        BenchmarkRunner.Run<WriterBin_all>();
+        
     }
 }

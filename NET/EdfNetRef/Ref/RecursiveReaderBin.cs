@@ -1,6 +1,6 @@
 namespace EdfNet.Ref;
 
-public class RecursiveWriterBin : IPrimitiveIo
+public class RecursiveReaderBin : IPrimitiveIo
 {
     #region Unused
     public void SepRecBegin() { }
@@ -16,14 +16,16 @@ public class RecursiveWriterBin : IPrimitiveIo
     public int Skip { get; set; } = 0;
     public uint RecordId { get; private set; } = 0;
 
-    public RecursiveWriterBin(BinDataBlock blk, Stream dstStream)
+    public RecursiveReaderBin(BinDataBlock blk, Stream stream)
     {
         _blk = blk;
-        _stream = dstStream;
+        _stream = stream;
     }
 
-    public EdfErr DoWrite(EdfType edfType, object obj)
+    public EdfErr DoRead(EdfType edfType, out object obj, Type type)
     {
+        obj = 1; return EdfErr.IsOk;
+        /*
         _decomposer = new PrimitiveDecomposer(obj);
         _decomposerEnum = _decomposer.GetEnumerator();
         _hasCurrent = false;
@@ -31,7 +33,7 @@ public class RecursiveWriterBin : IPrimitiveIo
         {
             try
             {
-                EdfTypeWalkerBin.Process(edfType, this);
+                _walker.Process(edfType, this);
             }
             catch (EdfWrongTypeException)
             {
@@ -57,6 +59,7 @@ public class RecursiveWriterBin : IPrimitiveIo
                 return EdfErr.IsOk;
         }
         while (true);
+        */
     }
 
     public void Primitive(EdfType edfType)
@@ -106,6 +109,7 @@ public class RecursiveWriterBin : IPrimitiveIo
 
 
     private readonly Stream _stream;
+    private readonly EdfTypeWalker _walker = new();
     private readonly BinDataBlock _blk;
     private PrimitiveDecomposer? _decomposer;
     private IEnumerator<object>? _decomposerEnum;

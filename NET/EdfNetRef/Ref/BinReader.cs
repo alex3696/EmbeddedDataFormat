@@ -4,10 +4,22 @@ namespace EdfNet.Ref;
 
 public class BinReader : BaseReaderBin
 {
+    private readonly RecursiveReaderBin _reader;
     public BinReader(Stream stream, Config? cfg = default)
         :base(stream, cfg)
     {
+        _reader = new(_blkData, _stream);
     }
+
+    public EdfErr TryReadNew<T>(out T? ret)
+        where T : class, new()
+    {
+        ArgumentNullException.ThrowIfNull(CurrentSchema);
+        EdfErr err = _reader.DoRead(CurrentSchema.Type, out var obj, typeof(T));
+        ret = (T)obj;
+        return err;
+    }
+
 
     public static EdfErr ReadObject(EdfType t, ReadOnlySpan<byte> src, ref int skip, ref int qty, ref int readed, ref object ret)
     {
