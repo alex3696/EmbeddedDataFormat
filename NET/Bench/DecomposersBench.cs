@@ -22,7 +22,7 @@ public class DecomposersBench
         _buf = new ArrayBufferWriter<byte>(32);
         _decomposers.StdReflection_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
         _decomposers.Delegate1_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
-        _decomposers.Delegate2_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
+        _decomposers.StackDecomposer_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
         _decomposers.Generator_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
     }
 
@@ -44,12 +44,12 @@ public class DecomposersBench
         }
     }
     [Benchmark]
-    public void Delegate2_GetValue()
+    public void StackDecomposer_GetValue()
     {
         for (int i = 0; i < Size; i++)
         {
             _buf.ResetWrittenCount();
-            _decomposers.Delegate2_GetValue(_list[i], _buf);
+            _decomposers.StackDecomposer_GetValue(_list[i], _buf);
         }
     }
     [Benchmark]

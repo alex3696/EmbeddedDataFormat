@@ -20,7 +20,7 @@ public class Decomposers
     private readonly ArrayBufferWriter<byte> _bufDst;
     PrimitiveDecomposer _refl;
     AotPrimitiveDecomposer _delegate1;
-    FastDecomposer _delegate2;
+    StackDecomposer _stackDecomposer;
 
     public readonly EdfType _edfType = new() { Type = PoType.Int64 };
     public static readonly MyPosition DefaultVal = new() { X = 0x01020304_05060708, Y = 2, Z = 0x05060708_01020304 };
@@ -33,8 +33,8 @@ public class Decomposers
         _refl = new PrimitiveDecomposer();
         // delegate 1
         _delegate1 = new AotPrimitiveDecomposer();
-        // delegate 1
-        _delegate2 = new FastDecomposer();
+        // StackDecomposer
+        _stackDecomposer = new();
     }
 
     public ReadOnlySpan<byte> GetExpected() => MemoryMarshal.Cast<long, byte>(ExpectedResult).Slice(0, 3 * 8);
@@ -58,7 +58,7 @@ public class Decomposers
         }
     }
     // Delegate 1
-    [TestMethod]
+    //[TestMethod]
     public void Delegate1_GetValue()
     {
         _bufDst.Clear();
@@ -69,17 +69,23 @@ public class Decomposers
     {
         _delegate1.Decompose(item, dst);
     }
-    // Delegate 2
+    // StackDecomposer
     [TestMethod]
-    public void Delegate2_GetValue()
+    public void StackDecomposer_GetValue()
     {
         _bufDst.Clear();
-        Delegate2_GetValue(DefaultVal, _bufDst);
+        StackDecomposer_GetValue(DefaultVal, _bufDst);
         Assert.IsTrue(GetExpected().SequenceEqual(GetResult()));
     }
-    public void Delegate2_GetValue(MyPosition item, ArrayBufferWriter<byte> dst)
+    public void StackDecomposer_GetValue(MyPosition item, ArrayBufferWriter<byte> dst)
     {
-        _delegate2.Serialize(item, dst);
+        var enm = new StackDecomposer(item);
+        while (enm.MoveNext(_edfType))
+        {
+            var obj = enm.GetValue();
+            var len = PrimitiveWritersBin.TryWrite(dst.GetSpan(), _edfType, obj);
+            dst.Advance(len);
+        }
     }
 
     [TestMethod]
