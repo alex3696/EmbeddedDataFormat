@@ -5,8 +5,32 @@ using System.Runtime.CompilerServices;
 
 namespace EdfNet.Ref;
 
-public class FastDecomposerIo
+public interface IPropertyAccessor
 {
+    void WriteValue(object target, IBufferWriter<byte> writer);
+    void ReadValue(object target, IBufferWriter<byte> writer);
+}
+
+public class PropertyAccessor<TTarget, TProperty> : IPropertyAccessor
+    where TTarget : class
+    where TProperty : struct
+{
+    private readonly Func<TTarget, TProperty> _getter;
+    private readonly Action<TTarget, TProperty> _setter;
+    public PropertyAccessor(MethodInfo getMethod, MethodInfo setMethod)
+    {
+        _getter = (Func<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Func<TTarget, TProperty>), getMethod);
+        _setter = (Action<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Action<TTarget, TProperty>), setMethod);
+    }
+    public void WriteValue(object target, IBufferWriter<byte> writer)
+    {
+        TProperty value = _getter((TTarget)target);
+        Write(value, writer);
+    }
+    public void ReadValue(object target, IBufferWriter<byte> buf)
+    {
+        _setter.Invoke((TTarget)target, Read<TProperty>(buf));
+    }
     public static void Write<T>(T value, IBufferWriter<byte> writer)
         where T : struct
     {
@@ -25,76 +49,36 @@ public class FastDecomposerIo
         return val;
     }
 }
-public interface IPropertyAccessor
-{
-    void WriteValue(object target, IBufferWriter<byte> writer);
-    void ReadValue(object target, IBufferWriter<byte> writer);
-}
-
-public class PropertyAccessor<TTarget, TProperty> : IPropertyAccessor
-    where TTarget : class
-    where TProperty : struct
-{
-    private readonly Func<TTarget, TProperty> _getter;
-    private readonly Action<TTarget, TProperty> _setter;
-
-    public PropertyAccessor(MethodInfo getMethod, MethodInfo setMethod)
-    {
-        // Использован System.Delegate вместо delegate с маленькой буквы
-        _getter = (Func<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Func<TTarget, TProperty>), getMethod);
-        _setter = (Action<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Action<TTarget, TProperty>), setMethod);
-    }
-
-    public void WriteValue(object target, IBufferWriter<byte> writer)
-    {
-        TProperty value = _getter((TTarget)target);
-        FastDecomposerIo.Write(value, writer);
-    }
-    public void ReadValue(object target, IBufferWriter<byte> buf)
-    {
-        _setter.Invoke((TTarget)target, FastDecomposerIo.Read<TProperty>(buf));
-    }
-}
 
 public class FastDecomposer
 {
     private static readonly ConcurrentDictionary<Type, List<IPropertyAccessor>> _accessorCache = new();
-
-    private readonly object _source;
     public EdfType? DstType { get; set; }
 
     public FastDecomposer()
     {
-        //_source = source ?? throw new ArgumentNullException(nameof(source));
     }
-
-    // Внешний API метод для запуска сериализации объекта
     public void Serialize(object src, IBufferWriter<byte> writer)
     {
-        var accessors = GetOrBuildAccessors(_source.GetType());
+        var accessors = GetOrBuildAccessors(src.GetType());
         foreach (var accessor in accessors)
         {
-            accessor.WriteValue(_source, writer);
+            accessor.WriteValue(src, writer);
         }
     }
-
-    // Внешний API метод для запуска десериализации в объект
-    public void Deserialize(IBufferWriter<byte> buf)
+    public void Deserialize(object dst, IBufferWriter<byte> buf)
     {
-        var accessors = GetOrBuildAccessors(_source.GetType());
+        var accessors = GetOrBuildAccessors(dst.GetType());
         foreach (var accessor in accessors)
         {
-            accessor.ReadValue(_source, buf);
+            accessor.ReadValue(dst, buf);
         }
     }
-
-    // Построение и кэширование плоского списка аксессоров для сложных структур данных
-    private List<IPropertyAccessor> GetOrBuildAccessors(Type type)
+    private static List<IPropertyAccessor> GetOrBuildAccessors(Type type)
     {
         return _accessorCache.GetOrAdd(type, t => BuildAccessorsFlat(t).ToList());
     }
-
-    private IEnumerable<IPropertyAccessor> BuildAccessorsFlat(Type type)
+    private static IEnumerable<IPropertyAccessor> BuildAccessorsFlat(Type type)
     {
         if (IsSimpleType(type))
         {
@@ -128,19 +112,15 @@ public class FastDecomposer
             // Дополнительные ветки для массивов/коллекций (пропущены для лаконичности)
         }
     }
-
-    // Фабрика для создания типизированного аксессора без Boxing
-    public static IPropertyAccessor MakeAccessor(Type targetType, PropertyInfo prop)
+    private static IPropertyAccessor MakeAccessor(Type targetType, PropertyInfo prop)
     {
         Type accessorGenericType = typeof(PropertyAccessor<,>).MakeGenericType(targetType, prop.PropertyType);
-
         return (IPropertyAccessor)Activator.CreateInstance(
             accessorGenericType,
             prop.GetMethod!,
             prop.SetMethod!
         )!;
     }
-
     private static bool IsSimpleType(Type type)
     {
         return type.IsPrimitive ||

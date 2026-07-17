@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
+using NetTest;
 using System.IO;
 
 namespace Bench;
@@ -27,7 +28,7 @@ public class WriterBin_all
         _writerRef = new(_ms);
         _list = new MyPosition[Size];
         for (int i = 0; i < Size; i++)
-            _list[i] = new MyPosition() { X = i, Y = i / 2d, Z = i / 3d };
+            _list[i] = new MyPosition() { X = i, Y = i * 2, Z = i * 3 };
         _writerEnum.Write(MyPosition.GetEdfSchema());
         _writerRef.Write(MyPosition.GetEdfSchema());
     }

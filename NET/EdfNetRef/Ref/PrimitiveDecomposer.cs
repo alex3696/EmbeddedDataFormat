@@ -11,7 +11,7 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
     private readonly object _source;
     public EdfType? DstType { get; set; }
 
-    public PrimitiveDecomposer(object source)
+    public PrimitiveDecomposer(object source = default!)
     {
         _source = source;
     }
@@ -19,7 +19,7 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
     public IEnumerator<object> GetEnumerator() => Decompose(_source).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    private IEnumerable<object> Decompose(object? obj)
+    public IEnumerable<object> Decompose(object? obj)
     {
         if (obj == null) yield break;
 
@@ -30,10 +30,7 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
         {
             yield return obj;
         }
-        else if (obj is Array
-            && type.GetElementType() == typeof(byte)
-            && 1 == type.GetArrayRank()
-            && PoType.Char == DstType?.Type)
+        else if (obj is byte[] && PoType.Char == DstType?.Type)
         {
             yield return obj;
         }
