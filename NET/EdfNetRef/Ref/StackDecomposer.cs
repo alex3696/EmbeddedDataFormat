@@ -3,23 +3,24 @@ using System.Linq;
 
 namespace EdfNet.Ref;
 
-public struct StackDecomposer
+public class StackDecomposer
 {
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = [];
 
     private object _source;
-    private readonly Stack<IContextNode> _stack = new();
+    private Stack<IContextNode> _stack;
     private IContextNode? _currentNode;
 
     public EdfType? DstType { get; set; }
 
     public StackDecomposer(object source = default!)
     {
-        Reset(_source);
+        Reset(source);
     }
 
     public void Reset(object source)
     {
+        _stack ??= new();
         _stack.Clear();
         _currentNode = null;
 
@@ -37,25 +38,20 @@ public struct StackDecomposer
         while (_stack.Count > 0)
         {
             var top = _stack.Peek();
-
             if (!top.MoveNext())
             {
                 _stack.Pop();
                 continue;
             }
-
             object? item = top.CurrentValue;
             if (item == null) continue;
-
             Type type = item.GetType();
-
             // 1. Если это простой тип или массив байт в режиме Char — это наш целевой примитив
             if (IsSimpleType(type) || (item is byte[] && PoType.Char == DstType?.Type))
             {
                 _currentNode = top;
                 return true;
             }
-
             // 2. Если это массив (но не byte[] в режиме Char) — уходим вглубь по массиву
             if (type.IsArray)
             {
@@ -72,7 +68,6 @@ public struct StackDecomposer
                 _stack.Push(new ObjectNode(item, props));
             }
         }
-
         _currentNode = null;
         return false;
     }

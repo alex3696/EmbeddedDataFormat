@@ -2,6 +2,7 @@ using EdfNet.Interfaces;
 using EdfNet.Ref;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NetTest;
@@ -34,7 +35,7 @@ public class Decomposers
         // delegate 1
         _delegate1 = new AotPrimitiveDecomposer();
         // StackDecomposer
-        _stackDecomposer = new();
+        _stackDecomposer = new StackDecomposer(DefaultVal);
     }
 
     public ReadOnlySpan<byte> GetExpected() => MemoryMarshal.Cast<long, byte>(ExpectedResult).Slice(0, 3 * 8);
@@ -79,10 +80,10 @@ public class Decomposers
     }
     public void StackDecomposer_GetValue(MyPosition item, ArrayBufferWriter<byte> dst)
     {
-        var enm = new StackDecomposer(item);
-        while (enm.MoveNext(_edfType))
+        _stackDecomposer.Reset(item);
+        while (_stackDecomposer.MoveNext(_edfType))
         {
-            var obj = enm.GetValue();
+            var obj = _stackDecomposer.GetValue();
             var len = PrimitiveWritersBin.TryWrite(dst.GetSpan(), _edfType, obj);
             dst.Advance(len);
         }
