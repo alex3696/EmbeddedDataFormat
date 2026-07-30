@@ -52,4 +52,59 @@ public static class PrimitiveWritersBin
         return len;
     }
 
+
+    public static int TryRead(ReadOnlySpan<byte> src, EdfType edfType, out object? obj)
+    {
+        return edfType.Type switch
+        {
+            PoType.Char => TryReadChar(src, null == edfType.Dims ? 0 : edfType.Dims[0], out obj),
+            PoType.UInt8 => TryRead<byte>(src, out obj),
+            PoType.Int8 => TryRead<sbyte>(src, out obj),
+            PoType.UInt16 => TryRead<ushort>(src, out obj),
+            PoType.Int16 => TryRead<short>(src, out obj),
+            PoType.UInt32 => TryRead<uint>(src, out obj),
+            PoType.Int32 => TryRead<int>(src, out obj),
+            PoType.UInt64 => TryRead<ulong>(src, out obj),
+            PoType.Int64 => TryRead<long>(src, out obj),
+            PoType.Single => TryRead<float>(src, out obj),
+            PoType.Double => TryRead<double>(src, out obj),
+            PoType.String => TryReadString(src, out obj),
+            _ => throw new EdfException($"Unsupported type: {edfType.Type}"),
+        };
+    }
+    public static int TryRead<T>(ReadOnlySpan<byte> dst, out object? val)
+    where T : struct
+    {
+        var len = Marshal.SizeOf<T>();
+        if (dst.Length < len)
+        {
+            val = default;
+            return -1; //throw new EdfDstBufOverflowException();
+        }
+        val = MemoryMarshal.Read<T>(dst);
+        return len;
+    }
+    public static int TryReadChar(ReadOnlySpan<byte> src, int edfLen, out object? charArray)
+    {
+        if (src.Length < edfLen)
+        {
+            charArray = default;
+            return -1; //throw new EdfDstBufOverflowException();
+        }
+        var ret = new byte[edfLen];
+        src.Slice(0, edfLen).CopyTo(ret);
+        charArray = ret;
+        return edfLen;
+    }
+    public static int TryReadString(ReadOnlySpan<byte> src, out object? str)
+    {
+        var len = EdfBinString.ReadBin(src, out var s);
+        if (1 > len)
+        {
+            str = default;
+            return -1; //throw new EdfDstBufOverflowException();
+        }
+        str = s;
+        return len;
+    }
 }

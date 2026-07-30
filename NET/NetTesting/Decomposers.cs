@@ -2,7 +2,6 @@ using EdfNet.Interfaces;
 using EdfNet.Ref;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NetTest;
@@ -20,7 +19,6 @@ public class Decomposers
 {
     private readonly ArrayBufferWriter<byte> _bufDst;
     PrimitiveDecomposer _refl;
-    AotPrimitiveDecomposer _delegate1;
     StackDecomposer _stackDecomposer;
 
     public readonly EdfType _edfType = new() { Type = PoType.Int64 };
@@ -32,8 +30,6 @@ public class Decomposers
         _bufDst = new ArrayBufferWriter<byte>(32);
         // reflection
         _refl = new PrimitiveDecomposer();
-        // delegate 1
-        _delegate1 = new AotPrimitiveDecomposer();
         // StackDecomposer
         _stackDecomposer = new StackDecomposer(DefaultVal);
     }
@@ -58,18 +54,6 @@ public class Decomposers
             dst.Advance(len);
         }
     }
-    // Delegate 1
-    //[TestMethod]
-    public void Delegate1_GetValue()
-    {
-        _bufDst.Clear();
-        Delegate1_GetValue(DefaultVal, _bufDst);
-        Assert.IsTrue(GetExpected().SequenceEqual(GetResult()));
-    }
-    public void Delegate1_GetValue(MyPosition item, ArrayBufferWriter<byte> dst)
-    {
-        _delegate1.Decompose(item, dst);
-    }
     // StackDecomposer
     [TestMethod]
     public void StackDecomposer_GetValue()
@@ -83,8 +67,7 @@ public class Decomposers
         _stackDecomposer.Reset(item);
         while (_stackDecomposer.MoveNext(_edfType))
         {
-            var obj = _stackDecomposer.GetValue();
-            var len = PrimitiveWritersBin.TryWrite(dst.GetSpan(), _edfType, obj);
+            var len = _stackDecomposer.Write(dst.GetSpan());
             dst.Advance(len);
         }
     }
@@ -104,5 +87,29 @@ public class Decomposers
             var len = enm.Write(dst.GetSpan());
             dst.Advance(len);
         }
+    }
+
+    [TestMethod]
+    public void TestPrimitiveDecomposer()
+    {
+        int val0 = 123;
+        var flaten0 = new PrimitiveDecomposer(val0).ToArray();
+        Assert.HasCount(1, flaten0, "flaten0.Length not equal 1");
+        Assert.AreEqual(123, flaten0[0]);
+
+        var data = new
+        {
+            Id = 1,
+            Meta = new { Code = "A1", Active = true },
+            Tags = new[] { "tag1", "tag2" }
+        };
+        var flaten2 = new PrimitiveDecomposer(data).ToArray();
+        Assert.HasCount(5, flaten2, "flaten2.Length not equal 5");
+
+        Assert.AreEqual(1, flaten2[0]);
+        Assert.AreEqual("A1", flaten2[1]);
+        Assert.IsTrue((bool?)flaten2[2]);
+        Assert.AreEqual("tag1", flaten2[3]);
+        Assert.AreEqual("tag2", flaten2[4]);
     }
 }
