@@ -1,32 +1,62 @@
+using EdfNet.Interfaces;
 using System.Collections;
-using System.Collections.Concurrent;
-using System.Linq;
 
 namespace EdfNet.Ref;
 
-public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
+public class PrimitiveDecomposer : IEdfByteEnumerator
 {
-    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = [];
-
-    private readonly object _source;
+    private IEnumerator<object> _enumerator;
     public EdfType? DstType { get; set; }
+    public int CurrentIndex { get; private set; }
+    public PoType CurrentPoType => DstType.Type;
+    public int CurrentPoLen => CurrentPoType.GetSizeOf();
 
-    public PrimitiveDecomposer(object source = default!)
+    public PrimitiveDecomposer()
     {
-        _source = source;
+    }
+    public void Reset(object? source)
+    {
+        CurrentIndex = -1;
+        if (source != null)
+        {
+            _enumerator = Decompose(source).GetEnumerator();
+        }
+        else
+            _enumerator?.Reset();
+    }
+    public bool MoveNext(EdfType? et = null)
+    {
+        DstType = et;
+        return _enumerator.MoveNext();
     }
 
-    public IEnumerator<object> GetEnumerator() => Decompose(_source).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    public int WriteTxt(Stream dst)
+    {
+        var obj = _enumerator.Current;
+        ArgumentNullException.ThrowIfNull(obj, nameof(obj));
+        ArgumentNullException.ThrowIfNull(DstType, nameof(DstType));
+        return PrimitiveWritersTxt.TryWrite(dst, DstType, obj);
+    }
+    public int Write(Span<byte> dst)
+    {
+        var obj = _enumerator.Current;
+        ArgumentNullException.ThrowIfNull(obj, nameof(obj));
+        ArgumentNullException.ThrowIfNull(DstType, nameof(DstType));
+        return PrimitiveWritersBin.TryWrite(dst, DstType, obj);
+    }
+    public int Read(ReadOnlySpan<byte> src)
+    {
+        throw new NotImplementedException();
+    }
 
-    public IEnumerable<object> Decompose(object? obj)
+    private IEnumerable<object> Decompose(object? obj)
     {
         if (obj == null) yield break;
 
         Type type = obj.GetType();
 
         // 1. Если это "простой" тип — отдаем сразу
-        if (IsSimpleType(type))
+        if (AccessorExt.IsSimpleType(type))
         {
             yield return obj;
         }
@@ -46,10 +76,7 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
         // 3. Если это сложный объект — рекурсивно раскладываем каждое свойство
         else
         {
-            var props = _propertyCache.GetOrAdd(type, t =>
-                t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.GetIndexParameters().Length == 0)
-                .ToArray());
+            var props = AccessorExt.GetProperties(type);
 
             foreach (var prop in props)
             {
@@ -59,13 +86,4 @@ public class PrimitiveDecomposer : IEnumerable<object>, IEnumerable
             }
         }
     }
-
-    private static bool IsSimpleType(Type type)
-    {
-        return type.IsPrimitive ||
-               type.IsEnum ||
-               type == typeof(string) ||
-               type == typeof(decimal);
-    }
-
 }

@@ -56,22 +56,26 @@ namespace Bench;
 | StackDecomposer_GetValue | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  44,274.398 ns | 150.4010 ns | 140.6852 ns |  0.34 |  104000 B |        0.25 |
 | Generator_GetValue       | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  10,313.167 ns |  31.6644 ns |  29.6189 ns |  0.08 |         - |        0.00 | 
 
- | Method                   | Job            | Runtime        | Size | Mean           | Error       | StdDev      | Ratio | Allocated | Alloc Ratio |
-|------------------------- |--------------- |--------------- |----- |---------------:|------------:|------------:|------:|----------:|------------:|
-| StdReflection_GetValue   | .NET 10.0      | .NET 10.0      | 1    |     142.851 ns |   0.9216 ns |   0.8621 ns |  1.00 |     424 B |        1.00 |
-| StackDecomposer_GetValue | .NET 10.0      | .NET 10.0      | 1    |      71.604 ns |   0.4794 ns |   0.4484 ns |  0.50 |     120 B |        0.28 |
-| Generator_GetValue       | .NET 10.0      | .NET 10.0      | 1    |       4.918 ns |   0.0224 ns |   0.0199 ns |  0.03 |         - |        0.00 |
-| StdReflection_GetValue   | NativeAOT 10.0 | NativeAOT 10.0 | 1    |      32.299 ns |   0.0976 ns |   0.0913 ns |  0.23 |      88 B |        0.21 |
-| StackDecomposer_GetValue | NativeAOT 10.0 | NativeAOT 10.0 | 1    |      54.091 ns |   0.1609 ns |   0.1505 ns |  0.38 |     120 B |        0.28 |
-| Generator_GetValue       | NativeAOT 10.0 | NativeAOT 10.0 | 1    |      10.625 ns |   0.0310 ns |   0.0290 ns |  0.07 |         - |        0.00 |
-|                          |                |                |      |                |             |             |       |           |             |
-| StdReflection_GetValue   | .NET 10.0      | .NET 10.0      | 1000 | 133,974.578 ns | 417.1740 ns | 390.2248 ns |  1.00 |  424000 B |        1.00 |
-| StackDecomposer_GetValue | .NET 10.0      | .NET 10.0      | 1000 |  75,714.315 ns | 374.9917 ns | 350.7674 ns |  0.57 |  120000 B |        0.28 |
-| Generator_GetValue       | .NET 10.0      | .NET 10.0      | 1000 |   4,057.546 ns |  10.9409 ns |  10.2341 ns |  0.03 |         - |        0.00 |
-| StdReflection_GetValue   | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  30,878.413 ns | 136.6034 ns | 121.0953 ns |  0.23 |   88000 B |        0.21 |
-| StackDecomposer_GetValue | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  53,379.413 ns | 841.8392 ns | 787.4569 ns |  0.40 |  120000 B |        0.28 |
-| Generator_GetValue       | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  10,525.222 ns |  47.4162 ns |  44.3531 ns |  0.08 |         - |        0.00 |
-
+YeldDecomposer 1
+| Method                   | Job            | Runtime        | Size | Mean           | Error         | StdDev        | Ratio | Allocated | Alloc Ratio |
+|------------------------- |--------------- |--------------- |----- |---------------:|--------------:|--------------:|------:|----------:|------------:|
+| StdReflection_GetValue   | .NET 10.0      | .NET 10.0      | 1    |     145.738 ns |     1.1994 ns |     1.1219 ns |  1.00 |     424 B |        1.00 |
+| StackDecomposer_GetValue | .NET 10.0      | .NET 10.0      | 1    |      69.534 ns |     0.4141 ns |     0.3671 ns |  0.48 |     120 B |        0.28 |
+| YeldDecomposer_GetValue  | .NET 10.0      | .NET 10.0      | 1    |      69.122 ns |     0.6671 ns |     0.6240 ns |  0.47 |     208 B |        0.49 |
+| Generator_GetValue       | .NET 10.0      | .NET 10.0      | 1    |       4.881 ns |     0.0418 ns |     0.0391 ns |  0.03 |         - |        0.00 |
+| StdReflection_GetValue   | NativeAOT 10.0 | NativeAOT 10.0 | 1    |      31.637 ns |     0.3370 ns |     0.3152 ns |  0.22 |      88 B |        0.21 |
+| StackDecomposer_GetValue | NativeAOT 10.0 | NativeAOT 10.0 | 1    |      51.272 ns |     0.2375 ns |     0.2222 ns |  0.35 |     120 B |        0.28 |
+| YeldDecomposer_GetValue  | NativeAOT 10.0 | NativeAOT 10.0 | 1    |      39.392 ns |     0.2791 ns |     0.2611 ns |  0.27 |      88 B |        0.21 |
+| Generator_GetValue       | NativeAOT 10.0 | NativeAOT 10.0 | 1    |      11.980 ns |     0.0922 ns |     0.0863 ns |  0.08 |         - |        0.00 |
+|                          |                |                |      |                |               |               |       |           |             |
+| StdReflection_GetValue   | .NET 10.0      | .NET 10.0      | 1000 | 136,249.577 ns | 1,389.1505 ns | 1,299.4122 ns |  1.00 |  424000 B |        1.00 |
+| StackDecomposer_GetValue | .NET 10.0      | .NET 10.0      | 1000 |  66,986.494 ns |   567.3358 ns |   530.6862 ns |  0.49 |  120000 B |        0.28 |
+| YeldDecomposer_GetValue  | .NET 10.0      | .NET 10.0      | 1000 |  66,771.480 ns |   670.8184 ns |   627.4840 ns |  0.49 |  208000 B |        0.49 |
+| Generator_GetValue       | .NET 10.0      | .NET 10.0      | 1000 |   3,997.026 ns |    28.4228 ns |    23.7343 ns |  0.03 |         - |        0.00 |
+| StdReflection_GetValue   | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  29,937.396 ns |   116.2849 ns |   108.7729 ns |  0.22 |   88000 B |        0.21 |
+| StackDecomposer_GetValue | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  50,343.761 ns |   409.2630 ns |   382.8249 ns |  0.37 |  120000 B |        0.28 |
+| YeldDecomposer_GetValue  | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  37,402.036 ns |   355.7097 ns |   332.7311 ns |  0.27 |   88000 B |        0.21 |
+| Generator_GetValue       | NativeAOT 10.0 | NativeAOT 10.0 | 1000 |  10,788.210 ns |    87.0293 ns |    81.4073 ns |  0.08 |         - |        0.00 |
  */
 
 [MemoryDiagnoser(false)]
@@ -90,6 +94,7 @@ public class DecomposersBench
         _buf = new ArrayBufferWriter<byte>(32);
         _decomposers.StdReflection_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
         _decomposers.StackDecomposer_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
+        _decomposers.YeldDecomposer_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
         _decomposers.Generator_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
     }
 
@@ -119,6 +124,16 @@ public class DecomposersBench
             _decomposers.StackDecomposer_GetValue(_list[i], _buf);
         }
     }
+    [Benchmark]
+    public void YeldDecomposer_GetValue()
+    {
+        for (int i = 0; i < Size; i++)
+        {
+            _buf.ResetWrittenCount();
+            _decomposers.YeldDecomposer_GetValue(_list[i], _buf);
+        }
+    }
+
     [Benchmark]
     public void Generator_GetValue()
     {

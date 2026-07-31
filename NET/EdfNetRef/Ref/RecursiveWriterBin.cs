@@ -20,12 +20,12 @@ public class RecursiveWriterBin : IPrimitiveIo
     {
         _blk = blk;
         _stream = dstStream;
+        _decomposer = new PrimitiveDecomposer();
     }
 
     public EdfErr DoWrite(EdfType edfType, object obj)
     {
-        _decomposer = new PrimitiveDecomposer(obj);
-        _decomposerEnum = _decomposer.GetEnumerator();
+        _decomposer.Reset(obj);
         _hasCurrent = false;
         do
         {
@@ -49,7 +49,7 @@ public class RecursiveWriterBin : IPrimitiveIo
             RecordId++;
             PrimitivesWritted = 0;
             Skip = 0;
-            if (_decomposerEnum.MoveNext())
+            if (_decomposer.MoveNext(edfType))
             {
                 _hasCurrent = true;
             }
@@ -66,25 +66,20 @@ public class RecursiveWriterBin : IPrimitiveIo
             Skip--;
             return;
         }
-        ArgumentNullException.ThrowIfNull(_decomposer, nameof(_decomposer));
-        ArgumentNullException.ThrowIfNull(_decomposerEnum, nameof(_decomposerEnum));
         ArgumentNullException.ThrowIfNull(edfType, nameof(edfType));
 
-        _decomposer.DstType = edfType;
         if (!_hasCurrent)
         {
-            if (!_decomposerEnum.MoveNext())
+            if (!_decomposer.MoveNext(edfType))
                 throw new EdfSrcDataRequredException();
             _hasCurrent = true;
         }
-        var obj = _decomposerEnum.Current;
-        ArgumentNullException.ThrowIfNull(obj, nameof(obj));
-
         int retry = 1;
         do
         {
             Span<byte> dst = _blk.GetEmptyBuffer();
-            var len = PrimitiveWritersBin.TryWrite(dst, edfType, obj);
+            _decomposer.DstType = edfType;
+            var len = _decomposer.Write(dst);
             if (0 > len)
             {
                 _stream.Write(_blk);
@@ -107,7 +102,6 @@ public class RecursiveWriterBin : IPrimitiveIo
 
     private readonly Stream _stream;
     private readonly BinDataBlock _blk;
-    private PrimitiveDecomposer? _decomposer;
-    private IEnumerator<object>? _decomposerEnum;
+    private readonly PrimitiveDecomposer _decomposer;
     private bool _hasCurrent;
 }

@@ -31,12 +31,12 @@ public class RecursiveWriterTxt : IPrimitiveIo
     public RecursiveWriterTxt(Stream dstStream)
     {
         _stream = dstStream;
+        _decomposer = new PrimitiveDecomposer();
     }
 
     public EdfErr DoWrite(EdfType edfType, object obj)
     {
-        _decomposer = new PrimitiveDecomposer(obj);
-        _decomposerEnum = _decomposer.GetEnumerator();
+        _decomposer.Reset(obj);
         _hasCurrent = false;
         do
         {
@@ -59,7 +59,7 @@ public class RecursiveWriterTxt : IPrimitiveIo
             }
             PrimitivesWritted = 0;
             Skip = 0;
-            if (_decomposerEnum.MoveNext())
+            if (_decomposer.MoveNext(edfType))
             {
                 _hasCurrent = true;
             }
@@ -76,21 +76,17 @@ public class RecursiveWriterTxt : IPrimitiveIo
             Skip--;
             return;
         }
-        ArgumentNullException.ThrowIfNull(_decomposer, nameof(_decomposer));
-        ArgumentNullException.ThrowIfNull(_decomposerEnum, nameof(_decomposerEnum));
         ArgumentNullException.ThrowIfNull(edfType, nameof(edfType));
 
-        _decomposer.DstType = edfType;
         if (!_hasCurrent)
         {
-            if (!_decomposerEnum.MoveNext())
+            if (!_decomposer.MoveNext(edfType))
                 throw new EdfSrcDataRequredException();
             _hasCurrent = true;
         }
-        var obj = _decomposerEnum.Current;
-        ArgumentNullException.ThrowIfNull(obj, nameof(obj));
 
-        var len = PrimitiveWritersTxt.TryWrite(_stream, edfType, obj);
+        _decomposer.DstType = edfType;
+        var len = _decomposer.WriteTxt(_stream);
         if (0 > len)
             throw new EdfDstBufOverflowException();
         _hasCurrent = false;
@@ -101,7 +97,6 @@ public class RecursiveWriterTxt : IPrimitiveIo
 
     private readonly Stream _stream;
     private readonly EdfTypeWalker _walker = new();
-    private PrimitiveDecomposer? _decomposer;
-    private IEnumerator<object>? _decomposerEnum;
+    private readonly PrimitiveDecomposer _decomposer;
     private bool _hasCurrent;
 }
