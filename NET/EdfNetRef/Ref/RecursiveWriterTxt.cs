@@ -42,7 +42,7 @@ public class RecursiveWriterTxt : IPrimitiveIo
         {
             try
             {
-                _walker.Process(edfType, this);
+                EdfTypeWalker.Process(edfType, this);
             }
             catch (EdfWrongTypeException)
             {
@@ -96,7 +96,6 @@ public class RecursiveWriterTxt : IPrimitiveIo
 
 
     private readonly Stream _stream;
-    private readonly EdfTypeWalker _walker = new();
     private readonly PrimitiveDecomposer _decomposer;
     private bool _hasCurrent;
 }

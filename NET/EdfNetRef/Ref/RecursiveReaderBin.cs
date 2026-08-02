@@ -33,7 +33,7 @@ public class RecursiveReaderBin : IPrimitiveIo
         {
             try
             {
-                _walker.Process(edfType, this);
+                EdfTypeWalker.Process(edfType, this);
             }
             catch (EdfWrongTypeException)
             {
@@ -109,7 +109,6 @@ public class RecursiveReaderBin : IPrimitiveIo
 
 
     private readonly Stream _stream;
-    private readonly EdfTypeWalker _walker = new();
     private readonly BinDataBlock _blk;
     private PrimitiveDecomposer? _decomposer;
     private IEnumerator<object>? _decomposerEnum;

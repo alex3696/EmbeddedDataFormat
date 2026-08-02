@@ -25,15 +25,21 @@ public interface IPrimitiveIo
     //int Skip { get; set; }
 }
 
-public class EdfTypeWalker
+public static class EdfTypeWalker
 {
-    public void Process(EdfType et, IPrimitiveIo io)
+    public static void Process(EdfType et, IPrimitiveIo io)
+    {
+        WriteObj(et, ref io);//boxing
+    }
+    public static void Process<T>(EdfType et, ref T io)
+        where T : IPrimitiveIo, allows ref struct
     {
         io.SepRecBegin();
-        WriteObj(et, io);
+        WriteObj(et, ref io);
         io.SepRecEnd();
     }
-    private void WriteObj(EdfType inf, IPrimitiveIo io)
+    private static void WriteObj<T>(EdfType inf, ref T io)
+        where T : IPrimitiveIo, allows ref struct
     {
         if (PoType.Char == inf.Type)
         {
@@ -45,11 +51,12 @@ public class EdfTypeWalker
         if (1 < totalElement)
             io.SepBeginArray();
         for (int i = 0; i < totalElement; i++)
-            WriteObjElement(inf, io);
+            WriteObjElement(inf, ref io);
         if (1 < totalElement)
             io.SepEndArray();
     }
-    private void WriteObjElement(EdfType inf, IPrimitiveIo io)
+    private static void WriteObjElement<T>(EdfType inf, ref T io)
+        where T : IPrimitiveIo, allows ref struct
     {
         if (PoType.Struct == inf.Type)
         {
@@ -57,7 +64,7 @@ public class EdfTypeWalker
             {
                 io.SepBeginStruct();
                 for (int childIndex = 0; childIndex < inf.Childs.Length; childIndex++)
-                    WriteObj(inf.Childs[childIndex], io);
+                    WriteObj(inf.Childs[childIndex], ref io);
                 io.SepEndStruct();
             }
         }

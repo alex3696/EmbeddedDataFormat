@@ -52,7 +52,7 @@ public ref struct RecursiveWriterBin<TEnumerator> : IPrimitiveIo
         {
             try
             {
-                EdfTypeWalkerBinRef.Process(_rooEt, ref this);
+                EdfTypeWalkerBin.Process(_rooEt, ref this);
             }
             catch (EdfWrongTypeException)
             {
