@@ -32,7 +32,7 @@ public class Decomposers
         // reflection
         _refl = new PrimitiveDecomposer();
         // StackDecomposer
-        _stackDecomposer = new StackDecomposer(DefaultVal);
+        _stackDecomposer = new StackDecomposer();
         // YeldDecomposer
         _yeldDecomposer = new YeldDecomposer();
     }
@@ -50,7 +50,7 @@ public class Decomposers
     }
     public void StdReflection_GetValue(MyPosition item, ArrayBufferWriter<byte> dst)
     {
-        _refl.Reset(item);
+        _refl.Reset(_edfType, item);
         while (_refl.MoveNext(_edfType))
         {
             var len = _refl.Write(dst.GetSpan());
@@ -67,7 +67,7 @@ public class Decomposers
     }
     public void YeldDecomposer_GetValue(MyPosition item, ArrayBufferWriter<byte> dst)
     {
-        _yeldDecomposer.Reset(item);
+        _yeldDecomposer.Reset(_edfType, item);
         while (_yeldDecomposer.MoveNext(_edfType))
         {
             var len = _yeldDecomposer.Write(dst.GetSpan());
@@ -84,7 +84,7 @@ public class Decomposers
     }
     public void StackDecomposer_GetValue(MyPosition item, ArrayBufferWriter<byte> dst)
     {
-        _stackDecomposer.Reset(item);
+        _stackDecomposer.Reset(_edfType, item);
         while (_stackDecomposer.MoveNext(_edfType))
         {
             var len = _stackDecomposer.Write(dst.GetSpan());

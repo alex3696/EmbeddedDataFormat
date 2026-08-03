@@ -10,22 +10,34 @@ public class YeldDecomposer : IEdfByteEnumerator
     public PoType CurrentPoType => DstType.Type;
     public int CurrentPoLen => CurrentPoType.GetSizeOf();
 
-    public YeldDecomposer(object source = default!)
+    public YeldDecomposer(EdfType? edfType = default, object source = default!)
     {
-        Reset(source);
+        Reset(edfType, source);
     }
-    public void Reset(object? source)
+    public void Reset(EdfType? edfType, object? source)
     {
         CurrentIndex = -1;
         if (source != null)
         {
-            if (AccessorExt.IsSimpleType(source.GetType()))
+            DstType = edfType;
+            if (AccessorExt.IsSimpleType(source.GetType())
+                || (source is byte[] && PoType.Char == DstType?.Type))
                 source = new object[] { source };
             _enumerator = Decompose(source).GetEnumerator();
         }
         else
             _enumerator?.Reset();
     }
+    public void ResetAdd(object? source)
+    {
+        if (source == null)
+            return;
+        if (AccessorExt.IsSimpleType(source.GetType())
+                || (source is byte[] && PoType.Char == DstType?.Type))
+            source = new object[] { source };
+        _enumerator = Decompose(source).GetEnumerator();
+    }
+
     public bool MoveNext(EdfType? dstType)
     {
         DstType = dstType;
@@ -48,7 +60,21 @@ public class YeldDecomposer : IEdfByteEnumerator
         if (obj is Array arr)
         {
             Type et = type.GetElementType()!;
+            if (typeof(object) == et)
+            {
+                object? item0 = arr.GetValue(0);
+                if (item0 != null)
+                    et = item0.GetType();
+            }
             if (AccessorExt.IsSimpleType(et))
+            {
+                for (int i = 0; i < arr.Length; ++i)
+                {
+                    CurrentIndex++;
+                    yield return new YArrayNode(DstType, arr, i);
+                }
+            }
+            else if (typeof(byte[]) == et && PoType.Char == DstType?.Type)
             {
                 for (int i = 0; i < arr.Length; ++i)
                 {
@@ -60,7 +86,8 @@ public class YeldDecomposer : IEdfByteEnumerator
             {
                 for (int i = 0; i < arr.Length; ++i)
                 {
-                    foreach (var subItem in Decompose(arr.GetValue(i)))
+                    var val = arr.GetValue(i);
+                    foreach (var subItem in Decompose(val))
                         yield return subItem;
                 }
             }

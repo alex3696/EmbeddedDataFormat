@@ -15,7 +15,7 @@ public class RecursiveWriterState
     }
     public void Reset()
     {
-        RecordId = 0;
+        //RecordId = 0;
         PrimOffset = 0;
     }
 }
@@ -24,13 +24,13 @@ public ref struct RecursiveWriterBin<TEnumerator> : IPrimitiveIo
     where TEnumerator : struct, IEdfByteEnumerator
 {
     #region Unused
-    public void SepRecBegin() { }
-    public void SepRecEnd() { }
-    public void SepBeginStruct() { }
-    public void SepEndStruct() { }
-    public void SepBeginArray() { }
-    public void SepEndArray() { }
-    public void SepVarEnd() { }
+    public readonly void SepRecBegin() { }
+    public readonly void SepRecEnd() { }
+    public readonly void SepBeginStruct() { }
+    public readonly void SepEndStruct() { }
+    public readonly void SepBeginArray() { }
+    public readonly void SepEndArray() { }
+    public readonly void SepVarEnd() { }
     #endregion
     private readonly RecursiveWriterState _state;
     private readonly ref TEnumerator _enumerator;

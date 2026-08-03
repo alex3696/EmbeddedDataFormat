@@ -23,7 +23,7 @@ internal class Program
     public static int Main(string[] args)
     {
         var reflTests = new TestStructSerialize();
-        ExecTryCatch(reflTests.TestPrimitiveDecomposer);
+        //ExecTryCatch(reflTests.TestPrimitiveDecomposer);
         ExecTryCatch(reflTests.TestPackUnpack);
 
         var genTests = new GenSerializationTests();

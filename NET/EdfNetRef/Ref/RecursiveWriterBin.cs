@@ -20,12 +20,15 @@ public class RecursiveWriterBin : IPrimitiveIo
     {
         _blk = blk;
         _stream = dstStream;
-        _decomposer = new PrimitiveDecomposer();
+        _decomposer = new();
     }
 
     public EdfErr DoWrite(EdfType edfType, object obj)
     {
-        _decomposer.Reset(obj);
+        if (0 == Skip)
+            _decomposer.Reset(edfType, obj);
+        else
+            _decomposer.ResetAdd(obj);
         _hasCurrent = false;
         do
         {
@@ -102,6 +105,6 @@ public class RecursiveWriterBin : IPrimitiveIo
 
     private readonly Stream _stream;
     private readonly BinDataBlock _blk;
-    private readonly PrimitiveDecomposer _decomposer;
+    private readonly PrimitiveDecomposer _decomposer;// StackDecomposer
     private bool _hasCurrent;
 }

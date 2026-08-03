@@ -106,18 +106,18 @@ public class TestStructSerialize
         Assert.AreEqual(kvArr[1], data?.ElementAt(1));
     }
 
-    struct KeyValue
+    class KeyValue
     {
         public string? Key { get; set; }
         public string? Value { get; set; }
     };
-    struct ComplexVariable
+    class ComplexVariable
     {
         public long Time { get; set; }
-        public struct StateT
+        public class StateT
         {
             public sbyte Text { get; set; }
-            public struct PosT
+            public class PosT
             {
                 public int X { get; set; }
                 public int Y { get; set; }

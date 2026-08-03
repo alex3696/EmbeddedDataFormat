@@ -38,6 +38,59 @@ public class PropertyAccessor<TTarget, TProperty> : IPropertyAccessor
     public void SetValue(object target, object? val) => _setter.Invoke((TTarget)target, (TProperty)val!);
     public Type GetPropertyType() => typeof(TProperty);
 }
+
+public class PropertyAccessorString<TTarget> : IPropertyAccessor
+//where TTarget : class
+{
+    private readonly Func<TTarget, string?> _getter;
+    private readonly Action<TTarget, string?> _setter;
+    public PropertyAccessorString(MethodInfo getMethod, MethodInfo setMethod)
+    {
+        _getter = (Func<TTarget, string?>)Delegate.CreateDelegate(typeof(Func<TTarget, string?>), getMethod);
+        _setter = (Action<TTarget, string?>)Delegate.CreateDelegate(typeof(Action<TTarget, string?>), setMethod);
+    }
+    public int WriteValue(object target, Span<byte> dst)
+    {
+        string? value = _getter((TTarget)target);
+        return EdfBinString.WriteBin(value, dst);
+    }
+    public int ReadValue(object target, ReadOnlySpan<byte> src)
+    {
+        var len = EdfBinString.ReadBin(src, out var str);
+        _setter.Invoke((TTarget)target, str);
+        return len;
+    }
+    public object? GetValue(object target) => _getter((TTarget)target);
+    public void SetValue(object target, object? val) => _setter.Invoke((TTarget)target, (string?)val!);
+    public Type GetPropertyType() => typeof(string);
+}
+
+
+public class PropertyAccessorArray<TTarget, TProperty> : IPropertyAccessor
+//where TTarget : class
+{
+    private readonly Func<TTarget, TProperty> _getter;
+    private readonly Action<TTarget, TProperty> _setter;
+    public PropertyAccessorArray(MethodInfo getMethod, MethodInfo setMethod)
+    {
+        _getter = (Func<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Func<TTarget, TProperty>), getMethod);
+        _setter = (Action<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Action<TTarget, TProperty>), setMethod);
+    }
+    public int WriteValue(object target, Span<byte> dst)
+    {
+        throw new NotImplementedException();
+    }
+    public int ReadValue(object target, ReadOnlySpan<byte> src)
+    {
+        throw new NotImplementedException();
+    }
+    public object? GetValue(object target) => _getter((TTarget)target);
+    public void SetValue(object target, object? val) => _setter.Invoke((TTarget)target, (TProperty)val!);
+    public Type GetPropertyType() => typeof(TProperty);
+}
+
+
+
 public static class AccessorExt
 {
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = [];
@@ -79,7 +132,16 @@ public static class AccessorExt
             {
                 yield return MakeAccessor(type, prop);
             }
-            // Дополнительные ветки для массивов/коллекций (пропущены для лаконичности)
+            else if (propType == typeof(string))
+            {
+                Type accr = typeof(PropertyAccessorString<>).MakeGenericType(type);
+                yield return (IPropertyAccessor)Activator.CreateInstance(accr, prop.GetMethod!, prop.SetMethod!)!;
+            }
+            else if (propType.IsArray)
+            {
+                Type accr = typeof(PropertyAccessorArray<,>).MakeGenericType(type, propType!);
+                yield return (IPropertyAccessor)Activator.CreateInstance(accr, prop.GetMethod!, prop.SetMethod!)!;
+            }
         }
     }
     private static readonly ConcurrentDictionary<Type, List<IPropertyAccessor>> _accessorCache = new();

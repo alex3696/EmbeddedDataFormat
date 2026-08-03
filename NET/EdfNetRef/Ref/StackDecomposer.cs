@@ -12,26 +12,48 @@ public class StackDecomposer : IEdfByteEnumerator
     public PoType CurrentPoType => DstType.Type;
     public int CurrentPoLen => CurrentPoType.GetSizeOf();
 
-    public StackDecomposer(object source = default!)
+    public StackDecomposer(EdfType? edfType = default, object source = default!)
     {
-        Reset(source);
+        Reset(edfType, source);
     }
 
-    public void Reset(object? source)
+    public void Reset(EdfType? edfType, object? source)
     {
         _stack ??= new();
         _stack.Clear();
         _currentNode = null;
+        CurrentIndex = -1;
         if (source != null)
         {
-            // Начальный корень оборачиваем в массив из 1 элемента для единообразия старта
+            DstType = edfType;
+            if (AccessorExt.IsSimpleType(source.GetType())
+                || (source is byte[] && PoType.Char == DstType?.Type))
+            {
+                var rootArray = new object[] { source };
+                _stack.Push(new ArrayNode(rootArray));
+            }
+            else
+                _stack.Push(new ObjectNode(source));
+        }
+    }
+    public void ResetAdd(object? source)
+    {
+        if (source == null)
+            return;
+        if (AccessorExt.IsSimpleType(source.GetType())
+            || (source is byte[] && PoType.Char == DstType?.Type))
+        {
             var rootArray = new object[] { source };
             _stack.Push(new ArrayNode(rootArray));
         }
+        else
+            _stack.Push(new ObjectNode(source));
     }
+
 
     public bool MoveNext(EdfType? dstType)
     {
+        DstType = dstType;
         while (_stack.Count > 0)
         {
             var top = _stack.Peek();
@@ -194,9 +216,15 @@ public class StackDecomposer : IEdfByteEnumerator
 
         public Type GetPropertyType()
         {
-            var t = _array.GetType().GetElementType();
-            ArgumentNullException.ThrowIfNull(t);
-            return t;
+            var et = _array.GetType().GetElementType();
+            if (typeof(object) == et)
+            {
+                object? item0 = _array.GetValue(0);
+                if (item0 != null)
+                    et = item0.GetType();
+            }
+            ArgumentNullException.ThrowIfNull(et);
+            return et;
         }
     }
 

@@ -14,16 +14,31 @@ public class PrimitiveDecomposer : IEdfByteEnumerator
     public PrimitiveDecomposer()
     {
     }
-    public void Reset(object? source)
+    public void Reset(EdfType? edfType, object? source)
     {
         CurrentIndex = -1;
         if (source != null)
         {
+            DstType = edfType;
             _enumerator = Decompose(source).GetEnumerator();
         }
         else
             _enumerator?.Reset();
     }
+    public void ResetAdd(object? source)
+    {
+        if (source == null)
+            return;
+        if (AccessorExt.IsSimpleType(source.GetType())
+            || (source is byte[] && PoType.Char == DstType?.Type))
+        {
+            var rootArray = new object[] { source };
+            _enumerator = Decompose(source).GetEnumerator();
+        }
+        else
+            _enumerator = Decompose(source).GetEnumerator();
+    }
+
     public bool MoveNext(EdfType? et = null)
     {
         DstType = et;

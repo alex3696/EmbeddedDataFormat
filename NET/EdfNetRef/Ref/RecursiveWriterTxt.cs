@@ -36,7 +36,10 @@ public class RecursiveWriterTxt : IPrimitiveIo
 
     public EdfErr DoWrite(EdfType edfType, object obj)
     {
-        _decomposer.Reset(obj);
+        if (0 == Skip)
+            _decomposer.Reset(edfType, obj);
+        else
+            _decomposer.ResetAdd(obj);
         _hasCurrent = false;
         do
         {

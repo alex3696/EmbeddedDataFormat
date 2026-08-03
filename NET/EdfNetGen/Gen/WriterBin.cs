@@ -11,7 +11,9 @@ public class WriterBin : BaseWriterBin
     public override void Write(Schema sch)
     {
         base.Write(sch);
-        _rstate.Reset();
+        _rstate.Skip = 0;
+        _rstate.RecordId = 0;
+        _rstate.PrimOffset = 0;
     }
     private readonly RecursiveWriterState _rstate;
 
