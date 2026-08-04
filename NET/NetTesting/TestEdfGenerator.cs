@@ -41,7 +41,7 @@ public partial class KeyVal
 [TestClass]
 public class GenSerializationTests
 {
-    readonly Schema _sch = new()
+    public static readonly Schema _sch = new()
     {
         Id = 0,
         Name = "KeyValSchema",
@@ -51,43 +51,42 @@ public class GenSerializationTests
             Type = PoType.Struct,
             Name = "KeyVal",
             Childs =
-        [
-            new (PoType.String, "Test1"),
-                    new (PoType.String, "Key"),
-                    new (PoType.Int32, "Val"),
-                    new (PoType.Int32, "NVal"),
-                    new (PoType.Int32, "Arr", [3, 2, 1]),
-                    new (PoType.Struct, "Sub0")
-                    {
-                        Childs =
-                        [
-                            new (PoType.Double, "ValDouble"),
-                            new (PoType.UInt8, "ValByte"),
-                            new (PoType.Int8, "ValSByte"),
-                        ]
-                    },
-                    new (PoType.Struct, "Sub1")
-                    {
-                        Childs =
-                        [
-                            new (PoType.Double, "ValDouble"),
-                            new (PoType.UInt8, "ValByte"),
-                            new (PoType.Int8, "ValSByte"),
-                        ]
-                    },
-                    new (PoType.Struct, "Sub", [2, 2])
-                    {
-                        Childs =
-                        [
-                            new (PoType.Double, "ValDouble"),
-                            new (PoType.UInt8, "ValByte"),
-                            new (PoType.Int8, "ValSByte"),
-                        ]
-                    }
-        ]
+            [
+                new (PoType.String, "Test1"),
+                new (PoType.String, "Key"),
+                new (PoType.Int32, "Val"),
+                new (PoType.Int32, "NVal"),
+                new (PoType.Int32, "Arr", [3, 2, 1]),
+                new (PoType.Struct, "Sub0")
+                {
+                    Childs =
+                    [
+                        new (PoType.Double, "ValDouble"),
+                        new (PoType.UInt8, "ValByte"),
+                        new (PoType.Int8, "ValSByte"),
+                    ]
+                },
+                new (PoType.Struct, "Sub1")
+                {
+                    Childs =
+                    [
+                        new (PoType.Double, "ValDouble"),
+                        new (PoType.UInt8, "ValByte"),
+                        new (PoType.Int8, "ValSByte"),
+                    ]
+                },
+                new (PoType.Struct, "Sub", [2, 2])
+                {
+                    Childs =
+                    [
+                        new (PoType.Double, "ValDouble"),
+                        new (PoType.UInt8, "ValByte"),
+                        new (PoType.Int8, "ValSByte"),
+                    ]
+                }
+            ]
         }
     };
-
 
     [TestMethod]
     public void Generate_Schema()

@@ -5,9 +5,9 @@ public class EdfType : IEquatable<EdfType>
 {
     public PoType Type;// { get; set; }
     public string? Name;// { get; set; }
-    public ushort[]? Dims;// { get; set; }
-    public EdfType[]? Childs;// { get; set; }
-
+    public ushort[] Dims;// { get; set; }
+    public EdfType[] Childs = [];// { get; set; }
+    private int _totalElements = -1; // -1 = не вычислено
     protected static string GetOffset(int noffset)
     {
         string offset = "";
@@ -82,9 +82,11 @@ public class EdfType : IEquatable<EdfType>
     }
     public uint GetTotalElements()
     {
+        if (_totalElements != -1) return (uint)_totalElements;
         uint totalElement = 1;
         for (int i = 0; i < Dims?.Length; i++)
             totalElement *= Dims[i];
+        _totalElements = (int)totalElement;
         return totalElement;
     }
     public static EdfType Parse(ReadOnlySpan<byte> b) => ParseType(b, out _);
