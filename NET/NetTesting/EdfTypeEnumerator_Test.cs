@@ -53,11 +53,13 @@ public class EdfTypeEnumerator_Test
     private readonly List<EdfType> _lst = new(100);
     private readonly EdfSchema _schema;
     private readonly RecursiveClass _rcls;
+    private EdfTypeEnumeratorStackInlineArray _enm;
 
     public EdfTypeEnumerator_Test()
     {
         _schema = NetTest.KeyVal.GetEdfSchema();
         _rcls = new(_lst);
+        _enm = new EdfTypeEnumeratorStackInlineArray();
     }
 
     [TestMethod]
@@ -65,6 +67,9 @@ public class EdfTypeEnumerator_Test
     {
         EdfTypeEnumeratorStack();
         List<EdfType> lst = _lst.ToList();
+
+        EdfTypeEnumeratorStackInlineArray();
+        Assert.IsTrue(lst.SequenceEqual(_lst), "EdfTypeEnumeratorYield");
 
         EdfTypeEnumeratorYield();
         Assert.IsTrue(lst.SequenceEqual(_lst), "EdfTypeEnumeratorYield");
@@ -81,8 +86,16 @@ public class EdfTypeEnumerator_Test
         _lst.Clear();
         foreach (var field in _schema.Type.EnumerateStack(_stack))
         {
-            if (null != field)
-                _lst.Add(field);
+            _lst.Add(field);
+        }
+    }
+    public void EdfTypeEnumeratorStackInlineArray()
+    {
+        _lst.Clear();
+        _enm.Reset(_schema.Type);
+        while (_enm.MoveNext())
+        {
+            _lst.Add(_enm.Current);
         }
     }
     public void EdfTypeEnumeratorYield()
@@ -90,8 +103,7 @@ public class EdfTypeEnumerator_Test
         _lst.Clear();
         foreach (var field in _schema.Type.EnumerateYield())
         {
-            if (null != field)
-                _lst.Add(field);
+            _lst.Add(field);
         }
     }
     public void EdfTypeEnumeratorRecursive()
