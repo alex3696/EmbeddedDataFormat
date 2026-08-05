@@ -32,6 +32,10 @@ public class StackDecomposer : IEdfByteEnumerator
                 var rootArray = new object[] { source };
                 _stack.Push(new ArrayNode(rootArray));
             }
+            else if(source is Array arr)
+            {
+                _stack.Push(new ArrayNode(arr));
+            }
             else
                 _stack.Push(new ObjectNode(source));
         }
@@ -45,6 +49,10 @@ public class StackDecomposer : IEdfByteEnumerator
         {
             var rootArray = new object[] { source };
             _stack.Push(new ArrayNode(rootArray));
+        }
+        else if (source is Array arr)
+        {
+            _stack.Push(new ArrayNode(arr));
         }
         else
             _stack.Push(new ObjectNode(source));
@@ -184,23 +192,50 @@ public class StackDecomposer : IEdfByteEnumerator
         EdfType? _edfType;
         private readonly Array _array;
         private readonly int _length;
-        private int _index = -1;
+        private int _flatIndex = -1;
+        private readonly int[] _indices;
+        private readonly int[] _dims;
         public ArrayNode(Array array)
         {
             _array = array;
             _length = array.Length;
+
+            if (array != null)
+            {
+                _indices = new int[array.Rank];
+                _dims = new int[array.Rank];
+                for (int i = 0; i < array.Rank; i++)
+                {
+                    _dims[i] = array.GetLength(i);
+                }
+            }
+            else
+            {
+                _indices = [];
+                _dims = [];
+            }
+        }
+        private void UpdateIndices(int flatIndex)
+        {
+            int remainder = flatIndex;
+            for (int i = _dims.Length - 1; i >= 0; i--)
+            {
+                _indices[i] = remainder % _dims[i];
+                remainder /= _dims[i];
+            }
         }
         public bool MoveNext(EdfType? dstType)
         {
-            _index++;
+            _flatIndex++;
+            UpdateIndices(_flatIndex);
             _edfType = dstType;
-            return _index < _length;
+            return _flatIndex < _length;
         }
-        public object? GetValue() => _array.GetValue(_index);
-        public void SetValue(object? value) => _array.SetValue(value, _index);
+        public object? GetValue() => _array.GetValue(_flatIndex);
+        public void SetValue(object? value) => _array.SetValue(value, _flatIndex);
         public int Write(Span<byte> dst)
         {
-            var obj = _array.GetValue(_index);
+            var obj = _array.GetValue(_indices);
             ArgumentNullException.ThrowIfNull(obj);
             ArgumentNullException.ThrowIfNull(_edfType);
             var len = PrimitiveWritersBin.TryWrite(dst, _edfType, obj);
@@ -210,7 +245,7 @@ public class StackDecomposer : IEdfByteEnumerator
         {
             ArgumentNullException.ThrowIfNull(_edfType);
             var len = PrimitiveWritersBin.TryRead(src, _edfType, out var obj);
-            _array.SetValue(obj, _index);
+            _array.SetValue(obj, _indices);
             return len;
         }
 

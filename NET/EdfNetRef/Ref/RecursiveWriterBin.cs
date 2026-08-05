@@ -105,6 +105,6 @@ public class RecursiveWriterBin : IPrimitiveIo
 
     private readonly Stream _stream;
     private readonly BinDataBlock _blk;
-    private readonly PrimitiveDecomposer _decomposer;// StackDecomposer
+    private readonly StackDecomposer _decomposer;// StackDecomposer
     private bool _hasCurrent;
 }
