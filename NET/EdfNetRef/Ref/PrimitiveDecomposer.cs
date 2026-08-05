@@ -29,7 +29,7 @@ public class PrimitiveDecomposer : IEdfByteEnumerator
     {
         if (source == null)
             return;
-        if (AccessorExt.IsSimpleType(source.GetType())
+        if (source.GetType().IsSimpleType()
             || (source is byte[] && PoType.Char == DstType?.Type))
         {
             var rootArray = new object[] { source };
@@ -71,7 +71,7 @@ public class PrimitiveDecomposer : IEdfByteEnumerator
         Type type = obj.GetType();
 
         // 1. Если это "простой" тип — отдаем сразу
-        if (AccessorExt.IsSimpleType(type))
+        if (type.IsSimpleType())
         {
             yield return obj;
         }

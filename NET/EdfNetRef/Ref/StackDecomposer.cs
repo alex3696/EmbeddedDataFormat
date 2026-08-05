@@ -23,28 +23,14 @@ public class StackDecomposer : IEdfByteEnumerator
         _stack.Clear();
         _currentNode = null;
         CurrentIndex = -1;
-        if (source != null)
-        {
-            DstType = edfType;
-            if (AccessorExt.IsSimpleType(source.GetType())
-                || (source is byte[] && PoType.Char == DstType?.Type))
-            {
-                var rootArray = new object[] { source };
-                _stack.Push(new ArrayNode(rootArray));
-            }
-            else if(source is Array arr)
-            {
-                _stack.Push(new ArrayNode(arr));
-            }
-            else
-                _stack.Push(new ObjectNode(source));
-        }
+        DstType = edfType;
+        ResetAdd(source);
     }
     public void ResetAdd(object? source)
     {
         if (source == null)
             return;
-        if (AccessorExt.IsSimpleType(source.GetType())
+        if (source.GetType().IsSimpleType()
             || (source is byte[] && PoType.Char == DstType?.Type))
         {
             var rootArray = new object[] { source };
@@ -75,20 +61,20 @@ public class StackDecomposer : IEdfByteEnumerator
             //Type type = item.GetType();
             var type = top.GetPropertyType();
             // 1. Если это простой тип или массив байт в режиме Char — это наш целевой примитив
-            if (AccessorExt.IsSimpleType(type) || (type == typeof(byte[]) && PoType.Char == dstType?.Type))
+            if (type.IsSimpleType() || (type == typeof(byte[]) && PoType.Char == dstType?.Type))
             {
                 _currentNode = top;
                 return true;
             }
             // 2. Если это массив (но не byte[] в режиме Char) — уходим вглубь по массиву
-            if (type.IsArray)
+            else if (type.IsArray)
             {
                 object? item = top.GetValue();
                 if (item == null) continue;
                 _stack.Push(new ArrayNode((Array)item));
             }
             // 3. Если сложный объект — уходим вглубь по свойствам
-            else
+            else if (type.IsStructType())
             {
                 //var props = _propertyCache.GetOrAdd(type, t =>
                 //    t.GetProperties(BindingFlags.Public | BindingFlags.Instance)

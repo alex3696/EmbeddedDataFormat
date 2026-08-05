@@ -20,7 +20,7 @@ public partial class SubVal
 [EdfSerializable]
 public partial class KeyVal
 {
-    public PlainStruct NotUsed { get; set; } // not used in serialization
+    //public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }
     public string? Key { get; set; }
     public int Val { get; set; }

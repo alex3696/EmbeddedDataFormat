@@ -89,8 +89,6 @@ public class PropertyAccessorArray<TTarget, TProperty> : IPropertyAccessor
     public Type GetPropertyType() => typeof(TProperty);
 }
 
-
-
 public static class AccessorExt
 {
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = [];
@@ -104,7 +102,7 @@ public static class AccessorExt
 
     private static IEnumerable<IPropertyAccessor> BuildAccessorsFlat(Type type)
     {
-        if (IsSimpleType(type))
+        if (type.IsSimpleType())
         {
             // Напрямую примитивы без родительского объекта через PropertyAccessor обработать нельзя,
             // так как у них нет PropertyInfo (нет Getter/Setter). 
@@ -118,8 +116,20 @@ public static class AccessorExt
         foreach (var prop in props)
         {
             Type propType = prop.PropertyType;
-
-            if (propType.IsValueType && !propType.IsEnum && !IsSimpleType(propType))
+            propType = Nullable.GetUnderlyingType(propType) ?? propType;
+            if (propType.IsSimpleType()) // Элементарные struct (int, float, bool, custom enums)
+            {
+                if (propType.IsValueType)
+                    yield return MakeAccessor(type, prop);
+                else if (propType == typeof(string))
+                    yield return MakeAccessorString(type, prop);
+            }
+            else if (propType.IsArray)
+            {
+                Type accr = typeof(PropertyAccessorArray<,>).MakeGenericType(type, propType!);
+                yield return (IPropertyAccessor)Activator.CreateInstance(accr, prop.GetMethod!, prop.SetMethod!)!;
+            }
+            else if (propType.IsStructType())
             {
                 // Если свойство — это вложенная пользовательская структура (Сложный тип), 
                 // рекурсивно вытаскиваем её свойства
@@ -127,20 +137,6 @@ public static class AccessorExt
                 {
                     yield return subAccessor;
                 }
-            }
-            else if (propType.IsValueType) // Элементарные struct (int, float, bool, custom enums)
-            {
-                yield return MakeAccessor(type, prop);
-            }
-            else if (propType == typeof(string))
-            {
-                Type accr = typeof(PropertyAccessorString<>).MakeGenericType(type);
-                yield return (IPropertyAccessor)Activator.CreateInstance(accr, prop.GetMethod!, prop.SetMethod!)!;
-            }
-            else if (propType.IsArray)
-            {
-                Type accr = typeof(PropertyAccessorArray<,>).MakeGenericType(type, propType!);
-                yield return (IPropertyAccessor)Activator.CreateInstance(accr, prop.GetMethod!, prop.SetMethod!)!;
             }
         }
     }
@@ -158,12 +154,10 @@ public static class AccessorExt
             prop.SetMethod!
         )!;
     }
-    public static bool IsSimpleType(Type type)
+    private static IPropertyAccessor MakeAccessorString(Type targetType, PropertyInfo prop)
     {
-        return type.IsPrimitive ||
-               type.IsEnum ||
-               type == typeof(string) ||
-               type == typeof(decimal);
-
+        Type accr = typeof(PropertyAccessorString<>).MakeGenericType(targetType);
+        return (IPropertyAccessor)Activator.CreateInstance(accr, prop.GetMethod!, prop.SetMethod!)!;
     }
+
 }

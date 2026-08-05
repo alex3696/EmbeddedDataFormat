@@ -20,7 +20,7 @@ public class YeldDecomposer : IEdfByteEnumerator
         if (source != null)
         {
             DstType = edfType;
-            if (AccessorExt.IsSimpleType(source.GetType())
+            if (source.GetType().IsSimpleType()
                 || (source is byte[] && PoType.Char == DstType?.Type))
                 source = new object[] { source };
             _enumerator = Decompose(source).GetEnumerator();
@@ -32,7 +32,7 @@ public class YeldDecomposer : IEdfByteEnumerator
     {
         if (source == null)
             return;
-        if (AccessorExt.IsSimpleType(source.GetType())
+        if (source.GetType().IsSimpleType()
                 || (source is byte[] && PoType.Char == DstType?.Type))
             source = new object[] { source };
         _enumerator = Decompose(source).GetEnumerator();
@@ -52,7 +52,7 @@ public class YeldDecomposer : IEdfByteEnumerator
             yield break;
         Type type = obj.GetType();
 
-        if (AccessorExt.IsSimpleType(type))
+        if (type.IsSimpleType())
             yield break;
         if (obj is byte[] && PoType.Char == DstType?.Type)
             yield break;
@@ -66,7 +66,7 @@ public class YeldDecomposer : IEdfByteEnumerator
                 if (item0 != null)
                     et = item0.GetType();
             }
-            if (AccessorExt.IsSimpleType(et))
+            if (et.IsSimpleType())
             {
                 for (int i = 0; i < arr.Length; ++i)
                 {
@@ -97,7 +97,7 @@ public class YeldDecomposer : IEdfByteEnumerator
             var acc = AccessorExt.GetOrBuildAccessors(obj.GetType());
             for (int i = 0; i < acc.Count; ++i)
             {
-                if (AccessorExt.IsSimpleType(acc[i].GetPropertyType()))
+                if (acc[i].GetPropertyType().IsSimpleType())
                 {
                     CurrentIndex++;
                     yield return new YObjNode(DstType, obj, acc[i]);

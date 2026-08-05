@@ -36,12 +36,12 @@ public static class EdfSchemaExt
             return BuildEdfType(elementType, name);
         }
 
-        if (IsSimpleType(t))
+        if (t.IsSimpleType())
         {
             return new EdfType(t.GetPoType(), name);
         }
 
-        if (!IsStructType(t))
+        if (!t.IsStructType())
         {
             return null;
         }
@@ -58,7 +58,7 @@ public static class EdfSchemaExt
             var propName = prop.Name;
             var propUnderlying = Nullable.GetUnderlyingType(propType) ?? propType;
 
-            if (!IsSimpleType(propUnderlying) && !IsStructType(propUnderlying) && !propUnderlying.IsArray)
+            if (!propUnderlying.IsSimpleType() && !propUnderlying.IsStructType() && !propUnderlying.IsArray)
                 continue;
 
             // --- EdfCharArrayAttribute ---
@@ -129,22 +129,6 @@ public static class EdfSchemaExt
                 $"Массив '{prop.Name}' должен иметь атрибут [EdfArray] или [EdfCharArray].");
         }
         return null;
-    }
-
-    private static bool IsStructType(Type type)
-    {
-        if (type.IsClass || type.IsValueType)
-        {
-            if (type.IsDefined(typeof(EdfSerializableAttribute), inherit: false))
-                return true;
-        }
-        return false;
-    }
-    private static bool IsSimpleType(Type type)
-    {
-        return type.IsPrimitive ||
-               type.IsEnum ||
-               type == typeof(string);
     }
 
     extension<T>(T)
