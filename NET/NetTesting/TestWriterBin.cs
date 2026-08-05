@@ -51,7 +51,7 @@ public class TestWriterBin
         }
     }
     [TestMethod]
-    public void Writer_Reflexion()
+    public void Writer_Reflection()
     {
         _ms.Position = 0;
         for (int i = 0; i < Size; i++)

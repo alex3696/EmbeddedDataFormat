@@ -25,7 +25,7 @@ PrimitiveDecomposer + Enum
 [MemoryDiagnoser(false)]
 [SimpleJob(RuntimeMoniker.Net10_0, baseline: true)]
 [SimpleJob(RuntimeMoniker.NativeAot10_0)]
-public class WriterBin_all
+public class WriterBin_Bench
 {
     private readonly TestWriterBin _test = new();
 
@@ -41,5 +41,5 @@ public class WriterBin_all
     [Benchmark(Baseline = true)]
     public void Writer_Enum() => _test.Writer_Enum();
     [Benchmark]
-    public void Writer_Reflexion() => _test.Writer_Reflexion();
+    public void Writer_Reflection() => _test.Writer_Reflection();
 }

@@ -17,6 +17,7 @@ internal class Program
         //BenchmarkRunner.Run<Schema>();
         //BenchmarkRunner.Run<DecomposersBench>();
         //BenchmarkRunner.Run<WriterBin_all>();
-        BenchmarkRunner.Run<EdfTypeEnumerator_Bench>();
+        //BenchmarkRunner.Run<EdfTypeEnumerator_Bench>();
+        BenchmarkRunner.Run<EdfTypeCreator_Bench>();
     }
 }

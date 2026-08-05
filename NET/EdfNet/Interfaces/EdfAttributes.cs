@@ -4,13 +4,16 @@ namespace EdfNet.Interfaces;
 public class EdfSerializableAttribute : Attribute { }
 
 [AttributeUsage(AttributeTargets.Property)]
-public class EdfArrayAttribute(params int[] dimensions) : Attribute
+public class EdfArrayAttribute(params ushort[] dimensions) : Attribute
 {
-    public int[] Dimensions { get; set; } = dimensions;
+    public ushort[] Dimensions { get; set; } = dimensions;
 }
 
-//[AttributeUsage(AttributeTargets.Property)]
-//public class EdfCharArrayAttribute(byte len) : Attribute
-//{
-//    public byte Len { get; set; } = len;
-//}
+[AttributeUsage(AttributeTargets.Property)]
+public class EdfCharArrayAttribute(byte len) : Attribute
+{
+    public byte Len { get; set; } = len;
+}
+
+[AttributeUsage(AttributeTargets.Property)]
+public class EdfIgnoreAttribute : Attribute { }
