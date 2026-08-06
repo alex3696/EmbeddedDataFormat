@@ -33,17 +33,37 @@ public class StackDecomposer : IEdfByteEnumerator
         if (source.GetType().IsSimpleType()
             || (source is byte[] && PoType.Char == DstType?.Type))
         {
-            var rootArray = new object[] { source };
-            _stack.Push(new ArrayNode(rootArray));
+            var arr = Array.CreateInstance(source.GetType(), 1);
+            arr.SetValue(source, 0);
+            source = arr;
         }
-        else if (source is Array arr)
-        {
-            _stack.Push(new ArrayNode(arr));
-        }
-        else
-            _stack.Push(new ObjectNode(source));
+        PushComplexObjectElements(source);
     }
 
+    private void PushComplexObjectElements(object obj)
+    {
+        if (obj is Array arr)
+        {
+            var elementType = obj.GetType().GetElementType();
+            if (true == elementType?.IsSimpleType()
+                || (elementType == typeof(byte[]) && PoType.Char == DstType?.Type))
+            {
+                _stack.Push(new ArrayNode(arr));
+            }
+            else if (true == elementType?.IsStructType())
+            {
+                var flatArray = arr.Cast<object>().ToArray();
+                for (int i = flatArray.Length - 1; i >= 0; i--)
+                {
+                    _stack.Push(new ObjectNode(flatArray[i]));
+                }
+            }
+        }
+        else
+        {
+            _stack.Push(new ObjectNode(obj));
+        }
+    }
 
     public bool MoveNext(EdfType? dstType)
     {
@@ -56,9 +76,6 @@ public class StackDecomposer : IEdfByteEnumerator
                 _stack.Pop();
                 continue;
             }
-            //object? item = top.GetValue();
-            //if (item == null) continue;
-            //Type type = item.GetType();
             var type = top.GetPropertyType();
             // 1. Если это простой тип или массив байт в режиме Char — это наш целевой примитив
             if (type.IsSimpleType() || (type == typeof(byte[]) && PoType.Char == dstType?.Type))
@@ -66,23 +83,11 @@ public class StackDecomposer : IEdfByteEnumerator
                 _currentNode = top;
                 return true;
             }
-            // 2. Если это массив (но не byte[] в режиме Char) — уходим вглубь по массиву
-            else if (type.IsArray)
+            else
             {
-                object? item = top.GetValue();
-                if (item == null) continue;
-                _stack.Push(new ArrayNode((Array)item));
-            }
-            // 3. Если сложный объект — уходим вглубь по свойствам
-            else if (type.IsStructType())
-            {
-                //var props = _propertyCache.GetOrAdd(type, t =>
-                //    t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                //    .Where(p => p.GetIndexParameters().Length == 0)
-                //    .ToArray());
-                object? item = top.GetValue();
-                if (item == null) continue;
-                _stack.Push(new ObjectNode(item/*, props*/));
+                var obj = top.GetValue();
+                if (null != obj)
+                    PushComplexObjectElements(obj);
             }
         }
         _currentNode = null;

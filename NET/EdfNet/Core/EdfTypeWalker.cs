@@ -29,7 +29,9 @@ public static class EdfTypeWalker
 {
     public static void Process(EdfType et, IPrimitiveIo io)
     {
-        WriteObj(et, ref io);//boxing
+        io.SepRecBegin();
+        WriteObj(et, ref io);
+        io.SepRecEnd();
     }
     public static void Process<T>(EdfType et, ref T io)
         where T : IPrimitiveIo, allows ref struct

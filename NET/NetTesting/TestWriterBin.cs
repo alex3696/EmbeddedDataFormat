@@ -5,14 +5,15 @@ public class TestWriterBin
 {
     public int Size { get; set; } = 1;
 #pragma warning disable CS8618
-    MemoryStream _ms;
+    MemoryStream _msGen;
+    MemoryStream _msRef;
     EdfNet.Gen.WriterBin _writerEnum;
     EdfNet.Ref.WriterBin _writerRef;
     MyPosition[] _list;
 #pragma warning restore CS8618
 
     public TestWriterBin()
-        :this(1)
+        : this(1)
     {
 
     }
@@ -21,17 +22,18 @@ public class TestWriterBin
         Setup(count);
     }
 
-
     public void Setup(int count = 1)
     {
-        _ms?.Dispose();
+        _msGen?.Dispose();
+        _msRef?.Dispose();
         _writerEnum?.Dispose();
         _writerRef?.Dispose();
 
         Size = count;
-        _ms = new MemoryStream(100_000 * 4 * 8);
-        _writerEnum = new(_ms);
-        _writerRef = new(_ms);
+        _msGen = new MemoryStream(1000);
+        _msRef = new MemoryStream(1000);
+        _writerEnum = new(_msGen);
+        _writerRef = new(_msRef);
         _list = new MyPosition[Size];
         for (int i = 0; i < Size; i++)
             _list[i] = new MyPosition() { X = i, Y = i * 2, Z = i * 3 };
@@ -43,9 +45,9 @@ public class TestWriterBin
     [TestMethod]
     public void Writer_Enum()
     {
-        _ms.Position = 0;
         for (int i = 0; i < Size; i++)
         {
+            _msGen.Position = 0;
             var enm = new MyPositionByteEnumerator(_list[i]);
             _writerEnum.WriteEnumerator(ref enm);
         }
@@ -53,9 +55,9 @@ public class TestWriterBin
     [TestMethod]
     public void Writer_Reflection()
     {
-        _ms.Position = 0;
         for (int i = 0; i < Size; i++)
         {
+            _msRef.Position = 0;
             _writerRef.Write(_list[i]);
         }
     }

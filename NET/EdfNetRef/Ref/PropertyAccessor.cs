@@ -12,13 +12,13 @@ public interface IPropertyAccessor
     object? GetValue(object target);
     void SetValue(object target, object? value);
 }
-public class PropertyAccessor<TTarget, TProperty> : IPropertyAccessor
+public class PropertyAccessorPrim<TTarget, TProperty> : IPropertyAccessor
     where TTarget : class
     where TProperty : struct
 {
     private readonly Func<TTarget, TProperty> _getter;
     private readonly Action<TTarget, TProperty> _setter;
-    public PropertyAccessor(MethodInfo getMethod, MethodInfo setMethod)
+    public PropertyAccessorPrim(MethodInfo getMethod, MethodInfo setMethod)
     {
         _getter = (Func<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Func<TTarget, TProperty>), getMethod);
         _setter = (Action<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Action<TTarget, TProperty>), setMethod);
@@ -26,8 +26,11 @@ public class PropertyAccessor<TTarget, TProperty> : IPropertyAccessor
     public int WriteValue(object target, Span<byte> dst)
     {
         TProperty value = _getter((TTarget)target);
+        var len = Unsafe.SizeOf<TProperty>();
+        if (len > dst.Length)
+            return -1;
         MemoryMarshal.Write(dst, in value);
-        return Unsafe.SizeOf<TTarget>();
+        return len;
     }
     public int ReadValue(object target, ReadOnlySpan<byte> src)
     {
@@ -40,7 +43,6 @@ public class PropertyAccessor<TTarget, TProperty> : IPropertyAccessor
 }
 
 public class PropertyAccessorString<TTarget> : IPropertyAccessor
-//where TTarget : class
 {
     private readonly Func<TTarget, string?> _getter;
     private readonly Action<TTarget, string?> _setter;
@@ -65,25 +67,18 @@ public class PropertyAccessorString<TTarget> : IPropertyAccessor
     public Type GetPropertyType() => typeof(string);
 }
 
-
-public class PropertyAccessorArray<TTarget, TProperty> : IPropertyAccessor
-//where TTarget : class
+public class PropertyAccessorComplex<TTarget, TProperty> : IPropertyAccessor
+    where TTarget : class
 {
     private readonly Func<TTarget, TProperty> _getter;
     private readonly Action<TTarget, TProperty> _setter;
-    public PropertyAccessorArray(MethodInfo getMethod, MethodInfo setMethod)
+    public PropertyAccessorComplex(MethodInfo getMethod, MethodInfo setMethod)
     {
         _getter = (Func<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Func<TTarget, TProperty>), getMethod);
         _setter = (Action<TTarget, TProperty>)Delegate.CreateDelegate(typeof(Action<TTarget, TProperty>), setMethod);
     }
-    public int WriteValue(object target, Span<byte> dst)
-    {
-        throw new NotImplementedException();
-    }
-    public int ReadValue(object target, ReadOnlySpan<byte> src)
-    {
-        throw new NotImplementedException();
-    }
+    public int WriteValue(object target, Span<byte> dst) => throw new NotImplementedException();
+    public int ReadValue(object target, ReadOnlySpan<byte> src) => throw new NotImplementedException();
     public object? GetValue(object target) => _getter((TTarget)target);
     public void SetValue(object target, object? val) => _setter.Invoke((TTarget)target, (TProperty)val!);
     public Type GetPropertyType() => typeof(TProperty);
@@ -120,23 +115,13 @@ public static class AccessorExt
             if (propType.IsSimpleType()) // Элементарные struct (int, float, bool, custom enums)
             {
                 if (propType.IsValueType)
-                    yield return MakeAccessor(type, prop);
+                    yield return MakeAccessorPrim(type, prop);
                 else if (propType == typeof(string))
                     yield return MakeAccessorString(type, prop);
             }
-            else if (propType.IsArray)
+            else
             {
-                Type accr = typeof(PropertyAccessorArray<,>).MakeGenericType(type, propType!);
-                yield return (IPropertyAccessor)Activator.CreateInstance(accr, prop.GetMethod!, prop.SetMethod!)!;
-            }
-            else if (propType.IsStructType())
-            {
-                // Если свойство — это вложенная пользовательская структура (Сложный тип), 
-                // рекурсивно вытаскиваем её свойства
-                foreach (var subAccessor in BuildAccessorsFlat(propType))
-                {
-                    yield return subAccessor;
-                }
+                yield return MakeAccessorComplex(type, prop);
             }
         }
     }
@@ -145,14 +130,19 @@ public static class AccessorExt
     {
         return _accessorCache.GetOrAdd(type, static t => BuildAccessorsFlat(t).ToList());
     }
-    private static IPropertyAccessor MakeAccessor(Type targetType, PropertyInfo prop)
+    private static IPropertyAccessor MakeAccessorPrim(Type targetType, PropertyInfo prop)
     {
-        Type accessorGenericType = typeof(PropertyAccessor<,>).MakeGenericType(targetType, prop.PropertyType);
+        Type accessorGenericType = typeof(PropertyAccessorPrim<,>).MakeGenericType(targetType, prop.PropertyType);
         return (IPropertyAccessor)Activator.CreateInstance(
             accessorGenericType,
             prop.GetMethod!,
             prop.SetMethod!
         )!;
+    }
+    private static IPropertyAccessor MakeAccessorComplex(Type targetType, PropertyInfo prop)
+    {
+        Type accr = typeof(PropertyAccessorComplex<,>).MakeGenericType(targetType, prop.PropertyType);
+        return (IPropertyAccessor)Activator.CreateInstance(accr, prop.GetMethod!, prop.SetMethod!)!;
     }
     private static IPropertyAccessor MakeAccessorString(Type targetType, PropertyInfo prop)
     {

@@ -29,7 +29,7 @@ public class WriterBin_Bench
 {
     private readonly TestWriterBin _test = new();
 
-    [Params(1, 100_000)]
+    [Params(1, 1000)]
     public int Size { get; set; }
 
     [GlobalSetup]
