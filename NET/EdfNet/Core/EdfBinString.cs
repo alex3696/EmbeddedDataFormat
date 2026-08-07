@@ -40,6 +40,25 @@ public static class EdfBinString
         dst[0] = len;
         return 1 + len;
     }
+    public static int WriteTxt(string? str, Span<byte> dst)
+    {
+        if (1 > dst.Length)
+            return -1;
+        if (string.IsNullOrEmpty(str))
+        {
+            dst[0] = 0;
+            return 1;
+        }
+        var len = (byte)int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
+        if (len + 2 > dst.Length)
+            return -1;
+        SpanBufferWriter writer = new(dst);
+        writer.Append<byte>(34);
+        var writed = EdfBinString.CopyStringToSpan(str, writer.GetSpan().Slice(0, len));
+        writer.Advance(writed);
+        writer.Append<byte>(34);
+        return writer.WrittedCount;
+    }
     public static int ReadBin(ReadOnlySpan<byte> b, out string? str)
     {
         if (1 > b.Length)

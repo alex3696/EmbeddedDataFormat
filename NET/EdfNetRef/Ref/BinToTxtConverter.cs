@@ -47,11 +47,11 @@ public class BinToTxtConverter : BaseDisposable
                         break;
                     case BlockType.Data:
                         EdfErr err = TryReadPrimitives(out var arr, _reader.GetBlockData());
-                        if (0 < arr.Count)
+                        for (int i = 0; i < arr.Count; ++i)
                         {
-                            _writer.Write(arr);
-                            _writer.Flush();
+                            _writer.Write(arr[i]);
                         }
+                        _writer.Flush();
                         break;
                 }
             }

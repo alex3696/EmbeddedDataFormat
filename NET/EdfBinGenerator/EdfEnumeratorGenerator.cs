@@ -86,6 +86,8 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         GenerateCurrentPoLen(sb, fields);
         GenerateWrite(sb, fields);
         GenerateRead(sb, fields);
+        GenerateWriteTxt(sb, fields);
+        GenerateReadTxt(sb, fields);
         GenerateResult(sb, structName);
 
         sb.AppendLine("    }");
@@ -273,7 +275,8 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         sb.AppendLine("        }");
         sb.AppendLine();
 
-    }// 7. Write
+    }
+    // 7. Write
     private static void GenerateWrite(StringBuilder sb, List<IPropertySymbol> fields)
     {
         sb.AppendLine("        public int Write(Span<byte> destination)");
@@ -302,7 +305,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
             else
             {
                 int size = fType.GetPrimitiveSize();
-                sb.AppendLine($"                case {i + 1}: if (destination.Length < {size}) return 0;");
+                sb.AppendLine($"                case {i + 1}: if (destination.Length < {size}) return -1;");
                 if (isNullable)// Nullable-структура 
                 {
                     sb.AppendLine($"                    MemoryMarshal.Write(destination, _instance.{f.Name}.GetValueOrDefault());");
@@ -364,6 +367,52 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         sb.AppendLine("            }");
         sb.AppendLine("        }");
         sb.AppendLine();
+    }
+    // 7. Write
+    private static void GenerateWriteTxt(StringBuilder sb, List<IPropertySymbol> fields)
+    {
+        sb.AppendLine("        public int WriteTxt(Span<byte> destination)");
+        sb.AppendLine("        {");
+        for (int i = 0; i < fields.Count; i++)
+        {
+            var fType = fields[i].Type.UnwrapNullable();
+            if (fType is IArrayTypeSymbol)
+                sb.AppendLine($"            if (_inArray{i + 1}) return _arrayEnum{i + 1}.WriteTxt(destination);");
+            else if (fType.IsNestedSerializable())
+                sb.AppendLine($"            if (_inNested{i + 1}) return _nestedEnum{i + 1}.WriteTxt(destination);");
+        }
+        sb.AppendLine("            switch (_state)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                default: return 0;");
+
+        for (int i = 0; i < fields.Count; i++)
+        {
+            var f = fields[i];
+            var fType = f.Type.UnwrapNullable();
+            bool isNullable = f.Type.IsNullableValueType();
+            if (fType is IArrayTypeSymbol || fType.IsNestedSerializable())
+                continue;
+            if (fType.SpecialType == SpecialType.System_String)
+                sb.AppendLine($"                case {i + 1}: return EdfBinString.WriteTxt(_instance.{f.Name}, destination);");
+            else
+            {
+                if (isNullable)// Nullable-структура 
+                {
+                    sb.AppendLine($"                case {i + 1}: return PrimitiveWritersTxt.TryWrite(destination, _instance.{f.Name}.GetValueOrDefault());");
+                }
+                else // Обычная структура (struct SubVal)
+                {
+                    sb.AppendLine($"                case {i + 1}: return PrimitiveWritersTxt.TryWrite(destination, _instance.{f.Name});");
+                }
+            }
+        }
+        sb.AppendLine("            }");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+    }
+    private static void GenerateReadTxt(StringBuilder sb, List<IPropertySymbol> fields)
+    {
+        sb.AppendLine("        public int ReadTxt(ReadOnlySpan<byte> src) => throw new NotImplementedException();");
     }
     // 9. Result
     private static void GenerateResult(StringBuilder sb, string structName)

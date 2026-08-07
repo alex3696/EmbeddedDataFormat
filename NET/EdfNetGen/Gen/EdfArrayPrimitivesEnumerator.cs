@@ -1,7 +1,7 @@
 namespace EdfNet.Gen;
 
 public struct EdfArrayPrimitivesEnumerator<T> : IEdfByteEnumerator
-    where T : struct // unmanaged заменили на struct, так как мы safe
+    where T : struct, IUtf8SpanFormattable
 {
     private readonly Array _array;
     private int _index;
@@ -88,5 +88,19 @@ public struct EdfArrayPrimitivesEnumerator<T> : IEdfByteEnumerator
         elementRef = MemoryMarshal.Read<T>(src);
         return elementSize;
     }
-
+    public readonly int WriteTxt(Span<byte> dst)
+    {
+        if (_array == null)
+            return 0;
+        int elementSize = _poType.GetSizeOf();
+        ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
+        int byteOffset = _index * elementSize;
+        ref byte targetByteRef = ref Unsafe.Add(ref byteRoot, byteOffset);
+        ref T elementRef = ref Unsafe.As<byte, T>(ref targetByteRef);
+        return PrimitiveWritersTxt.TryWrite(dst, elementRef); ;
+    }
+    public int ReadTxt(ReadOnlySpan<byte> src)
+    {
+        throw new NotImplementedException();
+    }
 }

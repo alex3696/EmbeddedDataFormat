@@ -104,6 +104,16 @@ public class StackDecomposer : IEdfByteEnumerator
         ArgumentNullException.ThrowIfNull(_currentNode);
         return _currentNode.Read(src);
     }
+    public int WriteTxt(Span<byte> dst)
+    {
+        ArgumentNullException.ThrowIfNull(_currentNode);
+        return _currentNode.WriteTxt(dst);
+    }
+    public int ReadTxt(ReadOnlySpan<byte> src)
+    {
+        ArgumentNullException.ThrowIfNull(_currentNode);
+        return _currentNode.ReadTxt(src);
+    }
 
     #region Узлы контекста обхода
 
@@ -115,6 +125,8 @@ public class StackDecomposer : IEdfByteEnumerator
         void SetValue(object? value);
         int Write(Span<byte> dst);
         int Read(ReadOnlySpan<byte> src);
+        int WriteTxt(Span<byte> dst);
+        int ReadTxt(ReadOnlySpan<byte> src);
     }
 
     private class ObjectNode : IContextNode
@@ -176,6 +188,8 @@ public class StackDecomposer : IEdfByteEnumerator
             //    prop.SetValue(_target, obj);
             //return len;
         }
+        public int WriteTxt(Span<byte> dst) => _accessors.ElementAt(_index).WriteValueTxt(_target, dst);
+        public int ReadTxt(ReadOnlySpan<byte> src)=> _accessors.ElementAt(_index).ReadValueTxt(_target, src);
     }
 
     private class ArrayNode : IContextNode
@@ -222,8 +236,8 @@ public class StackDecomposer : IEdfByteEnumerator
             _edfType = dstType;
             return _flatIndex < _length;
         }
-        public object? GetValue() => _array.GetValue(_flatIndex);
-        public void SetValue(object? value) => _array.SetValue(value, _flatIndex);
+        public object? GetValue() => _array.GetValue(_indices);
+        public void SetValue(object? value) => _array.SetValue(value, _indices);
         public int Write(Span<byte> dst)
         {
             var obj = _array.GetValue(_indices);
@@ -239,7 +253,21 @@ public class StackDecomposer : IEdfByteEnumerator
             _array.SetValue(obj, _indices);
             return len;
         }
-
+        public int WriteTxt(Span<byte> dst)
+        {
+            var obj = _array.GetValue(_indices);
+            ArgumentNullException.ThrowIfNull(obj);
+            ArgumentNullException.ThrowIfNull(_edfType);
+            return PrimitiveWritersTxt.TryWrite(dst, _edfType, obj);
+        }
+        public int ReadTxt(ReadOnlySpan<byte> src)
+        {
+            throw new NotImplementedException();
+            //ArgumentNullException.ThrowIfNull(_edfType);
+            //var len = Primitive.TryReadTxt(src, _edfType, out var obj);
+            //_array.SetValue(obj, _index);
+            //return len;
+        }
         public Type GetPropertyType()
         {
             var et = _array.GetType().GetElementType();

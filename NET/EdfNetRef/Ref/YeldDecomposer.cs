@@ -110,6 +110,19 @@ public class YeldDecomposer : IEdfByteEnumerator
             }
         }
     }
+
+    public int WriteTxt(Span<byte> dst)
+    {
+        ArgumentNullException.ThrowIfNull(_enumerator?.Current);
+        return _enumerator.Current.WriteTxt(dst);
+    }
+
+    public int ReadTxt(ReadOnlySpan<byte> src)
+    {
+        ArgumentNullException.ThrowIfNull(_enumerator?.Current);
+        return _enumerator.Current.ReadTxt(src);
+    }
+
     private interface IContextNode
     {
         //Type GetPropertyType();
@@ -117,6 +130,8 @@ public class YeldDecomposer : IEdfByteEnumerator
         void SetValue(object? value);
         int Write(Span<byte> dst);
         int Read(ReadOnlySpan<byte> src);
+        int WriteTxt(Span<byte> dst);
+        int ReadTxt(ReadOnlySpan<byte> src);
     }
     private class YObjNode : IContextNode
     {
@@ -146,7 +161,8 @@ public class YeldDecomposer : IEdfByteEnumerator
         public void SetValue(object? value) => _accessor.SetValue(_target, value);
         public int Read(ReadOnlySpan<byte> src) => _accessor.ReadValue(_target, src);
         public int Write(Span<byte> dst) => _accessor.WriteValue(_target, dst);
-
+        public int ReadTxt(ReadOnlySpan<byte> src) => _accessor.ReadValueTxt(_target, src);
+        public int WriteTxt(Span<byte> dst) => _accessor.WriteValueTxt(_target, dst);
     }
     private class YArrayNode : IContextNode
     {
@@ -187,6 +203,23 @@ public class YeldDecomposer : IEdfByteEnumerator
             _array.SetValue(obj, _index);
             return len;
         }
+        public int WriteTxt(Span<byte> dst)
+        {
+            var obj = _array.GetValue(_index);
+            ArgumentNullException.ThrowIfNull(obj);
+            ArgumentNullException.ThrowIfNull(_edfType);
+            return PrimitiveWritersTxt.TryWrite(dst, _edfType, obj);
+        }
+        public int ReadTxt(ReadOnlySpan<byte> src)
+        {
+            throw new NotImplementedException();
+            //ArgumentNullException.ThrowIfNull(_edfType);
+            //var len = Primitive.TryReadTxt(src, _edfType, out var obj);
+            //_array.SetValue(obj, _index);
+            //return len;
+        }
+
+
     }
 }
 

@@ -11,9 +11,11 @@ public interface IEdfByteEnumerator
     // Получение Длина текущего примитива
     int CurrentPoLen { get; }
     // Запись сырых байт примитива напрямую в предоставленный Span
-    int Write(Span<byte> destination);
+    int Write(Span<byte> dst);
     // Чтение сырых байт из Span в примитив напрямую
     int Read(ReadOnlySpan<byte> src);
+    int WriteTxt(Span<byte> dst);
+    int ReadTxt(ReadOnlySpan<byte> src);
 }
 
 public interface IEdfByteEnumerator<T> : IEdfByteEnumerator

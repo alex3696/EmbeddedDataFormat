@@ -28,10 +28,13 @@ public class RecursiveWriterTxt : IPrimitiveIo
     public int PrimitivesWritted { get; private set; } = 0;
     public int BytesWritted { get; private set; } = 0;
     public int Skip { get; set; } = 0;
+
+    private readonly byte[] _buf = new byte[512];
+
     public RecursiveWriterTxt(Stream dstStream)
     {
         _stream = dstStream;
-        _decomposer = new PrimitiveDecomposer();
+        _decomposer = new();
     }
 
     public EdfErr DoWrite(EdfType edfType, object obj)
@@ -89,9 +92,10 @@ public class RecursiveWriterTxt : IPrimitiveIo
         }
 
         _decomposer.DstType = edfType;
-        var len = _decomposer.WriteTxt(_stream);
+        var len = _decomposer.WriteTxt(_buf.AsSpan());
         if (0 > len)
             throw new EdfDstBufOverflowException();
+        _stream.Write(_buf.AsSpan(0, len));
         _hasCurrent = false;
         BytesWritted += (ushort)len;
         PrimitivesWritted++;
@@ -99,6 +103,6 @@ public class RecursiveWriterTxt : IPrimitiveIo
 
 
     private readonly Stream _stream;
-    private readonly PrimitiveDecomposer _decomposer;
+    private readonly StackDecomposer _decomposer = new();
     private bool _hasCurrent;
 }

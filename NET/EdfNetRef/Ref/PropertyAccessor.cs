@@ -9,12 +9,14 @@ public interface IPropertyAccessor
     Type GetPropertyType();
     int WriteValue(object target, Span<byte> dst);
     int ReadValue(object target, ReadOnlySpan<byte> src);
+    int WriteValueTxt(object target, Span<byte> dst);
+    int ReadValueTxt(object target, ReadOnlySpan<byte> src);
     object? GetValue(object target);
     void SetValue(object target, object? value);
 }
 public class PropertyAccessorPrim<TTarget, TProperty> : IPropertyAccessor
     where TTarget : class
-    where TProperty : struct
+    where TProperty : struct, IUtf8SpanFormattable
 {
     private readonly Func<TTarget, TProperty> _getter;
     private readonly Action<TTarget, TProperty> _setter;
@@ -25,18 +27,31 @@ public class PropertyAccessorPrim<TTarget, TProperty> : IPropertyAccessor
     }
     public int WriteValue(object target, Span<byte> dst)
     {
-        TProperty value = _getter((TTarget)target);
         var len = Unsafe.SizeOf<TProperty>();
         if (len > dst.Length)
             return -1;
+        TProperty value = _getter((TTarget)target);
         MemoryMarshal.Write(dst, in value);
         return len;
     }
     public int ReadValue(object target, ReadOnlySpan<byte> src)
     {
+        var len = Unsafe.SizeOf<TProperty>();
+        if (len > src.Length)
+            return -1;
         _setter.Invoke((TTarget)target, MemoryMarshal.Read<TProperty>(src));
-        return Unsafe.SizeOf<TProperty>();
+        return len;
     }
+    public int WriteValueTxt(object target, Span<byte> dst)
+    {
+        TProperty val = _getter((TTarget)target);
+        return PrimitiveWritersTxt.TryWrite(dst, val);
+    }
+    public int ReadValueTxt(object target, ReadOnlySpan<byte> src)
+    {
+        throw new NotImplementedException();
+    }
+
     public object? GetValue(object target) => _getter((TTarget)target);
     public void SetValue(object target, object? val) => _setter.Invoke((TTarget)target, (TProperty)val!);
     public Type GetPropertyType() => typeof(TProperty);
@@ -62,6 +77,15 @@ public class PropertyAccessorString<TTarget> : IPropertyAccessor
         _setter.Invoke((TTarget)target, str);
         return len;
     }
+    public int WriteValueTxt(object target, Span<byte> dst)
+    {
+        string? str = _getter((TTarget)target);
+        return EdfBinString.WriteTxt(str, dst);
+    }
+    public int ReadValueTxt(object target, ReadOnlySpan<byte> src)
+    {
+        throw new NotImplementedException();
+    }
     public object? GetValue(object target) => _getter((TTarget)target);
     public void SetValue(object target, object? val) => _setter.Invoke((TTarget)target, (string?)val!);
     public Type GetPropertyType() => typeof(string);
@@ -79,6 +103,8 @@ public class PropertyAccessorComplex<TTarget, TProperty> : IPropertyAccessor
     }
     public int WriteValue(object target, Span<byte> dst) => throw new NotImplementedException();
     public int ReadValue(object target, ReadOnlySpan<byte> src) => throw new NotImplementedException();
+    public int WriteValueTxt(object target, Span<byte> dst) => throw new NotImplementedException();
+    public int ReadValueTxt(object target, ReadOnlySpan<byte> src) => throw new NotImplementedException();
     public object? GetValue(object target) => _getter((TTarget)target);
     public void SetValue(object target, object? val) => _setter.Invoke((TTarget)target, (TProperty)val!);
     public Type GetPropertyType() => typeof(TProperty);

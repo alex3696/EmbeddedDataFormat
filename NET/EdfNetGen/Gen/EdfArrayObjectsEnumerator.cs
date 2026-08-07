@@ -93,6 +93,12 @@ namespace EdfNet.Gen
             _array.SetValue(_currentElementEnum.Result, _indices);
             return readLen;
         }
-
+        public int WriteTxt(Span<byte> dst) => _currentElementEnum.WriteTxt(dst);
+        public int ReadTxt(ReadOnlySpan<byte> src)
+        {
+            int readLen = _currentElementEnum.ReadTxt(src);
+            _array.SetValue(_currentElementEnum.Result, _indices);
+            return readLen;
+        }
     }
 }

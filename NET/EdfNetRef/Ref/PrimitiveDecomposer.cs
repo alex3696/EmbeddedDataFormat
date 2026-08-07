@@ -45,13 +45,6 @@ public class PrimitiveDecomposer : IEdfByteEnumerator
         return _enumerator.MoveNext();
     }
 
-    public int WriteTxt(Stream dst)
-    {
-        var obj = _enumerator.Current;
-        ArgumentNullException.ThrowIfNull(obj, nameof(obj));
-        ArgumentNullException.ThrowIfNull(DstType, nameof(DstType));
-        return PrimitiveWritersTxt.TryWrite(dst, DstType, obj);
-    }
     public int Write(Span<byte> dst)
     {
         var obj = _enumerator.Current;
@@ -100,5 +93,16 @@ public class PrimitiveDecomposer : IEdfByteEnumerator
                     yield return subItem;
             }
         }
+    }
+    public int WriteTxt(Span<byte> dst)
+    {
+        var obj = _enumerator.Current;
+        ArgumentNullException.ThrowIfNull(obj, nameof(obj));
+        ArgumentNullException.ThrowIfNull(DstType, nameof(DstType));
+        return PrimitiveWritersTxt.TryWrite(dst, DstType, obj);
+    }
+    public int ReadTxt(ReadOnlySpan<byte> src)
+    {
+        throw new NotImplementedException();
     }
 }
