@@ -101,6 +101,9 @@ public class PrimitiveWritersTxt
     public static int TryWriteChar(Span<byte> dst, byte[] src, int edfLen)
     {
         var len = (byte)int.Min(edfLen, src.Length);
+        int firstZero = Array.FindIndex(src, (byte nn) => nn == 0);
+        if(0 < firstZero && 256 > firstZero)
+            len = (byte)int.Min(len, firstZero);
         if (2 + len > dst.Length)
             return -1;
         dst[0] = 34;

@@ -72,8 +72,8 @@ public static class PrimitiveWritersBin
             _ => throw new EdfException($"Unsupported type: {edfType.Type}"),
         };
     }
-    public static int TryRead<T>(ReadOnlySpan<byte> dst, out object? val)
-    where T : struct
+    public static int ReadValue<T>(ReadOnlySpan<byte> dst, out T? val)
+        where T : struct
     {
         var len = Marshal.SizeOf<T>();
         if (dst.Length < len)
@@ -84,7 +84,14 @@ public static class PrimitiveWritersBin
         val = MemoryMarshal.Read<T>(dst);
         return len;
     }
-    public static int TryReadChar(ReadOnlySpan<byte> src, int edfLen, out object? charArray)
+    public static int TryRead<T>(ReadOnlySpan<byte> dst, out object? val)
+        where T : struct
+    {
+        var len = ReadValue<T>(dst, out var ret);
+        val = ret;
+        return len;
+    }
+    public static int TryReadCharValue(ReadOnlySpan<byte> src, int edfLen, out byte[]? charArray)
     {
         if (src.Length < edfLen)
         {
@@ -93,6 +100,12 @@ public static class PrimitiveWritersBin
         }
         var ret = new byte[edfLen];
         src.Slice(0, edfLen).CopyTo(ret);
+        charArray = ret;
+        return edfLen;
+    }
+    public static int TryReadChar(ReadOnlySpan<byte> src, int edfLen, out object? charArray)
+    {
+        var len = TryReadCharValue(src, edfLen, out byte[]? ret);
         charArray = ret;
         return edfLen;
     }

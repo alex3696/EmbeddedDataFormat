@@ -1,141 +1,202 @@
-using System.Globalization;
-
 namespace EdfNet.Core;
 
-public struct BinToTxtEnumerator : IEdfByteEnumerator
+public class BlockReaderBin : BaseReaderBin
 {
-    private int _currentIndex;
-
-    private EdfType? _currentType;
-    private Memory<byte> _src;
-
-    public readonly int CurrentIndex => _currentIndex;
-    public readonly PoType CurrentPoType
+    public BlockReaderBin(Stream stream, Config? cfg = null)
+        : base(stream, cfg)
     {
-        get
+    }
+}
+
+public class ConvWriterTxt : BaseWriterTxt
+{
+    public ConvWriterTxt(Stream stream, Config? cfg = null)
+        : base(stream, cfg)
+    {
+    }
+
+    public override EdfErr Write(object obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class RecursiveWriterBinToTxt : IPrimitiveIo
+{
+    #region Separators
+    private void WriteSep(ReadOnlySpan<byte> src)
+    {
+        if (0 < Skip)
         {
-            ArgumentNullException.ThrowIfNull(_currentType, nameof(_currentType));
-            return _currentType.Type;
+            Skip--;
+            return;
         }
-    }
-    public readonly int CurrentPoLen
-    {
-        get
+        if (0 < src.Length)
         {
-            ArgumentNullException.ThrowIfNull(_currentType, nameof(_currentType));
-            return _currentType.Type switch
-            {
-                PoType.UInt8 => 1,
-                PoType.Int8 => 1,
-                PoType.UInt16 => 2,
-                PoType.Int16 => 2,
-                PoType.UInt32 => 4,
-                PoType.Int32 => 4,
-                PoType.UInt64 => 8,
-                PoType.Int64 => 8,
-                PoType.Single => 4,
-                PoType.Double => 8,
-                PoType.Char => (int)_currentType.GetTotalElements(),
-                PoType.String => EdfBinString.SizeOf(_src.Span),
-                _ => throw new Exception("Unsupported type: " + _currentType.Type),
-            };
+            _txtStream.Write(src);
+            BytesWritted += src.Length;
         }
+        PrimitivesWritted++;
     }
+    public void SepRecBegin() => WriteSep(Separator.RecBegin);
+    public void SepRecEnd() => WriteSep(Separator.RecEnd);
+    public void SepBeginStruct() => WriteSep(Separator.BeginStruct);
+    public void SepEndStruct() => WriteSep(Separator.EndStruct);
+    public void SepBeginArray() => WriteSep(Separator.BeginArray);
+    public void SepEndArray() => WriteSep(Separator.EndArray);
+    public void SepVarEnd() => WriteSep(Separator.VarEnd);
+    #endregion
+    public int PrimitivesWritted { get; private set; } = 0;
+    public int BytesWritted { get; private set; } = 0;
+    public int Skip { get; set; } = 0;
+    private readonly Stream _txtStream;
 
-    public BinToTxtEnumerator(Memory<byte> src)
+
+    private readonly byte[] _txtBuf = new byte[512];
+
+
+    private int _blkOffset = 0;
+    BlockReaderBin? _br;
+
+
+    public RecursiveWriterBinToTxt(Stream txtStream)
     {
-        _src = src;
-        _currentIndex = -1;
+        _txtStream = txtStream;
     }
-
-    public bool MoveNext(EdfType? et = default)
+    public EdfErr DoWrite(EdfType edfType, BlockReaderBin br)
     {
-        _currentType = et;
-        _currentIndex++;
-        _src = _src[CurrentPoLen..];
-        return 0 < _src.Length;
-    }
-
-    public readonly int Write(Span<byte> dst)
-    {
-        ArgumentNullException.ThrowIfNull(_currentType, nameof(_currentType));
-
-        if (PoType.Char == _currentType?.Type)
+        _blkOffset = 0;
+        _br = br;
+        do
         {
-            if (2 > dst.Length)
-                return -1;
-            var src = _src.Span;
-            int i = 0;
-            dst[0] = 34;
-            var edfLen = (int)_currentType.GetTotalElements();
-            for (; i < int.Min(edfLen, src.Length); i++)
+            try
             {
-                if (i + 1 > dst.Length)
-                    return -1;
-                if (0 == src[i])
-                    break;
-                dst[i + 1] = src[i];
+                EdfTypeWalker.Process(edfType, this);
             }
-            dst[i + 1] = 34;
-            return i + 2;
+            catch (EdfWrongTypeException)
+            {
+                return EdfErr.WrongType;
+            }
+            catch (EdfSrcDataRequredException)
+            {
+                Skip = PrimitivesWritted;
+                return EdfErr.SrcDataRequred;
+            }
+            catch (EdfDstBufOverflowException)
+            {
+                return EdfErr.DstBufOverflow;
+            }
+            PrimitivesWritted = 0;
+            Skip = 0;
+            if (_blkOffset < _br.GetBlockData().Length)
+                continue;
+            return EdfErr.IsOk;
         }
-        if (dst.Length < CurrentPoLen)
-            return -1;
-        switch (_currentType?.Type)
-        {
-            default: throw new Exception("Unsupported type: " + _currentType);
-            case PoType.UInt8: return TryFormat((byte)_src.Span[0], dst);
-            case PoType.Int8: return TryFormat((sbyte)_src.Span[0], dst);
-            case PoType.UInt16: return TryFormat(MemoryMarshal.Read<ushort>(_src.Span), dst);
-            case PoType.Int16: return TryFormat(MemoryMarshal.Read<short>(_src.Span), dst);
-            case PoType.UInt32: return TryFormat(MemoryMarshal.Read<uint>(_src.Span), dst);
-            case PoType.Int32: return TryFormat(MemoryMarshal.Read<int>(_src.Span), dst);
-            case PoType.UInt64: return TryFormat(MemoryMarshal.Read<ulong>(_src.Span), dst);
-            case PoType.Int64: return TryFormat(MemoryMarshal.Read<long>(_src.Span), dst);
-            case PoType.Single: return TryFormat(MemoryMarshal.Read<float>(_src.Span), dst);
-            case PoType.Double: return TryFormat(MemoryMarshal.Read<double>(_src.Span), dst);
-            case PoType.String:
-                {
-                    var byteLen = EdfBinString.SizeOf(_src.Span);
-                    if (dst.Length < byteLen + 2)
-                        return -1;
-                    dst[0] = 34;
-                    dst[byteLen + 1] = 34;
-                    _src.Span.Slice(1, byteLen).CopyTo(dst.Slice(1, byteLen));
-                    return byteLen + 2;
-                }
-        }
+        while (true);
     }
-    public int Read(ReadOnlySpan<byte> src)
+    public void Primitive(EdfType edfType)
     {
-        throw new NotSupportedException("Read operation is not supported in ObjByteEnumerator.");
+        if (0 < Skip)
+        {
+            Skip--;
+            return;
+        }
+        ArgumentNullException.ThrowIfNull(edfType, nameof(edfType));
+        ArgumentNullException.ThrowIfNull(_br, nameof(_br));
+
+        for (int i = 0; i < 2; ++i)
+        {
+            ReadOnlySpan<byte> srcBin = _br.GetBlockData();
+            srcBin = srcBin.Slice(_blkOffset);
+
+            ConvErr err = BinToTxt(edfType, srcBin, _txtBuf, out var readed, out var writed);
+            switch (err)
+            {
+                case ConvErr.SrcDataRequred:
+                    if (!_br.ReadBlock() || BlockType.Data != _br.GetBlockType())
+                        throw new EdfSrcDataRequredException();
+                    _blkOffset = 0;
+                    continue;
+                case ConvErr.DstBufOverflow: throw new EdfDstBufOverflowException();
+                case ConvErr.WrongType: throw new EdfWrongTypeException();
+                default: break;
+            }
+            _txtStream.Write(_txtBuf.AsSpan(0, writed));
+            _blkOffset += readed;
+            BytesWritted += (ushort)writed;
+            PrimitivesWritted++;
+            return;
+        }
+        throw new EdfSrcDataRequredException();
     }
-    public static int TryFormat<T>(T obj, Span<byte> dst)
-        where T : IUtf8SpanFormattable
+
+    private enum ConvErr : int
     {
-        try
-        {
-            if (obj.TryFormat(dst, out int w, default, CultureInfo.InvariantCulture))
-                return w;
-            return -1;
-        }
-        catch (Exception)
-        {
-        }
-        return -1;
+        SrcDataRequred = -1001,
+        DstBufOverflow = -1002,
+        WrongType = -1003,
+        IsOk = 0,
     }
-    public static int TryFormat(string? str, Span<byte> dst)
+
+    private static ConvErr ConvertBinToTxt<T>(ReadOnlySpan<byte> srcBin, Span<byte> dstTxt, out int readed, out int writed)
+        where T : struct, IUtf8SpanFormattable
     {
-        try
+        writed = readed = 0;
+        if (srcBin.Length < Unsafe.SizeOf<T>())
+            return ConvErr.SrcDataRequred;
+        readed = PrimitiveWritersBin.ReadValue(srcBin, out T? val);
+        if (0 >= readed || !val.HasValue)
+            return ConvErr.SrcDataRequred;
+        writed = PrimitiveWritersTxt.TryWrite(dstTxt, val.Value);
+        if (0 >= writed)
+            return ConvErr.DstBufOverflow;
+        return ConvErr.IsOk;
+    }
+    private static ConvErr ConvertBinToTxtString(ReadOnlySpan<byte> srcBin, Span<byte> dstTxt, out int readed, out int writed)
+    {
+        writed = readed = 0;
+        readed = EdfBinString.ReadBin(srcBin, out var str);
+        if (0 >= readed)
+            return ConvErr.SrcDataRequred;
+        writed = EdfBinString.WriteTxt(str, dstTxt);
+        if (0 >= writed)
+            return ConvErr.DstBufOverflow;
+        return ConvErr.IsOk;
+    }
+    private static ConvErr ConvertBinToTxtChar(ReadOnlySpan<byte> srcBin, Span<byte> dst, int edfLen, out int readed, out int writed)
+    {
+        writed = readed = 0;
+        readed = PrimitiveWritersBin.TryReadCharValue(srcBin, edfLen, out var ch);
+        if (0 >= readed)
+            return ConvErr.SrcDataRequred;
+        writed = PrimitiveWritersTxt.TryWriteChar(dst, ch ?? [], edfLen);
+        if (0 >= writed)
+            return ConvErr.DstBufOverflow;
+        return ConvErr.IsOk;
+    }
+    private static ConvErr BinToTxt(EdfType et, ReadOnlySpan<byte> srcBin, Span<byte> dstTxt, out int readed, out int writed)
+    {
+        switch (et.Type)
         {
-            dst[0] = 34;
-            var len = EdfBinString.CopyStringToSpan(str, dst.Slice(1, EdfBinString.MaxLen));
-            dst[len + 1] = 34;
-            return len + 2;
+            default:
+            case PoType.Struct: throw new EdfWrongTypeException();
+            case PoType.UInt8: return ConvertBinToTxt<byte>(srcBin, dstTxt, out readed, out writed);
+            case PoType.Int8: return ConvertBinToTxt<sbyte>(srcBin, dstTxt, out readed, out writed);
+            case PoType.Int16: return ConvertBinToTxt<short>(srcBin, dstTxt, out readed, out writed);
+            case PoType.UInt16: return ConvertBinToTxt<ushort>(srcBin, dstTxt, out readed, out writed);
+            case PoType.Int32: return ConvertBinToTxt<int>(srcBin, dstTxt, out readed, out writed);
+            case PoType.UInt32: return ConvertBinToTxt<uint>(srcBin, dstTxt, out readed, out writed);
+            case PoType.Int64: return ConvertBinToTxt<long>(srcBin, dstTxt, out readed, out writed);
+            case PoType.UInt64: return ConvertBinToTxt<ulong>(srcBin, dstTxt, out readed, out writed);
+            case PoType.Single: return ConvertBinToTxt<float>(srcBin, dstTxt, out readed, out writed);
+            case PoType.Double: return ConvertBinToTxt<double>(srcBin, dstTxt, out readed, out writed);
+            case PoType.String: return ConvertBinToTxtString(srcBin, dstTxt, out readed, out writed);
+            case PoType.Char: return ConvertBinToTxtChar(srcBin, dstTxt, (int)et.GetTotalElements(), out readed, out writed);
         }
-        catch (Exception)
-        {
-        }
-        return -1;
     }
 }

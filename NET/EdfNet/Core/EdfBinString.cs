@@ -44,12 +44,7 @@ public static class EdfBinString
     {
         if (1 > dst.Length)
             return -1;
-        if (string.IsNullOrEmpty(str))
-        {
-            dst[0] = 0;
-            return 1;
-        }
-        var len = (byte)int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
+        var len = string.IsNullOrEmpty(str) ? 0 : (byte)int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
         if (len + 2 > dst.Length)
             return -1;
         SpanBufferWriter writer = new(dst);
