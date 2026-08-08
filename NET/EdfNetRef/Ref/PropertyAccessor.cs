@@ -57,6 +57,48 @@ public class PropertyAccessorPrim<TTarget, TProperty> : IPropertyAccessor
     public Type GetPropertyType() => typeof(TProperty);
 }
 
+public class PropertyAccessorPrimNullable<TTarget, TProperty> : IPropertyAccessor
+    where TTarget : class
+    where TProperty : struct, IUtf8SpanFormattable
+{
+    private readonly Func<TTarget, Nullable<TProperty>> _getter;
+    private readonly Action<TTarget, Nullable<TProperty>> _setter;
+    public PropertyAccessorPrimNullable(MethodInfo getMethod, MethodInfo setMethod)
+    {
+        _getter = (Func<TTarget, Nullable<TProperty>>)Delegate.CreateDelegate(typeof(Func<TTarget, Nullable<TProperty>>), getMethod);
+        _setter = (Action<TTarget, Nullable<TProperty>>)Delegate.CreateDelegate(typeof(Action<TTarget, Nullable<TProperty>>), setMethod);
+    }
+    public int WriteValue(object target, Span<byte> dst)
+    {
+        var len = Unsafe.SizeOf<TProperty>();
+        if (len > dst.Length)
+            return -1;
+        Nullable<TProperty> nval = _getter((TTarget)target);
+        MemoryMarshal.Write(dst, (nval == null) ? new TProperty() : nval.Value);
+        return len;
+    }
+    public int ReadValue(object target, ReadOnlySpan<byte> src)
+    {
+        var len = Unsafe.SizeOf<TProperty>();
+        if (len > src.Length)
+            return -1;
+        _setter.Invoke((TTarget)target, MemoryMarshal.Read<TProperty>(src));
+        return len;
+    }
+    public int WriteValueTxt(object target, Span<byte> dst)
+    {
+        Nullable<TProperty> nval = _getter((TTarget)target);
+        return PrimitiveWritersTxt.TryWrite(dst, (nval == null) ? new TProperty() : nval.Value);
+    }
+    public int ReadValueTxt(object target, ReadOnlySpan<byte> src)
+    {
+        throw new NotImplementedException();
+    }
+
+    public object? GetValue(object target) => _getter((TTarget)target);
+    public void SetValue(object target, object? val) => _setter.Invoke((TTarget)target, (TProperty)val!);
+    public Type GetPropertyType() => typeof(TProperty);
+}
 public class PropertyAccessorString<TTarget> : IPropertyAccessor
 {
     private readonly Func<TTarget, string?> _getter;
@@ -137,8 +179,12 @@ public static class AccessorExt
         foreach (var prop in props)
         {
             Type propType = prop.PropertyType;
-            propType = Nullable.GetUnderlyingType(propType) ?? propType;
-            if (propType.IsSimpleType()) // Элементарные struct (int, float, bool, custom enums)
+            var underlying = Nullable.GetUnderlyingType(propType);
+            if (null != underlying && underlying.IsValueType && underlying.IsSimpleType())
+            {
+                yield return MakeAccessorPrimNullable(type, prop);
+            }
+            else if (propType.IsSimpleType()) // Элементарные struct (int, float, bool, custom enums)
             {
                 if (propType.IsValueType)
                     yield return MakeAccessorPrim(type, prop);
@@ -155,6 +201,16 @@ public static class AccessorExt
     public static List<IPropertyAccessor> GetOrBuildAccessors(Type type)
     {
         return _accessorCache.GetOrAdd(type, static t => BuildAccessorsFlat(t).ToList());
+    }
+    private static IPropertyAccessor MakeAccessorPrimNullable(Type targetType, PropertyInfo prop)
+    {
+        var t = Nullable.GetUnderlyingType(prop.PropertyType);
+        Type accessorGenericType = typeof(PropertyAccessorPrimNullable<,>).MakeGenericType(targetType, t);
+        return (IPropertyAccessor)Activator.CreateInstance(
+            accessorGenericType,
+            prop.GetMethod!,
+            prop.SetMethod!
+        )!;
     }
     private static IPropertyAccessor MakeAccessorPrim(Type targetType, PropertyInfo prop)
     {

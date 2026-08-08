@@ -37,8 +37,8 @@ public class TestWriterBin
         _list = new MyPosition[Size];
         for (int i = 0; i < Size; i++)
             _list[i] = new MyPosition() { X = i, Y = i * 2, Z = i * 3 };
-        _writerEnum.Write(MyPosition.GetEdfSchema());
-        _writerRef.Write(MyPosition.GetEdfSchema());
+        _writerEnum.Write(TestClasses_Content.KeyValSchema);
+        _writerRef.Write(TestClasses_Content.KeyValSchema);
     }
 
 
@@ -48,7 +48,7 @@ public class TestWriterBin
         for (int i = 0; i < Size; i++)
         {
             _msGen.Position = 0;
-            var enm = new MyPositionByteEnumerator(_list[i]);
+            var enm = TestClasses_Content.TestValue.GetByteEnumerator();
             _writerEnum.WriteEnumerator(ref enm);
         }
     }
@@ -58,7 +58,7 @@ public class TestWriterBin
         for (int i = 0; i < Size; i++)
         {
             _msRef.Position = 0;
-            _writerRef.Write(_list[i]);
+            _writerRef.Write(TestClasses_Content.TestValue);
         }
     }
 }

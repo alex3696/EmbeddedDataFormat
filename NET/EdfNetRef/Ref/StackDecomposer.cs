@@ -77,6 +77,7 @@ public class StackDecomposer : IEdfByteEnumerator
                 continue;
             }
             var type = top.GetPropertyType();
+            //var underlying = Nullable.GetUnderlyingType(type);
             // 1. Если это простой тип или массив байт в режиме Char — это наш целевой примитив
             if (type.IsSimpleType() || (type == typeof(byte[]) && PoType.Char == dstType?.Type))
             {
@@ -189,7 +190,7 @@ public class StackDecomposer : IEdfByteEnumerator
             //return len;
         }
         public int WriteTxt(Span<byte> dst) => _accessors.ElementAt(_index).WriteValueTxt(_target, dst);
-        public int ReadTxt(ReadOnlySpan<byte> src)=> _accessors.ElementAt(_index).ReadValueTxt(_target, src);
+        public int ReadTxt(ReadOnlySpan<byte> src) => _accessors.ElementAt(_index).ReadValueTxt(_target, src);
     }
 
     private class ArrayNode : IContextNode

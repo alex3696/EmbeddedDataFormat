@@ -29,13 +29,13 @@ public class WriterBin_Bench
 {
     private readonly TestWriterBin _test = new();
 
-    [Params(1, 1000)]
+    //[Params(1, 1000)]
     public int Size { get; set; }
 
     [GlobalSetup]
     public void Setup()
     {
-        _test.Setup(Size);
+        //_test.Setup(Size);
     }
 
     [Benchmark(Baseline = true)]

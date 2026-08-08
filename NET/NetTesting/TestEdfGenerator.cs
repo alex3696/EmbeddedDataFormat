@@ -98,40 +98,7 @@ public class GenSerializationTests
     public void KeyVal_Serialization_And_Deserialization_Should_Be_Identical()
     {
         // 1. ARRANGE: Создаем и максимально разнообразно заполняем тестовый объект
-        var original = new KeyVal
-        {
-            Test1 = "Первая тестовая строка с UTF-8 символами №123",
-            Key = "Уникальный Ключ А-40",
-            Val = 987654321,
-            NVal = 1230456,
-
-            // Трехмерный массив примитивов int[,,] размерностью 3х2х1
-            Arr = new int[3, 2, 1]
-            {
-                { { 10 }, { 20 } },
-                { { 30 }, { 40 } },
-                { { 50 }, { 60 } }
-            },
-
-            // Вложенная Nullable-структура (значение заполнено)
-            Sub0 = new SubVal { ValDouble = 3.14159, ValByte = 0xAA, ValSByte = -50 },
-
-            // Обычная вложенная структура
-            Sub1 = new SubVal { ValDouble = 2.71828, ValByte = 0x55, ValSByte = 120 },
-
-            // Двухмерный массив вложенных объектов SubVal[,] размерностью 2х2
-            Sub = new SubVal[2, 2]
-            {
-                {
-                    new SubVal { ValDouble = 1.1, ValByte = 11, ValSByte = 12 },
-                    new SubVal { ValDouble = 1.2, ValByte = 13, ValSByte = 14 }
-                },
-                {
-                    new SubVal { ValDouble = 2.1, ValByte = 21, ValSByte = 22 },
-                    new SubVal { ValDouble = 2.2, ValByte = 23, ValSByte = 24 }
-                }
-            }
-        };
+        var original = TestClasses_Content.TestValue;
 
         // Создаем буфер в памяти (имитация файла/флеш-блока)
         using var memoryStream = new MemoryStream(1024);
