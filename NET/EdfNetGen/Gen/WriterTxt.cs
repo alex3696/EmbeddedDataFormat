@@ -1,8 +1,8 @@
 namespace EdfNet.Gen;
 
-public class WriterBin : BaseWriterBin
+public class WriterTxt : BaseWriterBin
 {
-    public WriterBin(Stream stream, Config? cfg = default)
+    public WriterTxt(Stream stream, Config? cfg = default)
         : base(stream, cfg)
     {
         _rstate = new(_stream, _blkData);
@@ -17,12 +17,11 @@ public class WriterBin : BaseWriterBin
     }
     private readonly RecursiveWriterState _rstate;
 
-    //public override EdfErr Write(object obj) =>  throw new NotImplementedException();
     public override EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enm)
         where TEnumerator : struct
     {
         ArgumentNullException.ThrowIfNull(CurrentSchema);
-        var writer = new RecursiveWriterBin<TEnumerator>(_rstate, CurrentSchema.Type, ref enm);
+        var writer = new RecursiveWriterBin<TEnumerator>(_rstate, CurrentSchema.Type, ref enm, true);
         return writer.DoWrite();
     }
 }

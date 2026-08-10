@@ -1,4 +1,3 @@
-using EdfNet.Ref;
 using EdfSchema = EdfNet.Core.Schema;
 
 namespace NetTest;
@@ -13,19 +12,10 @@ public class EdfTypeCreator_Test
 
         EdfType genSch = GetGenSchema().Type;
         Assert.IsTrue(genSch.Equals(test));
-
-        EdfType refSch = GetReflSchema().Type;
-        Assert.IsTrue(refSch.Equals(test));
     }
 
     public EdfSchema GetGenSchema()
     {
-        return NetTest.KeyVal.GetEdfSchema();
+        return NetTest.ComplexType.GetEdfSchema();
     }
-
-    public EdfSchema GetReflSchema()
-    {
-        return NetTest.KeyVal.GetEdfSchemaRefl();
-    }
-
 }

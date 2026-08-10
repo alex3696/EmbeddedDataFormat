@@ -42,7 +42,14 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
         Write($">");
         CurrentSchema = sch;
     }
-    public abstract EdfErr Write(object obj);
+    public EdfErr Write<T>(T val) where T : class
+    {
+        return EdfErr.WrongType;
+    }
+    public EdfErr WriteValue<T>(in T val) where T : struct, allows ref struct
+    {
+        return EdfErr.WrongType;
+    }
     public abstract EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
         where TEnumerator : struct, IEdfByteEnumerator;
 

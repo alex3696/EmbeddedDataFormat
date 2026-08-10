@@ -18,7 +18,7 @@ public partial class SubVal
     public sbyte ValSByte { get; set; } = 0x33;
 }
 [EdfSerializable]
-public partial class KeyVal
+public partial class ComplexType
 {
     //public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }
@@ -48,7 +48,7 @@ public static class TestClasses_Content
         Type = new()
         {
             Type = PoType.Struct,
-            Name = "KeyVal",
+            Name = "ComplexType",
             Childs =
         [
             new (PoType.String, "Test1"),
@@ -88,7 +88,7 @@ public static class TestClasses_Content
     };
 
 
-    public static readonly KeyVal TestValue = new()
+    public static readonly ComplexType TestValue = new()
     {
         Test1 = "Первая тестовая строка с UTF-8 символами №123",
         Key = "Уникальный Ключ А-40",

@@ -57,7 +57,7 @@ public class EdfTypeEnumerator_Test
 
     public EdfTypeEnumerator_Test()
     {
-        _schema = NetTest.KeyVal.GetEdfSchema();
+        _schema = NetTest.ComplexType.GetEdfSchema();
         _rcls = new(_lst);
         _enm = new EdfTypeEnumeratorStackInlineArray();
     }

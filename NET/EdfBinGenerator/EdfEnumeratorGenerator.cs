@@ -148,9 +148,13 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
                 var dims = f.ExtractArrayDimensions();
                 if (!string.IsNullOrEmpty(elemPoType))
                 {
-                    sb.AppendLine($"            _arrayEnum{i + 1} = " +
-                        $"new EdfArrayPrimitivesEnumerator<{elemTypeName}>" +
-                        $"(null==instance.{f.Name} ? new {elemTypeName}[{dims}] : instance.{f.Name}, PoType.{elemPoType});");
+                    sb.AppendLine($"            {{");
+                    sb.AppendLine($"                if(null==instance.{f.Name})");
+                    sb.AppendLine($"                    instance.{f.Name}=new {elemTypeName}[{dims}];");
+                    sb.AppendLine($"                _arrayEnum{i + 1} = " +
+                                                    $"new EdfArrayPrimitivesEnumerator<{elemTypeName}>" +
+                                                    $"(instance.{f.Name} , PoType.{elemPoType});");
+                    sb.AppendLine($"            }}");
                 }
                 else
                 {

@@ -15,11 +15,6 @@ public class ConvWriterTxt : BaseWriterTxt
     {
     }
 
-    public override EdfErr Write(object obj)
-    {
-        throw new NotImplementedException();
-    }
-
     public override EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
     {
         throw new NotImplementedException();

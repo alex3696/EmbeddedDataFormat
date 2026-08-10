@@ -40,6 +40,4 @@ public class WriterBin_Bench
 
     [Benchmark(Baseline = true)]
     public void Writer_Enum() => _test.Writer_Enum();
-    [Benchmark]
-    public void Writer_Reflection() => _test.Writer_Reflection();
 }

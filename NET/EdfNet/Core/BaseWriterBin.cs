@@ -83,7 +83,16 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         _blkData.DataLen = 0;
     }
 
-    public abstract EdfErr Write(object obj);
+    public EdfErr Write<T>(T val) where T : class
+    {
+        return EdfErr.WrongType;
+    }
+    public EdfErr WriteValue<T>(in T val) where T : struct, allows ref struct
+    {
+        return EdfErr.WrongType;
+    }
+
+
     public abstract EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
         where TEnumerator : struct, IEdfByteEnumerator;
 

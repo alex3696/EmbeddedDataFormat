@@ -36,14 +36,16 @@ public ref struct RecursiveWriterBin<TEnumerator> : IPrimitiveIo
     private readonly ref TEnumerator _enumerator;
     private readonly EdfType _rooEt;
     private bool _hasCurrent;
+    private readonly bool _txtMode;
 
     public RecursiveWriterBin(RecursiveWriterState state
-        , EdfType edfType, ref TEnumerator enm)
+        , EdfType edfType, ref TEnumerator enm, bool txtMode = false)
     {
         _state = state;
         _enumerator = ref enm;
         _rooEt = edfType;
         _hasCurrent = false;
+        _txtMode = txtMode;
     }
 
     public EdfErr DoWrite()
@@ -100,7 +102,7 @@ public ref struct RecursiveWriterBin<TEnumerator> : IPrimitiveIo
         do
         {
             Span<byte> dst = _state.Block.GetEmptyBuffer();
-            var len = _enumerator.Write(dst);
+            var len = _txtMode ? _enumerator.WriteTxt(dst) : _enumerator.Write(dst);
             if (0 > len)
             {
                 _state.DstStream.Write(_state.Block);

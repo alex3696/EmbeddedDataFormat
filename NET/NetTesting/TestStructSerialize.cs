@@ -1,5 +1,5 @@
+using EdfNet.Gen;
 using EdfNet.Interfaces;
-using EdfNet.Ref;
 using EdfNet.Utils;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -11,6 +11,38 @@ public struct MyPos
     public UInt32 X;
     public UInt32 Y;
     public UInt32 Z;
+}
+
+
+[EdfSerializable]
+public class KeyValueStruct : IEquatable<KeyValueStruct>
+{
+    public string? Key { get; set; }
+    public string? Value { get; set; }
+    [EdfArray(3)]
+    public byte[]? Arr { get; set; }
+
+    public bool Equals(KeyValueStruct? other)
+    {
+        if (other is null)
+            return false;
+        if (!string.Equals(Key, other.Key))
+            return false;
+        if (!string.Equals(Value, other.Value))
+            return false;
+        if (!Arr.SequenceEqual(other.Arr))
+            return false;
+        return true;
+    }
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as KeyValueStruct);
+    }
+
+    public override int GetHashCode()
+    {
+        throw new NotImplementedException();
+    }
 }
 
 
@@ -27,34 +59,7 @@ public class TestStructSerialize
         return ret;
     }
 
-    class KeyValueStruct : IEquatable<KeyValueStruct>
-    {
-        public string? Key { get; set; }
-        public string? Value { get; set; }
-        public byte[]? Arr { get; set; }
 
-        public bool Equals(KeyValueStruct? other)
-        {
-            if (other is null)
-                return false;
-            if (!string.Equals(Key, other.Key))
-                return false;
-            if (!string.Equals(Value, other.Value))
-                return false;
-            if (!Arr.SequenceEqual(other.Arr))
-                return false;
-            return true;
-        }
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as KeyValueStruct);
-        }
-
-        public override int GetHashCode()
-        {
-            throw new NotImplementedException();
-        }
-    }
     [TestMethod]
     public void TestPackUnpack()
     {
@@ -82,7 +87,9 @@ public class TestStructSerialize
         using (var bw = new WriterBin(memStream))
         {
             bw.Write(TestStructInf);
-            bw.Write(kvArr);
+            bw.WriteValue(val1);
+            bw.WriteValue(val2);
+
             //bw.Write(TestStructInf.Inf, val1);
             //bw.Write(TestStructInf.Inf, val2);
             Assert.AreEqual(30, bw.CurrentDataLen);
@@ -100,10 +107,13 @@ public class TestStructSerialize
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
 
-        reader.TryRead(out KeyValueStruct[]? data);
+        var readEnumerator1 = new KeyValueStructByteEnumerator(new());
+        reader.ReadData(ref readEnumerator1);
+        Assert.AreEqual(val1, readEnumerator1.Result);
 
-        Assert.AreEqual(kvArr[0], data?.ElementAt(0));
-        Assert.AreEqual(kvArr[1], data?.ElementAt(1));
+        var readEnumerator2 = new KeyValueStructByteEnumerator(new());
+        reader.ReadData(ref readEnumerator2);
+        Assert.AreEqual(val2, readEnumerator2.Result);
     }
 
     class KeyValue
@@ -170,13 +180,13 @@ public class TestStructSerialize
 
         Schema t = new() { Type = new(PoType.Int32), Id = 0, Name = "weight variable" };
         dw.Write(t);
-        Assert.AreEqual(EdfErr.IsOk, dw.Write(unchecked((int)0xFFFFFFFF)));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(unchecked((int)0xFFFFFFFF)));
 
         Schema td = new() { Type = new(PoType.Double), Id = 0, Name = "TestDouble" };
         dw.Write(td);
-        Assert.AreEqual(EdfErr.IsOk, dw.Write(1.1d));
-        Assert.AreEqual(EdfErr.IsOk, dw.Write(2.1d));
-        Assert.AreEqual(EdfErr.IsOk, dw.Write(3.1d));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(1.1d));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(2.1d));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(3.1d));
 
         Schema tchar = new() { Type = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
         dw.Write(tchar);
@@ -199,11 +209,11 @@ public class TestStructSerialize
             }
         };
         dw.Write(schComlexChar);
-        dw.Write((byte)8);
+        dw.WriteValue((byte)8);
         var schComlexCharBuf = new byte[10];
         Encoding.UTF8.GetBytes("Char", schComlexCharBuf.AsSpan());
         dw.Write(schComlexCharBuf);
-        dw.Write((ushort)16);
+        dw.WriteValue((ushort)16);
 
         EdfType comlexVarInf = new()
         {

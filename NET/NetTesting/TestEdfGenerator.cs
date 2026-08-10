@@ -7,16 +7,16 @@ public class GenSerializationTests
     public void Generate_Schema()
     {
         // 1. ACT: Получаем сгенерированную бинарную схему напрямую без создания объектов
-        Schema schema = KeyVal.GetEdfSchema();
+        Schema schema = ComplexType.GetEdfSchema();
 
         // 2. ASSERT: Базовые проверки корневого контейнера схемы
         Assert.IsNotNull(schema, "Схема не должна быть null");
         Assert.AreEqual(0, schema.Id, "Дефолтный Id схемы должен быть равен 0");
-        Assert.AreEqual("KeyValSchema", schema.Name);
+        Assert.AreEqual("ComplexTypeSchema", schema.Name);
 
         Assert.IsNotNull(schema.Type, "Корневой тип схемы не должен быть null");
         Assert.AreEqual(PoType.Struct, schema.Type.Type, "Корневой тип схемы должен быть PoType.Struct");
-        Assert.AreEqual("KeyVal", schema.Type.Name);
+        Assert.AreEqual("ComplexType", schema.Type.Name);
         Assert.IsNotNull(schema.Type.Childs, "Список дочерних элементов схемы не должен быть null");
 
         // В классе KeyVal ровно 8 свойств, пригодных для сериализации
@@ -105,7 +105,7 @@ public class GenSerializationTests
         using var writer = new EdfNet.Gen.WriterBin(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
-        writer.Write(KeyVal.GetEdfSchema());
+        writer.Write(ComplexType.GetEdfSchema());
         EdfErr writeResult = writer.WriteValue(original);
         writer.Flush(); // Сбрасываем остатки буфера в поток
 
@@ -119,8 +119,9 @@ public class GenSerializationTests
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
         reader.ReadSchema();
-        KeyVal restored = new();
-        var readEnumerator = new KeyValByteEnumerator(restored);
+        reader.ReadBlock();
+        ComplexType restored = new();
+        var readEnumerator = new ComplexTypeByteEnumerator(restored);
         EdfErr readResult = reader.ReadData(ref readEnumerator);
         Assert.AreEqual(EdfErr.IsOk, readResult);
 
@@ -168,7 +169,7 @@ public class GenSerializationTests
     public void KeyVal_With_Null_Properties_Should_Serialize_Correctly_Or_Handle_Gracefully()
     {
         // Тест пограничного состояния: когда строки и массивы равны null.
-        var original = new KeyVal
+        var original = new ComplexType
         {
             Test1 = null,
             Key = null,
@@ -180,10 +181,10 @@ public class GenSerializationTests
 
         using var memoryStream = new MemoryStream();
         using var writer = new EdfNet.Gen.WriterBin(memoryStream);
-        writer.Write(KeyVal.GetEdfSchema());
+        writer.Write(ComplexType.GetEdfSchema());
         EdfErr writeResult = writer.WriteValue(original);
 
-        var enumerator = (KeyValByteEnumerator)original.GetByteEnumerator();
+        var enumerator = (ComplexTypeByteEnumerator)original.GetByteEnumerator();
         writer.WriteEnumerator(ref enumerator);
         writer.WriteValue(original);
 

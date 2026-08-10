@@ -24,6 +24,4 @@ public class EdfTypeCreator_Bench
 
     [Benchmark(Baseline = true)]
     public void Generator() => _tst.GetGenSchema();
-    [Benchmark]
-    public void Reflection() => _tst.GetReflSchema();
 }

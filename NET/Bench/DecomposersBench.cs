@@ -26,10 +26,6 @@ public class DecomposersBench
     private readonly NetTest.Decomposers _decomposers = new();
     public DecomposersBench()
     {
-        // _decomposers.StdReflection_GetValue();
-        // _decomposers.StackDecomposer_GetValue();
-        // _decomposers.YeldDecomposer_GetValue();
-        // _decomposers.Generator_GetValue();
     }
 
     [GlobalSetup]
@@ -38,11 +34,5 @@ public class DecomposersBench
     }
 
     [Benchmark(Baseline = true)]
-    public void StdReflection_GetValue() => _decomposers.StdReflection_GetValue();
-    [Benchmark]
-    public void StackDecomposer_GetValue() => _decomposers.StackDecomposer_GetValue();
-    [Benchmark]
-    public void YeldDecomposer_GetValue() => _decomposers.YeldDecomposer_GetValue();
-    [Benchmark]
     public void Generator_GetValue() => _decomposers.Generator_GetValue();
 }

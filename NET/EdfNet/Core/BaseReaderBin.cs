@@ -11,6 +11,7 @@ public abstract class BaseReaderBin
 
     private uint _recId = 0;
     private ushort _prmOffset = 0;
+    protected ushort _byteOffset;
 
     public BaseReaderBin(Stream stream, Config? cfg = default)
     {
@@ -61,6 +62,7 @@ public abstract class BaseReaderBin
 
     private void ReadDatBlockHeader()
     {
+        _byteOffset = 0;
         ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
         //ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.SchemaId, CurrentSchema.Id, nameof(BinDataBlock.SchemaId));
         //ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.RecordId, _recId, nameof(BinDataBlock.RecordId));
