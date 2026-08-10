@@ -1,9 +1,31 @@
+using System.Buffers.Text;
 using System.Globalization;
 
 namespace EdfNet.Core;
 
 public class PrimitiveWritersTxt
 {
+    public static int TryRead<T>(ReadOnlySpan<byte> src, out T? val)
+        where T : struct
+    {
+        int w;
+        switch (Type.GetTypeCode(typeof(T)))
+        {
+            case TypeCode.Byte:
+                if (!Utf8Parser.TryParse(src, out byte vByte, out w))
+                    break;
+                val = Unsafe.As<byte, T>(ref vByte);
+                return w;
+            case TypeCode.SByte:
+                if (!Utf8Parser.TryParse(src, out sbyte vSByte, out w))
+                    break;
+                val = Unsafe.As<sbyte, T>(ref vSByte);
+                return w;
+            default: break;
+        }
+        throw new NotSupportedException($"Тип {typeof(T).Name} не поддерживается.");
+    }
+
     public static int TryWrite(Span<byte> dst, EdfType edfType, object obj)
     {
         return edfType.Type switch
@@ -40,7 +62,7 @@ public class PrimitiveWritersTxt
     {
         var len = (byte)int.Min(edfLen, src.Length);
         int firstZero = Array.FindIndex(src, (byte nn) => nn == 0);
-        if(0 < firstZero && 256 > firstZero)
+        if (0 < firstZero && 256 > firstZero)
             len = (byte)int.Min(len, firstZero);
         if (2 + len > dst.Length)
             return -1;

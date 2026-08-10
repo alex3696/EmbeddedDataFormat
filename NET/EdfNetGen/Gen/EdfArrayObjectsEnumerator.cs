@@ -9,8 +9,6 @@ namespace EdfNet.Gen
         private TEnumerator _currentElementEnum;
         private bool _isElementActive;
         private readonly Func<T, TEnumerator> _factory; // Фабрика для создания без рефлексии
-        private readonly int[] _indices;
-        private readonly int[] _dims;
 
         public EdfArrayObjectsEnumerator(Array array, Func<T, TEnumerator> factory)
         {
@@ -19,31 +17,6 @@ namespace EdfNet.Gen
             _isElementActive = false;
             _currentElementEnum = default;
             _factory = factory;
-
-            if (array != null)
-            {
-                _indices = new int[array.Rank];
-                _dims = new int[array.Rank];
-                for (int i = 0; i < array.Rank; i++)
-                {
-                    _dims[i] = array.GetLength(i);
-                }
-            }
-            else
-            {
-                _indices = [];
-                _dims = [];
-            }
-        }
-
-        private void UpdateIndices(int flatIndex)
-        {
-            int remainder = flatIndex;
-            for (int i = _dims.Length - 1; i >= 0; i--)
-            {
-                _indices[i] = remainder % _dims[i];
-                remainder /= _dims[i];
-            }
         }
         public bool MoveNext(EdfType et = default!)
         {
@@ -61,8 +34,13 @@ namespace EdfNet.Gen
             if (_arrayIndex >= _array.Length) return false;
 
             // 3. Обновляем индексы многомерного массива для следующего шага
-            UpdateIndices(_arrayIndex);
-            T currentObj = (T?)_array.GetValue(_indices) ?? new T();
+            ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
+            ref T firstElement = ref Unsafe.As<byte, T>(ref byteRoot);
+            ref T elementRef = ref Unsafe.Add(ref firstElement, _arrayIndex);
+            T currentObj;
+            if (null == elementRef)
+                elementRef = new T();
+            currentObj = elementRef;
 
             // 4. создаем энумератор через переданную фабрику 
             _currentElementEnum = _factory(currentObj);
@@ -78,27 +56,12 @@ namespace EdfNet.Gen
             _arrayIndex++;
             return false;
         }
-
         public int CurrentIndex => _currentElementEnum.CurrentIndex;
         public PoType CurrentPoType => _currentElementEnum.CurrentPoType;
         public int CurrentPoLen => _currentElementEnum.CurrentPoLen;
-
         public int Write(Span<byte> destination) => _currentElementEnum.Write(destination);
-
-        public int Read(ReadOnlySpan<byte> src)
-        {
-            int readLen = _currentElementEnum.Read(src);
-
-            // Записываем обновленный из файла объект обратно в массив без рефлексии и боксинга
-            _array.SetValue(_currentElementEnum.Result, _indices);
-            return readLen;
-        }
+        public int Read(ReadOnlySpan<byte> src) => _currentElementEnum.Read(src);
         public int WriteTxt(Span<byte> dst) => _currentElementEnum.WriteTxt(dst);
-        public int ReadTxt(ReadOnlySpan<byte> src)
-        {
-            int readLen = _currentElementEnum.ReadTxt(src);
-            _array.SetValue(_currentElementEnum.Result, _indices);
-            return readLen;
-        }
+        public int ReadTxt(ReadOnlySpan<byte> src) => (_currentElementEnum.ReadTxt(src));
     }
 }

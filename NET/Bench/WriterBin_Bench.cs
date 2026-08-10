@@ -18,7 +18,10 @@ PrimitiveDecomposer + Enum
 | Writer_Enum      | NativeAOT 10.0 | NativeAOT 10.0 | 100000 |  4,503,099.76 ns |  35,819.665 ns |  29,911.042 ns |  1.66 |    0.02 |          - |          NA |
 | Writer_Reflexion | NativeAOT 10.0 | NativeAOT 10.0 | 100000 | 93,740,408.89 ns | 431,758.175 ns | 403,866.865 ns | 34.58 |    0.32 | 35200000 B |          NA | 
  
- 
+ | Method      | Job            | Runtime        | Mean     | Error   | StdDev  | Ratio | Allocated | Alloc Ratio |
+|------------ |--------------- |--------------- |---------:|--------:|--------:|------:|----------:|------------:|
+| Writer_Enum | .NET 10.0      | .NET 10.0      | 363.1 ns | 0.97 ns | 0.90 ns |  1.00 |         - |          NA |
+| Writer_Enum | NativeAOT 10.0 | NativeAOT 10.0 | 523.8 ns | 2.28 ns | 2.14 ns |  1.44 |         - |          NA |
  */
 
 
