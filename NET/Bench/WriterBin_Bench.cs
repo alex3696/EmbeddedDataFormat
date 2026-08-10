@@ -5,23 +5,11 @@ using NetTest;
 namespace Bench;
 
 /*
-PrimitiveDecomposer + Enum
-| Method           | Job            | Runtime        | Size   | Mean             | Error          | StdDev         | Ratio | RatioSD | Allocated  | Alloc Ratio |
-|----------------- |--------------- |--------------- |------- |-----------------:|---------------:|---------------:|------:|--------:|-----------:|------------:|
-| Writer_Enum      | .NET 10.0      | .NET 10.0      | 1      |         28.50 ns |       0.325 ns |       0.304 ns |  1.00 |    0.01 |          - |          NA |
-| Writer_Reflexion | .NET 10.0      | .NET 10.0      | 1      |        193.95 ns |       3.565 ns |       2.977 ns |  6.81 |    0.12 |      424 B |          NA |
-| Writer_Enum      | NativeAOT 10.0 | NativeAOT 10.0 | 1      |         47.84 ns |       0.376 ns |       0.333 ns |  1.68 |    0.02 |          - |          NA |
-| Writer_Reflexion | NativeAOT 10.0 | NativeAOT 10.0 | 1      |        945.70 ns |       6.819 ns |       6.378 ns | 33.19 |    0.40 |      352 B |          NA |
-|                  |                |                |        |                  |                |                |       |         |            |             |
-| Writer_Enum      | .NET 10.0      | .NET 10.0      | 100000 |  2,710,992.22 ns |  27,689.357 ns |  23,121.867 ns |  1.00 |    0.01 |          - |          NA |
-| Writer_Reflexion | .NET 10.0      | .NET 10.0      | 100000 | 19,248,642.50 ns | 157,989.261 ns | 147,783.253 ns |  7.10 |    0.08 | 42401222 B |          NA |
-| Writer_Enum      | NativeAOT 10.0 | NativeAOT 10.0 | 100000 |  4,503,099.76 ns |  35,819.665 ns |  29,911.042 ns |  1.66 |    0.02 |          - |          NA |
-| Writer_Reflexion | NativeAOT 10.0 | NativeAOT 10.0 | 100000 | 93,740,408.89 ns | 431,758.175 ns | 403,866.865 ns | 34.58 |    0.32 | 35200000 B |          NA | 
- 
- | Method      | Job            | Runtime        | Mean     | Error   | StdDev  | Ratio | Allocated | Alloc Ratio |
+// ref fn
+| Method      | Job            | Runtime        | Mean     | Error   | StdDev  | Ratio | Allocated | Alloc Ratio |
 |------------ |--------------- |--------------- |---------:|--------:|--------:|------:|----------:|------------:|
-| Writer_Enum | .NET 10.0      | .NET 10.0      | 363.1 ns | 0.97 ns | 0.90 ns |  1.00 |         - |          NA |
-| Writer_Enum | NativeAOT 10.0 | NativeAOT 10.0 | 523.8 ns | 2.28 ns | 2.14 ns |  1.44 |         - |          NA |
+| Writer_Enum | .NET 10.0      | .NET 10.0      | 365.8 ns | 1.73 ns | 1.45 ns |  1.00 |         - |          NA |
+| Writer_Enum | NativeAOT 10.0 | NativeAOT 10.0 | 505.5 ns | 1.96 ns | 1.74 ns |  1.38 |         - |          NA |
  */
 
 

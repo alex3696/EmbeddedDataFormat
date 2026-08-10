@@ -34,9 +34,7 @@ namespace EdfNet.Gen
             if (_arrayIndex >= _array.Length) return false;
 
             // 3. Обновляем индексы многомерного массива для следующего шага
-            ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
-            ref T firstElement = ref Unsafe.As<byte, T>(ref byteRoot);
-            ref T elementRef = ref Unsafe.Add(ref firstElement, _arrayIndex);
+            ref T elementRef = ref _array.GetElementAtFlatIndex<T>(_arrayIndex);
             T currentObj;
             if (null == elementRef)
                 elementRef = new T();
@@ -62,6 +60,6 @@ namespace EdfNet.Gen
         public int Write(Span<byte> destination) => _currentElementEnum.Write(destination);
         public int Read(ReadOnlySpan<byte> src) => _currentElementEnum.Read(src);
         public int WriteTxt(Span<byte> dst) => _currentElementEnum.WriteTxt(dst);
-        public int ReadTxt(ReadOnlySpan<byte> src) => (_currentElementEnum.ReadTxt(src));
+        public int ReadTxt(ReadOnlySpan<byte> src) => _currentElementEnum.ReadTxt(src);
     }
 }

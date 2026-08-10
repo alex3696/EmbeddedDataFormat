@@ -31,40 +31,30 @@ public struct EdfArrayPrimitivesEnumerator<T> : IEdfByteEnumerator
         int elementSize = Unsafe.SizeOf<T>();
         if (elementSize > dst.Length)
             return -1;
-        ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
-        ref T firstElement = ref Unsafe.As<byte, T>(ref byteRoot);
-        ref T elementRef = ref Unsafe.Add(ref firstElement, _index);
+        ref T elementRef = ref _array.GetElementAtFlatIndex<T>(_index);
         MemoryMarshal.Write(dst, in elementRef);
         return elementSize;
     }
     public readonly int Read(ReadOnlySpan<byte> src)
     {
         int elementSize = Unsafe.SizeOf<T>();
-        ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
-        ref byte targetByteRef = ref Unsafe.Add(ref byteRoot, _index * elementSize);
-        ref T elementRef = ref Unsafe.As<byte, T>(ref targetByteRef);
+        if (elementSize > src.Length)
+            return -1;
+        ref T elementRef = ref _array.GetElementAtFlatIndex<T>(_index);
         elementRef = MemoryMarshal.Read<T>(src);
         return elementSize;
     }
     public readonly int WriteTxt(Span<byte> dst)
     {
-        int elementSize = Unsafe.SizeOf<T>();
-        if (elementSize > dst.Length)
-            return -1;
-        ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
-        ref T firstElement = ref Unsafe.As<byte, T>(ref byteRoot);
-        ref T elementRef = ref Unsafe.Add(ref firstElement, _index);
+        ref T elementRef = ref _array.GetElementAtFlatIndex<T>(_index);
         return PrimitiveWritersTxt.TryWrite(dst, elementRef);
     }
-    public int ReadTxt(ReadOnlySpan<byte> src)
+    public readonly int ReadTxt(ReadOnlySpan<byte> src)
     {
         var len = PrimitiveWritersTxt.TryRead(src, out T? val);
         if (0 > len)
             return -1;
-        int elementSize = Unsafe.SizeOf<T>();
-        ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
-        ref byte targetByteRef = ref Unsafe.Add(ref byteRoot, _index * elementSize);
-        ref T elementRef = ref Unsafe.As<byte, T>(ref targetByteRef);
+        ref T elementRef = ref _array.GetElementAtFlatIndex<T>(_index);
         elementRef = val.GetValueOrDefault();
         return len;
     }
