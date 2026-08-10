@@ -38,7 +38,7 @@ public partial class KeyVal
     public SubVal[,]? Sub { get; set; } = new SubVal[2, 2];
 }
 
-public class TestClasses_Content
+public static class TestClasses_Content
 {
     public static readonly Schema KeyValSchema = new()
     {
@@ -122,4 +122,51 @@ public class TestClasses_Content
             }
         }
     };
+
+
+    static TestClasses_Content()
+    {
+        Span<byte> dst = new byte[1000];
+        int n = 0;
+        //SpanBufferWriter sb = new SpanBufferWriter(dst);
+        n += EdfBinString.WriteBin(TestValue.Test1, dst.Slice(n));
+        n += EdfBinString.WriteBin(TestValue.Key, dst.Slice(n));
+
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Val);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.NVal.Value);
+
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[0, 0, 0]);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[0, 1, 0]);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[1, 0, 0]);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[1, 1, 0]);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[2, 0, 0]);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[2, 1, 0]);
+
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub0.ValDouble);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub0.ValByte);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub0.ValSByte);
+
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub1.ValDouble);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub1.ValByte);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub1.ValSByte);
+
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValDouble);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValByte);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValSByte);
+
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValDouble);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValByte);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValSByte);
+
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValDouble);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValByte);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValSByte);
+
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValDouble);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValByte);
+        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValSByte);
+
+        TestValueBin = dst.Slice(0, n).ToArray();
+    }
+    public static readonly byte[] TestValueBin;
 }

@@ -85,9 +85,8 @@ public class YeldDecomposer : IEdfByteEnumerator
             }
             else
             {
-                for (int i = 0; i < arr.Length; ++i)
+                foreach (var val in arr)
                 {
-                    var val = arr.GetValue(i);
                     foreach (var subItem in Decompose(val))
                         yield return subItem;
                 }
@@ -171,10 +170,6 @@ public class YeldDecomposer : IEdfByteEnumerator
         private Array _array;
         private int _index;
 
-        public YArrayNode()
-        {
-
-        }
         public YArrayNode(EdfType? edfType, Array array, int index)
         {
             Reset(edfType, array, index);
@@ -186,13 +181,19 @@ public class YeldDecomposer : IEdfByteEnumerator
             _index = index;
         }
 
-        public Type GetPropertyType() => _array.GetType().GetElementType();
+        public Type GetPropertyType()
+        {
+            Type? et = _array.GetType().GetElementType();
+            ArgumentNullException.ThrowIfNull(et);
+            return et;
+        }
+            
         public object? GetValue() => _array.GetValue(_index);
         public void SetValue(object? value) => _array.SetValue(value, _index);
         public int Write(Span<byte> dst)
         {
             ArgumentNullException.ThrowIfNull(_edfType);
-            int elementSize = Marshal.SizeOf(_array.GetType().GetElementType()!);
+            int elementSize = Marshal.SizeOf(GetPropertyType());
             if (dst.Length < elementSize)
                 return -1;
             ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
@@ -212,7 +213,7 @@ public class YeldDecomposer : IEdfByteEnumerator
         public int WriteTxt(Span<byte> dst)
         {
             ArgumentNullException.ThrowIfNull(_edfType);
-            int elementSize = Marshal.SizeOf(_array.GetType().GetElementType()!);
+            int elementSize = Marshal.SizeOf(GetPropertyType());
             if (dst.Length < elementSize)
                 return -1;
             ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);

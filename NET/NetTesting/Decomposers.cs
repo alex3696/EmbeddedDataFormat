@@ -1,7 +1,6 @@
 using EdfNet.Ref;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace NetTest;
 
@@ -35,78 +34,78 @@ public class Decomposers
         _yeldDecomposer = new YeldDecomposer();
     }
 
-    public ReadOnlySpan<byte> GetExpected() => MemoryMarshal.Cast<long, byte>(ExpectedResult).Slice(0, 3 * 8);
-    public ReadOnlySpan<byte> GetResult() => _bufDst.WrittenSpan.Slice(0, 3 * 8);
+    public ReadOnlySpan<byte> GetExpected() => TestClasses_Content.TestValueBin;
+
+
+    private void CheckResults()
+    {
+    }
 
 
     [TestMethod]
     public void StdReflection_GetValue()
     {
         _bufDst.Clear();
-        StdReflection_GetValue(DefaultVal, _bufDst);
-        Assert.IsTrue(GetExpected().SequenceEqual(GetResult()));
-    }
-    public void StdReflection_GetValue(KeyVal item, ArrayBufferWriter<byte> dst)
-    {
         int i = 0;
-        _refl.Reset(_edfType, item);
+        _refl.Reset(_edfType, DefaultVal);
         while (i < _lst.Count && _refl.MoveNext(_lst[i++]))
         {
-            var len = _refl.Write(dst.GetSpan());
-            dst.Advance(len);
+            var len = _refl.Write(_bufDst.GetSpan());
+            _bufDst.Advance(len);
         }
+        bool eq = GetExpected().SequenceEqual(_bufDst.WrittenSpan);
+        if (!eq)
+            Console.WriteLine($"writed={_bufDst.WrittenCount} elements={i}");
+        Assert.IsTrue(eq);
     }
     // YeldDecomposer
     [TestMethod]
     public void YeldDecomposer_GetValue()
     {
         _bufDst.Clear();
-        YeldDecomposer_GetValue(DefaultVal, _bufDst);
-        Assert.IsTrue(GetExpected().SequenceEqual(GetResult()));
-    }
-    public void YeldDecomposer_GetValue(KeyVal item, ArrayBufferWriter<byte> dst)
-    {
         int i = 0;
-        _yeldDecomposer.Reset(_edfType, item);
+        _yeldDecomposer.Reset(_edfType, DefaultVal);
         while (i < _lst.Count && _yeldDecomposer.MoveNext(_lst[i++]))
         {
-            var len = _yeldDecomposer.Write(dst.GetSpan());
-            dst.Advance(len);
+            var len = _yeldDecomposer.Write(_bufDst.GetSpan());
+            _bufDst.Advance(len);
         }
+        bool eq = GetExpected().SequenceEqual(_bufDst.WrittenSpan);
+        if (!eq)
+            Console.WriteLine($"writed={_bufDst.WrittenCount} elements={i}");
+        Assert.IsTrue(eq);
     }
     // StackDecomposer
     [TestMethod]
     public void StackDecomposer_GetValue()
     {
-        StackDecomposer_GetValue(DefaultVal, _bufDst);
-        Assert.IsTrue(GetExpected().SequenceEqual(GetResult()));
-    }
-    public void StackDecomposer_GetValue(KeyVal item, ArrayBufferWriter<byte> dst)
-    {
+        _bufDst.Clear();
         int i = 0;
-        _stackDecomposer.Reset(_edfType, item);
+        _stackDecomposer.Reset(_edfType, DefaultVal);
         while (i < _lst.Count && _stackDecomposer.MoveNext(_lst[i++]))
         {
-            var len = _stackDecomposer.Write(dst.GetSpan());
-            dst.Advance(len);
+            var len = _stackDecomposer.Write(_bufDst.GetSpan());
+            _bufDst.Advance(len);
         }
+        bool eq = GetExpected().SequenceEqual(_bufDst.WrittenSpan);
+        if (!eq)
+            Console.WriteLine($"writed={_bufDst.WrittenCount} elements={i}");
+        Assert.IsTrue(eq);
     }
-
     [TestMethod]
     public void Generator_GetValue()
     {
-        Generator_GetValue(DefaultVal, _bufDst);
-        Assert.IsTrue(GetExpected().SequenceEqual(GetResult()));
-    }
-    public void Generator_GetValue(KeyVal item, ArrayBufferWriter<byte> dst)
-    {
+        _bufDst.Clear();
         int i = 0;
-        var enm = item.GetByteEnumerator();
+        var enm = DefaultVal.GetByteEnumerator();
         while (i < _lst.Count && enm.MoveNext(_lst[i++]))
         {
-            var len = enm.Write(dst.GetSpan());
-            dst.Advance(len);
+            var len = enm.Write(_bufDst.GetSpan());
+            _bufDst.Advance(len);
         }
+        bool eq = GetExpected().SequenceEqual(_bufDst.WrittenSpan);
+        if (!eq)
+            Console.WriteLine($"writed={_bufDst.WrittenCount} elements={i}");
+        Assert.IsTrue(eq);
     }
-
 }
