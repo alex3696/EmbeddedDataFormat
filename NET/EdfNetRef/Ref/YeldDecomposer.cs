@@ -1,4 +1,5 @@
 using EdfNet.Interfaces;
+using System.Runtime.CompilerServices;
 
 namespace EdfNet.Ref;
 
@@ -190,11 +191,16 @@ public class YeldDecomposer : IEdfByteEnumerator
         public void SetValue(object? value) => _array.SetValue(value, _index);
         public int Write(Span<byte> dst)
         {
-            var obj = _array.GetValue(_index);
-            ArgumentNullException.ThrowIfNull(obj);
             ArgumentNullException.ThrowIfNull(_edfType);
-            var len = PrimitiveWritersBin.TryWrite(dst, _edfType, obj);
-            return len;
+            int elementSize = Marshal.SizeOf(_array.GetType().GetElementType()!);
+            if (dst.Length < elementSize)
+                return -1;
+            ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
+            int byteOffset = _index * elementSize;
+            ref byte targetByteRef = ref Unsafe.Add(ref byteRoot, byteOffset);
+            ReadOnlySpan<byte> srcSpan = MemoryMarshal.CreateReadOnlySpan(ref targetByteRef, elementSize);
+            srcSpan.CopyTo(dst);
+            return elementSize;
         }
         public int Read(ReadOnlySpan<byte> src)
         {
@@ -205,10 +211,16 @@ public class YeldDecomposer : IEdfByteEnumerator
         }
         public int WriteTxt(Span<byte> dst)
         {
-            var obj = _array.GetValue(_index);
-            ArgumentNullException.ThrowIfNull(obj);
             ArgumentNullException.ThrowIfNull(_edfType);
-            return PrimitiveWritersTxt.TryWrite(dst, _edfType, obj);
+            int elementSize = Marshal.SizeOf(_array.GetType().GetElementType()!);
+            if (dst.Length < elementSize)
+                return -1;
+            ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
+            int byteOffset = _index * elementSize;
+            ref byte targetByteRef = ref Unsafe.Add(ref byteRoot, byteOffset);
+            ReadOnlySpan<byte> srcSpan = MemoryMarshal.CreateReadOnlySpan(ref targetByteRef, elementSize);
+            srcSpan.CopyTo(dst);
+            return elementSize;
         }
         public int ReadTxt(ReadOnlySpan<byte> src)
         {

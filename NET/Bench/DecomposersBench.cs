@@ -83,27 +83,23 @@ YeldDecomposer 1
 [SimpleJob(RuntimeMoniker.NativeAot10_0)]
 public class DecomposersBench
 {
-    [Params(1, 1_000)]
-    public int Size { get; set; }
+    //[Params(1, 1_000)]
+    public int Size { get; set; } = 1;
 
-    private MyPosition[] _list;
     private readonly NetTest.Decomposers _decomposers = new();
     private readonly ArrayBufferWriter<byte> _buf;
     public DecomposersBench()
     {
-        _buf = new ArrayBufferWriter<byte>(32);
-        _decomposers.StdReflection_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
-        _decomposers.StackDecomposer_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
-        _decomposers.YeldDecomposer_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
-        _decomposers.Generator_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
+        _buf = new ArrayBufferWriter<byte>(1024);
+        //_decomposers.StdReflection_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
+        //_decomposers.StackDecomposer_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
+        //_decomposers.YeldDecomposer_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
+        //_decomposers.Generator_GetValue(Decomposers.DefaultVal, _buf); _buf.ResetWrittenCount();
     }
 
     [GlobalSetup]
     public void Setup()
     {
-        _list = new MyPosition[Size];
-        for (int i = 0; i < Size; i++)
-            _list[i] = new MyPosition() { X = i, Y = i, Z = i };
     }
 
     [Benchmark(Baseline = true)]
@@ -112,7 +108,7 @@ public class DecomposersBench
         for (int i = 0; i < Size; i++)
         {
             _buf.ResetWrittenCount();
-            _decomposers.StdReflection_GetValue(_list[i], _buf);
+            _decomposers.StdReflection_GetValue(Decomposers.DefaultVal, _buf);
         }
     }
     [Benchmark]
@@ -121,7 +117,7 @@ public class DecomposersBench
         for (int i = 0; i < Size; i++)
         {
             _buf.ResetWrittenCount();
-            _decomposers.StackDecomposer_GetValue(_list[i], _buf);
+            _decomposers.StackDecomposer_GetValue(Decomposers.DefaultVal, _buf);
         }
     }
     [Benchmark]
@@ -130,7 +126,7 @@ public class DecomposersBench
         for (int i = 0; i < Size; i++)
         {
             _buf.ResetWrittenCount();
-            _decomposers.YeldDecomposer_GetValue(_list[i], _buf);
+            _decomposers.YeldDecomposer_GetValue(Decomposers.DefaultVal, _buf);
         }
     }
 
@@ -140,7 +136,7 @@ public class DecomposersBench
         for (int i = 0; i < Size; i++)
         {
             _buf.ResetWrittenCount();
-            _decomposers.Generator_GetValue(_list[i], _buf);
+            _decomposers.Generator_GetValue(Decomposers.DefaultVal, _buf);
         }
     }
 }

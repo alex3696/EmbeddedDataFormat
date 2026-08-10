@@ -9,7 +9,6 @@ public class TestWriterBin
     MemoryStream _msRef;
     EdfNet.Gen.WriterBin _writerEnum;
     EdfNet.Ref.WriterBin _writerRef;
-    MyPosition[] _list;
 #pragma warning restore CS8618
 
     public TestWriterBin()
@@ -34,9 +33,6 @@ public class TestWriterBin
         _msRef = new MemoryStream(1000);
         _writerEnum = new(_msGen);
         _writerRef = new(_msRef);
-        _list = new MyPosition[Size];
-        for (int i = 0; i < Size; i++)
-            _list[i] = new MyPosition() { X = i, Y = i * 2, Z = i * 3 };
         _writerEnum.Write(TestClasses_Content.KeyValSchema);
         _writerRef.Write(TestClasses_Content.KeyValSchema);
     }

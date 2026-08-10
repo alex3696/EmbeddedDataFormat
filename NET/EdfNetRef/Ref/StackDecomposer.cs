@@ -1,5 +1,6 @@
 using EdfNet.Interfaces;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace EdfNet.Ref;
 
@@ -197,15 +198,12 @@ public class StackDecomposer : IEdfByteEnumerator
     {
         EdfType? _edfType;
         private readonly Array _array;
-        private readonly int _length;
         private int _flatIndex = -1;
-        private readonly int[] _indices;
-        private readonly int[] _dims;
+        private readonly int[] _indices = [];
+        private readonly int[] _dims = [];
         public ArrayNode(Array array)
         {
             _array = array;
-            _length = array.Length;
-
             if (array != null)
             {
                 _indices = new int[array.Rank];
@@ -214,11 +212,6 @@ public class StackDecomposer : IEdfByteEnumerator
                 {
                     _dims[i] = array.GetLength(i);
                 }
-            }
-            else
-            {
-                _indices = [];
-                _dims = [];
             }
         }
         private void UpdateIndices(int flatIndex)
@@ -233,19 +226,33 @@ public class StackDecomposer : IEdfByteEnumerator
         public bool MoveNext(EdfType? dstType)
         {
             _flatIndex++;
+            if (_flatIndex >= _array.Length)
+                return false;
             UpdateIndices(_flatIndex);
             _edfType = dstType;
-            return _flatIndex < _length;
+            return true;
         }
         public object? GetValue() => _array.GetValue(_indices);
         public void SetValue(object? value) => _array.SetValue(value, _indices);
         public int Write(Span<byte> dst)
         {
+            ArgumentNullException.ThrowIfNull(_edfType);
+            int elementSize = Marshal.SizeOf(_array.GetType().GetElementType()!);
+            if (dst.Length < elementSize)
+                return -1;
+            ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(_array);
+            int byteOffset = _flatIndex * elementSize;
+            ref byte targetByteRef = ref Unsafe.Add(ref byteRoot, byteOffset);
+            ReadOnlySpan<byte> srcSpan = MemoryMarshal.CreateReadOnlySpan(ref targetByteRef, elementSize);
+            srcSpan.CopyTo(dst);
+            return elementSize;
+            /*
             var obj = _array.GetValue(_indices);
             ArgumentNullException.ThrowIfNull(obj);
             ArgumentNullException.ThrowIfNull(_edfType);
             var len = PrimitiveWritersBin.TryWrite(dst, _edfType, obj);
             return len;
+            */
         }
         public int Read(ReadOnlySpan<byte> src)
         {
