@@ -113,7 +113,7 @@ public class GenSerializationTests
 
         // Сбрасываем поток в начало для чтения
         memoryStream.Position = 0;
-        var reader = new EdfNet.Gen.BinReader(memoryStream);
+        var reader = new EdfNet.Gen.ReaderBin(memoryStream);
 
         // 3. ACT (READ): Читаем объект обратно из бинарного потока
         if (!reader.ReadBlock())

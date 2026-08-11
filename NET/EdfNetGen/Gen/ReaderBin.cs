@@ -1,8 +1,8 @@
 namespace EdfNet.Gen;
 
-public class BinReader : BaseReaderBin
+public class ReaderBin : BaseReaderBin
 {
-    public BinReader(Stream stream, Config? cfg = default)
+    public ReaderBin(Stream stream, Config? cfg = default)
         : base(stream, cfg)
     {
 

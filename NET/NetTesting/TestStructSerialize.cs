@@ -95,7 +95,7 @@ public class TestStructSerialize
             Assert.AreEqual(30, bw.CurrentDataLen);
         }
         var mssrc = new MemoryStream(binBuf);
-        var reader = new BinReader(mssrc);
+        var reader = new ReaderBin(mssrc);
 
         //if (!reader.ReadBlock())
         //    Assert.Fail("there are no block");
@@ -272,7 +272,7 @@ public class TestStructSerialize
         {
             Config cfg;
             {
-                var edf = new BinReader(file);
+                var edf = new ReaderBin(file);
                 cfg = edf.Cfg;
                 //try
                 //{
