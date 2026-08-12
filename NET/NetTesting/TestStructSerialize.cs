@@ -84,7 +84,7 @@ public class TestStructSerialize
 
         byte[] binBuf = new byte[1024];
         using (var memStream = new MemoryStream(binBuf))
-        using (var bw = new WriterBin(memStream))
+        using (var bw = new WriterBin2(memStream))
         {
             bw.Write(TestStructInf);
             bw.WriteValue(val1);

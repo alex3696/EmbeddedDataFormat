@@ -5,7 +5,7 @@ public class BinBlock
     public const int HeaderLen = sizeof(BlockType) + sizeof(ushort);
     public const int CrcLen = sizeof(ushort);
     public const int OverheadLen = HeaderLen + CrcLen;
-    public int MaxPayloadLen => _buffer.Length - OverheadLen;
+    public readonly int MaxPayloadLen;
     public BlockType Type
     {
         get => (BlockType)_buffer[0];
@@ -27,6 +27,7 @@ public class BinBlock
     public BinBlock(byte[] buf)
     {
         _buffer = buf;
+        MaxPayloadLen = _buffer.Length - OverheadLen;
     }
     public BinBlock(int len)
         : this(new byte[len])
