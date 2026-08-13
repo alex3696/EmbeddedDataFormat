@@ -5,8 +5,10 @@ public class TestWriterBin
 {
     public int Size { get; set; } = 1;
 #pragma warning disable CS8618
+    MemoryStream _msEnm;
     MemoryStream _msGen;
     EdfNet.Gen.WriterBin _writerEnum;
+    EdfNet.Gen.WriterBin2 _writerGen;
 #pragma warning restore CS8618
 
     public TestWriterBin()
@@ -21,13 +23,22 @@ public class TestWriterBin
 
     public void Setup(int count = 1)
     {
-        _msGen?.Dispose();
-        _writerEnum?.Dispose();
-
         Size = count;
-        _msGen = new MemoryStream(1000);
-        _writerEnum = new(_msGen);
+
+        _writerEnum?.Dispose();
+        _msEnm?.Dispose();
+        _msEnm = new MemoryStream(1000);
+        _writerEnum = new(_msEnm);
         _writerEnum.Write(TestClasses_Content.KeyValSchema);
+        var enm = TestClasses_Content.TestValue.GetByteEnumerator();
+        _writerEnum.WriteEnumerator(ref enm);
+
+        _writerGen?.Dispose();
+        _msGen?.Dispose();
+        _msGen = new MemoryStream(1000);
+        _writerGen = new(_msGen);
+        _writerGen.Write(TestClasses_Content.KeyValSchema);
+        _writerGen.Write(TestClasses_Content.TestValue);
     }
 
 
@@ -36,10 +47,18 @@ public class TestWriterBin
     {
         for (int i = 0; i < Size; i++)
         {
-            _msGen.Position = 0;
+            _msEnm.Position = 0;
             var enm = TestClasses_Content.TestValue.GetByteEnumerator();
             _writerEnum.WriteEnumerator(ref enm);
         }
     }
-
+    [TestMethod]
+    public void Writer_Gen2()
+    {
+        for (int i = 0; i < Size; i++)
+        {
+            _msGen.Position = 0;
+            _writerGen.Write(TestClasses_Content.TestValue);
+        }
+    }
 }

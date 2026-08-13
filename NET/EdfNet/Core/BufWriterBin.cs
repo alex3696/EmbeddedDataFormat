@@ -43,7 +43,6 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public int WriteCharArray(ReadOnlySpan<byte> charArray, int len)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(len, _state.Blk.MaxDataLen);
         EnsureCapacity(len);
         var datalen = int.Min(len, charArray.Length);
         var dst = _state.Blk.GetEmptyBuffer();
