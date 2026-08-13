@@ -49,6 +49,7 @@ public readonly ref struct BufWriterBin : IBufWriter
         charArray.Slice(0, datalen).CopyTo(dst);
         if (datalen < len)
             dst.Slice(datalen, len - datalen).Clear();
+        _state.Blk.DataLen += (ushort)len;
         return datalen;
     }
     private readonly void EnsureCapacity(int len)
