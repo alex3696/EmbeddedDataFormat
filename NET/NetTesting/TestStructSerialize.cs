@@ -86,6 +86,8 @@ public class TestStructSerialize
         using (var memStream = new MemoryStream(binBuf))
         using (var bw = new WriterBin2(memStream))
         {
+            CompositeResolver.Instance.TryRegister([new GeneratedEdfResolver()]);
+            
             bw.Write(TestStructInf);
             bw.WriteValue(val1);
             bw.WriteValue(val2);

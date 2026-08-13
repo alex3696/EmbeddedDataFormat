@@ -9,6 +9,7 @@ public static class Common
     public const string Namespace = "EdfNet.Interfaces";
     public const string SerializeAttribute = "EdfSerializableAttribute";
     public const string ArrayAttribute = "EdfArrayAttribute";
+    public const string CharArrayAttribute = "EdfCharArrayAttribute";
 
     public static bool IsAttribute(this string? str, string attribute)
     {

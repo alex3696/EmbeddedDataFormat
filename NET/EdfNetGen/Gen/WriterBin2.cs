@@ -1,13 +1,11 @@
 namespace EdfNet.Gen;
 
-
 public class WriterBin2 : BaseWriterBin
 {
     public WriterBin2(Stream stream, Config? cfg = default)
         : base(stream, cfg)
     {
         _rstate = new(_stream, _blkData);
-        CompositeResolver.Instance.Register(new EdfNet.Gen.GeneratedEdfResolver());
     }
 
     public override void Write(Schema sch)

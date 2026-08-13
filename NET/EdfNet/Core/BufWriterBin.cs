@@ -27,6 +27,7 @@ public readonly ref struct BufWriterBin : IBufWriter
     public readonly int Write(string? str)
     {
         var len = string.IsNullOrEmpty(str) ? 1 : int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
+        len += 1;
         EnsureCapacity(len);
         EdfBinString.WriteBin(str, _state.Blk.GetEmptyBuffer());
         _state.Blk.DataLen += (ushort)len;
@@ -39,6 +40,17 @@ public readonly ref struct BufWriterBin : IBufWriter
         val.CopyTo(_state.Blk.GetEmptyBuffer());
         _state.Blk.DataLen += (ushort)len;
         return len;
+    }
+    public int WriteCharArray(ReadOnlySpan<byte> charArray, int len)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(len, _state.Blk.MaxDataLen);
+        EnsureCapacity(len);
+        var datalen = int.Min(len, charArray.Length);
+        var dst = _state.Blk.GetEmptyBuffer();
+        charArray.Slice(0, datalen).CopyTo(dst);
+        if (datalen < len)
+            dst.Slice(datalen, len - datalen).Clear();
+        return datalen;
     }
     private readonly void EnsureCapacity(int len)
     {

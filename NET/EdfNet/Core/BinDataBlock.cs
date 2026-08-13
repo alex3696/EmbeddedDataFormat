@@ -3,7 +3,7 @@ namespace EdfNet.Core;
 public class BinDataBlock : BinBlock
 {
     public const ushort ServiceLen = 8;
-    public const ushort DataBefinIndex = HeaderLen + ServiceLen;
+    public const ushort DataBeпinIndex = HeaderLen + ServiceLen;
     public readonly int MaxDataLen;
     public ushort SchemaId
     {
@@ -25,10 +25,10 @@ public class BinDataBlock : BinBlock
         get => (ushort)(ContentLen - ServiceLen);
         set => ContentLen = (ushort)(value + ServiceLen);
     }
-    public Span<byte> DataBuffer => _buffer.AsSpan(DataBefinIndex, MaxDataLen);
-    public ReadOnlySpan<byte> CurrentData => _buffer.AsSpan(DataBefinIndex, DataLen);
+    public Span<byte> DataBuffer => _buffer.AsSpan(DataBeпinIndex, MaxDataLen);
+    public ReadOnlySpan<byte> CurrentData => _buffer.AsSpan(DataBeпinIndex, DataLen);
 
-    public Span<byte> GetEmptyBuffer() => _buffer.AsSpan(DataBefinIndex + DataLen, MaxDataLen);
+    public Span<byte> GetEmptyBuffer() => _buffer.AsSpan(DataBeпinIndex + DataLen, MaxDataLen - DataLen);
     public BinDataBlock(byte[] buf)
         : base(buf)
     {

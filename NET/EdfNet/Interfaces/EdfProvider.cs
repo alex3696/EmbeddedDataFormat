@@ -30,16 +30,21 @@ public sealed class CompositeResolver : IFormatterResolver
 
     private IFormatterResolver[] _resolvers = [];
     private bool _isRegistred;
-    
+
 
     private CompositeResolver() { }
 
-    public void Register(params IFormatterResolver[] resolvers)
+    public bool TryRegister(params IFormatterResolver[] resolvers)
     {
-        if (_isRegistred)
-            throw new InvalidOperationException("already registred");
+        if (_isRegistred) return false;
         _resolvers = resolvers;
         _isRegistred = true;
+        return true;
+    }
+    public void Register(params IFormatterResolver[] resolvers)
+    {
+        if (!TryRegister(resolvers))
+            throw new InvalidOperationException("already registred");
     }
 
     public IFormatter<T>? GetFormatter<T>()
