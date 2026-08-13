@@ -159,13 +159,15 @@ public ref struct BufReaderTxt : IBufReader
         return len;
     }
 
-    private void Match(ReadOnlySpan<byte> expected)
+    private bool Match(ReadOnlySpan<byte> expected)
     {
         if (StartsWith(expected))
         {
             _state.Readed += expected.Length;
+            return true;
         }
         throw new FormatException($"expected {expected.ToString()}");
+        return false;
     }
 
     private bool StartsWith(ReadOnlySpan<byte> expected)
