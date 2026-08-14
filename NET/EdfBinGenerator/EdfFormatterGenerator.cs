@@ -64,24 +64,28 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         sb.AppendLine($"    public void Serialize<TWriter>(ref TWriter writer, in {typeName} val, EdfOptions options)");
         sb.AppendLine("        where TWriter : struct, IBufWriter, allows ref struct");
         sb.AppendLine("    {");
+        sb.AppendLine("        writer.RecBegin();");
         sb.AppendLine("        writer.BeginStruct();");
         foreach (var member in GetSerializableMembers(type))
         {
             GenerateSerializeMember(sb, member, "val", currentNamespace);
         }
         sb.AppendLine("        writer.EndStruct();");
+        sb.AppendLine("        writer.RecEnd();");
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine($"    public {typeName} Deserialize<TReader>(ref TReader reader, EdfOptions options)");
         sb.AppendLine("        where TReader : struct, IBufReader, allows ref struct");
         sb.AppendLine("    {");
         sb.AppendLine($"        {typeName} result = new {typeName}();");
+        sb.AppendLine("        reader.ReadRecBegin();");
         sb.AppendLine("        reader.ReadBeginStruct();");
         foreach (var member in GetSerializableMembers(type))
         {
             GenerateDeserializeMember(sb, member, "result", currentNamespace);
         }
         sb.AppendLine("        reader.ReadEndStruct();");
+        sb.AppendLine("        reader.ReadRecEnd();");
         sb.AppendLine("        return result;");
         sb.AppendLine("    }");
         sb.AppendLine("}");

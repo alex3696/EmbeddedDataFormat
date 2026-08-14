@@ -8,21 +8,25 @@ public class WriterBin : BaseWriterBin
         _rstate = new(_stream, _blkData);
     }
 
-    public override void Write(Schema sch)
+    public override void WriteSchema(Schema sch)
     {
-        base.Write(sch);
+        base.WriteSchema(sch);
         _rstate.Skip = 0;
         _rstate.RecordId = 0;
         _rstate.PrimOffset = 0;
     }
-    private readonly RecursiveWriterState _rstate;
+    private readonly BufWriterState _rstate;
+    private readonly EdfOptions _options = EdfOptions.Default;
 
-    //public override EdfErr Write(object obj) =>  throw new NotImplementedException();
-    public override EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enm)
-        where TEnumerator : struct
+    public override EdfErr WriteValue<T>(in T val)
     {
-        ArgumentNullException.ThrowIfNull(CurrentSchema);
-        var writer = new RecursiveWriterBin<TEnumerator>(_rstate, CurrentSchema.Type, ref enm);
-        return writer.DoWrite();
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
+        //IFormatter<T>? formatter = _options.Resolver.GetFormatter<T>();
+        IFormatter<T> formatter = EdfProvider<T>.Formatter;
+        if (formatter == null)
+            throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
+        var writer = new BufWriterBin(_rstate);
+        formatter.Serialize(ref writer, val, _options);
+        return EdfErr.IsOk;
     }
 }

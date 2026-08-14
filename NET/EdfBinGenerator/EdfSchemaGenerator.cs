@@ -136,41 +136,5 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("    {");
         sb.AppendLine($"        public static EdfSchema GetEdfSchema() => GetEdfSchema_{typeLabel}();");
         sb.AppendLine("    }");
-        //sb.AppendLine();
-        //sb.AppendLine($"        extension({structName} instance)");
-        //sb.AppendLine("        {");
-        //sb.AppendLine($"            public IEdfByteEnumerator<{structName}> GetByteEnumerator() => new {structName}ByteEnumerator(instance);");
-        //sb.AppendLine("        }");
-
-        string enumeratorName = $"{EdfEnumeratorGenerator.GetEnumeratorTypeName(structSymbol, ns)}";
-        sb.AppendLine();
-        sb.AppendLine($"    public static {enumeratorName} GetByteEnumerator(this {typeName} val) => new(val);");
-        sb.AppendLine();
-        sb.AppendLine($"    public static EdfErr WriteValue(this IWriter writer, {typeName} val)");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        var enm = new {enumeratorName}(val);");
-        sb.AppendLine($"        return writer.WriteEnumerator(ref enm);");
-        sb.AppendLine("    }");
-    }
-    private static void GeneratePartialEdfSerializable(StringBuilder sb, string structName)
-    {
-        //sb.AppendLine($"public partial class {structName}: IEdfSerializable<{structName}ByteEnumerator>");
-        sb.AppendLine($"public partial class {structName}: IEdfSerializable");
-        sb.AppendLine("{");
-        //sb.AppendLine($"    public {structName}ByteEnumerator GetByteEnumerator() " +
-        //sb.AppendLine($"    public {structName}ByteEnumerator GetByteEnumerator() " +
-        sb.AppendLine($"    public IEdfByteEnumerator GetByteEnumerator() " +
-                      $"=> new {structName}ByteEnumerator(this);");
-
-        sb.AppendLine($"    public static IEdfByteEnumerator GetByteEnumerator({structName} val) " +
-                      $"=> new {structName}ByteEnumerator(val);");
-
-        sb.AppendLine("    public EdfErr WriteTo<TWriter>(TWriter writer) where TWriter : IWriter");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        var enm = new {structName}ByteEnumerator(this);");
-        sb.AppendLine($"        return writer.WriteEnumerator(ref enm);");
-        sb.AppendLine("    }");
-
-        sb.AppendLine("}");
     }
 }

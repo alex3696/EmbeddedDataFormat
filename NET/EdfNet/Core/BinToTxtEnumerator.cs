@@ -14,11 +14,6 @@ public class ConvWriterTxt : BaseWriterTxt
         : base(stream, cfg)
     {
     }
-
-    public override EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
-    {
-        throw new NotImplementedException();
-    }
 }
 
 public class RecursiveWriterBinToTxt : IPrimitiveIo

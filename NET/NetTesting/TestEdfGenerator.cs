@@ -97,6 +97,8 @@ public class GenSerializationTests
     [TestMethod]
     public void KeyVal_Serialization_And_Deserialization_Should_Be_Identical()
     {
+        //CompositeResolver.Instance.TryRegister(new EdfNet.Gen.GeneratedEdfResolver());
+
         // 1. ARRANGE: Создаем и максимально разнообразно заполняем тестовый объект
         var original = TestClasses_Content.TestValue;
 
@@ -105,7 +107,7 @@ public class GenSerializationTests
         using var writer = new EdfNet.Gen.WriterBin(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
-        writer.Write(ComplexType.GetEdfSchema());
+        writer.WriteSchema(ComplexType.GetEdfSchema());
         EdfErr writeResult = writer.WriteValue(original);
         writer.Flush(); // Сбрасываем остатки буфера в поток
 
@@ -120,10 +122,7 @@ public class GenSerializationTests
             Assert.Fail("there are no block");
         reader.ReadSchema();
         reader.ReadBlock();
-        ComplexType restored = new();
-        var readEnumerator = new ComplexTypeByteEnumerator(restored);
-        EdfErr readResult = reader.ReadData(ref readEnumerator);
-        Assert.AreEqual(EdfErr.IsOk, readResult);
+        ComplexType restored = reader.ReadValue<ComplexType>();
 
         // 4. ASSERT: Проверяем идентичность всех полей (в MSTest сначала идет Expected, потом Actual)
         Assert.IsNotNull(restored);
@@ -181,15 +180,9 @@ public class GenSerializationTests
 
         using var memoryStream = new MemoryStream();
         using var writer = new EdfNet.Gen.WriterBin(memoryStream);
-        writer.Write(ComplexType.GetEdfSchema());
+        writer.WriteSchema(ComplexType.GetEdfSchema());
         EdfErr writeResult = writer.WriteValue(original);
-
-        var enumerator = (ComplexTypeByteEnumerator)original.GetByteEnumerator();
-        writer.WriteEnumerator(ref enumerator);
-        writer.WriteValue(original);
-
         writer.Flush();
-
         Assert.AreEqual(EdfErr.IsOk, writeResult);
     }
 

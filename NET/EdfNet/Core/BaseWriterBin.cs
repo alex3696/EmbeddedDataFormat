@@ -18,7 +18,7 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         _blk = new(_blkBuf);
         _blkData = new(_blkBuf);
         if (0 == stream.Position)
-            Write(Cfg);
+            WriteConfig(Cfg);
     }
     protected override void Dispose(bool disposing)
     {
@@ -45,7 +45,7 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
                 break;
         }
     }
-    public void Write(Config cfg)
+    public void WriteConfig(Config cfg)
     {
         Flush();
         _blk.Reset();
@@ -62,7 +62,7 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         _stream.Write(_blk);
         _blk.Reset();
     }
-    public virtual void Write(Schema sch)
+    public virtual void WriteSchema(Schema sch)
     {
         Flush();
         _blk.Reset();
@@ -83,18 +83,15 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         _blkData.DataLen = 0;
     }
 
-    public EdfErr Write<T>(T val) where T : class
+    public virtual EdfErr WriteValue<T>(in T val)
     {
         return EdfErr.WrongType;
     }
-    public EdfErr WriteValue<T>(in T val) where T : struct, allows ref struct
+    public EdfErr WriteInfData<T>(ushort id, PoType pt, string name, T d)
     {
-        return EdfErr.WrongType;
+        WriteSchema(new Schema() { Id = id, Type = new(pt), Name = name, });
+        return WriteValue(d);
     }
-
-
-    public abstract EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
-        where TEnumerator : struct, IEdfByteEnumerator;
 
     private static void Append(ref SpanBufferWriter buf, EdfType t)
     {

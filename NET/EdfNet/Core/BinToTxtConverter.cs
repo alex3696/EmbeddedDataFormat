@@ -39,12 +39,12 @@ public class BinToTxtConverter : BaseDisposable
                     case BlockType.Config:
                         var header = _reader.ReadConfig();
                         if (header != null)
-                            _writer.Write(header);
+                            _writer.WriteConfig(header);
                         break;
                     case BlockType.Schema:
                         var rec = _reader.ReadSchema();
                         if (rec != null)
-                            _writer.Write(rec);
+                            _writer.WriteSchema(rec);
                         break;
                     case BlockType.Data:
                         ArgumentNullException.ThrowIfNull(_writer.CurrentSchema?.Type);

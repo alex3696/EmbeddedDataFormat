@@ -14,12 +14,38 @@ public static class EdfProvider<T>
     {
         var formatter = CompositeResolver.Instance.GetFormatter<T>();
         if (formatter is null)
+        {
+            CompositeResolver.Instance.TryRegister(GlobalResolverRegistry.BuildComposite());
+            formatter = CompositeResolver.Instance.GetFormatter<T>();
+        }
+        if (formatter is null)
             throw new InvalidOperationException("formatter not found");
         Formatter = formatter;
     }
     public static void Register(IFormatter<T> formatter)
     {
         Formatter = formatter;
+    }
+}
+
+public static class GlobalResolverRegistry
+{
+    static GlobalResolverRegistry()
+    {
+        _resolvers.Add(PrimitiveResolver.Instance);
+    }
+
+    private static readonly List<IFormatterResolver> _resolvers = new();
+
+    // Сюда внешние проекты будут складывать свои резолверы
+    public static void Register(IFormatterResolver resolver)
+    {
+        lock (_resolvers) { _resolvers.Add(resolver); }
+    }
+    public static IFormatterResolver BuildComposite()
+    {
+        // Собираем всё вместе, когда базовому проекту нужно выполнить сериализацию
+        return CompositeResolver.Create(_resolvers.ToArray());
     }
 }
 
@@ -30,6 +56,14 @@ public sealed class CompositeResolver : IFormatterResolver
         var resolver = new CompositeResolver();
         return resolver;
     }
+
+    public static IFormatterResolver Create(params IFormatterResolver[] resolvers)
+    {
+        var resolver = new CompositeResolver();
+        resolver.Register(resolvers);
+        return resolver;
+    }
+
 
     public static readonly CompositeResolver Instance = MakeDefault();
     public bool IsRegistred => _isRegistred;

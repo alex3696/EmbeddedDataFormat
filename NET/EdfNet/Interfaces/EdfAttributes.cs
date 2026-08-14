@@ -3,7 +3,7 @@ namespace EdfNet.Interfaces;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
 public class EdfSerializableAttribute : Attribute { }
 
-[AttributeUsage(AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 public class EdfArrayAttribute(params ushort[] dimensions) : Attribute
 {
     public ushort[] Dimensions { get; set; } = dimensions;

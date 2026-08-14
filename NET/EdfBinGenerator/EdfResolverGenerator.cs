@@ -29,6 +29,7 @@ public class EdfResolverGenerator : IIncrementalGenerator
         if (distinctTypes.Count == 0) return;
         var sb = new StringBuilder();
         GeneratedEdfResolver(sb, distinctTypes);
+        RegisterResolver(sb, distinctTypes);
         context.AddSource("GeneratedEdfResolver.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
     private static void GeneratedEdfResolver(StringBuilder sb, List<INamedTypeSymbol> distinctTypes)
@@ -37,12 +38,12 @@ public class EdfResolverGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine("using EdfNet.Interfaces;");
         sb.AppendLine();
-        sb.AppendLine("namespace EdfNet.Gen");
+        sb.AppendLine("namespace EdfNet.Gen;");
+        sb.AppendLine("public class GeneratedEdfResolver : IFormatterResolver");
         sb.AppendLine("{");
-        sb.AppendLine("    public sealed class GeneratedEdfResolver : IFormatterResolver");
+        //sb.AppendLine("        public static GeneratedEdfResolver Instance { get; } = new GeneratedEdfResolver();");
+        sb.AppendLine("    public IFormatter<T>? GetFormatter<T>()");
         sb.AppendLine("    {");
-        sb.AppendLine("        public IFormatter<T>? GetFormatter<T>()");
-        sb.AppendLine("        {");
 
         foreach (var type in distinctTypes)
         {
@@ -52,12 +53,23 @@ public class EdfResolverGenerator : IIncrementalGenerator
                 ? $"{type.Name}Formatter"
                 : $"{type.ContainingNamespace.ToDisplayString()}.{type.Name}Formatter";
 
-            sb.AppendLine($"            if (typeof(T) == typeof({typeName}))");
-            sb.AppendLine($"                return (IFormatter<T>)(object)new {formatterName}();");
+            sb.AppendLine($"        if (typeof(T) == typeof({typeName}))");
+            sb.AppendLine($"           return (IFormatter<T>)(object)new {formatterName}();");
         }
 
-        sb.AppendLine("            return null;");
-        sb.AppendLine("        }");
+        sb.AppendLine("        return null;");
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+    }
+    private static void RegisterResolver(StringBuilder sb, List<INamedTypeSymbol> distinctTypes)
+    {
+        sb.AppendLine();
+        sb.AppendLine("public static class GeneratedEdfResolverInitializer");
+        sb.AppendLine("{");
+        sb.AppendLine("    [System.Runtime.CompilerServices.ModuleInitializer]");
+        sb.AppendLine("    public static void AutoRegister()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        EdfNet.Interfaces.GlobalResolverRegistry.Register(new GeneratedEdfResolver());");
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }

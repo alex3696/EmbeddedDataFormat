@@ -11,7 +11,7 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
         Cfg = cfg ?? Config.Default;
         _st = stream;
         if (0 == stream.Position)
-            Write(Cfg);
+            WriteConfig(Cfg);
     }
     protected override void Dispose(bool disposing)
     {
@@ -23,14 +23,14 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
     {
         _st.Flush();
     }
-    public void Write(Config h)
+    public void WriteConfig(Config h)
     {
         Flush();
         Write($"<~ {{version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags}; }} >\n");
         //Write($"// ? - struct @ - data // - comment");
         CurrentSchema = null;
     }
-    public void Write(Schema sch)
+    public void WriteSchema(Schema sch)
     {
         Flush();
         Write($"\n\n<? {{");
@@ -42,17 +42,15 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
         Write($">");
         CurrentSchema = sch;
     }
-    public EdfErr Write<T>(T val) where T : class
+    public virtual EdfErr WriteValue<T>(in T val)
     {
         return EdfErr.WrongType;
     }
-    public EdfErr WriteValue<T>(in T val) where T : struct, allows ref struct
+    public EdfErr WriteInfData<T>(ushort id, PoType pt, string name, T d)
     {
-        return EdfErr.WrongType;
+        WriteSchema(new Schema() { Id = id, Type = new(pt), Name = name, });
+        return WriteValue(d);
     }
-    public abstract EdfErr WriteEnumerator<TEnumerator>(ref TEnumerator enumerator)
-        where TEnumerator : struct, IEdfByteEnumerator;
-
     protected void Write(string? str)
     {
         if (!string.IsNullOrEmpty(str))
