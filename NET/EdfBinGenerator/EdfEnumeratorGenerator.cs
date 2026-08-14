@@ -46,13 +46,20 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(compilationAndClasses, static (spc, source) => Execute(spc, source));
     }
 
+    public static string GetEnumeratorTypeName(ITypeSymbol t, string? namespaceName)
+    {
+        string typeName = TypeSymbolUtils.GetShortTypeName(t, namespaceName ?? string.Empty);
+        string enumeratorName = $"{typeName.Replace(".", "_")}ByteEnumerator";
+        return enumeratorName;
+    }
+
     private static void Execute(SourceProductionContext context, INamedTypeSymbol? structSymbol)
     {
         if (structSymbol is null) return;
 
         string namespaceName = structSymbol.ContainingNamespace.ToDisplayString();
-        string structName = structSymbol.Name;
-        string enumeratorName = $"{structName}ByteEnumerator";
+        string typeName = TypeSymbolUtils.GetShortTypeName(structSymbol, namespaceName);
+        string enumeratorName = GetEnumeratorTypeName(structSymbol, namespaceName);
 
         // Собираем свойства: базовые, вложенные сериализуемые и массивы
         var fields = structSymbol.GetMembers()
@@ -74,12 +81,12 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine($"namespace {namespaceName}");
         sb.AppendLine("{");
-        sb.AppendLine($"    public struct {enumeratorName} : IEdfByteEnumerator<{structName}>");
+        sb.AppendLine($"    public struct {enumeratorName} : IEdfByteEnumerator<{typeName}>");
         sb.AppendLine("    {");
 
         // Вызываем раздельные методы генерации
-        GenerateFieldsAndDeclarations(sb, fields, structName);
-        GenerateConstructor(sb, fields, structName, enumeratorName);
+        GenerateFieldsAndDeclarations(sb, fields, typeName, namespaceName);
+        GenerateConstructor(sb, fields, typeName, enumeratorName, namespaceName);
         GenerateMoveNext(sb, fields);
         GenerateCurrentIndex(sb);
         GenerateCurrentPoType(sb, fields);
@@ -88,16 +95,16 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
         GenerateRead(sb, fields);
         GenerateWriteTxt(sb, fields);
         GenerateReadTxt(sb, fields);
-        GenerateResult(sb, structName);
+        GenerateResult(sb, typeName);
 
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
-        context.AddSource($"{structName}ByteEnumerator.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        context.AddSource($"{enumeratorName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     // 1. Объявления полей и внутренних энумераторов
-    private static void GenerateFieldsAndDeclarations(StringBuilder sb, List<IPropertySymbol> fields, string structName)
+    private static void GenerateFieldsAndDeclarations(StringBuilder sb, List<IPropertySymbol> fields, string structName, string ns)
     {
         sb.AppendLine($"        private const int FieldCount = {fields.Count};");
         sb.AppendLine($"        private readonly {structName} _instance;");
@@ -114,12 +121,12 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
                 if (!string.IsNullOrEmpty(elemPoType))
                     sb.AppendLine($"        private EdfArrayPrimitivesEnumerator<{arraySymbol.ElementType.ToDisplayString()}> _arrayEnum{i + 1};");
                 else
-                    sb.AppendLine($"        private EdfArrayObjectsEnumerator<{arraySymbol.ElementType.ToDisplayString()}, {arraySymbol.ElementType.Name}ByteEnumerator> _arrayEnum{i + 1};");
+                    sb.AppendLine($"        private EdfArrayObjectsEnumerator<{arraySymbol.ElementType.ToDisplayString()}, {GetEnumeratorTypeName(arraySymbol.ElementType, ns)}> _arrayEnum{i + 1};");
                 sb.AppendLine($"        private bool _inArray{i + 1};");
             }
             else if (fType.IsNestedSerializable())
             {
-                sb.AppendLine($"        private {fType.Name}ByteEnumerator _nestedEnum{i + 1};");
+                sb.AppendLine($"        private {GetEnumeratorTypeName(fType, ns)} _nestedEnum{i + 1};");
                 sb.AppendLine($"        private bool _inNested{i + 1};");
             }
         }
@@ -127,7 +134,7 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
     }
 
     // 2. Конструктор
-    private static void GenerateConstructor(StringBuilder sb, List<IPropertySymbol> fields, string structName, string enumeratorName)
+    private static void GenerateConstructor(StringBuilder sb, List<IPropertySymbol> fields, string structName, string enumeratorName, string ns)
     {
         sb.AppendLine($"        public {enumeratorName}({structName} instance)");
         sb.AppendLine("        {");
@@ -159,8 +166,8 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
                 else
                 {
                     sb.AppendLine($"            _arrayEnum{i + 1} = " +
-                        $"new EdfArrayObjectsEnumerator<{elemTypeName}, {elemShortName}ByteEnumerator>" +
-                        $"(null==instance.{f.Name} ? new {elemTypeName}[{dims}] : instance.{f.Name}, obj => new {elemShortName}ByteEnumerator(obj));");
+                        $"new EdfArrayObjectsEnumerator<{elemTypeName}, {GetEnumeratorTypeName(arraySymbol.ElementType, ns)}>" +
+                        $"(null==instance.{f.Name} ? new {elemTypeName}[{dims}] : instance.{f.Name}, obj => new {GetEnumeratorTypeName(arraySymbol.ElementType, ns)}(obj));");
                 }
                 sb.AppendLine($"            _inArray{i + 1} = false;");
             }
@@ -169,17 +176,17 @@ public class EdfEnumeratorGenerator : IIncrementalGenerator
                 if (isNullable)
                 {
                     // Nullable-класс (SubVal?)
-                    sb.AppendLine($"            _nestedEnum{i + 1} = new {fType.Name}ByteEnumerator(instance.{f.Name}.HasValue? instance.{f.Name}.HasValue : new {fType.Name}());");
+                    sb.AppendLine($"            _nestedEnum{i + 1} = new {GetEnumeratorTypeName(fType, ns)}(instance.{f.Name}.HasValue? instance.{f.Name}.HasValue : new {TypeSymbolUtils.GetShortTypeName(fType, ns)}());");
                 }
                 else if (fType.IsReferenceType)
                 {
                     // Обычный класс (class KeyVal)
-                    sb.AppendLine($"            _nestedEnum{i + 1} = new {fType.Name}ByteEnumerator(instance.{f.Name} ?? new {fType.Name}());");
+                    sb.AppendLine($"            _nestedEnum{i + 1} = new {GetEnumeratorTypeName(fType, ns)}(instance.{f.Name} ?? new {TypeSymbolUtils.GetShortTypeName(fType, ns)}());");
                 }
                 else
                 {
                     // Обычная структура (struct SubVal)
-                    sb.AppendLine($"            _nestedEnum{i + 1} = new {fType.Name}ByteEnumerator(instance.{f.Name});");
+                    sb.AppendLine($"            _nestedEnum{i + 1} = new {GetEnumeratorTypeName(fType, ns)}(instance.{f.Name});");
                 }
                 sb.AppendLine($"            _inNested{i + 1} = false;");
             }

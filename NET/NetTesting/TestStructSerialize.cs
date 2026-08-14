@@ -44,6 +44,35 @@ public class KeyValueStruct : IEquatable<KeyValueStruct>
         throw new NotImplementedException();
     }
 }
+[EdfSerializable]
+public class KeyValue
+{
+    public string? Key { get; set; }
+    public string? Value { get; set; }
+};
+
+[EdfSerializable]
+public class ComplexVariable
+{
+    public long Time { get; set; }
+    [EdfSerializable]
+    public class StateT
+    {
+        public sbyte Text { get; set; }
+        [EdfSerializable]
+        public class PosT
+        {
+            public int X { get; set; }
+            public int Y { get; set; }
+        };
+        public PosT? Pos { get; set; }
+
+        [EdfArray(2,2)]
+        public double[,]? Temp { get; set; }
+    };
+    [EdfArray(3)]
+    public StateT[]? State { get; set; }
+};
 
 
 [TestClass]
@@ -118,27 +147,6 @@ public class TestStructSerialize
         Assert.AreEqual(val2, readEnumerator2.Result);
     }
 
-    class KeyValue
-    {
-        public string? Key { get; set; }
-        public string? Value { get; set; }
-    };
-    class ComplexVariable
-    {
-        public long Time { get; set; }
-        public class StateT
-        {
-            public sbyte Text { get; set; }
-            public class PosT
-            {
-                public int X { get; set; }
-                public int Y { get; set; }
-            };
-            public PosT Pos { get; set; }
-            public double[,] Temp { get; set; }
-        };
-        public StateT[] State { get; set; }
-    };
 
     static int WriteSample(IWriter dw)
     {

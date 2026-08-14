@@ -52,49 +52,40 @@ public static class TypeSymbolUtils
             _ => null
         };
     }
-
     public static ITypeSymbol UnwrapNullable(this ITypeSymbol type)
     {
         if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && type is INamedTypeSymbol namedType && namedType.TypeArguments.Length > 0)
             return namedType.TypeArguments[0];
         return type;
     }
-
     public static bool IsNullableValueType(this ITypeSymbol type)
     {
         return type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
     }
-
     public static bool IsNestedSerializable(this ITypeSymbol type)
     {
-        return string.IsNullOrEmpty(type.MapToPoType()) && type is INamedTypeSymbol;
+        return !IsSupportedPrimitive(type) && type is INamedTypeSymbol;
     }
-
-    public static bool HasAttribute(this ITypeSymbol ntype, string attribute)
+    public static AttributeData? GetAttribute(this ISymbol symbol, string attribute)
     {
-        return ntype.GetAttributes().Any(a =>
-            a.AttributeClass?.ToDisplayString() == $"{Common.Namespace}.{attribute}" ||
-            a.AttributeClass?.Name == attribute);
+        return symbol.GetAttributes().FirstOrDefault(a =>
+            Common.HasAttribute(a.AttributeClass?.Name, attribute)
+            || Common.HasAttribute(a.AttributeClass?.ToDisplayString(), attribute));
     }
-
-    public static bool HasAttribute(this ISymbol symbol, string attribute)
-    {
-        return symbol.GetAttributes().Any(a => Common.IsAttribute(a.AttributeClass?.Name, attribute));
-    }
-
+    public static bool IsSerializable(this ITypeSymbol ntype) => null != GetAttribute(ntype, Common.SerializeAttribute);
+    public static AttributeData? GetArrayAttribute(this ISymbol symbol) => GetAttribute(symbol, Common.ArrayAttribute);
+    public static AttributeData? GetCharArrayAttribute(this ISymbol symbol) => GetAttribute(symbol, Common.CharArrayAttribute);
     public static bool IsCompatibleType(this ITypeSymbol ntype)
     {
         if (ntype == null) return false;
         ntype = ntype.UnwrapNullable();
-        bool hasAttribute = ntype.HasAttribute(Common.SerializeAttribute)
-            || ntype.HasAttribute(Common.ArrayAttribute);
-        return hasAttribute || !string.IsNullOrWhiteSpace(TypeSymbolUtils.MapToPoType(ntype));
+        bool hasAttribute = ntype.IsSerializable();
+        return hasAttribute || IsSupportedPrimitive(ntype);
     }
 
     public static string ExtractArrayDimensions(this ISymbol symbol)
     {
-        var arrayAttr = symbol.GetAttributes().FirstOrDefault(a =>
-            Common.IsAttribute(a.AttributeClass?.Name, Common.ArrayAttribute));
+        var arrayAttr = symbol.GetArrayAttribute();
 
         if (arrayAttr != null && arrayAttr.ConstructorArguments.Length > 0)
         {
@@ -107,18 +98,16 @@ public static class TypeSymbolUtils
         }
         return string.Empty;
     }
-
     public static string[] ExtractArrayDimensionValues(this ISymbol symbol)
     {
         var s = symbol.ExtractArrayDimensions();
-        if (string.IsNullOrEmpty(s)) return Array.Empty<string>();
-        return s.Split(new[] { ", " }, StringSplitOptions.None);
+        if (string.IsNullOrEmpty(s))
+            return [];
+        return s.Split([", "], StringSplitOptions.None);
     }
-
     public static byte ExtractCharArrayLength(this ISymbol symbol)
     {
-        var attr = symbol.GetAttributes().FirstOrDefault(a =>
-            Common.IsAttribute(a.AttributeClass?.Name, "EdfCharArrayAttribute"));
+        var attr = symbol.GetCharArrayAttribute();
         if (attr != null && attr.ConstructorArguments.Length > 0)
         {
             var val = attr.ConstructorArguments[0].Value;
@@ -147,42 +136,44 @@ public static class TypeSymbolUtils
                 return true;
         }
     }
-
-    public static void CheckSupportedPrimitive(ITypeSymbol type)
-    {
-        if (!IsSupportedPrimitive(type))
-            throw new InvalidOperationException($"Type {type.ToDisplayString()} is not a supported primitive type.");
-    }
-
-    public static bool IsIgnored(this ISymbol symbol)
-    {
-        return symbol.GetAttributes().Any(a =>
-            a.AttributeClass?.ToDisplayString() == $"{Common.Namespace}.EdfIgnoreAttribute" ||
-            a.AttributeClass?.Name == "EdfIgnoreAttribute");
-    }
-
     public static string GetShortTypeName(ITypeSymbol type, string currentNamespace)
     {
-        if (type.ContainingNamespace.IsGlobalNamespace)
-            return type.Name;
+        // 1. Формируем имя типа с учетом всей цепочки вложенности (для вложенных классов)
+        string typeNameWithNested = type.Name;
+        INamedTypeSymbol containingType = type.ContainingType;
+        while (containingType != null)
+        {
+            typeNameWithNested = containingType.Name + "." + typeNameWithNested;
+            containingType = containingType.ContainingType;
+        }
+        // 2. Проверяем пространство имен
+        if (type.ContainingNamespace == null || type.ContainingNamespace.IsGlobalNamespace)
+            return typeNameWithNested;
         string typeNs = type.ContainingNamespace.ToDisplayString();
         if (typeNs == currentNamespace)
-            return type.Name;
+            return typeNameWithNested;
+        // 3. Если пространства имен не совпадают, возвращаем полное имя
         return type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        //if (type.ContainingNamespace.IsGlobalNamespace)
+        //    return type.Name;
+        //string typeNs = type.ContainingNamespace.ToDisplayString();
+        //if (typeNs == currentNamespace)
+        //    return type.Name;
+        //return type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
     public static string GetArrayTypeName(IArrayTypeSymbol arrayType, string currentNamespace)
     {
-        string elemName = TypeSymbolUtils.GetShortTypeName(arrayType.ElementType, currentNamespace);
+        string elemName = GetShortTypeName(arrayType.ElementType, currentNamespace);
         int rank = arrayType.Rank;
         if (rank == 1) return elemName + "[]";
         return elemName + "[" + new string(',', rank - 1) + "]";
     }
-
-    public static bool IsByteArray(this ISymbol symbol)
+    public static bool IsCharArray(this ISymbol symbol)
     {
         // особый случай свойство или поле byte[] FieldName; с атрибутом [EdfCharArray(len: 54)]
         // - это аналог Си поля фиксированного размера char[54] FieldName в структуре
-        if (symbol.HasAttribute(Common.CharArrayAttribute))
+        if (null != symbol.GetCharArrayAttribute())
         {
             var type = symbol.GetMemberType();
             if (type is IArrayTypeSymbol arrayType && arrayType.ElementType.SpecialType == SpecialType.System_Byte)
@@ -192,15 +183,30 @@ public static class TypeSymbolUtils
         return false;
     }
 
+    public static bool IsReadOnly(this ISymbol symbol)
+    {
+        return symbol switch
+        {
+            IPropertySymbol p => p.IsReadOnly,
+            IFieldSymbol f => f.IsReadOnly,
+            _ => false
+        };
+    }
+    public static bool IsConst(this ISymbol symbol) => symbol is IFieldSymbol f && f.IsConst;
+    public static bool IsImplicitlyDeclared(this ISymbol symbol) => symbol is IFieldSymbol f && f.IsImplicitlyDeclared;
+    public static bool IsIgnored(this ISymbol symbol) => null != GetAttribute(symbol, Common.IgnoreAttribute);
     public static bool IsSupportedMemberType(this ISymbol symbol)
     {
+        if (symbol.IsReadOnly()
+            || symbol.IsConst()
+            || symbol.IsImplicitlyDeclared()
+            || symbol.IsIgnored())
+            return false;
         var type = symbol.GetMemberType();
         if (type == null) return false;
-
         // 1. Примитив
         if (IsSupportedPrimitive(type))
             return true;
-
         // 2. Nullable примитив
         if (type.IsNullableValueType())
         {
@@ -208,17 +214,13 @@ public static class TypeSymbolUtils
             if (IsSupportedPrimitive(underlying))
                 return true;
         }
-
         // 3. byte[] с [EdfCharArray]
-        if (symbol.HasAttribute(Common.CharArrayAttribute))
+        if (symbol.IsCharArray())
         {
-            if (type is IArrayTypeSymbol arr && arr.ElementType.SpecialType == SpecialType.System_Byte)
-                return true;
-            return false;
+            return true;
         }
-
         // 4. Массив с [EdfArray]
-        if (symbol.HasAttribute(Common.ArrayAttribute))
+        if (null != symbol.GetArrayAttribute())
         {
             var elementType = (type as IArrayTypeSymbol)?.ElementType;
             if (elementType == null)
@@ -226,13 +228,12 @@ public static class TypeSymbolUtils
                 var named = type as INamedTypeSymbol;
                 elementType = named?.TypeArguments.FirstOrDefault();
             }
-            if (elementType != null && (IsSupportedPrimitive(elementType) || elementType.HasAttribute(Common.SerializeAttribute)))
+            if (elementType != null && (IsSupportedPrimitive(elementType) || elementType.IsSerializable()))
                 return true;
             return false;
         }
-
         // 5. Вложенный сериализуемый тип
-        if (type.HasAttribute(Common.SerializeAttribute))
+        if (type.IsSerializable())
             return true;
 
         return false;

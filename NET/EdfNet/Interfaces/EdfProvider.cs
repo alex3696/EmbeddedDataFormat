@@ -1,5 +1,11 @@
 namespace EdfNet.Interfaces;
 
+public static class EmptyObjectCache<T> where T : new()
+{
+    // Экземпляр создается один раз при первом обращении к типу T
+    public static T Instance = new();
+}
+
 public static class EdfProvider<T>
 {
     // Поле инициализируется один раз для каждого типа T

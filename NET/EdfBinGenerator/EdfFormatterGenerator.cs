@@ -48,14 +48,14 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         {
             sb.AppendLine();
         }
-
         GenerateFormatter(typeSymbol, sb, ns);
-        context.AddSource($"{typeSymbol.Name}Formatter.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+        string typeName = TypeSymbolUtils.GetShortTypeName(typeSymbol, ns);
+        context.AddSource($"{typeName}Formatter.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     private static void GenerateFormatter(INamedTypeSymbol type, StringBuilder sb, string currentNamespace)
     {
-        string typeName = type.Name;
+        string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
         string formatterName = $"{type.Name}Formatter";
         sb.AppendLine($"public sealed class {formatterName} : IFormatter<{typeName}>");
         sb.AppendLine("{");
@@ -91,37 +91,22 @@ public class EdfFormatterGenerator : IIncrementalGenerator
     {
         return type.GetMembers()
             .Where(m => m is IPropertySymbol || m is IFieldSymbol)
-            .Where(m => !TypeSymbolUtils.IsIgnored(m))
             .Where(m => m.DeclaredAccessibility == Accessibility.Public)
-            .Where(m => !IsReadOnly(m))
-            .Where(m => !(m is IFieldSymbol f && f.IsConst))
-            .Where(m => !(m is IFieldSymbol f && f.IsImplicitlyDeclared))
             .Where(m => m.IsSupportedMemberType());
     }
-
-    private static bool IsReadOnly(ISymbol symbol)
-    {
-        return symbol switch
-        {
-            IPropertySymbol p => p.IsReadOnly,
-            IFieldSymbol f => f.IsReadOnly,
-            _ => false
-        };
-    }
-
     private static void GenerateSerializeMember(StringBuilder sb, ISymbol member, string valVar, string currentNamespace)
     {
         string memberAccess = $"{valVar}.{member.Name}";
         var memberType = member.GetMemberType()!;
         const string i8 = "        ";
 
-        if (member.HasAttribute(Common.ArrayAttribute))
+        if (null != member.GetArrayAttribute())
         {
             GenerateArraySerialize(sb, member, memberAccess, currentNamespace);
             return;
         }
 
-        if (member.IsByteArray())
+        if (member.IsCharArray())
         {
             byte len = member.ExtractCharArrayLength();
             sb.AppendLine($"{i8}writer.WriteCharArray({memberAccess}!, {len});");
@@ -136,7 +121,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
                 sb.AppendLine($"{i8}writer.Write({memberAccess} ?? default);");
                 return;
             }
-            WriteValue(sb, underlying, memberAccess, i8, currentNamespace);
+            WriteValue(sb, underlying, memberAccess + " ?? EmptyObjectCache<" + underlying.Name + ">.Instance", i8, currentNamespace);
             return;
         }
 
@@ -149,13 +134,13 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         var memberType = member.GetMemberType()!;
         const string i8 = "        ";
 
-        if (member.HasAttribute(Common.ArrayAttribute))
+        if (null != member.GetArrayAttribute())
         {
             GenerateArrayDeserialize(sb, member, memberAccess, currentNamespace);
             return;
         }
 
-        if (member.IsByteArray())
+        if (member.IsCharArray())
         {
             byte len = member.ExtractCharArrayLength();
             if (len > 0)
@@ -190,13 +175,19 @@ public class EdfFormatterGenerator : IIncrementalGenerator
 
     private static void WriteValue(StringBuilder sb, ITypeSymbol type, string access, string indent, string currentNamespace)
     {
+        string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
         if (TypeSymbolUtils.IsSupportedPrimitive(type))
         {
+            if (string.IsNullOrEmpty(access))
+                access = $"default({typeName})";
             sb.AppendLine($"{indent}writer.Write({access});");
         }
-        else if (type.HasAttribute(Common.SerializeAttribute))
+        else if (type.IsSerializable())
         {
-            string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
+            if (string.IsNullOrEmpty(access))
+                access = $"EmptyObjectCache<{typeName}>.Instance";
+            else
+                access += $" ?? EmptyObjectCache<{typeName}>.Instance";
             sb.AppendLine($"{indent}EdfProvider<{typeName}>.Formatter.Serialize(ref writer, {access}, options);");
         }
         else
@@ -216,7 +207,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
             string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
             return $"reader.Read<{typeName}>()";
         }
-        else if (type.HasAttribute(Common.SerializeAttribute))
+        else if (type.IsSerializable())
         {
             string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
             return $"EdfProvider<{typeName}>.Formatter.Deserialize(ref reader, options)";
@@ -240,21 +231,16 @@ public class EdfFormatterGenerator : IIncrementalGenerator
             elementType = named?.TypeArguments.FirstOrDefault();
         }
 
-        if (elementType == null || !(TypeSymbolUtils.IsSupportedPrimitive(elementType) || elementType.HasAttribute(Common.SerializeAttribute)))
+        if (elementType == null || !(TypeSymbolUtils.IsSupportedPrimitive(elementType) || elementType.IsSerializable()))
         {
             sb.AppendLine($"{i8}/* Unsupported array element type for {member.Name} */");
             return;
         }
 
-        string elemTypeName = TypeSymbolUtils.GetShortTypeName(elementType, currentNamespace);
-        string defaultExpr = TypeSymbolUtils.IsSupportedPrimitive(elementType)
-            ? $"default({elemTypeName})"
-            : $"new {elemTypeName}()";
-
         sb.AppendLine($"{i8}writer.BeginArray();");
         sb.AppendLine($"{i8}if ({access} == null)");
         sb.AppendLine($"{i8}{{");
-        GenerateArraySerializeLoops(sb, member, access, elementType, currentNamespace, i12, true, defaultExpr);
+        GenerateArraySerializeLoops(sb, member, access, elementType, currentNamespace, i12, true, string.Empty);
         sb.AppendLine($"{i8}}}");
         sb.AppendLine($"{i8}else");
         sb.AppendLine($"{i8}{{");
@@ -299,7 +285,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
             elementType = named?.TypeArguments.FirstOrDefault();
         }
 
-        if (elementType == null || !(TypeSymbolUtils.IsSupportedPrimitive(elementType) || elementType.HasAttribute(Common.SerializeAttribute)))
+        if (elementType == null || !(TypeSymbolUtils.IsSupportedPrimitive(elementType) || elementType.IsSerializable()))
         {
             sb.AppendLine($"{i8}/* Unsupported array element type for {member.Name} */");
             return;

@@ -142,9 +142,9 @@ public class GenSerializationTests
 
         // Проверка вложенной Nullable-структуры Sub0
         Assert.IsNotNull(restored.Sub0);
-        Assert.AreEqual(original.Sub0.ValDouble, restored.Sub0.ValDouble);
-        Assert.AreEqual(original.Sub0.ValByte, restored.Sub0.ValByte);
-        Assert.AreEqual(original.Sub0.ValSByte, restored.Sub0.ValSByte);
+        Assert.AreEqual(original.Sub0?.ValDouble, restored.Sub0.ValDouble);
+        Assert.AreEqual(original.Sub0?.ValByte, restored.Sub0.ValByte);
+        Assert.AreEqual(original.Sub0?.ValSByte, restored.Sub0.ValSByte);
 
         // Проверка обычной структуры Sub1
         Assert.AreEqual(original.Sub1.ValDouble, restored.Sub1.ValDouble);
@@ -153,14 +153,14 @@ public class GenSerializationTests
 
         // Проверка двухмерного массива объектов SubVal[,]
         Assert.IsNotNull(restored.Sub);
-        Assert.AreEqual(original.Sub.Rank, restored.Sub.Rank);
+        Assert.AreEqual(original.Sub?.Rank, restored.Sub.Rank);
         for (int i = 0; i < 2; i++)
         {
             for (int j = 0; j < 2; j++)
             {
-                Assert.AreEqual(original.Sub[i, j].ValDouble, restored.Sub[i, j].ValDouble);
-                Assert.AreEqual(original.Sub[i, j].ValByte, restored.Sub[i, j].ValByte);
-                Assert.AreEqual(original.Sub[i, j].ValSByte, restored.Sub[i, j].ValSByte);
+                Assert.AreEqual(original.Sub?[i, j].ValDouble, restored.Sub[i, j].ValDouble);
+                Assert.AreEqual(original.Sub?[i, j].ValByte, restored.Sub[i, j].ValByte);
+                Assert.AreEqual(original.Sub?[i, j].ValSByte, restored.Sub[i, j].ValSByte);
             }
         }
     }

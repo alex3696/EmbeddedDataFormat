@@ -10,10 +10,11 @@ public static class Common
     public const string SerializeAttribute = "EdfSerializableAttribute";
     public const string ArrayAttribute = "EdfArrayAttribute";
     public const string CharArrayAttribute = "EdfCharArrayAttribute";
+    public const string IgnoreAttribute = "EdfIgnoreAttribute";
 
-    public static bool IsAttribute(this string? str, string attribute)
+    public static bool HasAttribute(this string? str, string attribute)
     {
-        return str != null && (str.Contains(attribute) || str.Contains(attribute.Replace(Common.Attribute, string.Empty)));
+        return str?.Contains(attribute.Replace(Attribute, string.Empty)) ?? false;
     }
 
     public static INamedTypeSymbol? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
@@ -26,7 +27,7 @@ public static class Common
             {
                 // Быстрая текстовая проверка, чтобы зря не нагружать семантическую модель
                 string attrName = attribute.Name.ToString();
-                if (!IsAttribute(attrName, SerializeAttribute))
+                if (!HasAttribute(attrName, SerializeAttribute))
                     continue;
 
                 if (context.SemanticModel.GetSymbolInfo(attribute).Symbol is IMethodSymbol attributeSymbol &&
