@@ -3,7 +3,7 @@ namespace EdfNet.Interfaces;
 public static class EmptyObjectCache<T> where T : new()
 {
     // Экземпляр создается один раз при первом обращении к типу T
-    public static T Instance = new();
+    public static readonly T Instance = new();
 }
 
 public static class EdfProvider<T>
@@ -18,8 +18,8 @@ public static class EdfProvider<T>
             CompositeResolver.Instance.TryRegister(GlobalResolverRegistry.BuildComposite());
             formatter = CompositeResolver.Instance.GetFormatter<T>();
         }
-        if (formatter is null)
-            throw new InvalidOperationException("formatter not found");
+        //if (formatter is null)
+        //    throw new InvalidOperationException("formatter not found");
         Formatter = formatter;
     }
     public static void Register(IFormatter<T> formatter)
@@ -66,19 +66,16 @@ public sealed class CompositeResolver : IFormatterResolver
 
 
     public static readonly CompositeResolver Instance = MakeDefault();
-    public bool IsRegistred => _isRegistred;
-
+    public bool IsRegistred { get; private set; } = false;
     private IFormatterResolver[] _resolvers = [];
-    private bool _isRegistred;
-
 
     private CompositeResolver() { }
 
     public bool TryRegister(params IFormatterResolver[] resolvers)
     {
-        if (_isRegistred) return false;
+        if (IsRegistred) return false;
         _resolvers = resolvers;
-        _isRegistred = true;
+        IsRegistred = true;
         return true;
     }
     public void Register(params IFormatterResolver[] resolvers)

@@ -2,9 +2,9 @@ using System.Buffers.Text;
 
 namespace EdfNet.Core;
 
-public ref struct BufWriterTxt : IBufWriter
+public readonly ref struct BufWriterTxt : IBufWriter
 {
-    private BufStateTxt _state;
+    private readonly BufStateTxt _state;
     private readonly Span<byte> GetEmptyBuffer() => _state.Buf.Slice(_state.Writed);
 
     public BufWriterTxt(BufStateTxt state)
@@ -19,7 +19,7 @@ public ref struct BufWriterTxt : IBufWriter
     public void RecEnd() => Write(Separator.RecEnd);
     public void VarEnd() => Write(Separator.VarEnd);
 
-    private readonly void ThrowNotSupportedType(Type t) => throw new NotSupportedException($"Type {t.Name} not supported.");
+    private void ThrowNotSupportedType(Type t) => throw new NotSupportedException($"Type {t.Name} not supported.");
 
     public int Write<T>(T val) where T : struct
     {
@@ -54,7 +54,7 @@ public ref struct BufWriterTxt : IBufWriter
         var dst = GetEmptyBuffer();
         dst[0] = 34; // "
         if (contentLen > 0)
-            Encoding.UTF8.GetBytes(str!, dst.Slice(1, contentLen));
+            EdfBinString.CopyStringToSpan(str, dst.Slice(1, contentLen));
         dst[1 + contentLen] = 34; // "
         Separator.VarEnd.CopyTo(dst.Slice(2 + contentLen));
         _state.Writed += totalLen;
@@ -88,7 +88,7 @@ public ref struct BufWriterTxt : IBufWriter
         return totalLen;
     }
 
-    private void EnsureEmpty()
+    public void EnsureEmpty()
     {
         _state.Stream.Write(_state.Buf.Slice(0, _state.Writed));
         _state.Writed = 0;

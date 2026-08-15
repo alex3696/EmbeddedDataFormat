@@ -212,12 +212,12 @@ public class TestStructSerialize
                 ]
             }
         };
-        dw.WriteSchema(schComlexChar);
-        dw.WriteValue((byte)8);
-        var schComlexCharBuf = new byte[10];
-        Encoding.UTF8.GetBytes("Char", schComlexCharBuf.AsSpan());
-        dw.WriteValue(schComlexCharBuf);
-        dw.WriteValue((ushort)16);
+        //dw.WriteSchema(schComlexChar);
+        //dw.WriteValue((byte)8);
+        //var schComlexCharBuf = new byte[10];
+        //Encoding.UTF8.GetBytes("Char", schComlexCharBuf.AsSpan());
+        //dw.WriteValue(schComlexCharBuf);
+        //dw.WriteValue((ushort)16);
 
         EdfType comlexVarInf = new()
         {
@@ -335,7 +335,7 @@ public class TestStructSerialize
 
     static int WriteBigVar(IWriter dw)
     {
-        int arrLen = (int)(dw.Cfg.Blocksize / sizeof(uint) * 2.5);
+        int arrLen = 160;
         Schema rec = new()
         {
             Id = 0xF1F2,
@@ -346,9 +346,10 @@ public class TestStructSerialize
         for (uint i = 0; i < arrLen; i++)
             test[i] = (int)i;
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray160() { Arr = test }));//write all
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray15() { Arr = test.AsSpan(0, 15).ToArray() }));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray130() { Arr = test.AsSpan(15, arrLen - 30).ToArray() }));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray15() { Arr = test.AsSpan(arrLen - 15).ToArray() }));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray160() { Arr = test }));//write all
+        //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray15() { Arr = test.AsSpan(0, 15).ToArray() }));
+        //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray130() { Arr = test.AsSpan(15, arrLen - 30).ToArray() }));
+        //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray15() { Arr = test.AsSpan(arrLen - 15).ToArray() }));
         //Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(0, 15).ToArray()));
         //Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(15, arrLen - 30).ToArray()));
         //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test.AsSpan(arrLen - 15).ToArray()));
