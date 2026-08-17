@@ -46,39 +46,62 @@ public class CharArrayFormatter : IFormatter<byte[]>
     }
 }
 
-public class PrimitiveArrayFormatter<T> : IFormatter<T[]> where T : struct
+public interface IFormatterArray<TARRAY> : IFormatter<TARRAY>
 {
-    public readonly int Len;
-    public PrimitiveArrayFormatter(int len)
-    {
-        Len = len;
-    }
-    public void Serialize<TWriter>(ref TWriter writer, in T[] val, EdfOptions options)
+    void Serialize<TWriter>(ref TWriter writer, int[] Dims, in TARRAY arrObj, EdfOptions options)
+        where TWriter : struct, IBufWriter, allows ref struct;
+    TARRAY Deserialize<TReader>(ref TReader reader, int[] Dims, EdfOptions options)
+        where TReader : struct, IBufReader, allows ref struct;
+}
+
+public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
+    //where TARRAY : IList
+    where TITEM : struct
+{
+    public void Serialize<TWriter>(ref TWriter writer, int[] dims, in TARRAY arrObj, EdfOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
+        if (arrObj is not Array arr)
+            return;
         writer.BeginArray();
-        for (int i = 0; i < val.Length; i++)
-            writer.Write(val[i]);
+        for (int i = 0; i < arr.Length; i++)
+        {
+            ref TITEM item = ref arr.GetElementAtFlatIndex<TITEM>(i);
+            writer.Write<TITEM>(item);
+        }
         writer.EndArray();
     }
-    public T[] Deserialize<TReader>(ref TReader reader, EdfOptions options)
+    public TARRAY Deserialize<TReader>(ref TReader reader, int[] dims, EdfOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
         reader.ReadBeginArray();
-        var arr = new T[Len];
-        for (int i = 0; i < Len; ++i)
-            arr[i] = reader.Read<T>();
-        return arr;
+        var arr = Array.CreateInstanceFromArrayType(typeof(TARRAY), dims);
+        for (int i = 0; i < arr.Length; i++)
+        {
+            arr.GetElementAtFlatIndex<TITEM>(i) = reader.Read<TITEM>();
+        }
+        reader.ReadEndArray();
+        return Unsafe.As<Array, TARRAY>(ref arr);//return (TARRAY)(object)arr;
+    }
+
+    public void Serialize<TWriter>(ref TWriter writer, in TARRAY value, EdfOptions options) where TWriter : struct, IBufWriter, allows ref struct
+    {
+        throw new NotImplementedException();
+    }
+
+    public TARRAY Deserialize<TReader>(ref TReader reader, EdfOptions options) where TReader : struct, IBufReader, allows ref struct
+    {
+        throw new NotImplementedException();
     }
 }
-
 
 public class PrimitiveResolver : IFormatterResolver
 {
     public static readonly PrimitiveResolver Instance = new();
     public IFormatter<T>? GetFormatter<T>()
     {
-        switch (Type.GetTypeCode(typeof(T)))
+        var type = typeof(T);
+        switch (Type.GetTypeCode(type))
         {
             default: break;
             case TypeCode.Byte: return (IFormatter<T>)(object)new PrimitiveFormatter<byte>();
@@ -92,6 +115,17 @@ public class PrimitiveResolver : IFormatterResolver
             case TypeCode.Single: return (IFormatter<T>)(object)new PrimitiveFormatter<float>();
             case TypeCode.Double: return (IFormatter<T>)(object)new PrimitiveFormatter<double>();
             case TypeCode.String: return (IFormatter<T>)(object)new PrimitiveFormatterString();
+        }
+        if (type.IsArray)
+        {
+            var itemType = type.GetElementType();
+            if (itemType != null)
+            {
+                // Динамически создаем тип PrimitiveArrayFormatter<T, itemType>
+                //    var formatterType = typeof(PrimitiveArrayFormatter<,>).MakeGenericType(type, itemType);
+                // Создаем и возвращаем экземпляр форматтера
+                //    return (IFormatter<T>?)Activator.CreateInstance(formatterType);
+            }
         }
         return null;
     }

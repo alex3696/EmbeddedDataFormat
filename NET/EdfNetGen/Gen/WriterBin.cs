@@ -5,17 +5,17 @@ public class WriterBin : BaseWriterBin
     public WriterBin(Stream stream, Config? cfg = default)
         : base(stream, cfg)
     {
-        _rstate = new(_stream, _blkData);
+        _state = new(_stream, _blkData);
     }
 
     public override void WriteSchema(Schema sch)
     {
         base.WriteSchema(sch);
-        _rstate.Skip = 0;
-        _rstate.RecordId = 0;
-        _rstate.PrimOffset = 0;
+        _state.Skip = 0;
+        _state.RecordId = 0;
+        _state.PrimOffset = 0;
     }
-    private readonly BufWriterState _rstate;
+    private readonly BufWriterState _state;
     private readonly EdfOptions _options = EdfOptions.Default;
 
     private EdfErr WriteValue(in byte[] val)
@@ -25,7 +25,7 @@ public class WriterBin : BaseWriterBin
             return EdfErr.WrongType;
         int len = (int)CurrentSchema.Type.GetTotalElements();
         var formatter = new CharArrayFormatter(len);
-        var writer = new BufWriterBin(_rstate);
+        var writer = new BufWriterBin(_state);
         writer.RecBegin();
         formatter.Serialize(ref writer, val, _options);
         writer.RecEnd();
@@ -40,7 +40,7 @@ public class WriterBin : BaseWriterBin
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var writer = new BufWriterBin(_rstate);
+        var writer = new BufWriterBin(_state);
         writer.RecBegin();
         formatter.Serialize(ref writer, val, _options);
         writer.RecEnd();
