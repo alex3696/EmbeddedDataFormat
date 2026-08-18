@@ -82,7 +82,19 @@ public static class TypeSymbolUtils
         bool hasAttribute = ntype.IsSerializable();
         return hasAttribute || IsSupportedPrimitive(ntype);
     }
-
+    public static ushort[] ExtractArrayDims(this ISymbol symbol)
+    {
+        var arrayAttr = symbol.GetArrayAttribute();
+        if (arrayAttr != null && arrayAttr.ConstructorArguments.Length > 0)
+        {
+            var arg = arrayAttr.ConstructorArguments[0];
+            if (arg.Kind == TypedConstantKind.Array)
+            {
+                return arg.Values.Select(v => (ushort)v.Value!).ToArray();
+            }
+        }
+        return [];
+    }
     public static string ExtractArrayDimensions(this ISymbol symbol)
     {
         var arrayAttr = symbol.GetArrayAttribute();

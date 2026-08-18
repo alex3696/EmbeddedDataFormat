@@ -102,7 +102,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
 
         if (null != member.GetArrayAttribute())
         {
-            GenerateArraySerialize(sb, member, memberAccess, currentNamespace);
+            GenerateArraySerializeFlat(sb, member, memberAccess, currentNamespace);
             return;
         }
 
@@ -217,7 +217,44 @@ public class EdfFormatterGenerator : IIncrementalGenerator
             return $"/* Unsupported deserialize type: {type.ToDisplayString()} */";
         }
     }
-
+    private static void GenerateArraySerializeFlat(StringBuilder sb, ISymbol member, string access, string currentNamespace)
+    {
+        var arrayType = member.GetMemberType() as IArrayTypeSymbol;
+        var elementType = arrayType?.ElementType;
+        const string i8 = "        ";
+        const string i16 = "                ";
+        if (elementType == null)
+        {
+            var named = member.GetMemberType() as INamedTypeSymbol;
+            elementType = named?.TypeArguments.FirstOrDefault();
+        }
+        if (elementType == null || !(TypeSymbolUtils.IsSupportedPrimitive(elementType) || elementType.IsSerializable()))
+        {
+            sb.AppendLine($"{i8}/* Unsupported array element type for {member.Name} */");
+            return;
+        }
+        var dims = member.ExtractArrayDims();
+        int totalElements = 1;
+        for (int i = 0; i < dims?.Length; i++)
+            totalElements *= dims[i];
+        sb.AppendLine($"{i8}writer.BeginArray();");
+        sb.AppendLine($"{i8}if ({access} == null)");
+        sb.AppendLine($"{i8}{{");
+        sb.AppendLine($"{i8}    for (int i = 0; i < {totalElements}; i++)");
+        sb.AppendLine($"{i8}    {{");
+        WriteValue(sb, elementType, string.Empty, i16, currentNamespace);
+        sb.AppendLine($"{i8}    }}");
+        sb.AppendLine($"{i8}}}");
+        sb.AppendLine($"{i8}else");
+        sb.AppendLine($"{i8}{{");
+        sb.AppendLine($"{i8}    for (int i = 0; i < {totalElements}; i++)");
+        sb.AppendLine($"{i8}    {{");
+        sb.AppendLine($"{i8}        ref {elementType} item = ref {access}.GetElementAtFlatIndexUnsafe<{elementType}>(i);");
+        WriteValue(sb, elementType, "item", i16, currentNamespace);
+        sb.AppendLine($"{i8}    }}");
+        sb.AppendLine($"{i8}}}");
+        sb.AppendLine($"{i8}writer.EndArray();");
+    }
     private static void GenerateArraySerialize(StringBuilder sb, ISymbol member, string access, string currentNamespace)
     {
         var arrayType = member.GetMemberType() as IArrayTypeSymbol;

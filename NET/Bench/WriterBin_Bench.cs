@@ -17,6 +17,11 @@ fixed Marshal.SizeOf >> Unsafe.SizeO
 | Writer_Gen2 | .NET 10.0      | 282.2 ns |  1.00 |         - |          NA |
 | Writer_Gen2 | NativeAOT 10.0 | 376.7 ns |  1.33 |         - |          NA |
 
+// GetElementAtFlatIndexUnsafe
+| Method      | Job            | Mean     | Ratio | Allocated | Alloc Ratio |
+|------------ |--------------- |---------:|------:|----------:|------------:|
+| Writer_Gen2 | .NET 10.0      | 280.3 ns |  1.00 |         - |          NA |
+| Writer_Gen2 | NativeAOT 10.0 | 370.5 ns |  1.32 |         - |          NA |
  */
 
 
