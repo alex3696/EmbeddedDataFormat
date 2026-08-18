@@ -7,7 +7,7 @@ public class EdfType : IEquatable<EdfType>
     public string? Name;// { get; set; }
     public ushort[] Dims;// { get; set; }
     public EdfType[] Childs = [];// { get; set; }
-    private int _totalElements = -1; // -1 = не вычислено
+    private int _totalElements = int.MinValue; // -1 = не вычислено
     protected static string GetOffset(int noffset)
     {
         string offset = "";
@@ -39,19 +39,8 @@ public class EdfType : IEquatable<EdfType>
         Dims = dims ?? [];
         Childs = (PoType.Struct == type) ? (Childs = childs ?? []) : [];
     }
-    public EdfType(string? name, PoType type, ushort[]? dims = default, EdfType[]? childs = default)
-    {
-        Name = name;
-        Type = type;
-        Dims = dims ?? [];
-        Childs = (PoType.Struct == type) ? (Childs = childs ?? []) : [];
-    }
-    public EdfType(string? name, ushort[]? dims = null, EdfType[]? childs = null)
-        : this(name, PoType.Struct, dims, childs)
-    {
-    }
     public EdfType()
-        : this(string.Empty, PoType.Int32)
+        : this(PoType.Int32)
     {
     }
     public bool Equals(EdfType? y)
@@ -82,7 +71,7 @@ public class EdfType : IEquatable<EdfType>
     }
     public uint GetTotalElements()
     {
-        if (_totalElements != -1) return (uint)_totalElements;
+        if (_totalElements > int.MinValue) return (uint)_totalElements;
         uint totalElement = 1;
         for (int i = 0; i < Dims?.Length; i++)
             totalElement *= Dims[i];
@@ -126,6 +115,6 @@ public class EdfType : IEquatable<EdfType>
             for (int i = 0; i < childsCount; i++)
                 childs.Add(ParseType(rest, out rest));
         }
-        return new EdfType(name, type, dims, childs?.ToArray());
+        return new EdfType(type, name, dims, childs?.ToArray());
     }
 }
