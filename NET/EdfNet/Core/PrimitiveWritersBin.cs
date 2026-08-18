@@ -24,7 +24,7 @@ public static class PrimitiveWritersBin
     public static int TryWrite<T>(Span<byte> dst, T val)
         where T : struct
     {
-        var len = Marshal.SizeOf<T>();
+        var len = Unsafe.SizeOf<T>();
         if (dst.Length < len)
             return -1; //throw new EdfDstBufOverflowException();
         MemoryMarshal.Write(dst, val);
@@ -75,7 +75,7 @@ public static class PrimitiveWritersBin
     public static int ReadValue<T>(ReadOnlySpan<byte> dst, out T? val)
         where T : struct
     {
-        var len = Marshal.SizeOf<T>();
+        var len = Unsafe.SizeOf<T>();
         if (dst.Length < len)
         {
             val = default;

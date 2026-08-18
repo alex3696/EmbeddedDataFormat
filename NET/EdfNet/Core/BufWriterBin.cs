@@ -21,7 +21,7 @@ public ref struct BufWriterBin : IBufWriter
     #endregion
     public readonly int Write<T>(T val) where T : struct
     {
-        var len = Marshal.SizeOf<T>();
+        var len = Unsafe.SizeOf<T>();
         EnsureCapacity(len);
         MemoryMarshal.Write(_state.Blk.GetEmptyBuffer(), val);
         _state.Blk.DataLen += (ushort)len;
