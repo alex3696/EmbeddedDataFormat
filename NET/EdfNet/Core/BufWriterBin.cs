@@ -1,11 +1,14 @@
 namespace EdfNet.Core;
 
-public readonly ref struct BufWriterBin : IBufWriter
+public ref struct BufWriterBin : IBufWriter
 {
     private readonly BufWriterState _state;
-    public BufWriterBin(BufWriterState state)
+    private readonly EdfType? _rootType;
+
+    public BufWriterBin(BufWriterState state, EdfType? rootType)
     {
         _state = state;
+        _rootType = rootType;
     }
     #region Unused
     public readonly void BeginArray() { }
@@ -26,12 +29,15 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public readonly int Write(string? str)
     {
-        var len = string.IsNullOrEmpty(str) ? 1 : int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
-        len += 1;
+        var len = string.IsNullOrEmpty(str) ? 1 : 1 + int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
         EnsureCapacity(len);
         EdfBinString.WriteBin(str, _state.Blk.GetEmptyBuffer());
         _state.Blk.DataLen += (ushort)len;
         return len;
+    }
+    public EdfType? GetCurrentType()
+    {
+        return _rootType;
     }
     public int Write(ReadOnlySpan<byte> val)
     {

@@ -212,7 +212,7 @@ public class TestStructSerialize
                 ]
             }
         };
-        //dw.WriteSchema(schComlexChar);
+        dw.WriteSchema(schComlexChar);
         //dw.WriteValue((byte)8);
         //var schComlexCharBuf = new byte[10];
         //Encoding.UTF8.GetBytes("Char", schComlexCharBuf.AsSpan());
@@ -312,27 +312,6 @@ public class TestStructSerialize
         Assert.IsTrue(isEqual);
     }
 
-    [EdfSerializable]
-    public class BigArray160
-    {
-        [EdfArray(160)]
-        public int[] Arr;
-    }
-
-    [EdfSerializable]
-    public class BigArray15
-    {
-        [EdfArray(15)]
-        public int[] Arr;
-    }
-    [EdfSerializable]
-    public class BigArray130
-    {
-        [EdfArray(130)]
-        public int[] Arr;
-    }
-
-
     static int WriteBigVar(IWriter dw)
     {
         int arrLen = 160;
@@ -345,11 +324,8 @@ public class TestStructSerialize
         int[] test = new int[arrLen];
         for (uint i = 0; i < arrLen; i++)
             test[i] = (int)i;
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray160() { Arr = test }));//write all
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray160() { Arr = test }));//write all
-        //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray15() { Arr = test.AsSpan(0, 15).ToArray() }));
-        //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray130() { Arr = test.AsSpan(15, arrLen - 30).ToArray() }));
-        //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new BigArray15() { Arr = test.AsSpan(arrLen - 15).ToArray() }));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test));//write all
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test));//write all
         //Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(0, 15).ToArray()));
         //Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(15, arrLen - 30).ToArray()));
         //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test.AsSpan(arrLen - 15).ToArray()));

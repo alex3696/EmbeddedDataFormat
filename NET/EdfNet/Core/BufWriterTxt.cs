@@ -5,11 +5,14 @@ namespace EdfNet.Core;
 public readonly ref struct BufWriterTxt : IBufWriter
 {
     private readonly BufStateTxt _state;
+    private readonly EdfType? _rootType;
+
     private readonly Span<byte> GetEmptyBuffer() => _state.Buf.Slice(_state.Writed);
 
-    public BufWriterTxt(BufStateTxt state)
+    public BufWriterTxt(BufStateTxt state, EdfType? rootType)
     {
         _state = state;
+        _rootType = rootType;
     }
     public void BeginArray() => Write(Separator.BeginArray);
     public void BeginStruct() => Write(Separator.BeginStruct);
@@ -59,6 +62,10 @@ public readonly ref struct BufWriterTxt : IBufWriter
         Separator.VarEnd.CopyTo(dst.Slice(2 + contentLen));
         _state.Writed += totalLen;
         return totalLen;
+    }
+    public EdfType? GetCurrentType()
+    {
+        return _rootType;
     }
     public int Write(ReadOnlySpan<byte> val)
     {

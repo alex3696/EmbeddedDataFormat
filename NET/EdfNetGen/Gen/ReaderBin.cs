@@ -16,7 +16,7 @@ public class ReaderBin : BaseReaderBin
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var reader = new BufReaderBin(_state);
+        var reader = new BufReaderBin(_state, CurrentSchema?.Type);
         return formatter.Deserialize(ref reader, _options);
     }
 }

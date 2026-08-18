@@ -14,4 +14,11 @@ public static class ArrayExt
         ref T firstElement = ref Unsafe.As<byte, T>(ref byteRoot);
         return ref Unsafe.Add(ref firstElement, flatIndex);
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref T GetElementAtFlatIndexUnsafe<T>(this Array arr, int flatIndex)
+    {
+        ref byte byteRoot = ref MemoryMarshal.GetArrayDataReference(arr);
+        ref T firstElement = ref Unsafe.As<byte, T>(ref byteRoot);
+        return ref Unsafe.Add(ref firstElement, flatIndex);
+    }
 }

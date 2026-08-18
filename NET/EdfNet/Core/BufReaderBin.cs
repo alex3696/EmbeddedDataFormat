@@ -1,6 +1,6 @@
 namespace EdfNet.Core;
 
-public ref struct BufReaderBin : IBufReader
+public readonly ref struct BufReaderBin : IBufReader
 {
     #region Unused
     public readonly bool ReadRecBegin() => true;
@@ -11,11 +11,13 @@ public ref struct BufReaderBin : IBufReader
     public readonly bool ReadEndArray() => true;
     public readonly bool ReadVarEnd() => true;
     #endregion
-    private BufStateBin _state;
+    private readonly BufStateBin _state;
+    private readonly EdfType? _rootType;
 
-    public BufReaderBin(BufStateBin state)
+    public BufReaderBin(BufStateBin state, EdfType? rootType)
     {
         _state = state;
+        _rootType = rootType;
     }
 
     public T Read<T>() where T : struct
@@ -44,6 +46,10 @@ public ref struct BufReaderBin : IBufReader
         _state.DataBuf.Slice(0, len).CopyTo(result);
         _state.Readed += len;
         return result;
+    }
+    public EdfType? GetCurrentType()
+    {
+        return _rootType;
     }
     public int Read(Span<byte> dst)
     {

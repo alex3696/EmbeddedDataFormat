@@ -1,3 +1,5 @@
+using System.Buffers;
+
 namespace EdfNet.Core;
 
 public class PrimitiveFormatter<T> : IFormatter<T> where T : struct
@@ -46,52 +48,69 @@ public class CharArrayFormatter : IFormatter<byte[]>
     }
 }
 
-public interface IFormatterArray<TARRAY> : IFormatter<TARRAY>
-{
-    void Serialize<TWriter>(ref TWriter writer, int[] Dims, in TARRAY arrObj, EdfOptions options)
-        where TWriter : struct, IBufWriter, allows ref struct;
-    TARRAY Deserialize<TReader>(ref TReader reader, int[] Dims, EdfOptions options)
-        where TReader : struct, IBufReader, allows ref struct;
-}
-
 public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
-    //where TARRAY : IList
     where TITEM : struct
 {
-    public void Serialize<TWriter>(ref TWriter writer, int[] dims, in TARRAY arrObj, EdfOptions options)
+    public void Serialize<TWriter>(ref TWriter writer, in TARRAY arrObj, EdfOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
         if (arrObj is not Array arr)
-            return;
-        writer.BeginArray();
-        for (int i = 0; i < arr.Length; i++)
+            throw new ArgumentException("Invalid array type");
+        var edfType = writer.GetCurrentType();
+        if (null == edfType)
+            throw new InvalidOperationException("Current type is not an array or has no dimensions.");
+        int[] dims = null!;
+        try
         {
-            ref TITEM item = ref arr.GetElementAtFlatIndex<TITEM>(i);
-            writer.Write<TITEM>(item);
+            int ranks = edfType.Dims.Length;
+            dims = ArrayPool<int>.Shared.Rent(ranks);
+            for (int i = 0; i < ranks; i++)
+            {
+                if (arr.GetLength(i) != edfType.Dims[i])
+                    throw new InvalidOperationException($"Array rank mismatch at dimension {i}. Expected {edfType.Dims[i]}, got {arr.GetLength(i)}.");
+                dims[i] = edfType.Dims[i];
+            }
+            writer.BeginArray();
+            for (int i = 0; i < arr.Length; i++)
+            {
+                ref TITEM item = ref arr.GetElementAtFlatIndexUnsafe<TITEM>(i);
+                writer.Write<TITEM>(item);
+            }
+            writer.EndArray();
         }
-        writer.EndArray();
+        finally
+        {
+            if (dims != null)
+                ArrayPool<int>.Shared.Return(dims);
+        }
     }
-    public TARRAY Deserialize<TReader>(ref TReader reader, int[] dims, EdfOptions options)
+    public TARRAY Deserialize<TReader>(ref TReader reader, EdfOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        reader.ReadBeginArray();
-        var arr = Array.CreateInstanceFromArrayType(typeof(TARRAY), dims);
-        for (int i = 0; i < arr.Length; i++)
+        var edfType = reader.GetCurrentType();
+        if (null == edfType)
+            throw new InvalidOperationException("Current type is not an array or has no dimensions.");
+        int[] dims = null!;
+        try
         {
-            arr.GetElementAtFlatIndex<TITEM>(i) = reader.Read<TITEM>();
+            int ranks = edfType.Dims.Length;
+            dims = ArrayPool<int>.Shared.Rent(ranks);
+            for (int i = 0; i < ranks; i++)
+                dims[i] = edfType.Dims[i];
+            var arr = Array.CreateInstanceFromArrayType(typeof(TARRAY), dims);
+            reader.ReadBeginArray();
+            for (int i = 0; i < arr.Length; i++)
+            {
+                arr.GetElementAtFlatIndexUnsafe<TITEM>(i) = reader.Read<TITEM>();
+            }
+            reader.ReadEndArray();
+            return Unsafe.As<Array, TARRAY>(ref arr);//return (TARRAY)(object)arr;
         }
-        reader.ReadEndArray();
-        return Unsafe.As<Array, TARRAY>(ref arr);//return (TARRAY)(object)arr;
-    }
-
-    public void Serialize<TWriter>(ref TWriter writer, in TARRAY value, EdfOptions options) where TWriter : struct, IBufWriter, allows ref struct
-    {
-        throw new NotImplementedException();
-    }
-
-    public TARRAY Deserialize<TReader>(ref TReader reader, EdfOptions options) where TReader : struct, IBufReader, allows ref struct
-    {
-        throw new NotImplementedException();
+        finally
+        {
+            if (dims != null)
+                ArrayPool<int>.Shared.Return(dims);
+        }
     }
 }
 
@@ -121,10 +140,20 @@ public class PrimitiveResolver : IFormatterResolver
             var itemType = type.GetElementType();
             if (itemType != null)
             {
-                // Динамически создаем тип PrimitiveArrayFormatter<T, itemType>
-                //    var formatterType = typeof(PrimitiveArrayFormatter<,>).MakeGenericType(type, itemType);
-                // Создаем и возвращаем экземпляр форматтера
-                //    return (IFormatter<T>?)Activator.CreateInstance(formatterType);
+                switch (Type.GetTypeCode(itemType))
+                {
+                    default: break;
+                    case TypeCode.Byte: return new PrimitiveArrayFormatter<T, byte>();
+                    case TypeCode.SByte: return new PrimitiveArrayFormatter<T, sbyte>();
+                    case TypeCode.Int16: return new PrimitiveArrayFormatter<T, short>();
+                    case TypeCode.UInt16: return new PrimitiveArrayFormatter<T, ushort>();
+                    case TypeCode.Int32: return new PrimitiveArrayFormatter<T, int>();
+                    case TypeCode.UInt32: return new PrimitiveArrayFormatter<T, uint>();
+                    case TypeCode.Int64: return new PrimitiveArrayFormatter<T, long>();
+                    case TypeCode.UInt64: return new PrimitiveArrayFormatter<T, ulong>();
+                    case TypeCode.Single: return new PrimitiveArrayFormatter<T, float>();
+                    case TypeCode.Double: return new PrimitiveArrayFormatter<T, double>();
+                }
             }
         }
         return null;

@@ -18,7 +18,7 @@ public class WriterTxt : BaseWriterTxt
             return EdfErr.WrongType;
         int len = (int)CurrentSchema.Type.GetTotalElements();
         var formatter = new CharArrayFormatter(len);
-        var writer = new BufWriterTxt(_state);
+        var writer = new BufWriterTxt(_state, CurrentSchema?.Type);
         writer.RecBegin();
         formatter.Serialize(ref writer, val, _options);
         writer.RecEnd();
@@ -34,7 +34,7 @@ public class WriterTxt : BaseWriterTxt
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var writer = new BufWriterTxt(_state);
+        var writer = new BufWriterTxt(_state, CurrentSchema?.Type);
         writer.RecBegin();
         formatter.Serialize(ref writer, val, _options);
         writer.RecEnd();

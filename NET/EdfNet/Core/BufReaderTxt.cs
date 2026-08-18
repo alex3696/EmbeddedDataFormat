@@ -2,7 +2,7 @@ using System.Buffers.Text;
 
 namespace EdfNet.Core;
 
-public ref struct BufReaderTxt : IBufReader
+public readonly ref struct BufReaderTxt : IBufReader
 {
     public bool ReadRecBegin() => Match(Separator.RecBegin);
     public bool ReadRecEnd() => Match(Separator.RecEnd);
@@ -12,11 +12,13 @@ public ref struct BufReaderTxt : IBufReader
     public bool ReadEndArray() => Match(Separator.EndArray);
     public bool ReadVarEnd() => Match(Separator.VarEnd);
 
-    private BufStateTxt _state;
+    private readonly BufStateTxt _state;
+    private readonly EdfType? _rootType;
 
-    public BufReaderTxt(BufStateTxt state)
+    public BufReaderTxt(BufStateTxt state, EdfType? rootType)
     {
         _state = state;
+        _rootType = rootType;
     }
 
     public T Read<T>() where T : struct
@@ -129,7 +131,6 @@ public ref struct BufReaderTxt : IBufReader
         Match(Separator.VarEnd);
         return Encoding.UTF8.GetString(content);
     }
-
     public byte[] ReadCharArray(int len)
     {
         Ensure(1);
@@ -149,7 +150,10 @@ public ref struct BufReaderTxt : IBufReader
         content.CopyTo(result);
         return result;
     }
-
+    public EdfType? GetCurrentType()
+    {
+        return _rootType;
+    }
     public int Read(Span<byte> dst)
     {
         var len = dst.Length;
