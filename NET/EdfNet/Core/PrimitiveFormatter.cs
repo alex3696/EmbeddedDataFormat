@@ -29,25 +29,6 @@ public class PrimitiveFormatterString : IFormatter<string?>
         return reader.ReadString();
     }
 }
-public class CharArrayFormatter : IFormatter<byte[]>
-{
-    public readonly int Len;
-    public CharArrayFormatter(int len)
-    {
-        Len = len;
-    }
-    public void Serialize<TWriter>(ref TWriter writer, in byte[] val, EdfOptions options)
-        where TWriter : struct, IBufWriter, allows ref struct
-    {
-        writer.WriteCharArray(val, Len);
-    }
-    public byte[] Deserialize<TReader>(ref TReader reader, EdfOptions options)
-        where TReader : struct, IBufReader, allows ref struct
-    {
-        return reader.ReadCharArray(Len);
-    }
-}
-
 public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
     where TITEM : struct
 {
@@ -59,6 +40,11 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
         var edfType = writer.GetCurrentType();
         if (null == edfType)
             throw new InvalidOperationException("Current type is not an array or has no dimensions.");
+        if(PoType.Char == edfType.Type && arrObj is byte[] chArr)
+        {
+            writer.WriteCharArray(chArr, (int)edfType.GetTotalElements());
+            return;
+        }
         int[] dims = null!;
         try
         {
@@ -90,6 +76,12 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
         var edfType = reader.GetCurrentType();
         if (null == edfType)
             throw new InvalidOperationException("Current type is not an array or has no dimensions.");
+        if (PoType.Char == edfType.Type)
+        {
+            var len = (int)edfType.GetTotalElements();
+            var chArr = reader.ReadCharArray(len) as Array;
+            return Unsafe.As<Array, TARRAY>(ref chArr);
+        }
         int[] dims = null!;
         try
         {

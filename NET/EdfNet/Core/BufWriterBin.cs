@@ -3,12 +3,13 @@ namespace EdfNet.Core;
 public readonly ref struct BufWriterBin : IBufWriter
 {
     private readonly BufWriterState _state;
-    private readonly EdfType? _rootType;
+    private readonly EdfTypeEnumeratorStack _enm;
 
-    public BufWriterBin(BufWriterState state, EdfType? rootType)
+    public BufWriterBin(BufWriterState state, ref EdfTypeEnumeratorStack enm)
     {
         _state = state;
-        _rootType = rootType;
+        _enm = enm;
+        _enm.MoveNext();
     }
     #region Unused
     public void BeginArray() { }
@@ -18,7 +19,11 @@ public readonly ref struct BufWriterBin : IBufWriter
     public void RecBegin() { _state.PrimOffset = 0; }
     public void RecEnd() { _state.RecordId++; }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void VarEnd() { _state.PrimOffset++; }
+    public void VarEnd()
+    {
+        _state.PrimOffset++;
+        _enm.MoveNext();
+    }
     #endregion
     public int Write<T>(T val) where T : struct
     {
@@ -40,7 +45,7 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public EdfType? GetCurrentType()
     {
-        return _rootType;
+        return _enm.Current;
     }
     public int Write(ReadOnlySpan<byte> val)
     {

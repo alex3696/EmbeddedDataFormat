@@ -17,30 +17,18 @@ public class WriterBin : BaseWriterBin
     }
     private readonly BufWriterState _state;
     private readonly EdfOptions _options = EdfOptions.Default;
+    private readonly EdfType[] _typeStack = new EdfType[64];
 
-    private EdfErr WriteValue(in byte[] val)
-    {
-        ObjectDisposedException.ThrowIf(IsDisposed, this);
-        if (CurrentSchema?.Type.Type != PoType.Char)
-            return EdfErr.WrongType;
-        int len = (int)CurrentSchema.Type.GetTotalElements();
-        var formatter = new CharArrayFormatter(len);
-        var writer = new BufWriterBin(_state, CurrentSchema?.Type);
-        writer.RecBegin();
-        formatter.Serialize(ref writer, val, _options);
-        writer.RecEnd();
-        return EdfErr.IsOk;
-    }
     public override EdfErr WriteValue<T>(in T val)
     {
-        if (CurrentSchema?.Type.Type == PoType.Char && val is byte[] chArr)
-            return WriteValue(chArr);
         ObjectDisposedException.ThrowIf(IsDisposed, this);
+        ArgumentNullException.ThrowIfNull(CurrentSchema);
         //IFormatter<T>? formatter = _options.Resolver.GetFormatter<T>();
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var writer = new BufWriterBin(_state, CurrentSchema?.Type);
+        var enm = new EdfTypeEnumeratorStack(CurrentSchema.Type, _typeStack);
+        var writer = new BufWriterBin(_state, ref enm);
         writer.RecBegin();
         formatter.Serialize(ref writer, val, _options);
         writer.RecEnd();

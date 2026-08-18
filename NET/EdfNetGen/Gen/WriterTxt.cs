@@ -11,26 +11,10 @@ public class WriterTxt : BaseWriterTxt
         _state = new BufStateTxt(stream, new byte[cfg?.Blocksize ?? Config.Default.Blocksize]);
     }
 
-    private EdfErr WriteValue(in byte[] val)
-    {
-        ObjectDisposedException.ThrowIf(IsDisposed, this);
-        if (CurrentSchema?.Type.Type != PoType.Char)
-            return EdfErr.WrongType;
-        int len = (int)CurrentSchema.Type.GetTotalElements();
-        var formatter = new CharArrayFormatter(len);
-        var writer = new BufWriterTxt(_state, CurrentSchema?.Type);
-        writer.RecBegin();
-        formatter.Serialize(ref writer, val, _options);
-        writer.RecEnd();
-        writer.EnsureEmpty();
-        return EdfErr.IsOk;
-    }
     public override EdfErr WriteValue<T>(in T val)
     {
-        if (CurrentSchema?.Type.Type == PoType.Char && val is byte[] chArr)
-            return WriteValue(chArr);
         ObjectDisposedException.ThrowIf(IsDisposed, this);
-        //IFormatter<T>? formatter = _options.Resolver.GetFormatter<T>();
+        ArgumentNullException.ThrowIfNull(CurrentSchema);
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
