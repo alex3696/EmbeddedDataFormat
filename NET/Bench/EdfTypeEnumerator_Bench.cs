@@ -19,6 +19,7 @@ namespace Bench;
  */
 
 [MemoryDiagnoser(false)]
+[HideColumns("Runtime", "Error", "StdDev", "Median", "RatioSD")]
 [SimpleJob(RuntimeMoniker.Net10_0, baseline: true)]
 [SimpleJob(RuntimeMoniker.NativeAot10_0)]
 public class EdfTypeEnumerator_Bench

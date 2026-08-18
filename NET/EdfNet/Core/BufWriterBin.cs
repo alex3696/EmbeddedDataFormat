@@ -1,6 +1,6 @@
 namespace EdfNet.Core;
 
-public ref struct BufWriterBin : IBufWriter
+public readonly ref struct BufWriterBin : IBufWriter
 {
     private readonly BufWriterState _state;
     private readonly EdfType? _rootType;
@@ -11,28 +11,31 @@ public ref struct BufWriterBin : IBufWriter
         _rootType = rootType;
     }
     #region Unused
-    public readonly void BeginArray() { }
-    public readonly void BeginStruct() { }
-    public readonly void EndArray() { }
-    public readonly void EndStruct() { }
-    public readonly void RecBegin() { }
-    public readonly void RecEnd() { }
-    public readonly void VarEnd() { }
+    public void BeginArray() { }
+    public void BeginStruct() { }
+    public void EndArray() { }
+    public void EndStruct() { }
+    public void RecBegin() { _state.PrimOffset = 0; }
+    public void RecEnd() { _state.RecordId++; }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void VarEnd() { _state.PrimOffset++; }
     #endregion
-    public readonly int Write<T>(T val) where T : struct
+    public int Write<T>(T val) where T : struct
     {
         var len = Unsafe.SizeOf<T>();
         EnsureCapacity(len);
         MemoryMarshal.Write(_state.Blk.GetEmptyBuffer(), val);
         _state.Blk.DataLen += (ushort)len;
+        VarEnd();
         return len;
     }
-    public readonly int Write(string? str)
+    public int Write(string? str)
     {
         var len = string.IsNullOrEmpty(str) ? 1 : 1 + int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
         EnsureCapacity(len);
         EdfBinString.WriteBin(str, _state.Blk.GetEmptyBuffer());
         _state.Blk.DataLen += (ushort)len;
+        VarEnd();
         return len;
     }
     public EdfType? GetCurrentType()
@@ -56,6 +59,7 @@ public ref struct BufWriterBin : IBufWriter
         if (datalen < len)
             dst.Slice(datalen, len - datalen).Clear();
         _state.Blk.DataLen += (ushort)len;
+        VarEnd();
         return datalen;
     }
     private readonly void EnsureCapacity(int len)
