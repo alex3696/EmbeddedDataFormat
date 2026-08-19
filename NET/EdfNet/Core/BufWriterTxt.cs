@@ -5,26 +5,31 @@ namespace EdfNet.Core;
 public readonly ref struct BufWriterTxt : IBufWriter
 {
     private readonly BufStateTxt _state;
-    private readonly EdfType? _rootType;
-
     private readonly Span<byte> GetEmptyBuffer() => _state.Buf.Slice(_state.Writed);
+    private void ThrowNotSupportedType(Type t) => throw new NotSupportedException($"Type {t.Name} not supported.");
 
-    public BufWriterTxt(BufStateTxt state, EdfType? rootType)
+    public BufWriterTxt(BufStateTxt state)
     {
         _state = state;
-        _rootType = rootType;
     }
     public void BeginArray() => Write(Separator.BeginArray);
     public void BeginStruct() => Write(Separator.BeginStruct);
     public void EndArray() => Write(Separator.EndArray);
     public void EndStruct() => Write(Separator.EndStruct);
     public void RecBegin() => Write(Separator.RecBegin);
-    public void RecEnd() => Write(Separator.RecEnd);
-    public void VarEnd() => Write(Separator.VarEnd);
+    public void RecEnd()
+    {
+        Write(Separator.RecEnd);
+        EnsureEmpty();
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void VarEnd()
+    {
+        Write(Separator.VarEnd);
+        _state.Enum.MoveNext();
 
-    private void ThrowNotSupportedType(Type t) => throw new NotSupportedException($"Type {t.Name} not supported.");
-
-    public int Write<T>(T val) where T : struct
+    }
+    public void Write<T>(T val) where T : struct
     {
         EnsureEmpty();
         Span<byte> buf = GetEmptyBuffer();
@@ -43,39 +48,28 @@ public readonly ref struct BufWriterTxt : IBufWriter
             case TypeCode.Single: if (!Utf8Formatter.TryFormat(Unsafe.As<T, float>(ref val), buf, out len)) ThrowNotSupportedType(typeof(T)); break;
             case TypeCode.Double: if (!Utf8Formatter.TryFormat(Unsafe.As<T, double>(ref val), buf, out len)) ThrowNotSupportedType(typeof(T)); break;
         }
-        int totalLen = len + Separator.VarEnd.Length;
-        Separator.VarEnd.CopyTo(buf.Slice(len));
-        _state.Writed += totalLen;
-        return totalLen;
+        _state.Writed += len;
+        VarEnd();
     }
-    public int Write(string? str)
+    public void Write(string? str)
     {
         int contentLen = string.IsNullOrEmpty(str) ? 0 : Encoding.UTF8.GetByteCount(str);
         contentLen = int.Min(contentLen, EdfBinString.MaxLen);
-        int totalLen = contentLen + 2 + Separator.VarEnd.Length; // "content";
+        int totalLen = contentLen + 2;// "content"
         EnsureCapacity(totalLen);
         var dst = GetEmptyBuffer();
         dst[0] = 34; // "
         if (contentLen > 0)
             EdfBinString.CopyStringToSpan(str, dst.Slice(1, contentLen));
         dst[1 + contentLen] = 34; // "
-        Separator.VarEnd.CopyTo(dst.Slice(2 + contentLen));
         _state.Writed += totalLen;
-        return totalLen;
+        VarEnd();
     }
     public EdfType? GetCurrentType()
     {
-        return _rootType;
+        return _state.Enum.GetCurrentType();
     }
-    public int Write(ReadOnlySpan<byte> val)
-    {
-        var len = val.Length;
-        EnsureCapacity(len);
-        val.CopyTo(GetEmptyBuffer());
-        _state.Writed += len;
-        return len;
-    }
-    public int WriteCharArray(ReadOnlySpan<byte> charArray, int len)
+    public void WriteCharArray(ReadOnlySpan<byte> charArray, int len)
     {
         if (len < 0) throw new ArgumentOutOfRangeException(nameof(len));
         int datLen = int.Min(len, charArray.Length);
@@ -83,16 +77,15 @@ public readonly ref struct BufWriterTxt : IBufWriter
         int firstZero = charArray.IndexOf(zero);
         if (firstZero >= 0)
             datLen = int.Min(datLen, firstZero);
-        int totalLen = datLen + 2 + Separator.VarEnd.Length; // "content";
+        int totalLen = datLen + 2;// "content"
         EnsureCapacity(totalLen);
         var dst = GetEmptyBuffer();
         dst[0] = 34; // "
         if (datLen > 0)
             charArray.Slice(0, datLen).CopyTo(dst.Slice(1));
         dst[1 + datLen] = 34; // "
-        Separator.VarEnd.CopyTo(dst.Slice(2 + datLen));
         _state.Writed += totalLen;
-        return totalLen;
+        VarEnd();
     }
 
     public void EnsureEmpty()
@@ -109,5 +102,13 @@ public readonly ref struct BufWriterTxt : IBufWriter
             _state.Stream.Write(_state.Buf.Slice(0, _state.Writed));
             _state.Writed = 0;
         }
+    }
+    private int Write(ReadOnlySpan<byte> val)
+    {
+        var len = val.Length;
+        EnsureCapacity(len);
+        val.CopyTo(GetEmptyBuffer());
+        _state.Writed += len;
+        return len;
     }
 }

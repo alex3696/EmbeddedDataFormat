@@ -30,7 +30,7 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
         //Write($"// ? - struct @ - data // - comment");
         CurrentSchema = null;
     }
-    public void WriteSchema(Schema sch)
+    public virtual void WriteSchema(Schema sch)
     {
         Flush();
         Write($"\n\n<? {{");

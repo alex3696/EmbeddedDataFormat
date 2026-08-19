@@ -10,7 +10,11 @@ public class WriterTxt : BaseWriterTxt
     {
         _state = new BufStateTxt(stream, new byte[cfg?.Blocksize ?? Config.Default.Blocksize]);
     }
-
+    public override void WriteSchema(Schema sch)
+    {
+        base.WriteSchema(sch);
+        _state.Enum.Reset(sch.Type);
+    }
     public override EdfErr WriteValue<T>(in T val)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
@@ -18,11 +22,10 @@ public class WriterTxt : BaseWriterTxt
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var writer = new BufWriterTxt(_state, CurrentSchema?.Type);
+        var writer = new BufWriterTxt(_state);
         writer.RecBegin();
         formatter.Serialize(ref writer, val, _options);
         writer.RecEnd();
-        writer.EnsureEmpty();
         return EdfErr.IsOk;
     }
 }

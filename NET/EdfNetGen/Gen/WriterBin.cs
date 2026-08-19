@@ -11,13 +11,10 @@ public class WriterBin : BaseWriterBin
     public override void WriteSchema(Schema sch)
     {
         base.WriteSchema(sch);
-        _state.Skip = 0;
-        _state.RecordId = 0;
-        _state.PrimOffset = 0;
+        _state.Enum.Reset(sch.Type);
     }
     private readonly BufWriterState _state;
     private readonly EdfOptions _options = EdfOptions.Default;
-    private readonly EdfType[] _typeStack = new EdfType[64];
 
     public override EdfErr WriteValue<T>(in T val)
     {
@@ -27,8 +24,7 @@ public class WriterBin : BaseWriterBin
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var enm = new EdfTypeEnumeratorStack(CurrentSchema.Type, _typeStack);
-        var writer = new BufWriterBin(_state, ref enm);
+        var writer = new BufWriterBin(_state);
         writer.RecBegin();
         formatter.Serialize(ref writer, val, _options);
         writer.RecEnd();

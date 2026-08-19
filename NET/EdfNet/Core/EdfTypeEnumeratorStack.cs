@@ -94,16 +94,18 @@ public struct EdfTypeEnumeratorStackInlineArray
     // Ленивое разворачивание массива примитивов
     private uint _pendingRemaining;
     public readonly EdfType Current => _current!;
-    public EdfTypeEnumeratorStackInlineArray(EdfType root)
+    public EdfTypeEnumeratorStackInlineArray(EdfType? root)
     {
         Reset(root);
     }
-    public void Reset(EdfType root)
+    public readonly bool IsEmpty => _sp == 0;
+    public void Reset(EdfType? root)
     {
         _sp = 0;
         _current = null;
         _pendingRemaining = 0;
-        _stack[_sp++] = root;
+        if (null != root)
+            _stack[_sp++] = root;
     }
     public bool MoveNext()
     {

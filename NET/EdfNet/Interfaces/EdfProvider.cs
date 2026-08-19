@@ -20,7 +20,7 @@ public static class EdfProvider<T>
         }
         //if (formatter is null)
         //    throw new InvalidOperationException("formatter not found");
-        Formatter = formatter;
+        Formatter = formatter!;
     }
     public static void Register(IFormatter<T> formatter)
     {

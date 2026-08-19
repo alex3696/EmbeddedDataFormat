@@ -2,9 +2,9 @@ namespace EdfNet.Interfaces;
 
 public interface IBufWriter
 {
-    int Write<T>(T val) where T : struct; // + void VarEnd();
-    int Write(string? val); // + void VarEnd();
-    int WriteCharArray(ReadOnlySpan<byte> charArray, int len); // + void VarEnd();
+    void Write<T>(T val) where T : struct; // + void VarEnd();
+    void Write(string? val); // + void VarEnd();
+    void WriteCharArray(ReadOnlySpan<byte> charArray, int len); // + void VarEnd();
     EdfType? GetCurrentType();
     void RecBegin();
     void RecEnd();

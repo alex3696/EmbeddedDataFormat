@@ -171,7 +171,7 @@ public readonly ref struct BufReaderTxt : IBufReader
             return true;
         }
         throw new FormatException($"expected {expected.ToString()}");
-        return false;
+        //return false;
     }
 
     private bool StartsWith(ReadOnlySpan<byte> expected)

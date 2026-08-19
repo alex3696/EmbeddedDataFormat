@@ -20,8 +20,14 @@ fixed Marshal.SizeOf >> Unsafe.SizeO
 // GetElementAtFlatIndexUnsafe
 | Method      | Job            | Mean     | Ratio | Allocated | Alloc Ratio |
 |------------ |--------------- |---------:|------:|----------:|------------:|
-| Writer_Gen2 | .NET 10.0      | 280.3 ns |  1.00 |         - |          NA |
-| Writer_Gen2 | NativeAOT 10.0 | 370.5 ns |  1.32 |         - |          NA |
+| Writer_Gen2 | .NET 10.0      | 373.7 ns |  1.00 |         - |          NA |
+| Writer_Gen2 | NativeAOT 10.0 | 510.9 ns |  1.37 |         - |          NA |
+
+
+| Method      | Job            | Mean     | Ratio | Allocated | Alloc Ratio |
+|------------ |--------------- |---------:|------:|----------:|------------:|
+| Writer_Gen2 | .NET 10.0      | 511.3 ns |  1.00 |         - |          NA |
+| Writer_Gen2 | NativeAOT 10.0 | 756.2 ns |  1.48 |         - |          NA |
  */
 
 
