@@ -20,9 +20,9 @@ struct StackItem
     public uint ArrayCount;
 }
 
-public class EdfTypeEnumeratorToken
+public struct EdfTypeEnumeratorToken
 {
-    public const int MaxStackSize = 256;
+    public const int MaxStackSize = 64;
 
     [InlineArray(MaxStackSize)]
     private struct StackBuffer { public StackItem Slot; }
@@ -35,14 +35,13 @@ public class EdfTypeEnumeratorToken
 
     // Ленивый токен — zero-cost, не трогаем стек
     private uint _pendingCount;
-    private Token _pendingToken;
     private EdfType? _pendingType;
 
-    public EdfType Current => _current!;
-    public Token CurrentToken => _currentToken;
+    public readonly EdfType Current => _current!;
+    public readonly Token CurrentToken => _currentToken;
 
     public EdfTypeEnumeratorToken(EdfType? root) => Reset(root);
-    public bool IsEmpty => _sp == 0;
+    public readonly bool IsEmpty => _sp == 0;
 
     public void Reset(EdfType? root)
     {
@@ -86,7 +85,7 @@ public class EdfTypeEnumeratorToken
         if (_pendingCount == 0) return false;
 
         _pendingCount--;
-        _currentToken = _pendingToken;
+        _currentToken = Token.Value;
         _current = _pendingType;
         return true;
     }
@@ -165,7 +164,6 @@ public class EdfTypeEnumeratorToken
                 Push(Token.EndArray, node);
 
                 _pendingType = node;
-                _pendingToken = Token.Value;
                 _pendingCount = count;
 
                 _current = node;

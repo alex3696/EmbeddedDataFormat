@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using EdfSchema = EdfNet.Core.Schema;
 
 namespace NetTest;
@@ -49,11 +50,26 @@ public class RecursiveClass : IPrimitiveIo
 [TestClass]
 public class EdfTypeEnumerator_Test
 {
+    [DebuggerDisplay("{DebugString(),nq}")]
+    struct StackItem
+    {
+        public Token Token;
+        public EdfType? Type;
+        public string DebugString()
+        {
+            return $"{Token} : {Type?.DebugString()}";
+        }
+    }
+
     private readonly EdfType[] _stack = new EdfType[256];
     private readonly List<EdfType> _lst = new(100);
+    private readonly StackItem[] _lstToken = new StackItem[100];
+    private int _lstTokenCount = 0;
+
     private readonly EdfSchema _schema;
     private readonly RecursiveClass _rcls;
     private EdfTypeEnumeratorStackInlineArray _enm;
+    private EdfTypeEnumeratorToken _enmToken = new(null);
 
     public EdfTypeEnumerator_Test()
     {
@@ -79,6 +95,13 @@ public class EdfTypeEnumerator_Test
 
         EdfTypeEnumeratorRecursiveClass();
         Assert.IsTrue(lst.SequenceEqual(_lst), "EdfTypeEnumeratorRecursiveClass");
+
+
+        EdfTypeEnumeratorToken();
+        var result = _lstToken.Take(_lstTokenCount)
+                              .Where(item => item.Token == Token.Value)
+                              .Select(it => it.Type).ToList();
+        Assert.IsTrue(lst.SequenceEqual(result), "EdfTypeEnumeratorToken");
     }
 
     public void EdfTypeEnumeratorStack()
@@ -117,4 +140,17 @@ public class EdfTypeEnumerator_Test
         _lst.Clear();
         EdfTypeWalkerBin.Process(_schema.Type, _rcls);
     }
+    public void EdfTypeEnumeratorToken()
+    {
+        _lstTokenCount = 0;
+        _lst.Clear();
+        _enmToken.Reset(_schema.Type);
+        while (_enmToken.MoveNext())
+        {
+            _lstToken[_lstTokenCount].Token = _enmToken.CurrentToken;
+            _lstToken[_lstTokenCount].Type = _enmToken.Current;
+            _lstTokenCount++;
+        }
+    }
+
 }
