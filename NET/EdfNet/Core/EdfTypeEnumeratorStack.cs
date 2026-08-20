@@ -179,6 +179,11 @@ public struct EdfTypeEnumeratorStackInlineArray
         while (_sp > 0)
         {
             EdfType node = _stack[--_sp];
+            if (node.Type == PoType.Char)
+            {
+                _current = node;
+                return true;
+            }
             uint arrayCount = node.GetTotalElements();
             if (node.Type == PoType.Struct)
             {

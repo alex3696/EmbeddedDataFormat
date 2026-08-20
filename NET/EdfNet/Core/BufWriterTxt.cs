@@ -34,6 +34,8 @@ public readonly ref struct BufWriterTxt : IBufWriter
     public void Write<T>(T val) where T : struct
     {
         EnsureValueToken();
+        if (_state.Enum.GetCurrentType()?.Type != typeof(T).GetPoType())
+            throw new EdfWrongTypeException();
         EnsureEmpty();
         Span<byte> buf = GetEmptyBuffer();
         int len = 0;
@@ -58,6 +60,8 @@ public readonly ref struct BufWriterTxt : IBufWriter
     public void Write(string? str)
     {
         EnsureValueToken();
+        if (_state.Enum.GetCurrentType()?.Type != PoType.String)
+            throw new EdfWrongTypeException();
         int contentLen = string.IsNullOrEmpty(str) ? 0 : Encoding.UTF8.GetByteCount(str);
         contentLen = int.Min(contentLen, EdfBinString.MaxLen);
         int totalLen = contentLen + 2;// "content"
@@ -78,7 +82,9 @@ public readonly ref struct BufWriterTxt : IBufWriter
     public void WriteCharArray(ReadOnlySpan<byte> charArray, int len)
     {
         EnsureValueToken();
-        if (len < 0) throw new ArgumentOutOfRangeException(nameof(len));
+        if (_state.Enum.GetCurrentType()?.Type != PoType.Char)
+            throw new EdfWrongTypeException();
+        ArgumentOutOfRangeException.ThrowIfNegative(len);
         int datLen = int.Min(len, charArray.Length);
         ReadOnlySpan<byte> zero = stackalloc byte[1];
         int firstZero = charArray.IndexOf(zero);

@@ -19,12 +19,12 @@ public readonly struct TokenElement
     public readonly Token Token;
     public readonly EdfType? Type;
     public TokenElement(Token token, EdfType? type) { Token = token; Type = type; }
-    public string DebugString() => $"{Token} : {Type?.DebugString()}";
+    public readonly string DebugString() => $"{Token} : {Type?.DebugString()}";
 }
 
 public struct EdfTypeEnumeratorToken
 {
-    public const int MaxStackSize = 64;
+    public const int MaxStackSize = 256;
     struct StackItem
     {
         public Token Token;
