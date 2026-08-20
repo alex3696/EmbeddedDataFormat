@@ -1,3 +1,4 @@
+using EdfNet.Interfaces;
 using System.Collections.Generic;
 using System.Diagnostics;
 using EdfSchema = EdfNet.Core.Schema;
@@ -47,6 +48,21 @@ public class RecursiveClass : IPrimitiveIo
     }
 }
 
+
+[EdfSerializable]
+public struct Shape
+{
+    [EdfArray(1000)]
+    public Point[] Path;
+}
+[EdfSerializable]
+public struct Point
+{
+    public int X;
+    public int Y;
+}
+
+
 [TestClass]
 public class EdfTypeEnumerator_Test
 {
@@ -63,19 +79,36 @@ public class EdfTypeEnumerator_Test
 
     private readonly EdfType[] _stack = new EdfType[256];
     private readonly List<EdfType> _lst = new(100);
-    private readonly StackItem[] _lstToken = new StackItem[100];
+    private readonly StackItem[] _lstToken = new StackItem[4096];
     private int _lstTokenCount = 0;
 
     private readonly EdfSchema _schema;
     private readonly RecursiveClass _rcls;
     private EdfTypeEnumeratorStackInlineArray _enm;
-    private EdfTypeEnumeratorToken _enmToken = new(null);
+    public EdfTypeEnumeratorToken _enmToken = new(null);
 
     public EdfTypeEnumerator_Test()
     {
         _schema = NetTest.ComplexType.GetEdfSchema();
         _rcls = new(_lst);
         _enm = new EdfTypeEnumeratorStackInlineArray();
+    }
+
+    [TestMethod]
+    public void Equal_StructArray()
+    {
+        _lstTokenCount = 0;
+        _enmToken.Reset(Shape.GetEdfSchema().Type);
+        while (_enmToken.MoveNext())
+        {
+            _lstToken[_lstTokenCount].Token = _enmToken.CurrentToken;
+            _lstToken[_lstTokenCount].Type = _enmToken.Current;
+            _lstTokenCount++;
+        }
+        var result = _lstToken.Take(_lstTokenCount)
+                              .Where(item => item.Token == Token.Value)
+                              .Select(it => it.Type).ToList();
+        //Assert.IsTrue(lst.SequenceEqual(result), "EdfTypeEnumeratorToken");
     }
 
     [TestMethod]
@@ -96,12 +129,22 @@ public class EdfTypeEnumerator_Test
         EdfTypeEnumeratorRecursiveClass();
         Assert.IsTrue(lst.SequenceEqual(_lst), "EdfTypeEnumeratorRecursiveClass");
 
-
+        // максимальная глубина стэка для такой структуры - 12
+        _enmToken.EnableCache = true;
+        _enmToken.Reset(null);
         EdfTypeEnumeratorToken();
         var result = _lstToken.Take(_lstTokenCount)
                               .Where(item => item.Token == Token.Value)
                               .Select(it => it.Type).ToList();
         Assert.IsTrue(lst.SequenceEqual(result), "EdfTypeEnumeratorToken");
+
+        // проверка кэша
+        _lstTokenCount = 0;
+        EdfTypeEnumeratorToken();
+        result = _lstToken.Take(_lstTokenCount)
+                      .Where(item => item.Token == Token.Value)
+                      .Select(it => it.Type).ToList();
+        Assert.IsTrue(lst.SequenceEqual(result), "EdfTypeEnumeratorToken cache");
     }
 
     public void EdfTypeEnumeratorStack()
@@ -143,7 +186,6 @@ public class EdfTypeEnumerator_Test
     public void EdfTypeEnumeratorToken()
     {
         _lstTokenCount = 0;
-        _lst.Clear();
         _enmToken.Reset(_schema.Type);
         while (_enmToken.MoveNext())
         {
