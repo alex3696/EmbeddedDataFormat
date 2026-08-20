@@ -84,8 +84,8 @@ public class EdfTypeEnumerator_Test
 
     private readonly EdfSchema _schema;
     private readonly RecursiveClass _rcls;
-    private EdfTypeEnumeratorStackInlineArray _enm;
-    public EdfTypeEnumeratorToken _enmToken = new(null);
+    public EdfTypeEnumeratorStackInlineArray _enm;
+    public EdfTypeEnumeratorToken _enmToken = new();
 
     public EdfTypeEnumerator_Test()
     {

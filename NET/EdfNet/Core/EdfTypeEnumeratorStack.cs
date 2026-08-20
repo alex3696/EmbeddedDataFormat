@@ -89,26 +89,87 @@ public struct EdfTypeEnumeratorStackInlineArray
     [InlineArray(MaxStackSize)]
     private struct StackBuffer { public EdfType Slot; }
     private StackBuffer _stack;
+
+    public const int CacheSize = 1024;          // 16 KB , покрывает ~90% типов
+    [InlineArray(CacheSize)]
+    private struct CacheBuffer { public EdfType Slot; }
+    private CacheBuffer _cache;
+    private int _cacheLen;                      // >0 = cached, 0 = empty, -1 = overflow
+    private EdfType? _cachedRoot;               // root, для которого построен кэш
+
     private int _sp;
     private EdfType? _current;
     // Ленивое разворачивание массива примитивов
     private uint _pendingRemaining;
     public readonly EdfType Current => _current!;
-    public EdfTypeEnumeratorStackInlineArray(EdfType? root)
-    {
-        Reset(root);
-    }
-    public readonly bool IsEmpty => _sp == 0;
+
+    public EdfTypeEnumeratorStackInlineArray() => Reset(null);
+    public readonly bool IsEmpty => _cacheLen > 0 ? _sp >= _cacheLen : _sp == 0;
+
+    public bool EnableCache = true;
     public void Reset(EdfType? root)
     {
         _sp = 0;
-        _current = null;
         _pendingRemaining = 0;
-        if (null != root)
-            _stack[_sp++] = root;
+
+        if (root is null)
+        {
+            _cachedRoot = null;
+            _cacheLen = 0;
+            return;
+        }
+
+        // Если кэш отключён — гарантированно сбрасываем флаг, чтобы MoveNext не пошёл в кэш
+        if (!EnableCache)
+            _cacheLen = -1;
+
+        // Cache hit — тот же root, кэш валиден и включён
+        if (EnableCache && ReferenceEquals(_cachedRoot, root) && _cacheLen > 0)
+            return;
+
+        // Новый root при включённом кэше — инвалидируем старый кэш
+        if (EnableCache)
+            _cacheLen = 0;
+
+        // Инициализируем стек (общая логика для cache miss и fallback)
+        _stack[_sp++] = root;
+
+        if (!EnableCache)
+        {
+            _cachedRoot = root;
+            return;
+        }
+
+        // Пробуем построить flatten-кэш, вызывая текущий MoveNext()
+        int pos = 0;
+        while (MoveNext())
+        {
+            if (pos >= CacheSize)               // не влезает — fallback
+            {
+                _cacheLen = -1;
+                _sp = 0;
+                _pendingRemaining = 0;
+                _stack[_sp++] = root;
+                return;
+            }
+            _cache[pos++] = root;
+        }
+        _cachedRoot = root;
+        _cacheLen = pos;                            // успешно — переключаемся на кэш
+        _sp = 0;                                    // _sp теперь индекс чтения кэша
     }
     public bool MoveNext()
     {
+        //  линейное чтение из кэша
+        if (_cacheLen > 0)
+        {
+            if (_sp < _cacheLen)
+            {
+                _current = _cache[_sp++];
+                return true;
+            }
+            return false;
+        }
         // 1. Лениво выдаём оставшиеся элементы примитивного массива
         if (_pendingRemaining > 0)
         {
