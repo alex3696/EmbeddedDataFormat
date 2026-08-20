@@ -152,7 +152,7 @@ public struct EdfTypeEnumeratorStackInlineArray
                 _stack[_sp++] = root;
                 return;
             }
-            _cache[pos++] = root;
+            _cache[pos++] = _current!;
         }
         _cachedRoot = root;
         _cacheLen = pos;                            // успешно — переключаемся на кэш

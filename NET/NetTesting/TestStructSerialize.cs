@@ -213,11 +213,11 @@ public class TestStructSerialize
             }
         };
         dw.WriteSchema(schComlexChar);
-        //dw.WriteValue((byte)8);
-        //var schComlexCharBuf = new byte[10];
-        //Encoding.UTF8.GetBytes("Char", schComlexCharBuf.AsSpan());
-        //dw.WriteValue(schComlexCharBuf);
-        //dw.WriteValue((ushort)16);
+        dw.WriteValue((byte)8);
+        var schComlexCharBuf = new byte[10];
+        Encoding.UTF8.GetBytes("Char", schComlexCharBuf.AsSpan());
+        dw.WriteValue(schComlexCharBuf);
+        dw.WriteValue((ushort)16);
 
         EdfType comlexVarInf = new()
         {

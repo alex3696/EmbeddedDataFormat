@@ -8,13 +8,11 @@ public readonly ref struct BufWriterBin : IBufWriter
     {
         _state = state;
     }
-    #region Unused
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void EnsureValueToken()
     {
         _state.Enum.MoveNext();
     }
-    #endregion
     public void Write<T>(T val) where T : struct
     {
         var len = Unsafe.SizeOf<T>();
