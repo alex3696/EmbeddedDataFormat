@@ -57,7 +57,6 @@ public struct EdfTypeEnumeratorToken
     public readonly Token CurrentToken => _currentToken;
 
     public EdfTypeEnumeratorToken() => Reset(null);
-    public EdfTypeEnumeratorToken(EdfType? root) => Reset(root);
 
     // MODIFIED: _sp используем как индекс чтения кэша, когда _cacheLen > 0
     public readonly bool IsEmpty => _cacheLen > 0 ? _sp >= _cacheLen : _sp == 0;
@@ -68,19 +67,6 @@ public struct EdfTypeEnumeratorToken
 
     public void Reset(EdfType? root)
     {
-        // Cache hit — тот же root, кэш валиден и включён
-        if (EnableCache)
-        {
-            if(ReferenceEquals(_cachedRoot, root) && _cacheLen > 0)
-            {
-                _sp = 0;
-                _pendingCount = 0;
-                return;
-            }
-            else
-                _cacheLen = 0;
-        }
-
         _sp = 0;
         _pendingCount = 0;
         _current = null;
@@ -89,9 +75,21 @@ public struct EdfTypeEnumeratorToken
         if (root is null)
         {
             _cachedRoot = null;
-            if (EnableCache) _cacheLen = 0;
+            _cacheLen = 0;
             return;
         }
+
+        // Если кэш отключён — гарантированно сбрасываем флаг, чтобы MoveNext не пошёл в кэш
+        if (!EnableCache)
+            _cacheLen = -1;
+
+        // Cache hit — тот же root, кэш валиден и включён
+        if (EnableCache && ReferenceEquals(_cachedRoot, root) && _cacheLen > 0)
+            return;
+
+        // Новый root при включённом кэше — инвалидируем старый кэш
+        if (EnableCache)
+            _cacheLen = 0;
 
         // Инициализируем стек (общая логика для cache miss и fallback)
         InitStack(root);
@@ -99,7 +97,6 @@ public struct EdfTypeEnumeratorToken
         if (!EnableCache)
         {
             _cachedRoot = root;
-            _cacheLen = -1;
             return;
         }
 
