@@ -9,14 +9,8 @@ public readonly ref struct BufWriterBin : IBufWriter
         _state = state;
     }
     #region Unused
-    public void BeginArray() { }
-    public void BeginStruct() { }
-    public void EndArray() { }
-    public void EndStruct() { }
-    public void RecBegin() { }
-    public void RecEnd() {  }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void VarEnd()
+    private void EnsureValueToken()
     {
         _state.Enum.MoveNext();
     }
@@ -27,7 +21,7 @@ public readonly ref struct BufWriterBin : IBufWriter
         EnsureCapacity(len);
         MemoryMarshal.Write(_state.Blk.GetEmptyBuffer(), val);
         _state.Blk.DataLen += (ushort)len;
-        VarEnd();
+        EnsureValueToken();
     }
     public void Write(string? str)
     {
@@ -35,7 +29,7 @@ public readonly ref struct BufWriterBin : IBufWriter
         EnsureCapacity(len);
         EdfBinString.WriteBin(str, _state.Blk.GetEmptyBuffer());
         _state.Blk.DataLen += (ushort)len;
-        VarEnd();
+        EnsureValueToken();
     }
     public EdfType? GetCurrentType()
     {
@@ -50,7 +44,7 @@ public readonly ref struct BufWriterBin : IBufWriter
         if (datalen < len)
             dst.Slice(datalen, len - datalen).Clear();
         _state.Blk.DataLen += (ushort)len;
-        VarEnd();
+        EnsureValueToken();
     }
     private readonly void EnsureCapacity(int len)
     {

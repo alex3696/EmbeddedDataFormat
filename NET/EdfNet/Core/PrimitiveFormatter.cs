@@ -56,13 +56,11 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
                     throw new InvalidOperationException($"Array rank mismatch at dimension {i}. Expected {edfType.Dims[i]}, got {arr.GetLength(i)}.");
                 dims[i] = edfType.Dims[i];
             }
-            writer.BeginArray();
             for (int i = 0; i < arr.Length; i++)
             {
                 ref TITEM item = ref arr.GetElementAtFlatIndexUnsafe<TITEM>(i);
                 writer.Write<TITEM>(item);
             }
-            writer.EndArray();
         }
         finally
         {

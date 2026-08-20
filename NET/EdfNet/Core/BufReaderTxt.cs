@@ -6,10 +6,10 @@ public readonly ref struct BufReaderTxt : IBufReader
 {
     public bool ReadRecBegin() => Match(Separator.RecBegin);
     public bool ReadRecEnd() => Match(Separator.RecEnd);
-    public bool ReadBeginStruct() => Match(Separator.BeginStruct);
-    public bool ReadEndStruct() => Match(Separator.EndStruct);
-    public bool ReadBeginArray() => Match(Separator.BeginArray);
-    public bool ReadEndArray() => Match(Separator.EndArray);
+    public bool ReadBeginStruct() => Match(Separator.StructBegin);
+    public bool ReadEndStruct() => Match(Separator.StructEnd);
+    public bool ReadBeginArray() => Match(Separator.ArrayBegin);
+    public bool ReadEndArray() => Match(Separator.ArrayEnd);
     public bool ReadVarEnd() => Match(Separator.VarEnd);
 
     private readonly BufStateTxt _state;

@@ -6,11 +6,4 @@ public interface IBufWriter
     void Write(string? val); // + void VarEnd();
     void WriteCharArray(ReadOnlySpan<byte> charArray, int len); // + void VarEnd();
     EdfType? GetCurrentType();
-    void RecBegin();
-    void RecEnd();
-    void BeginStruct();
-    void EndStruct();
-    void BeginArray();
-    void EndArray();
-    void VarEnd();
 }

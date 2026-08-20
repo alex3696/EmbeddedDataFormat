@@ -2,22 +2,24 @@ namespace EdfNet.Core;
 
 public enum Token
 {
-    Value = 0,      // Обычное значение (примитив)
+    Node = 0,       // Внутренний маркер — развернуть EdfType
+    Value,          // Обычное значение (примитив)
     BeginRecord,    // Начало записи (корневой элемент)
     EndRecord,      // Конец записи (корневой элемент)
     BeginStruct,    // Начало любой структуры
     EndStruct,      // Конец любой структуры
     BeginArray,     // Начало массива, (когда Dims.Length > 0 )
     EndArray,       // Конец массива
-    Node,           // Внутренний маркер — развернуть EdfType
 }
 
 
+[DebuggerDisplay("{DebugString(),nq}")]
 public readonly struct TokenElement
 {
     public readonly Token Token;
     public readonly EdfType? Type;
     public TokenElement(Token token, EdfType? type) { Token = token; Type = type; }
+    public string DebugString() => $"{Token} : {Type?.DebugString()}";
 }
 
 public struct EdfTypeEnumeratorToken
@@ -54,6 +56,7 @@ public struct EdfTypeEnumeratorToken
     public readonly EdfType Current => _current!;
     public readonly Token CurrentToken => _currentToken;
 
+    public EdfTypeEnumeratorToken() => Reset(null);
     public EdfTypeEnumeratorToken(EdfType? root) => Reset(root);
 
     // MODIFIED: _sp используем как индекс чтения кэша, когда _cacheLen > 0
@@ -66,17 +69,22 @@ public struct EdfTypeEnumeratorToken
     public void Reset(EdfType? root)
     {
         // Cache hit — тот же root, кэш валиден и включён
-        if (EnableCache && ReferenceEquals(_cachedRoot, root) && _cacheLen > 0)
+        if (EnableCache)
         {
-            _sp = 0;
-            _pendingCount = 0;
-            return;
+            if(ReferenceEquals(_cachedRoot, root) && _cacheLen > 0)
+            {
+                _sp = 0;
+                _pendingCount = 0;
+                return;
+            }
+            else
+                _cacheLen = 0;
         }
 
         _sp = 0;
         _pendingCount = 0;
         _current = null;
-        _currentToken = Token.Value;
+        _currentToken = Token.Node;
 
         if (root is null)
         {
@@ -183,6 +191,13 @@ public struct EdfTypeEnumeratorToken
         var node = top.Type!;
         uint idx = top.ArrayIndex;
         uint count = top.ArrayCount;
+        if (node.Type == PoType.Char)
+        {
+            _sp--;
+            _current = node;
+            _currentToken = Token.Value;
+            return true;
+        }
         if (node.Type == PoType.Struct)
         {
             // ---- Массив / скаляр структуры ----

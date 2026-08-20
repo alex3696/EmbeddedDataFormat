@@ -23,9 +23,7 @@ public class WriterTxt : BaseWriterTxt
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
         var writer = new BufWriterTxt(_state);
-        writer.RecBegin();
         formatter.Serialize(ref writer, val, _options);
-        writer.RecEnd();
         return EdfErr.IsOk;
     }
 }

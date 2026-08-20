@@ -64,24 +64,20 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         sb.AppendLine($"    public void Serialize<TWriter>(ref TWriter writer, in {typeName} val, EdfOptions options)");
         sb.AppendLine("        where TWriter : struct, IBufWriter, allows ref struct");
         sb.AppendLine("    {");
-        sb.AppendLine("        writer.BeginStruct();");
         foreach (var member in GetSerializableMembers(type))
         {
             GenerateSerializeMember(sb, member, "val", currentNamespace);
         }
-        sb.AppendLine("        writer.EndStruct();");
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine($"    public {typeName} Deserialize<TReader>(ref TReader reader, EdfOptions options)");
         sb.AppendLine("        where TReader : struct, IBufReader, allows ref struct");
         sb.AppendLine("    {");
         sb.AppendLine($"        {typeName} result = new {typeName}();");
-        sb.AppendLine("        reader.ReadBeginStruct();");
         foreach (var member in GetSerializableMembers(type))
         {
             GenerateDeserializeMember(sb, member, "result", currentNamespace);
         }
-        sb.AppendLine("        reader.ReadEndStruct();");
         sb.AppendLine("        return result;");
         sb.AppendLine("    }");
         sb.AppendLine("}");
@@ -245,7 +241,6 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         int totalElements = 1;
         for (int i = 0; i < dims?.Length; i++)
             totalElements *= dims[i];
-        sb.AppendLine($"{i8}writer.BeginArray();");
         sb.AppendLine($"{i8}if ({access} == null)");
         sb.AppendLine($"{i8}{{");
         sb.AppendLine($"{i8}    for (int i = 0; i < {totalElements}; i++)");
@@ -261,7 +256,6 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         WriteValue(sb, elementType, "item", i16, currentNamespace);
         sb.AppendLine($"{i8}    }}");
         sb.AppendLine($"{i8}}}");
-        sb.AppendLine($"{i8}writer.EndArray();");
     }
     private static void GenerateArraySerialize(StringBuilder sb, ISymbol member, string access, string currentNamespace)
     {
@@ -282,7 +276,6 @@ public class EdfFormatterGenerator : IIncrementalGenerator
             return;
         }
 
-        sb.AppendLine($"{i8}writer.BeginArray();");
         sb.AppendLine($"{i8}if ({access} == null)");
         sb.AppendLine($"{i8}{{");
         GenerateArraySerializeLoops(sb, member, access, elementType, currentNamespace, i12, true, string.Empty);
@@ -291,7 +284,6 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         sb.AppendLine($"{i8}{{");
         GenerateArraySerializeLoops(sb, member, access, elementType, currentNamespace, i12, false, null);
         sb.AppendLine($"{i8}}}");
-        sb.AppendLine($"{i8}writer.EndArray();");
     }
 
     private static void GenerateArraySerializeLoops(StringBuilder sb, ISymbol member, string access, ITypeSymbol elementType, string currentNamespace, string indent, bool useDefault, string? defaultExpr)
@@ -343,10 +335,8 @@ public class EdfFormatterGenerator : IIncrementalGenerator
 
         if (isArray && dims.Length > 0)
         {
-            sb.AppendLine($"{i8}reader.ReadBeginArray();");
             sb.AppendLine($"{i8}{arrayTypeName} {localVar} = new {elemTypeName}[{string.Join(", ", dims)}];");
             GenerateArrayDeserializeLoops(sb, elementType, localVar, dims, 0, new List<string>(), i8, currentNamespace);
-            sb.AppendLine($"{i8}reader.ReadEndArray();");
             sb.AppendLine($"{i8}{access} = {localVar};");
         }
         else

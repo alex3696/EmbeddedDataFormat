@@ -35,10 +35,10 @@ public class RecursiveWriterBinToTxt : IPrimitiveIo
     }
     public void SepRecBegin() => WriteSep(Separator.RecBegin);
     public void SepRecEnd() => WriteSep(Separator.RecEnd);
-    public void SepBeginStruct() => WriteSep(Separator.BeginStruct);
-    public void SepEndStruct() => WriteSep(Separator.EndStruct);
-    public void SepBeginArray() => WriteSep(Separator.BeginArray);
-    public void SepEndArray() => WriteSep(Separator.EndArray);
+    public void SepBeginStruct() => WriteSep(Separator.StructBegin);
+    public void SepEndStruct() => WriteSep(Separator.StructEnd);
+    public void SepBeginArray() => WriteSep(Separator.ArrayBegin);
+    public void SepEndArray() => WriteSep(Separator.ArrayEnd);
     public void SepVarEnd() => WriteSep(Separator.VarEnd);
     #endregion
     public int PrimitivesWritted { get; private set; } = 0;

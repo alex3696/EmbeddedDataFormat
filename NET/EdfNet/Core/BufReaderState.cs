@@ -24,7 +24,7 @@ public class BufStateTxt
 {
     public readonly Stream Stream;
     public readonly byte[] _Buf;
-    public readonly CircularEnumaratorEdfType Enum = new();
+    public readonly CircularEnumaratorEdfTypeTxt Enum = new();
 
     public Span<byte> Buf => _Buf;
     public int Readed;   // сколько байт из Buf уже разобрано (потреблено)
