@@ -184,10 +184,18 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         }
         else if (type.IsSerializable())
         {
-            if (string.IsNullOrEmpty(access))
-                access = $"EmptyObjectCache<{typeName}>.Instance";
-            else
-                access += $" ?? EmptyObjectCache<{typeName}>.Instance";
+            if (type.IsReferenceType || type.NullableAnnotation == NullableAnnotation.Annotated)
+            {
+                if (string.IsNullOrEmpty(access))
+                    access = $"EmptyObjectCache<{typeName}>.Instance";
+                else
+                    access += $" ?? EmptyObjectCache<{typeName}>.Instance";
+            }
+            else if(type.IsValueType)
+            {
+                if (string.IsNullOrEmpty(access))
+                    access = $"default({typeName})";
+            }
             sb.AppendLine($"{indent}EdfProvider<{typeName}>.Formatter.Serialize(ref writer, {access}, options);");
         }
         else
