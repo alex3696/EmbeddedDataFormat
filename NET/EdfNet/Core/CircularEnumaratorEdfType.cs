@@ -4,38 +4,29 @@ public sealed class CircularEnumaratorEdfType
 {
     public int PrimOffset = 0;
     public uint RecordId = 0;
-    private EdfType? _rootType;
     private EdfTypeEnumeratorStackInlineArray _enm = new();
     public void Reset(EdfType rootType)
     {
         RecordId = 0;
-        _rootType = rootType;
-        Restart();
-    }
-    private bool Restart()
-    {
-        if (null == _rootType)
-            return false;
         PrimOffset = 0;
-        _enm.Reset(_rootType);
-        return _enm.MoveNext();
+        _enm.Reset(rootType);
+        _enm.MoveNext();
     }
     public bool MoveNext()
     {
-        bool result = _enm.MoveNext();
-        if (result)
+        if (_enm.MoveNext())
         {
             PrimOffset++;
+            return true;
         }
-        else
+        if (_enm.IsEnded)
         {
-            if (_enm.IsEmpty)
-            {
-                RecordId++;
-                return Restart();
-            }
+            RecordId++;
+            PrimOffset = 0;
+            if (_enm.Restart())
+                return _enm.MoveNext();
         }
-        return result;
+        return false;
     }
     public EdfType? GetCurrentType()
     {
@@ -53,38 +44,29 @@ public sealed class CircularEnumaratorEdfTypeTxt
 {
     public int PrimOffset = 0;
     public uint RecordId = 0;
-    private EdfType? _rootType;
     private EdfTypeEnumeratorToken _enm = new();
     public void Reset(EdfType rootType)
     {
         RecordId = 0;
-        _rootType = rootType;
-        Restart();
-    }
-    private bool Restart()
-    {
-        if (null == _rootType)
-            return false;
         PrimOffset = 0;
-        _enm.Reset(_rootType);
-        return _enm.MoveNext();
+        _enm.Reset(rootType);
+        _enm.MoveNext();
     }
     public bool MoveNext()
     {
-        bool result = _enm.MoveNext();
-        if (result)
+        if (_enm.MoveNext())
         {
             PrimOffset++;
+            return true;
         }
-        else
+        if (_enm.IsEnded)
         {
-            if (_enm.IsEmpty)
-            {
-                RecordId++;
-                return Restart();
-            }
+            RecordId++;
+            PrimOffset = 0;
+            if (_enm.Restart())
+                return _enm.MoveNext();
         }
-        return result;
+        return false;
     }
     public Token CurrentToken => _enm.CurrentToken;
     public EdfType? GetCurrentType()

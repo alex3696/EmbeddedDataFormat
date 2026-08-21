@@ -58,8 +58,16 @@ public struct EdfTypeEnumeratorToken
 
     public EdfTypeEnumeratorToken() => Reset(null);
 
-    // MODIFIED: _sp используем как индекс чтения кэша, когда _cacheLen > 0
-    public readonly bool IsEmpty => _cacheLen > 0 ? _sp >= _cacheLen : _sp == 0;
+    public readonly bool IsInitialized => _cachedRoot is not null;
+    // _sp используем как индекс чтения кэша, когда _cacheLen > 0
+    public readonly bool IsEnded => _cacheLen > 0 ? _sp >= _cacheLen : _sp == 0;
+    public bool Restart()
+    {
+        if (_cachedRoot is null)
+            return false;
+        Reset(_cachedRoot);
+        return true;
+    }
     // -----------------------------------------------------------------
     //  Включение/отключение кэширования
     // -----------------------------------------------------------------
@@ -67,63 +75,69 @@ public struct EdfTypeEnumeratorToken
 
     public void Reset(EdfType? root)
     {
-        _sp = 0;
-        _pendingCount = 0;
-        _current = null;
-        _currentToken = Token.Node;
-
+        ResetState();
         if (root is null)
         {
             _cachedRoot = null;
             _cacheLen = 0;
             return;
         }
-
-        // Если кэш отключён — гарантированно сбрасываем флаг, чтобы MoveNext не пошёл в кэш
-        if (!EnableCache)
-            _cacheLen = -1;
-
-        // Cache hit — тот же root, кэш валиден и включён
-        if (EnableCache && ReferenceEquals(_cachedRoot, root) && _cacheLen > 0)
-            return;
-
-        // Новый root при включённом кэше — инвалидируем старый кэш
         if (EnableCache)
-            _cacheLen = 0;
-
-        // Инициализируем стек (общая логика для cache miss и fallback)
-        InitStack(root);
-
-        if (!EnableCache)
         {
-            _cachedRoot = root;
-            return;
+            if (ReferenceEquals(_cachedRoot, root)) // Тот же root
+            {
+                if (_cacheLen > 0)
+                    return;                 // кэш валиден — ResetState() уже сделал rewind
+                if (_cacheLen < 0)          // раньше overflow — чистый стек
+                {
+                    InitStack(root);        // _cacheLen уже -1, InitStack idempotent
+                    return;
+                }
+                // _cacheLen == 0: кэш ещё не строился, падаем в построение
+            }
+            else
+                _cacheLen = 0;              // новый root
+            if (TryBuildCache(root, out int pos))//  попытка построение кэша
+            {
+                _cachedRoot = root;
+                _cacheLen = pos;
+                return;
+            }
+            // overflow — InitStack сам поставит _cacheLen = -1
         }
-
-        // Пробуем построить flatten-кэш, вызывая текущий MoveNext()
-        int pos = 0;
+        _cachedRoot = root;
+        InitStack(root);
+    }
+    private void ResetState()
+    {
+        _sp = 0;
+        _pendingCount = 0;
+        _pendingType = null;
+        _current = null;
+        _currentToken = Token.Node;
+    }
+    private bool TryBuildCache(EdfType root, out int pos)
+    {
+        pos = 0;
+        InitStack(root);
         while (MoveNext())
         {
-            if (pos >= CacheSize)               // не влезает — fallback
+            if (pos >= CacheSize)
             {
-                _cacheLen = -1;
-                _sp = 0;
-                _pendingCount = 0;
-                InitStack(root);
-                return;
+                ResetState();
+                return false;
             }
             _cache[pos++] = new TokenElement(_currentToken, _current);
         }
-
-        _cachedRoot = root;
-        _cacheLen = pos;                            // успешно — переключаемся на кэш
-        _sp = 0;                                    // _sp теперь индекс чтения кэша
+        ResetState();
+        return true;
     }
     private void InitStack(EdfType root)
     {
+        _sp = 0;
+        _cacheLen = -1;
+        _pendingCount = 0;
         uint count = root.GetTotalElements();
-
-        // LIFO: EndRecord на дне, BeginRecord наверху
         Push(Token.EndRecord, root);
         PushNode(root, count);
         Push(Token.BeginRecord, root);
