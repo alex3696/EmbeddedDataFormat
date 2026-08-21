@@ -37,7 +37,7 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
     {
         if (arrObj is not Array arr)
             throw new ArgumentException("Invalid array type");
-        var edfType = writer.GetCurrentType();
+        var edfType = writer.CurrentType;
         if (null == edfType)
             throw new InvalidOperationException("Current type is not an array or has no dimensions.");
         if(PoType.Char == edfType.Type && arrObj is byte[] chArr)

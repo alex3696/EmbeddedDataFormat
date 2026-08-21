@@ -7,6 +7,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
     private readonly BufStateTxt _state;
     private readonly Span<byte> GetEmptyBuffer() => _state.Buf.Slice(_state.Writed);
     private void ThrowNotSupportedType(Type t) => throw new NotSupportedException($"Type {t.Name} not supported.");
+    public EdfType CurrentType => _state.Enum.CurrentType;
 
     public BufWriterTxt(BufStateTxt state)
     {
@@ -26,7 +27,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
                 case Token.EndStruct: WriteSepAndMoveNext(Separator.StructEnd); break;
                 case Token.BeginArray: WriteSepAndMoveNext(Separator.ArrayBegin); break;
                 case Token.EndArray: WriteSepAndMoveNext(Separator.ArrayEnd); break;
-                default: ThrowNotSupportedType(_state.Enum.CurrentToken.GetType()); break;
+                default: throw new NotSupportedException($"Token {token} not supported.");
             }
             //_state.Enum.MoveNext();
         }
@@ -34,7 +35,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
     public void Write<T>(T val) where T : struct
     {
         EnsureValueToken();
-        if (_state.Enum.GetCurrentType()?.Type != typeof(T).GetPoType())
+        if (CurrentType.Type != typeof(T).GetPoType())
             throw new EdfWrongTypeException();
         EnsureEmpty();
         Span<byte> buf = GetEmptyBuffer();
@@ -60,7 +61,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
     public void Write(string? str)
     {
         EnsureValueToken();
-        if (_state.Enum.GetCurrentType()?.Type != PoType.String)
+        if (CurrentType.Type != PoType.String)
             throw new EdfWrongTypeException();
         int contentLen = string.IsNullOrEmpty(str) ? 0 : Encoding.UTF8.GetByteCount(str);
         contentLen = int.Min(contentLen, EdfBinString.MaxLen);
@@ -75,14 +76,10 @@ public readonly ref struct BufWriterTxt : IBufWriter
         WriteSepAndMoveNext(Separator.VarEnd);
         EnsureValueToken();
     }
-    public EdfType? GetCurrentType()
-    {
-        return _state.Enum.GetCurrentType();
-    }
     public void WriteCharArray(ReadOnlySpan<byte> charArray, int len)
     {
         EnsureValueToken();
-        if (_state.Enum.GetCurrentType()?.Type != PoType.Char)
+        if (CurrentType.Type != PoType.Char)
             throw new EdfWrongTypeException();
         ArgumentOutOfRangeException.ThrowIfNegative(len);
         int datLen = int.Min(len, charArray.Length);

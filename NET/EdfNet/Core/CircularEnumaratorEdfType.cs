@@ -11,6 +11,8 @@ public sealed class CircularEnumaratorEdfType
         PrimOffset = 0;
         _enm.Reset(rootType);
         _enm.MoveNext();
+        if (null == _enm.Current) // start enumerate
+            throw new EdfWrongTypeException();
     }
     public bool MoveNext()
     {
@@ -28,16 +30,7 @@ public sealed class CircularEnumaratorEdfType
         }
         return false;
     }
-    public EdfType? GetCurrentType()
-    {
-        if (null == _enm.Current) // start enumerate
-        {
-            if (MoveNext())
-                return _enm.Current;
-            throw new EdfWrongTypeException();
-        }
-        return _enm.Current;
-    }
+    public EdfType CurrentType => _enm.Current;
 }
 
 public sealed class CircularEnumaratorEdfTypeTxt
@@ -68,15 +61,6 @@ public sealed class CircularEnumaratorEdfTypeTxt
         }
         return false;
     }
+    public EdfType CurrentType => _enm.Current;
     public Token CurrentToken => _enm.CurrentToken;
-    public EdfType? GetCurrentType()
-    {
-        if (null == _enm.Current) // start enumerate
-        {
-            if (MoveNext())
-                return _enm.Current;
-            throw new EdfWrongTypeException();
-        }
-        return _enm.Current;
-    }
 }

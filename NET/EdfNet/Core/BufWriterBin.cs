@@ -3,6 +3,7 @@ namespace EdfNet.Core;
 public readonly ref struct BufWriterBin : IBufWriter
 {
     private readonly BufWriterState _state;
+    public EdfType CurrentType => _state.Enum.CurrentType;
 
     public BufWriterBin(BufWriterState state)
     {
@@ -15,7 +16,7 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public void Write<T>(T val) where T : struct
     {
-        if (_state.Enum.GetCurrentType()?.Type != typeof(T).GetPoType())
+        if (CurrentType.Type != typeof(T).GetPoType())
             throw new EdfWrongTypeException();
         var len = Unsafe.SizeOf<T>();
         EnsureCapacity(len);
@@ -25,7 +26,7 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public void Write(string? str)
     {
-        if (_state.Enum.GetCurrentType()?.Type != PoType.String)
+        if (CurrentType.Type != PoType.String)
             throw new EdfWrongTypeException();
         var len = string.IsNullOrEmpty(str) ? 1 : 1 + int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
         EnsureCapacity(len);
@@ -33,13 +34,9 @@ public readonly ref struct BufWriterBin : IBufWriter
         _state.Blk.DataLen += (ushort)len;
         EnsureValueToken();
     }
-    public EdfType? GetCurrentType()
-    {
-        return _state.Enum.GetCurrentType();
-    }
     public void WriteCharArray(ReadOnlySpan<byte> charArray, int len)
     {
-        if (_state.Enum.GetCurrentType()?.Type != PoType.Char)
+        if (CurrentType.Type != PoType.Char)
             throw new EdfWrongTypeException();
         EnsureCapacity(len);
         var datalen = int.Min(len, charArray.Length);
