@@ -76,11 +76,12 @@ public readonly ref struct BufWriterTxt : IBufWriter
         WriteSepAndMoveNext(Separator.VarEnd);
         EnsureValueToken();
     }
-    public void WriteCharArray(ReadOnlySpan<byte> charArray, int len)
+    public void WriteCharArray(ReadOnlySpan<byte> charArray)
     {
         EnsureValueToken();
         if (CurrentType.Type != PoType.Char)
             throw new EdfWrongTypeException();
+        int len = (int)CurrentType.GetTotalElements();
         ArgumentOutOfRangeException.ThrowIfNegative(len);
         int datLen = int.Min(len, charArray.Length);
         ReadOnlySpan<byte> zero = stackalloc byte[1];

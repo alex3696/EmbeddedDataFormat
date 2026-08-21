@@ -42,7 +42,7 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
             throw new InvalidOperationException("Current type is not an array or has no dimensions.");
         if(PoType.Char == edfType.Type && arrObj is byte[] chArr)
         {
-            writer.WriteCharArray(chArr, (int)edfType.GetTotalElements());
+            writer.WriteCharArray(chArr);
             return;
         }
         int[] dims = null!;
@@ -71,13 +71,13 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
     public TARRAY Deserialize<TReader>(ref TReader reader, EdfOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        var edfType = reader.GetCurrentType();
+        var edfType = reader.CurrentType;
         if (null == edfType)
             throw new InvalidOperationException("Current type is not an array or has no dimensions.");
         if (PoType.Char == edfType.Type)
         {
             var len = (int)edfType.GetTotalElements();
-            var chArr = reader.ReadCharArray(len) as Array;
+            var chArr = reader.ReadCharArray() as Array;
             return Unsafe.As<Array, TARRAY>(ref chArr);
         }
         int[] dims = null!;
@@ -88,12 +88,10 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
             for (int i = 0; i < ranks; i++)
                 dims[i] = edfType.Dims[i];
             var arr = Array.CreateInstanceFromArrayType(typeof(TARRAY), dims);
-            reader.ReadBeginArray();
             for (int i = 0; i < arr.Length; i++)
             {
                 arr.GetElementAtFlatIndexUnsafe<TITEM>(i) = reader.Read<TITEM>();
             }
-            reader.ReadEndArray();
             return Unsafe.As<Array, TARRAY>(ref arr);//return (TARRAY)(object)arr;
         }
         finally

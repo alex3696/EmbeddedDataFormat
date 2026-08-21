@@ -9,14 +9,18 @@ public class ReaderBin : BaseReaderBin
     {
         _state = new BufStateBin(stream, _blkData);
     }
-
+    protected override void OnSchemaBlockRead()
+    {
+        if (CurrentSchema?.Type != null)
+            _state.Enum.Reset(CurrentSchema.Type);
+    }
     public T ReadValue<T>()
     {
         //ObjectDisposedException.ThrowIf(IsDisposed, this);
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var reader = new BufReaderBin(_state, CurrentSchema?.Type);
+        var reader = new BufReaderBin(_state);
         return formatter.Deserialize(ref reader, _options);
     }
 }

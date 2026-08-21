@@ -34,10 +34,11 @@ public readonly ref struct BufWriterBin : IBufWriter
         _state.Blk.DataLen += (ushort)len;
         EnsureValueToken();
     }
-    public void WriteCharArray(ReadOnlySpan<byte> charArray, int len)
+    public void WriteCharArray(ReadOnlySpan<byte> charArray)
     {
         if (CurrentType.Type != PoType.Char)
             throw new EdfWrongTypeException();
+        int len = (int)CurrentType.GetTotalElements();
         EnsureCapacity(len);
         var datalen = int.Min(len, charArray.Length);
         var dst = _state.Blk.GetEmptyBuffer();

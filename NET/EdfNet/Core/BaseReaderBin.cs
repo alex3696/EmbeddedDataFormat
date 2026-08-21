@@ -9,10 +9,6 @@ public abstract class BaseReaderBin
     private readonly BinBlock _blk;
     protected readonly BinDataBlock _blkData;
 
-    private uint _recId = 0;
-    private ushort _prmOffset = 0;
-    protected ushort _byteOffset;
-
     public BaseReaderBin(Stream stream, Config? cfg = default)
     {
         _stream = stream;
@@ -37,7 +33,7 @@ public abstract class BaseReaderBin
                 default: throw new Exception($"Wrong block Type: {_blk.Type}");
                 case BlockType.Config: break;
                 case BlockType.Schema: ReadSchema(); break;
-                case BlockType.Data: ReadDatBlockHeader(); break;
+                case BlockType.Data: OnReadDatBlockStart(); break;
             }
             return true;
         }
@@ -53,16 +49,15 @@ public abstract class BaseReaderBin
     public Schema? ReadSchema()
     {
         CurrentSchema = _blk.ReadSchema();
-        if (CurrentSchema is null)
-            return null;
-        _recId = 0;
-        _prmOffset = 0;
+        OnSchemaBlockRead();
         return CurrentSchema;
     }
 
-    private void ReadDatBlockHeader()
+    protected virtual void OnSchemaBlockRead()
     {
-        _byteOffset = 0;
+    }
+    protected virtual void OnReadDatBlockStart()
+    {
         ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
         //ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.SchemaId, CurrentSchema.Id, nameof(BinDataBlock.SchemaId));
         //ArgumentOutOfRangeException.ThrowIfNotEqual(_blkData.RecordId, _recId, nameof(BinDataBlock.RecordId));

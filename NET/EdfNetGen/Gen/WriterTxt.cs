@@ -10,10 +10,11 @@ public class WriterTxt : BaseWriterTxt
     {
         _state = new BufStateTxt(stream, new byte[cfg?.Blocksize ?? Config.Default.Blocksize]);
     }
-    public override void WriteSchema(Schema sch)
+    public override void WriteSchema(Schema? sch)
     {
         base.WriteSchema(sch);
-        _state.Enum.Reset(sch.Type);
+        if (sch != null)
+            _state.Enum.Reset(sch.Type);
     }
     public override EdfErr WriteValue<T>(in T val)
     {

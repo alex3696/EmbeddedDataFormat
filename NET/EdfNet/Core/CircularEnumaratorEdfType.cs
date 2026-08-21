@@ -11,8 +11,6 @@ public sealed class CircularEnumaratorEdfType
         PrimOffset = 0;
         _enm.Reset(rootType);
         _enm.MoveNext();
-        if (null == _enm.Current) // start enumerate
-            throw new EdfWrongTypeException();
     }
     public bool MoveNext()
     {

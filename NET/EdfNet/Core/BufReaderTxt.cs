@@ -4,26 +4,20 @@ namespace EdfNet.Core;
 
 public readonly ref struct BufReaderTxt : IBufReader
 {
-    public bool ReadRecBegin() => Match(Separator.RecBegin);
-    public bool ReadRecEnd() => Match(Separator.RecEnd);
-    public bool ReadBeginStruct() => Match(Separator.StructBegin);
-    public bool ReadEndStruct() => Match(Separator.StructEnd);
-    public bool ReadBeginArray() => Match(Separator.ArrayBegin);
-    public bool ReadEndArray() => Match(Separator.ArrayEnd);
-    public bool ReadVarEnd() => Match(Separator.VarEnd);
-
     private readonly BufStateTxt _state;
-    private readonly EdfType? _rootType;
+    public EdfType CurrentType => _state.Enum.CurrentType;
 
-    public BufReaderTxt(BufStateTxt state, EdfType? rootType)
+    public BufReaderTxt(BufStateTxt state)
     {
         _state = state;
-        _rootType = rootType;
     }
 
     public T Read<T>() where T : struct
     {
         EnsureFull();
+        EnsureValueToken();
+        if (CurrentType.Type != typeof(T).GetPoType())
+            throw new EdfWrongTypeException();
         Span<byte> buf = _state.Buf.Slice(_state.Readed);
         int len = 0;
         var code = Type.GetTypeCode(typeof(T));
@@ -35,6 +29,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<byte, T>(ref b);
                 }
                 break;
@@ -43,6 +38,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<sbyte, T>(ref sb);
                 }
                 break;
@@ -51,6 +47,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<ushort, T>(ref us);
                 }
                 break;
@@ -59,6 +56,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<short, T>(ref s);
                 }
                 break;
@@ -67,6 +65,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<uint, T>(ref ui);
                 }
                 break;
@@ -75,6 +74,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<int, T>(ref i);
                 }
                 break;
@@ -83,6 +83,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<ulong, T>(ref ul);
                 }
                 break;
@@ -91,6 +92,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<long, T>(ref l);
                 }
                 break;
@@ -99,6 +101,7 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<float, T>(ref f);
                 }
                 break;
@@ -107,15 +110,18 @@ public readonly ref struct BufReaderTxt : IBufReader
                 {
                     _state.Readed += len + Separator.VarEnd.Length;
                     Match(Separator.VarEnd);
+                    EnsureValueToken();
                     return Unsafe.As<double, T>(ref d);
                 }
                 break;
         }
         throw new NotSupportedException($"Type {typeof(T).Name} not supported.");
     }
-
     public string? ReadString()
     {
+        EnsureValueToken();
+        if (CurrentType.Type != PoType.String)
+            throw new EdfWrongTypeException();
         Ensure(1);
         if (_state.Buf[_state.Readed] != 34) throw new FormatException("Expected opening quote");
         _state.Readed++;
@@ -129,13 +135,18 @@ public readonly ref struct BufReaderTxt : IBufReader
         var content = _state.Buf.Slice(start, _state.Readed - start);
         _state.Readed++; // skip closing quote
         Match(Separator.VarEnd);
+        EnsureValueToken();
         return Encoding.UTF8.GetString(content);
     }
-    public byte[] ReadCharArray(int len)
+    public byte[] ReadCharArray()
     {
+        EnsureValueToken();
+        if (CurrentType.Type != PoType.Char)
+            throw new EdfWrongTypeException();
         Ensure(1);
         if (_state.Buf[_state.Readed] != 34) throw new FormatException("Expected opening quote");
         _state.Readed++;
+        int len = (int)CurrentType.GetTotalElements();
         int start = _state.Readed;
         while (true)
         {
@@ -148,24 +159,14 @@ public readonly ref struct BufReaderTxt : IBufReader
         Match(Separator.VarEnd);
         var result = new byte[len];
         content.CopyTo(result);
+        EnsureValueToken();
         return result;
-    }
-    public EdfType? GetCurrentType()
-    {
-        return _rootType;
-    }
-    public int Read(Span<byte> dst)
-    {
-        var len = dst.Length;
-        Ensure(len);
-        _state.Buf.Slice(_state.Readed, len).CopyTo(dst);
-        _state.Readed += len;
-        return len;
     }
 
     private bool Match(ReadOnlySpan<byte> expected)
     {
-        if (StartsWith(expected))
+        Ensure(expected.Length);
+        if (_state.Buf.Slice(_state.Readed, expected.Length).SequenceEqual(expected))
         {
             _state.Readed += expected.Length;
             return true;
@@ -173,13 +174,32 @@ public readonly ref struct BufReaderTxt : IBufReader
         throw new FormatException($"expected {expected.ToString()}");
         //return false;
     }
-
-    private bool StartsWith(ReadOnlySpan<byte> expected)
+    private int ReadSepAndMoveNext(ReadOnlySpan<byte> val)
     {
-        Ensure(expected.Length);
-        return _state.Buf.Slice(_state.Readed, expected.Length).SequenceEqual(expected);
+        var len = val.Length;
+        Ensure(len);
+        Match(val);
+        _state.Enum.MoveNext();
+        return len;
     }
-
+    private void EnsureValueToken()
+    {
+        while (_state.Enum.CurrentToken != Token.Value)
+        {
+            var token = _state.Enum.CurrentToken;
+            switch (token)
+            {
+                case Token.BeginRecord: ReadSepAndMoveNext(Separator.RecBegin); break;
+                case Token.EndRecord: ReadSepAndMoveNext(Separator.RecEnd); return;
+                case Token.BeginStruct: ReadSepAndMoveNext(Separator.StructBegin); break;
+                case Token.EndStruct: ReadSepAndMoveNext(Separator.StructEnd); break;
+                case Token.BeginArray: ReadSepAndMoveNext(Separator.ArrayBegin); break;
+                case Token.EndArray: ReadSepAndMoveNext(Separator.ArrayEnd); break;
+                default: throw new NotSupportedException($"Token {token} not supported.");
+            }
+            //_state.Enum.MoveNext();
+        }
+    }
     private void EnsureFull()
     {
         var available = _state.Writed - _state.Readed;
@@ -205,5 +225,4 @@ public readonly ref struct BufReaderTxt : IBufReader
                 throw new EndOfStreamException();
         }
     }
-
 }

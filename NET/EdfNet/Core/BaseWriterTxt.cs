@@ -30,8 +30,11 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
         //Write($"// ? - struct @ - data // - comment");
         CurrentSchema = null;
     }
-    public virtual void WriteSchema(Schema sch)
+    public virtual void WriteSchema(Schema? sch)
     {
+        CurrentSchema = sch;
+        if (null == sch)
+            return;
         Flush();
         Write($"\n\n<? {{");
         Write($"{sch.Id};\"{sch.Name}\"");
@@ -40,7 +43,6 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
         Write($"}} ");
         ToString(sch.Type);
         Write($">");
-        CurrentSchema = sch;
     }
     public virtual EdfErr WriteValue<T>(in T val)
     {
