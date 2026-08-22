@@ -25,6 +25,6 @@ public class WriterTxt : BaseWriterTxt
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
         var writer = new BufWriterTxt(_state);
         formatter.Serialize(ref writer, val, _options);
-        return EdfErr.IsOk;
+        return _state.Enum.PrimOffset == 0 ? EdfErr.IsOk : EdfErr.SrcDataRequred;
     }
 }

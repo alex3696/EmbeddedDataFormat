@@ -35,37 +35,20 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
     public void Serialize<TWriter>(ref TWriter writer, in TARRAY arrObj, EdfOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
-        if (arrObj is not Array arr)
-            throw new ArgumentException("Invalid array type");
         var edfType = writer.CurrentType;
-        if (null == edfType)
-            throw new InvalidOperationException("Current type is not an array or has no dimensions.");
-        if(PoType.Char == edfType.Type && arrObj is byte[] chArr)
+        if (null == edfType || 0 == edfType.Dims.Length)
+            throw new InvalidOperationException("Current type is null or not an array.");
+        if (PoType.Char == edfType.Type && arrObj is byte[] chArr)
         {
             writer.WriteCharArray(chArr);
             return;
         }
-        int[] dims = null!;
-        try
+        if (arrObj is not Array arr)
+            throw new ArgumentException("Invalid array type");
+        for (int i = 0; i < arr.Length && ReferenceEquals(edfType, writer.CurrentType); i++)
         {
-            int ranks = edfType.Dims.Length;
-            dims = ArrayPool<int>.Shared.Rent(ranks);
-            for (int i = 0; i < ranks; i++)
-            {
-                if (arr.GetLength(i) != edfType.Dims[i])
-                    throw new InvalidOperationException($"Array rank mismatch at dimension {i}. Expected {edfType.Dims[i]}, got {arr.GetLength(i)}.");
-                dims[i] = edfType.Dims[i];
-            }
-            for (int i = 0; i < arr.Length; i++)
-            {
-                ref TITEM item = ref arr.GetElementAtFlatIndexUnsafe<TITEM>(i);
-                writer.Write<TITEM>(item);
-            }
-        }
-        finally
-        {
-            if (dims != null)
-                ArrayPool<int>.Shared.Return(dims);
+            ref TITEM item = ref arr.GetElementAtFlatIndexUnsafe<TITEM>(i++);
+            writer.Write(item);
         }
     }
     public TARRAY Deserialize<TReader>(ref TReader reader, EdfOptions options)

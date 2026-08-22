@@ -325,10 +325,9 @@ public class TestStructSerialize
         for (uint i = 0; i < arrLen; i++)
             test[i] = (int)i;
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test));//write all
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test));//write all
-        //Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(0, 15).ToArray()));
-        //Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(15, arrLen - 30).ToArray()));
-        //Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test.AsSpan(arrLen - 15).ToArray()));
+        Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(0, 15).ToArray()));
+        Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(15, arrLen - 30).ToArray()));
+        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test.AsSpan(arrLen - 15).ToArray()));
         dw.Flush();
         return 0;
     }
