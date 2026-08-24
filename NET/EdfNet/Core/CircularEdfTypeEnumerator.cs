@@ -1,6 +1,6 @@
 namespace EdfNet.Core;
 
-public sealed class CircularEnumaratorEdfType
+public sealed class CircularEdfTypeEnumerator
 {
     public int PrimOffset = 0;
     public uint RecordId = 0;
@@ -31,7 +31,7 @@ public sealed class CircularEnumaratorEdfType
     public EdfType CurrentType => _enm.Current;
 }
 
-public sealed class CircularEnumaratorEdfTypeTxt
+public sealed class CircularEdfTypeEnumeratorTxt
 {
     public int PrimOffset = 0;
     public uint RecordId = 0;

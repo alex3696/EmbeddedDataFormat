@@ -1,22 +1,22 @@
-namespace EdfNet.Core;
+namespace EdfNet.Converters;
 
-public class BinToTxt
+public class TxtToBin
 {
-    class StateWriterTxt : WriterTxt
+    class StateWriterBin : WriterBin
     {
-        public StateWriterTxt(Stream stream, Config? cfg = default)
-            : base(stream, cfg)
-        {
-        }
-        public BufStateTxt State => _state;
-    }
-    class StateReaderBin : ReaderBin
-    {
-        public StateReaderBin(Stream stream, Config? cfg = default)
+        public StateWriterBin(Stream stream, Config? cfg = default)
             : base(stream, cfg)
         {
         }
         public BufStateBin State => _state;
+    }
+    class StateReaderTxt : ReaderTxt
+    {
+        public StateReaderTxt(Stream stream, Config? cfg = default)
+            : base(stream, cfg)
+        {
+        }
+        public BufStateTxt State => _state;
     }
 
     public static void Convert(string srcBin, string dstTxt)
@@ -28,8 +28,8 @@ public class BinToTxt
 
     public static void Convert(Stream srcBin, Stream dstTxt)
     {
-        StateReaderBin reader = new(srcBin);
-        StateWriterTxt writer = new(dstTxt, reader.Cfg);
+        StateReaderTxt reader = new(srcBin);
+        StateWriterBin writer = new(dstTxt, reader.Cfg);
         try
         {
             while (reader.ReadBlock())
@@ -55,12 +55,12 @@ public class BinToTxt
         }
         writer.Flush();
     }
-    private static void Convert(BufStateBin readerState, BufStateTxt writerState)
+    private static void Convert(BufStateTxt readerState, BufStateBin writerState)
     {
-        BufReaderBin br = new(readerState);
-        BufWriterTxt bw = new(writerState);
+        BufReaderTxt br = new(readerState);
+        BufWriterBin bw = new(writerState);
 
-        while (0 < readerState.ReadAvailableLen)
+        while (readerState.Stream.CanRead)
         {
             var et = readerState.Enum.CurrentType;
             switch (et.Type)

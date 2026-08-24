@@ -1,3 +1,4 @@
+using EdfNet.Converters;
 using EdfNet.Interfaces;
 using EdfNet.Utils;
 using System.Runtime.InteropServices;
