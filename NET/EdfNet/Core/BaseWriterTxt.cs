@@ -2,6 +2,7 @@ namespace EdfNet.Core;
 
 public abstract class BaseWriterTxt : BaseDisposable, IWriter
 {
+    private readonly byte[] _stringBuf = new byte[4096];
     public Config Cfg { get; }
     public Schema? CurrentSchema;
     protected readonly Stream _st;
@@ -26,10 +27,11 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
     public void WriteConfig(Config h)
     {
         Flush();
+        Write("//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags");
+        Write(EdfTokenLiterals.EndLine);
         Write(EdfTokenLiterals.ConfigBegin);
-        Write(EdfTokenLiterals.Space);
         Write(EdfTokenLiterals.StructBegin);
-        Write($"version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags};");
+        Write($"{h.VersMajor};{h.VersMinor};{h.Blocksize};{h.Encoding};{(uint)h.Flags};");
         Write(EdfTokenLiterals.StructEnd);
         Write(EdfTokenLiterals.BlockEnd);
         Write(EdfTokenLiterals.EndLine);
@@ -70,8 +72,10 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
     }
     protected void Write(string? str)
     {
-        if (!string.IsNullOrEmpty(str))
-            _st.Write(Encoding.UTF8.GetBytes(str));
+        if (string.IsNullOrEmpty(str))
+            return;
+        int len = Encoding.UTF8.GetBytes(str, 0, str.Length, _stringBuf, 0);
+        _st.Write(_stringBuf, 0, len);
     }
     protected void ToString(EdfType t, int noffset = 0)
     {
