@@ -1,4 +1,3 @@
-using EdfNet.Gen;
 using EdfNet.Interfaces;
 using EdfNet.Utils;
 using System.Runtime.InteropServices;
@@ -306,8 +305,7 @@ public class TestStructSerialize
         {
             edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
         }
-        using (var binToText = new BinToTxtConverter(binFile, txtConvFile))
-            binToText.Execute();
+        BinToTxt.Convert(binFile, txtConvFile);
         bool isEqual = FileUtils.FileCompare(txtFile, txtConvFile);
         Assert.IsTrue(isEqual);
     }
@@ -349,8 +347,7 @@ public class TestStructSerialize
         {
             WriteBigVar(w);
         }
-        using (var binToText = new BinToTxtConverter(binFile, txtConvFile))
-            binToText.Execute();
+        BinToTxt.Convert(binFile, txtConvFile);
 
         bool isEqual = FileUtils.FileCompare(txtFile, txtConvFile);
         Assert.IsTrue(isEqual, "WriteBigVar file does not match ");

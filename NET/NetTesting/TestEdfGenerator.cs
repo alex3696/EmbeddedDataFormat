@@ -97,14 +97,12 @@ public class GenSerializationTests
     [TestMethod]
     public void KeyVal_Serialization_And_Deserialization_Should_Be_Identical()
     {
-        //CompositeResolver.Instance.TryRegister(new EdfNet.Gen.GeneratedEdfResolver());
-
         // 1. ARRANGE: Создаем и максимально разнообразно заполняем тестовый объект
         var original = TestClasses_Content.TestValue;
 
         // Создаем буфер в памяти (имитация файла/флеш-блока)
         using var memoryStream = new MemoryStream(1024);
-        using var writer = new EdfNet.Gen.WriterBin(memoryStream);
+        using var writer = new WriterBin(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
         writer.WriteSchema(ComplexType.GetEdfSchema());
@@ -115,7 +113,7 @@ public class GenSerializationTests
 
         // Сбрасываем поток в начало для чтения
         memoryStream.Position = 0;
-        var reader = new EdfNet.Gen.ReaderBin(memoryStream);
+        var reader = new ReaderBin(memoryStream);
 
         // 3. ACT (READ): Читаем объект обратно из бинарного потока
         if (!reader.ReadBlock())
@@ -179,7 +177,7 @@ public class GenSerializationTests
         };
 
         using var memoryStream = new MemoryStream();
-        using var writer = new EdfNet.Gen.WriterBin(memoryStream);
+        using var writer = new WriterBin(memoryStream);
         writer.WriteSchema(ComplexType.GetEdfSchema());
         EdfErr writeResult = writer.WriteValue(original);
         writer.Flush();

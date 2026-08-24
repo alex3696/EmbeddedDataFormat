@@ -1,30 +1,29 @@
-namespace EdfNet.Gen;
+namespace EdfNet.Core;
 
-public class WriterBin : BaseWriterBin
+public class WriterTxt : BaseWriterTxt
 {
-    public WriterBin(Stream stream, Config? cfg = default)
+    protected readonly BufStateTxt _state;
+    protected readonly EdfOptions _options = EdfOptions.Default;
+
+    public WriterTxt(Stream stream, Config? cfg = default)
         : base(stream, cfg)
     {
-        _state = new(_stream, _blkData);
+        _state = new BufStateTxt(stream, new byte[cfg?.Blocksize ?? Config.Default.Blocksize]);
     }
-
-    public override void WriteSchema(Schema sch)
+    public override void WriteSchema(Schema? sch)
     {
         base.WriteSchema(sch);
-        _state.Enum.Reset(sch.Type);
+        if (sch != null)
+            _state.Enum.Reset(sch.Type);
     }
-    private readonly BufWriterState _state;
-    private readonly EdfOptions _options = EdfOptions.Default;
-
     public override EdfErr WriteValue<T>(in T val)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         ArgumentNullException.ThrowIfNull(CurrentSchema);
-        //IFormatter<T>? formatter = _options.Resolver.GetFormatter<T>();
         IFormatter<T> formatter = EdfProvider<T>.Formatter;
         if (formatter == null)
             throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var writer = new BufWriterBin(_state);
+        var writer = new BufWriterTxt(_state);
         formatter.Serialize(ref writer, val, _options);
         return _state.Enum.PrimOffset == 0 ? EdfErr.IsOk : EdfErr.SrcDataRequred;
     }

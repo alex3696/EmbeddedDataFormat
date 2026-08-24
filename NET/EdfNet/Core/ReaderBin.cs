@@ -1,9 +1,10 @@
-namespace EdfNet.Gen;
+namespace EdfNet.Core;
 
 public class ReaderBin : BaseReaderBin
 {
-    private BufStateBin _state;
-    private readonly EdfOptions _options = EdfOptions.Default;
+    protected readonly BufStateBin _state;
+    protected readonly EdfOptions _options = EdfOptions.Default;
+
     public ReaderBin(Stream stream, Config? cfg = default)
         : base(stream, cfg)
     {
@@ -14,6 +15,12 @@ public class ReaderBin : BaseReaderBin
         if (CurrentSchema?.Type != null)
             _state.Enum.Reset(CurrentSchema.Type);
     }
+    protected override void OnReadDatBlockStart()
+    {
+        base.OnReadDatBlockStart();
+        _state.Readed = 0;
+    }
+
     public T ReadValue<T>()
     {
         //ObjectDisposedException.ThrowIf(IsDisposed, this);

@@ -47,7 +47,7 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
             throw new ArgumentException("Invalid array type");
         for (int i = 0; i < arr.Length && ReferenceEquals(edfType, writer.CurrentType); i++)
         {
-            ref TITEM item = ref arr.GetElementAtFlatIndexUnsafe<TITEM>(i++);
+            ref TITEM item = ref arr.GetElementAtFlatIndexUnsafe<TITEM>(i);
             writer.Write(item);
         }
     }

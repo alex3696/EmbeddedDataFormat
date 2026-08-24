@@ -6,7 +6,7 @@ public class TestWriterBin
     public int Size { get; set; } = 1;
 #pragma warning disable CS8618
     MemoryStream _msGen;
-    EdfNet.Gen.WriterBin _writerGen;
+    WriterBin _writerGen;
 #pragma warning restore CS8618
 
     public TestWriterBin()

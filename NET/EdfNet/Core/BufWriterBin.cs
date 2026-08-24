@@ -2,10 +2,10 @@ namespace EdfNet.Core;
 
 public readonly ref struct BufWriterBin : IBufWriter
 {
-    private readonly BufWriterState _state;
+    private readonly BufStateBin _state;
     public EdfType CurrentType => _state.Enum.CurrentType;
 
-    public BufWriterBin(BufWriterState state)
+    public BufWriterBin(BufStateBin state)
     {
         _state = state;
     }
