@@ -58,5 +58,4 @@ public class EdfTypeEnumerator_Bench
     }
     [Benchmark] public void EdfTypeEnumeratorRecursive() => _tst.EdfTypeEnumeratorRecursive();
     [Benchmark] public void EdfTypeEnumeratorRecursiveClass() => _tst.EdfTypeEnumeratorRecursiveClass();
-    [Benchmark] public void EdfTypeEnumeratorYield() => _tst.EdfTypeEnumeratorYield();
 }

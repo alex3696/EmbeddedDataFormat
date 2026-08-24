@@ -120,9 +120,6 @@ public class EdfTypeEnumerator_Test
         EdfTypeEnumeratorStackInlineArray();
         Assert.IsTrue(lst.SequenceEqual(_lst), "EdfTypeEnumeratorYield");
 
-        EdfTypeEnumeratorYield();
-        Assert.IsTrue(lst.SequenceEqual(_lst), "EdfTypeEnumeratorYield");
-
         EdfTypeEnumeratorRecursive();
         Assert.IsTrue(lst.SequenceEqual(_lst), "EdfTypeEnumeratorRecursive");
 
@@ -162,14 +159,6 @@ public class EdfTypeEnumerator_Test
         while (_enm.MoveNext())
         {
             _lst.Add(_enm.Current);
-        }
-    }
-    public void EdfTypeEnumeratorYield()
-    {
-        _lst.Clear();
-        foreach (var field in _schema.Type.EnumerateYield())
-        {
-            _lst.Add(field);
         }
     }
     public void EdfTypeEnumeratorRecursive()
