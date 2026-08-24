@@ -13,6 +13,11 @@ public class EdfParseException : Exception
     }
 }
 
+/// <summary>
+/// Парсер текстового описания типа (схемы).
+/// Правило: ';' (VarEnd) — терминатор только для примитивных полей.
+/// Структуры закрываются '}' (StructEnd) без trailing ';'.
+/// </summary>
 public static class EdfTypeParser
 {
     public static EdfType Parse(ReadOnlySpan<byte> text)
@@ -37,14 +42,14 @@ public static class EdfTypeParser
 
         if (poType == PoType.Struct)
         {
-            tokenizer.Expect(TextTokenType.LBrace);
+            tokenizer.Expect(TextTokenType.StructBegin);
             var childs = ParseChilds(ref tokenizer);
-            tokenizer.Expect(TextTokenType.RBrace);
+            tokenizer.Expect(TextTokenType.StructEnd);
             return new EdfType(poType, name, dims, childs);
         }
         else
         {
-            tokenizer.Expect(TextTokenType.Semicolon);
+            tokenizer.Expect(TextTokenType.VarEnd);
             return new EdfType(poType, name, dims, null);
         }
     }
@@ -52,7 +57,7 @@ public static class EdfTypeParser
     private static ushort[] ParseDimensions(ref EdfTokenizer tokenizer)
     {
         var dims = new List<ushort>();
-        while (tokenizer.Peek().Type == TextTokenType.LBracket)
+        while (tokenizer.Peek().Type == TextTokenType.ArrayBegin)
         {
             tokenizer.Consume(); // [
             var numToken = tokenizer.Expect(TextTokenType.Number);
@@ -61,7 +66,7 @@ public static class EdfTypeParser
                     $"Array dimension must be 0..65535, got '{numToken.Text}'",
                     numToken.Line, numToken.Column);
             dims.Add(dim);
-            tokenizer.Expect(TextTokenType.RBracket); // ]
+            tokenizer.Expect(TextTokenType.ArrayEnd); // ]
         }
         return dims.ToArray();
     }
@@ -69,7 +74,7 @@ public static class EdfTypeParser
     private static EdfType[] ParseChilds(ref EdfTokenizer tokenizer)
     {
         var childs = new List<EdfType>();
-        while (tokenizer.Peek().Type != TextTokenType.RBrace && tokenizer.Peek().Type != TextTokenType.EOF)
+        while (tokenizer.Peek().Type != TextTokenType.StructEnd && tokenizer.Peek().Type != TextTokenType.EOF)
         {
             childs.Add(ParseType(ref tokenizer));
         }

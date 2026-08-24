@@ -27,8 +27,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.Byte:
                 if (Utf8Parser.TryParse(buf, out byte b, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<byte, T>(ref b);
                 }
@@ -36,8 +36,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.SByte:
                 if (Utf8Parser.TryParse(buf, out sbyte sb, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<sbyte, T>(ref sb);
                 }
@@ -45,8 +45,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.UInt16:
                 if (Utf8Parser.TryParse(buf, out ushort us, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<ushort, T>(ref us);
                 }
@@ -54,8 +54,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.Int16:
                 if (Utf8Parser.TryParse(buf, out short s, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<short, T>(ref s);
                 }
@@ -63,8 +63,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.UInt32:
                 if (Utf8Parser.TryParse(buf, out uint ui, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<uint, T>(ref ui);
                 }
@@ -72,8 +72,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.Int32:
                 if (Utf8Parser.TryParse(buf, out int i, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<int, T>(ref i);
                 }
@@ -81,8 +81,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.UInt64:
                 if (Utf8Parser.TryParse(buf, out ulong ul, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<ulong, T>(ref ul);
                 }
@@ -90,8 +90,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.Int64:
                 if (Utf8Parser.TryParse(buf, out long l, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<long, T>(ref l);
                 }
@@ -99,8 +99,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.Single:
                 if (Utf8Parser.TryParse(buf, out float f, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<float, T>(ref f);
                 }
@@ -108,8 +108,8 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.Double:
                 if (Utf8Parser.TryParse(buf, out double d, out len))
                 {
-                    _state.Readed += len + Separator.VarEnd.Length;
-                    Match(Separator.VarEnd);
+                    _state.Readed += len;
+                    Match(EdfTokenLiterals.VarEnd);
                     EnsureValueToken();
                     return Unsafe.As<double, T>(ref d);
                 }
@@ -134,7 +134,7 @@ public readonly ref struct BufReaderTxt : IBufReader
         }
         var content = _state.Buf.Slice(start, _state.Readed - start);
         _state.Readed++; // skip closing quote
-        Match(Separator.VarEnd);
+        Match(EdfTokenLiterals.VarEnd);
         EnsureValueToken();
         return Encoding.UTF8.GetString(content);
     }
@@ -156,23 +156,33 @@ public readonly ref struct BufReaderTxt : IBufReader
         }
         var content = _state.Buf.Slice(start, _state.Readed - start);
         _state.Readed++; // skip closing quote
-        Match(Separator.VarEnd);
+        Match(EdfTokenLiterals.VarEnd);
         var result = new byte[len];
         content.CopyTo(result);
         EnsureValueToken();
         return result;
     }
-
+    private void SkipWhitespace()
+    {
+        while (_state.Readed < _state.Writed)
+        {
+            byte b = _state.Buf[_state.Readed];
+            if (b is 0x09 or 0x0A or 0x0B or 0x0C or 0x0D or 0x20)
+                _state.Readed++;
+            else
+                break;
+        }
+    }
     private bool Match(ReadOnlySpan<byte> expected)
     {
+        SkipWhitespace();
         Ensure(expected.Length);
         if (_state.Buf.Slice(_state.Readed, expected.Length).SequenceEqual(expected))
         {
             _state.Readed += expected.Length;
             return true;
         }
-        throw new FormatException($"expected {expected.ToString()}");
-        //return false;
+        throw new FormatException($"expected {Encoding.UTF8.GetString(expected)}");
     }
     private int ReadSepAndMoveNext(ReadOnlySpan<byte> val)
     {
@@ -189,12 +199,12 @@ public readonly ref struct BufReaderTxt : IBufReader
             var token = _state.Enum.CurrentToken;
             switch (token)
             {
-                case Token.BeginRecord: ReadSepAndMoveNext(Separator.RecBegin); break;
-                case Token.EndRecord: ReadSepAndMoveNext(Separator.RecEnd); return;
-                case Token.BeginStruct: ReadSepAndMoveNext(Separator.StructBegin); break;
-                case Token.EndStruct: ReadSepAndMoveNext(Separator.StructEnd); break;
-                case Token.BeginArray: ReadSepAndMoveNext(Separator.ArrayBegin); break;
-                case Token.EndArray: ReadSepAndMoveNext(Separator.ArrayEnd); break;
+                case Token.BeginRecord: ReadSepAndMoveNext(EdfTokenLiterals.RecBegin); break;
+                case Token.EndRecord: ReadSepAndMoveNext(EdfTokenLiterals.BlockEnd); return;
+                case Token.BeginStruct: ReadSepAndMoveNext(EdfTokenLiterals.StructBegin); break;
+                case Token.EndStruct: ReadSepAndMoveNext(EdfTokenLiterals.StructEnd); break;
+                case Token.BeginArray: ReadSepAndMoveNext(EdfTokenLiterals.ArrayBegin); break;
+                case Token.EndArray: ReadSepAndMoveNext(EdfTokenLiterals.ArrayEnd); break;
                 default: throw new NotSupportedException($"Token {token} not supported.");
             }
             //_state.Enum.MoveNext();

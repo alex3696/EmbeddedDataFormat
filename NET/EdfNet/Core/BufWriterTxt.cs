@@ -21,12 +21,18 @@ public readonly ref struct BufWriterTxt : IBufWriter
             var token = _state.Enum.CurrentToken;
             switch (token)
             {
-                case Token.BeginRecord: WriteSepAndMoveNext(Separator.RecBegin); break;
-                case Token.EndRecord: WriteSepAndMoveNext(Separator.RecEnd); EnsureEmpty(); return;
-                case Token.BeginStruct: WriteSepAndMoveNext(Separator.StructBegin); break;
-                case Token.EndStruct: WriteSepAndMoveNext(Separator.StructEnd); break;
-                case Token.BeginArray: WriteSepAndMoveNext(Separator.ArrayBegin); break;
-                case Token.EndArray: WriteSepAndMoveNext(Separator.ArrayEnd); break;
+                case Token.BeginRecord:
+                    WriteSepAndMoveNext(EdfTokenLiterals.RecBegin);
+                    WriteSep(EdfTokenLiterals.Space);
+                    break;
+                case Token.EndRecord:
+                    WriteSepAndMoveNext(EdfTokenLiterals.BlockEnd);
+                    WriteSep(EdfTokenLiterals.EndLine);
+                    EnsureEmpty(); return;
+                case Token.BeginStruct: WriteSepAndMoveNext(EdfTokenLiterals.StructBegin); break;
+                case Token.EndStruct: WriteSepAndMoveNext(EdfTokenLiterals.StructEnd); break;
+                case Token.BeginArray: WriteSepAndMoveNext(EdfTokenLiterals.ArrayBegin); break;
+                case Token.EndArray: WriteSepAndMoveNext(EdfTokenLiterals.ArrayEnd); break;
                 default: throw new NotSupportedException($"Token {token} not supported.");
             }
             //_state.Enum.MoveNext();
@@ -55,7 +61,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
             case TypeCode.Double: if (!Utf8Formatter.TryFormat(Unsafe.As<T, double>(ref val), buf, out len)) ThrowNotSupportedType(typeof(T)); break;
         }
         _state.Writed += len;
-        WriteSepAndMoveNext(Separator.VarEnd);
+        WriteSepAndMoveNext(EdfTokenLiterals.VarEnd);
         EnsureValueToken();
     }
     public void Write(string? str)
@@ -73,7 +79,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
             EdfBinString.CopyStringToSpan(str, dst.Slice(1, contentLen));
         dst[1 + contentLen] = 34; // "
         _state.Writed += totalLen;
-        WriteSepAndMoveNext(Separator.VarEnd);
+        WriteSepAndMoveNext(EdfTokenLiterals.VarEnd);
         EnsureValueToken();
     }
     public void WriteCharArray(ReadOnlySpan<byte> charArray)
@@ -96,7 +102,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
             charArray.Slice(0, datLen).CopyTo(dst.Slice(1));
         dst[1 + datLen] = 34; // "
         _state.Writed += totalLen;
-        WriteSepAndMoveNext(Separator.VarEnd);
+        WriteSepAndMoveNext(EdfTokenLiterals.VarEnd);
         EnsureValueToken();
     }
 
@@ -115,13 +121,16 @@ public readonly ref struct BufWriterTxt : IBufWriter
             _state.Writed = 0;
         }
     }
-    private int WriteSepAndMoveNext(ReadOnlySpan<byte> val)
+    private void WriteSep(ReadOnlySpan<byte> val)
     {
         var len = val.Length;
         EnsureCapacity(len);
         val.CopyTo(GetEmptyBuffer());
         _state.Writed += len;
+    }
+    private void WriteSepAndMoveNext(ReadOnlySpan<byte> val)
+    {
+        WriteSep(val);
         _state.Enum.MoveNext();
-        return len;
     }
 }

@@ -26,7 +26,13 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
     public void WriteConfig(Config h)
     {
         Flush();
-        Write($"<~ {{version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags}; }} >\n");
+        Write(EdfTokenLiterals.ConfigBegin);
+        Write(EdfTokenLiterals.Space);
+        Write(EdfTokenLiterals.StructBegin);
+        Write($"version={h.VersMajor}.{h.VersMinor}; bs={h.Blocksize}; encoding={h.Encoding}; flags={(uint)h.Flags};");
+        Write(EdfTokenLiterals.StructEnd);
+        Write(EdfTokenLiterals.BlockEnd);
+        Write(EdfTokenLiterals.EndLine);
         //Write($"// ? - struct @ - data // - comment");
         CurrentSchema = null;
     }
@@ -36,13 +42,18 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
         if (null == sch)
             return;
         Flush();
-        Write($"\n\n<? {{");
+        Write(EdfTokenLiterals.EndLine);
+        Write(EdfTokenLiterals.SchemaBegin);
+        Write(EdfTokenLiterals.Space);
+        Write(EdfTokenLiterals.StructBegin);
         Write($"{sch.Id};\"{sch.Name}\"");
         if (!string.IsNullOrEmpty(sch.Desc))
             Write($";\"{sch.Desc}\"");
-        Write($"}} ");
+        Write(EdfTokenLiterals.StructEnd);
+        Write(EdfTokenLiterals.Space);
         ToString(sch.Type);
-        Write($">");
+        Write(EdfTokenLiterals.BlockEnd);
+        Write(EdfTokenLiterals.EndLine);
     }
     public virtual EdfErr WriteValue<T>(in T val)
     {
@@ -52,6 +63,10 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
     {
         WriteSchema(new Schema() { Id = id, Type = new(pt), Name = name, });
         return WriteValue(d);
+    }
+    protected void Write(ReadOnlySpan<byte> b)
+    {
+        _st.Write(b);
     }
     protected void Write(string? str)
     {

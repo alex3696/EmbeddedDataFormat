@@ -1,6 +1,3 @@
-using System;
-using System.Text;
-
 namespace EdfNet.Core;
 
 public enum TextTokenType
@@ -9,15 +6,15 @@ public enum TextTokenType
     Identifier,
     StringLiteral,
     Number,
-    LBrace,       // {
-    RBrace,       // }
-    LBracket,     // [
-    RBracket,     // ]
-    Semicolon,    // ;
-    ConfigBegin,  // <~
-    SchemaBegin,  // <?
-    RecBegin,     // <=
-    BlockEnd,     // >
+    StructBegin,    // {
+    StructEnd,      // }
+    ArrayBegin,     // [
+    ArrayEnd,       // ]
+    VarEnd,         // ;   — терминатор только для примитивов
+    ConfigBegin,    // <~
+    SchemaBegin,    // <?
+    RecBegin,       // <=
+    BlockEnd,       // >
 }
 
 public readonly record struct TextToken(TextTokenType Type, string Text, int Line, int Column);
@@ -79,7 +76,7 @@ public ref struct EdfTokenizer
         int startCol = _column;
         byte b = _text[_pos];
 
-        // Блоковые маркеры: <~ < ? <=
+        // Блоковые маркеры: <~ <? <=
         if (b == (byte)'<')
         {
             if (_pos + 1 < _text.Length)
@@ -111,19 +108,19 @@ public ref struct EdfTokenizer
                 return new TextToken(TextTokenType.BlockEnd, ">", startLine, startCol);
             case (byte)'{':
                 Advance();
-                return new TextToken(TextTokenType.LBrace, "{", startLine, startCol);
+                return new TextToken(TextTokenType.StructBegin, "{", startLine, startCol);
             case (byte)'}':
                 Advance();
-                return new TextToken(TextTokenType.RBrace, "}", startLine, startCol);
+                return new TextToken(TextTokenType.StructEnd, "}", startLine, startCol);
             case (byte)'[':
                 Advance();
-                return new TextToken(TextTokenType.LBracket, "[", startLine, startCol);
+                return new TextToken(TextTokenType.ArrayBegin, "[", startLine, startCol);
             case (byte)']':
                 Advance();
-                return new TextToken(TextTokenType.RBracket, "]", startLine, startCol);
+                return new TextToken(TextTokenType.ArrayEnd, "]", startLine, startCol);
             case (byte)';':
                 Advance();
-                return new TextToken(TextTokenType.Semicolon, ";", startLine, startCol);
+                return new TextToken(TextTokenType.VarEnd, ";", startLine, startCol);
             case (byte)'"':
                 Advance(); // opening quote
                 int strStart = _pos;
@@ -251,11 +248,11 @@ public ref struct EdfTokenizer
         TextTokenType.Identifier => "identifier",
         TextTokenType.StringLiteral => "string literal",
         TextTokenType.Number => "number",
-        TextTokenType.LBrace => "'{'",
-        TextTokenType.RBrace => "'}'",
-        TextTokenType.LBracket => "'['",
-        TextTokenType.RBracket => "']'",
-        TextTokenType.Semicolon => "';'",
+        TextTokenType.StructBegin => "'{'",
+        TextTokenType.StructEnd => "'}'",
+        TextTokenType.ArrayBegin => "'['",
+        TextTokenType.ArrayEnd => "']'",
+        TextTokenType.VarEnd => "';'",
         TextTokenType.ConfigBegin => "'<~'",
         TextTokenType.SchemaBegin => "'<?'",
         TextTokenType.RecBegin => "'<='",
