@@ -5,6 +5,8 @@ public class ReaderTxt
     protected Config _cfg;
     private BlockType _currentBlockType;
     private readonly StreamBufferedReader _bufferedReader;
+    private readonly EdfTokenReader _tokenReader;
+
     private readonly CircularEdfTypeEnumeratorTxt _enum = new();
     protected readonly EdfOptions _options = EdfOptions.Default;
 
@@ -13,44 +15,48 @@ public class ReaderTxt
 
     public ReaderTxt(Stream stream, Config? cfg = default)
     {
-        _bufferedReader = new StreamBufferedReader(stream, 1024);
         _cfg = cfg ?? Config.Default;
+        _bufferedReader = new StreamBufferedReader(stream, 1024);
+        _tokenReader = new(_bufferedReader);
     }
 
     public bool ReadBlock()
     {
-        EdfTokenizer tokenizer = new(_bufferedReader);
-        var token = tokenizer.Peek();
-        switch (token.Type)
+        if (!_tokenReader.HasValidToken)
         {
-            case TextTokenType.ConfigBegin: ReadConfig(ref tokenizer); break;
-            case TextTokenType.SchemaBegin: ReadSchema(ref tokenizer); break;
+            if(!_tokenReader.MoveNext())
+                return false;
+        }
+        switch (_tokenReader.TokenType)
+        {
+            case TextTokenType.ConfigBegin: ReadConfig(); break;
+            case TextTokenType.SchemaBegin: ReadSchema(); break;
             case TextTokenType.RecBegin: ReadRecord(); break;
             case TextTokenType.BlockEnd: return false;
-            default: throw new Exception($"Wrong block Type: {token.Type}");
+            default: throw new Exception($"Wrong block Type: {_tokenReader.TokenType}");
         }
         return true;
     }
     public BlockType GetBlockType() => _currentBlockType;
 
-    private void ReadConfig(ref EdfTokenizer tokenizer)
+    private void ReadConfig()
     {
         try
         {
             _currentBlockType = BlockType.Config;
-            _cfg = ConfigParser.Parse(tokenizer);
+            _cfg = ConfigParser.Parse(_tokenReader);
         }
         catch (EdfParseException ex)
         {
             throw new Exception($"Ошибка чтения блока конфигурации: {ex.Message}", ex);
         }
     }
-    private void ReadSchema(ref EdfTokenizer tokenizer)
+    private void ReadSchema()
     {
         try
         {
             _currentBlockType = BlockType.Schema;
-            CurrentSchema = EdfTypeParser.ParseSchema(ref tokenizer);
+            CurrentSchema = EdfTypeParser.ParseSchema(_tokenReader);
             _enum.Reset(CurrentSchema.Type);
         }
         catch (EdfParseException ex)
@@ -65,12 +71,9 @@ public class ReaderTxt
 
     public T ReadValue<T>()
     {
-        EdfTokenizer tokenizer = new(_bufferedReader);
-        //tokenizer.Expect(TextTokenType.RecBegin);
         IFormatter<T> formatter = EdfProvider<T>.Formatter ?? throw GetException(typeof(T));
-        var reader = new BufReaderTxt(_bufferedReader, _enum);
+        var reader = new BufReaderTxt(_tokenReader, _enum);
         var result = formatter.Deserialize(ref reader, _options);
-        tokenizer.Expect(TextTokenType.BlockEnd);
         return result;
     }
 

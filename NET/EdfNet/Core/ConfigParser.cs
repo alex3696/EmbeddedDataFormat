@@ -1,49 +1,53 @@
+using System.Buffers.Text;
+
 namespace EdfNet.Core;
 
 public static class ConfigParser
 {
-    public static Config Parse(IBufferedReader reader) => Parse(new EdfTokenizer(reader));
-    public static Config Parse(EdfTokenizer tokenizer)
+    /// <summary>
+    /// Парсит содержимое блока конфигурации (без маркера &lt;~).
+    /// Ожидает: { VersMajor; VersMinor; Blocksize; Encoding; Flags; }
+    /// </summary>
+    public static Config ParseContent(EdfTokenReader tokenizer)
     {
-        // <~
-        tokenizer.Expect(TextTokenType.ConfigBegin);
-        // {
-        tokenizer.Expect(TextTokenType.StructBegin);
+        tokenizer.ExpectAdvance(TextTokenType.StructBegin); // {
 
         // VersMajor
-        var majorToken = tokenizer.Expect(TextTokenType.Number);
-        if (!byte.TryParse(majorToken.Text, out byte versMajor))
-            throw new EdfParseException($"Invalid VersMajor '{majorToken.Text}'", majorToken.Line, majorToken.Column);
-        tokenizer.Expect(TextTokenType.VarEnd);
+        tokenizer.Expect(TextTokenType.Number);
+        if (!Utf8Parser.TryParse(tokenizer.TokenValue, out byte versMajor, out int c1) || c1 != tokenizer.TokenValue.Length)
+            throw new EdfParseException("Invalid VersMajor", tokenizer.TokenLine, tokenizer.TokenColumn);
+        tokenizer.Advance();
+        tokenizer.ExpectAdvance(TextTokenType.VarEnd);
 
         // VersMinor
-        var minorToken = tokenizer.Expect(TextTokenType.Number);
-        if (!byte.TryParse(minorToken.Text, out byte versMinor))
-            throw new EdfParseException($"Invalid VersMinor '{minorToken.Text}'", minorToken.Line, minorToken.Column);
-        tokenizer.Expect(TextTokenType.VarEnd);
+        tokenizer.Expect(TextTokenType.Number);
+        if (!Utf8Parser.TryParse(tokenizer.TokenValue, out byte versMinor, out int c2) || c2 != tokenizer.TokenValue.Length)
+            throw new EdfParseException("Invalid VersMinor", tokenizer.TokenLine, tokenizer.TokenColumn);
+        tokenizer.Advance();
+        tokenizer.ExpectAdvance(TextTokenType.VarEnd);
 
         // Blocksize
-        var bsToken = tokenizer.Expect(TextTokenType.Number);
-        if (!ushort.TryParse(bsToken.Text, out ushort blocksize))
-            throw new EdfParseException($"Invalid Blocksize '{bsToken.Text}'", bsToken.Line, bsToken.Column);
-        tokenizer.Expect(TextTokenType.VarEnd);
+        tokenizer.Expect(TextTokenType.Number);
+        if (!Utf8Parser.TryParse(tokenizer.TokenValue, out ushort blocksize, out int c3) || c3 != tokenizer.TokenValue.Length)
+            throw new EdfParseException("Invalid Blocksize", tokenizer.TokenLine, tokenizer.TokenColumn);
+        tokenizer.Advance();
+        tokenizer.ExpectAdvance(TextTokenType.VarEnd);
 
         // Encoding
-        var encToken = tokenizer.Expect(TextTokenType.Number);
-        if (!ushort.TryParse(encToken.Text, out ushort encoding))
-            throw new EdfParseException($"Invalid Encoding '{encToken.Text}'", encToken.Line, encToken.Column);
-        tokenizer.Expect(TextTokenType.VarEnd);
+        tokenizer.Expect(TextTokenType.Number);
+        if (!Utf8Parser.TryParse(tokenizer.TokenValue, out ushort encoding, out int c4) || c4 != tokenizer.TokenValue.Length)
+            throw new EdfParseException("Invalid Encoding", tokenizer.TokenLine, tokenizer.TokenColumn);
+        tokenizer.Advance();
+        tokenizer.ExpectAdvance(TextTokenType.VarEnd);
 
         // Flags
-        var flagsToken = tokenizer.Expect(TextTokenType.Number);
-        if (!uint.TryParse(flagsToken.Text, out uint flags))
-            throw new EdfParseException($"Invalid Flags '{flagsToken.Text}'", flagsToken.Line, flagsToken.Column);
-        tokenizer.Expect(TextTokenType.VarEnd);
+        tokenizer.Expect(TextTokenType.Number);
+        if (!Utf8Parser.TryParse(tokenizer.TokenValue, out uint flags, out int c5) || c5 != tokenizer.TokenValue.Length)
+            throw new EdfParseException("Invalid Flags", tokenizer.TokenLine, tokenizer.TokenColumn);
+        tokenizer.Advance();
+        tokenizer.ExpectAdvance(TextTokenType.VarEnd);
 
-        // }
-        tokenizer.Expect(TextTokenType.StructEnd);
-        // >
-        tokenizer.Expect(TextTokenType.BlockEnd);
+        tokenizer.ExpectAdvance(TextTokenType.StructEnd); // }
 
         return new Config(blocksize)
         {
@@ -53,4 +57,16 @@ public static class ConfigParser
             Flags = (Options)flags
         };
     }
+
+    /// <summary>
+    /// Standalone парсинг полного блока конфигурации (с маркером <~ ... >).
+    /// </summary>
+    public static Config Parse(EdfTokenReader tokenizer)
+    {
+        tokenizer.ExpectAdvance(TextTokenType.ConfigBegin); // <~
+        var cfg = ParseContent(tokenizer);
+        tokenizer.ExpectAdvance(TextTokenType.BlockEnd);    // >
+        return cfg;
+    }
+
 }

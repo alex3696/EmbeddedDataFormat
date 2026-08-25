@@ -5,7 +5,12 @@ public class EdfException : Exception
     public EdfException() : base() { }
     public EdfException(string? msg) : base(msg) { }
 }
-public class EdfWrongTypeException : Exception { }
+public class EdfWrongTypeException : Exception
+{
+    public EdfWrongTypeException() : base() { }
+    public EdfWrongTypeException(string? msg) : base(msg) { }
+
+}
 public class EdfSrcDataRequredException : Exception { }
 public class EdfDstBufOverflowException : Exception { }
 
