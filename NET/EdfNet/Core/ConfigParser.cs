@@ -2,10 +2,9 @@ namespace EdfNet.Core;
 
 public static class ConfigParser
 {
-    public static Config Parse(ReadOnlySpan<byte> text)
+    public static Config Parse(IBufferedReader reader) => Parse(new EdfTokenizer(reader));
+    public static Config Parse(EdfTokenizer tokenizer)
     {
-        EdfTokenizer tokenizer = new(text);
-
         // <~
         tokenizer.Expect(TextTokenType.ConfigBegin);
         // {

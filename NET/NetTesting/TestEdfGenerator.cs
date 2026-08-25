@@ -163,6 +163,56 @@ public class GenSerializationTests
     }
 
     [TestMethod]
+    public void TextWrite_Read_Should_Be_Identical()
+    {
+        // 1. ARRANGE: Создаем и максимально разнообразно заполняем тестовый объект
+        var original = TestClasses_Content.TestValue;
+
+        using var memoryStream = new MemoryStream(1024);
+        {
+            using var writer = new WriterTxt(memoryStream);
+            //writer.WriteConfig(Config.Default);
+            writer.WriteSchema(TestClasses_Content.KeyValSchema);
+            EdfErr writeResult = writer.WriteValue(original);
+            writer.Flush(); // Сбрасываем остатки буфера в поток
+            Assert.AreEqual(EdfErr.IsOk, writeResult);
+        }
+        // Сбрасываем поток в начало для чтения
+        memoryStream.Position = 0;
+        var reader = new ReaderTxt(memoryStream);
+        if (!reader.ReadBlock())
+            Assert.Fail("there are no block");
+        if(reader.GetBlockType() != BlockType.Config)
+            Assert.Fail("there are no config block");
+        if (!reader.ReadBlock())
+            Assert.Fail("there are no block");
+        if (reader.GetBlockType() != BlockType.Schema)
+            Assert.Fail("there are no schema block");
+
+        Assert.AreEqual(TestClasses_Content.KeyValSchema.Id, reader.CurrentSchema?.Id);
+        Assert.AreEqual(TestClasses_Content.KeyValSchema.Name, reader.CurrentSchema?.Name);
+        Assert.AreEqual(TestClasses_Content.KeyValSchema.Desc, reader.CurrentSchema?.Desc);
+        Assert.AreEqual(TestClasses_Content.KeyValSchema.Type, reader.CurrentSchema?.Type);
+
+        if (!reader.ReadBlock())
+            Assert.Fail("there are no block");
+
+        if (reader.GetBlockType() != BlockType.Data)
+            Assert.Fail("there are no data block");
+
+        var restored = reader.ReadValue<ComplexType>();
+
+        Assert.AreEqual(TestClasses_Content.TestValue, restored);
+
+    }
+
+
+
+
+
+
+
+    [TestMethod]
     public void KeyVal_With_Null_Properties_Should_Serialize_Correctly_Or_Handle_Gracefully()
     {
         // Тест пограничного состояния: когда строки и массивы равны null.

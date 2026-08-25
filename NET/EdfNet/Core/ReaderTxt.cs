@@ -1,51 +1,82 @@
-using System.Text.RegularExpressions;
-
 namespace EdfNet.Core;
 
-public partial class ReaderTxt //: BaseReaderBin
+public class ReaderTxt
 {
-    private static readonly Regex _rxBlock = BlockRegex();
-    private static readonly Regex _rxConfig = ConfigRegex();
-
-    protected readonly Config _cfg;
-    protected readonly byte[] _buf;
-    protected readonly BufStateTxt _state;
+    protected Config _cfg;
+    private BlockType _currentBlockType;
+    private readonly StreamBufferedReader _bufferedReader;
+    private readonly CircularEdfTypeEnumeratorTxt _enum = new();
     protected readonly EdfOptions _options = EdfOptions.Default;
 
     public Config Cfg => _cfg;
     public Schema? CurrentSchema;
 
     public ReaderTxt(Stream stream, Config? cfg = default)
-    //: base(stream, cfg)
     {
+        _bufferedReader = new StreamBufferedReader(stream, 1024);
         _cfg = cfg ?? Config.Default;
-        var bufLen = _cfg.Blocksize;
-        _buf = new byte[bufLen];
-        _state = new BufStateTxt(stream, _buf);
     }
+
     public bool ReadBlock()
     {
-        // read block from stream < >
+        EdfTokenizer tokenizer = new(_bufferedReader);
+        var token = tokenizer.Peek();
+        switch (token.Type)
+        {
+            case TextTokenType.ConfigBegin: ReadConfig(ref tokenizer); break;
+            case TextTokenType.SchemaBegin: ReadSchema(ref tokenizer); break;
+            case TextTokenType.RecBegin: ReadRecord(); break;
+            case TextTokenType.BlockEnd: return false;
+            default: throw new Exception($"Wrong block Type: {token.Type}");
+        }
         return true;
     }
-    public BlockType GetBlockType() => BlockType.Data;
+    public BlockType GetBlockType() => _currentBlockType;
+
+    private void ReadConfig(ref EdfTokenizer tokenizer)
+    {
+        try
+        {
+            _currentBlockType = BlockType.Config;
+            _cfg = ConfigParser.Parse(tokenizer);
+        }
+        catch (EdfParseException ex)
+        {
+            throw new Exception($"Ошибка чтения блока конфигурации: {ex.Message}", ex);
+        }
+    }
+    private void ReadSchema(ref EdfTokenizer tokenizer)
+    {
+        try
+        {
+            _currentBlockType = BlockType.Schema;
+            CurrentSchema = EdfTypeParser.ParseSchema(ref tokenizer);
+            _enum.Reset(CurrentSchema.Type);
+        }
+        catch (EdfParseException ex)
+        {
+            throw new Exception($"Ошибка чтения блока схемы: {ex.Message}", ex);
+        }
+    }
+    private void ReadRecord()
+    {
+        _currentBlockType = BlockType.Data;
+    }
 
     public T ReadValue<T>()
     {
-        //ObjectDisposedException.ThrowIf(IsDisposed, this);
-        IFormatter<T> formatter = EdfProvider<T>.Formatter;
-        if (formatter == null)
-            throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
-        var reader = new BufReaderTxt(_state);
-        return formatter.Deserialize(ref reader, _options);
+        EdfTokenizer tokenizer = new(_bufferedReader);
+        //tokenizer.Expect(TextTokenType.RecBegin);
+        IFormatter<T> formatter = EdfProvider<T>.Formatter ?? throw GetException(typeof(T));
+        var reader = new BufReaderTxt(_bufferedReader, _enum);
+        var result = formatter.Deserialize(ref reader, _options);
+        tokenizer.Expect(TextTokenType.BlockEnd);
+        return result;
     }
 
-    [GeneratedRegex(@"<(?<prefix>[~|?|=])\s*(?<content>[\s\S]*?)>(?![^<]*>)"
-        , RegexOptions.IgnoreCase | RegexOptions.Compiled, "ru-RU")]
-    private static partial Regex BlockRegex();
 
-
-    [GeneratedRegex(@"version=(?<major>\d).(?<minor>\d).*bs=(?<bs>\d+).*encoding=(?<encoding>\d+).*flags=(?<flags>\d+)"
-        , RegexOptions.IgnoreCase | RegexOptions.Compiled, "ru-RU")]
-    private static partial Regex ConfigRegex();
+    private static InvalidOperationException GetException(Type type)
+    {
+        return new InvalidOperationException($"Тип {type.FullName} не зарегистрирован в системе сериализации.");
+    }
 }

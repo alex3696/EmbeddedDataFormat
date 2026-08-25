@@ -48,9 +48,9 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
         Write(EdfTokenLiterals.SchemaBegin);
         Write(EdfTokenLiterals.Space);
         Write(EdfTokenLiterals.StructBegin);
-        Write($"{sch.Id};\"{sch.Name}\"");
+        Write($"{sch.Id};\"{sch.Name}\";");
         if (!string.IsNullOrEmpty(sch.Desc))
-            Write($";\"{sch.Desc}\"");
+            Write($"\"{sch.Desc}\";");
         Write(EdfTokenLiterals.StructEnd);
         Write(EdfTokenLiterals.Space);
         ToString(sch.Type);

@@ -20,9 +20,9 @@ public class EdfParseException : Exception
 /// </summary>
 public static class EdfTypeParser
 {
-    public static EdfType Parse(ReadOnlySpan<byte> text)
+    public static EdfType Parse(IBufferedReader reader)
     {
-        EdfTokenizer tokenizer = new(text);
+        EdfTokenizer tokenizer = new(reader);
         var result = ParseType(ref tokenizer);
         var eof = tokenizer.Peek();
         if (eof.Type != TextTokenType.EOF)
@@ -30,6 +30,43 @@ public static class EdfTypeParser
         return result;
     }
 
+    /// <summary>
+    /// Парсит полный блок схемы: <? {Id;"Name"[;"Desc"]} Type ... >
+    /// </summary>
+    public static Schema ParseSchema(ref EdfTokenizer tokenizer)
+    {
+        tokenizer.Expect(TextTokenType.SchemaBegin); // <?
+        tokenizer.Expect(TextTokenType.StructBegin); // {
+
+        // Id
+        var idToken = tokenizer.Expect(TextTokenType.Number);
+        if (!ushort.TryParse(idToken.Text, out ushort id))
+            throw new EdfParseException($"Invalid schema Id '{idToken.Text}'", idToken.Line, idToken.Column);
+        tokenizer.Expect(TextTokenType.VarEnd);
+
+        // Name
+        var nameToken = tokenizer.Expect(TextTokenType.StringLiteral);
+        string name = nameToken.Text;
+        tokenizer.Expect(TextTokenType.VarEnd);
+
+        // Desc — опционально
+        string? desc = null;
+        var peek = tokenizer.Peek();
+        if (peek.Type == TextTokenType.StringLiteral)
+        {
+            desc = tokenizer.Consume().Text;
+            tokenizer.Expect(TextTokenType.VarEnd);
+        }
+
+        tokenizer.Expect(TextTokenType.StructEnd); // }
+
+        // Type
+        var type = ParseType(ref tokenizer);
+
+        tokenizer.Expect(TextTokenType.BlockEnd); // >
+
+        return new Schema { Id = id, Name = name, Desc = desc, Type = type };
+    }
     private static EdfType ParseType(ref EdfTokenizer tokenizer)
     {
         var typeToken = tokenizer.Expect(TextTokenType.Identifier);

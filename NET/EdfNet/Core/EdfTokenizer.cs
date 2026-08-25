@@ -19,21 +19,29 @@ public enum TextTokenType
 
 public readonly record struct TextToken(TextTokenType Type, string Text, int Line, int Column);
 
+/// <summary>
+/// Токенизатор EDF текстового формата.
+/// полагаясь на упредительное чтение StreamBufferedReader.
+/// </summary>
 public ref struct EdfTokenizer
 {
-    private ReadOnlySpan<byte> _text;
-    private int _pos;
-    private int _line;
-    private int _column;
+    public const int NumberTokenMaxLength = 64;
+    public const int StringTokenMaxLength = 258; // "..[255char]..";
+    public const int IdentifierTokenMaxLength = 64;
+
+    private readonly IBufferedReader _reader;
+    private int _line = 1;
+    private int _column = 1;
     private TextToken _current;
     private bool _hasCurrent;
 
-    public EdfTokenizer(ReadOnlySpan<byte> text) => Reset(text);
-
-    public void Reset(ReadOnlySpan<byte> text)
+    public EdfTokenizer(IBufferedReader reader)
     {
-        _text = text;
-        _pos = 0;
+        _reader = reader;
+    }
+
+    public void Reset()
+    {
         _line = 1;
         _column = 1;
         _hasCurrent = false;
@@ -66,148 +74,157 @@ public ref struct EdfTokenizer
         return token;
     }
 
+    // -----------------------------------------------------------------
+    //  Продвижение с подсчетом Line/Column
+    // -----------------------------------------------------------------
+    private void Advance(int count)
+    {
+        var buf = _reader.GetSpan(count);
+        int actual = Math.Min(count, buf.Length);
+        for (int i = 0; i < actual; i++)
+        {
+            if (buf[i] == (byte)'\n') { _line++; _column = 1; }
+            else _column++;
+        }
+        _reader.Advance(actual);
+    }
+
+    // -----------------------------------------------------------------
+    //  Основной цикл чтения токена
+    // -----------------------------------------------------------------
     private TextToken ReadNextCore()
     {
         SkipWhitespaceAndComments();
-        if (_pos >= _text.Length)
+
+        var buf = _reader.GetSpan(2);
+        if (buf.Length == 0)
             return new TextToken(TextTokenType.EOF, "", _line, _column);
 
         int startLine = _line;
         int startCol = _column;
-        byte b = _text[_pos];
-
-        // Блоковые маркеры: <~ <? <=
-        if (b == (byte)'<')
-        {
-            if (_pos + 1 < _text.Length)
-            {
-                byte next = _text[_pos + 1];
-                if (next == (byte)'~')
-                {
-                    Advance(); Advance();
-                    return new TextToken(TextTokenType.ConfigBegin, "<~", startLine, startCol);
-                }
-                if (next == (byte)'?')
-                {
-                    Advance(); Advance();
-                    return new TextToken(TextTokenType.SchemaBegin, "<?", startLine, startCol);
-                }
-                if (next == (byte)'=')
-                {
-                    Advance(); Advance();
-                    return new TextToken(TextTokenType.RecBegin, "<=", startLine, startCol);
-                }
-            }
-            throw new EdfParseException($"Unexpected '<'", startLine, startCol);
-        }
+        byte b = buf[0];
 
         switch (b)
         {
-            case (byte)'>':
-                Advance();
-                return new TextToken(TextTokenType.BlockEnd, ">", startLine, startCol);
-            case (byte)'{':
-                Advance();
-                return new TextToken(TextTokenType.StructBegin, "{", startLine, startCol);
-            case (byte)'}':
-                Advance();
-                return new TextToken(TextTokenType.StructEnd, "}", startLine, startCol);
-            case (byte)'[':
-                Advance();
-                return new TextToken(TextTokenType.ArrayBegin, "[", startLine, startCol);
-            case (byte)']':
-                Advance();
-                return new TextToken(TextTokenType.ArrayEnd, "]", startLine, startCol);
-            case (byte)';':
-                Advance();
-                return new TextToken(TextTokenType.VarEnd, ";", startLine, startCol);
-            case (byte)'"':
-                Advance(); // opening quote
-                int strStart = _pos;
-                while (_pos < _text.Length && _text[_pos] != (byte)'"')
-                    Advance();
-                if (_pos >= _text.Length)
-                    throw new EdfParseException("Unterminated string literal", startLine, startCol);
-                string str = Encoding.UTF8.GetString(_text.Slice(strStart, _pos - strStart));
-                Advance(); // closing quote
-                return new TextToken(TextTokenType.StringLiteral, str, startLine, startCol);
-            default:
-                // Число: [-]цифры[.цифры]
-                if (IsAsciiDigit(b) || (b == (byte)'-' && _pos + 1 < _text.Length && IsAsciiDigit(_text[_pos + 1])))
+            case (byte)'<': // Блоковые маркеры: <~ <? <=
+                if (buf.Length >= 2)
                 {
-                    int numStart = _pos;
-                    if (_text[_pos] == (byte)'-')
-                        Advance();
-                    while (_pos < _text.Length && IsAsciiDigit(_text[_pos]))
-                        Advance();
-                    if (_pos < _text.Length && _text[_pos] == (byte)'.')
+                    switch (buf[1])
                     {
-                        Advance();
-                        while (_pos < _text.Length && IsAsciiDigit(_text[_pos]))
-                            Advance();
+                        default: break;
+                        case (byte)'~': Advance(2); return new(TextTokenType.ConfigBegin, "<~", startLine, startCol);
+                        case (byte)'?': Advance(2); return new(TextTokenType.SchemaBegin, "<?", startLine, startCol);
+                        case (byte)'=': Advance(2); return new(TextTokenType.RecBegin, "<=", startLine, startCol);
                     }
-                    string num = Encoding.UTF8.GetString(_text.Slice(numStart, _pos - numStart));
-                    return new TextToken(TextTokenType.Number, num, startLine, startCol);
                 }
-                // Идентификатор
+                throw new EdfParseException("Unexpected '<'", startLine, startCol);
+            case (byte)'>': Advance(1); return new TextToken(TextTokenType.BlockEnd, ">", startLine, startCol);
+            case (byte)'{': Advance(1); return new TextToken(TextTokenType.StructBegin, "{", startLine, startCol);
+            case (byte)'}': Advance(1); return new TextToken(TextTokenType.StructEnd, "}", startLine, startCol);
+            case (byte)'[': Advance(1); return new TextToken(TextTokenType.ArrayBegin, "[", startLine, startCol);
+            case (byte)']': Advance(1); return new TextToken(TextTokenType.ArrayEnd, "]", startLine, startCol);
+            case (byte)';': Advance(1); return new TextToken(TextTokenType.VarEnd, ";", startLine, startCol);
+            case (byte)'"': return ReadStringLiteral(startLine, startCol);
+            default:
+                if (IsAsciiDigit(b) || (b == (byte)'-' && buf.Length > 1 && IsAsciiDigit(buf[1])))
+                    return ReadNumber(startLine, startCol);
                 if (IsAsciiLetter(b) || b == (byte)'_')
-                {
-                    int identStart = _pos;
-                    while (_pos < _text.Length && IsAsciiLetterOrDigitOrUnderscore(_text[_pos]))
-                        Advance();
-                    string ident = Encoding.UTF8.GetString(_text.Slice(identStart, _pos - identStart));
-                    return new TextToken(TextTokenType.Identifier, ident, startLine, startCol);
-                }
+                    return ReadIdentifier(startLine, startCol);
                 throw new EdfParseException($"Unexpected character '{(char)b}'", startLine, startCol);
         }
     }
 
+    // -----------------------------------------------------------------
+    //  StringLiteral
+    // -----------------------------------------------------------------
+    private TextToken ReadStringLiteral(int startLine, int startCol)
+    {
+        Advance(1); // skip opening quote
+        var buf = _reader.GetSpan(StringTokenMaxLength);
+        int quoteIdx = buf.IndexOf((byte)'"');
+        if (quoteIdx < 0)
+            throw new EdfParseException("Unterminated string literal", startLine, startCol);
+        string str = Encoding.UTF8.GetString(buf.Slice(0, quoteIdx));
+        Advance(quoteIdx + 1); // content + closing quote
+        return new TextToken(TextTokenType.StringLiteral, str, startLine, startCol);
+    }
+
+    // -----------------------------------------------------------------
+    //  Number: [-]digits[.digits] 
+    // -----------------------------------------------------------------
+    private TextToken ReadNumber(int startLine, int startCol)
+    {
+        var buf = _reader.GetSpan(NumberTokenMaxLength);
+        int len = 0;
+        if (buf[len] == (byte)'-') len++;
+        while (len < buf.Length && IsAsciiDigit(buf[len])) len++;
+        if (len < buf.Length && buf[len] == (byte)'.')
+        {
+            len++;
+            while (len < buf.Length && IsAsciiDigit(buf[len])) len++;
+        }
+        string num = Encoding.UTF8.GetString(buf.Slice(0, len));
+        Advance(len);
+        return new TextToken(TextTokenType.Number, num, startLine, startCol);
+    }
+
+    // -----------------------------------------------------------------
+    //  Identifier
+    // -----------------------------------------------------------------
+    private TextToken ReadIdentifier(int startLine, int startCol)
+    {
+        var buf = _reader.GetSpan(IdentifierTokenMaxLength);
+        int len = 0;
+        while (len < buf.Length && IsAsciiLetterOrDigitOrUnderscore(buf[len])) len++;
+        string ident = Encoding.UTF8.GetString(buf.Slice(0, len));
+        Advance(len);
+        return new TextToken(TextTokenType.Identifier, ident, startLine, startCol);
+    }
+
+    // -----------------------------------------------------------------
+    //  Пропуск whitespace и комментариев
+    // -----------------------------------------------------------------
     private void SkipWhitespaceAndComments()
     {
-        while (_pos < _text.Length)
+        while (true)
         {
-            // Whitespace
-            if (IsAsciiWhitespace(_text[_pos]))
+            var buf = _reader.GetSpan(2);
+            if (buf.Length == 0) break;
+
+            byte b = buf[0];
+            if (IsAsciiWhitespace(b))
             {
-                Advance();
+                Advance(1);
                 continue;
             }
 
-            // Single-line comment //
-            if (_pos + 1 < _text.Length && _text[_pos] == (byte)'/' && _text[_pos + 1] == (byte)'/')
+            if (buf.Length >= 2 && b == (byte)'/' && buf[1] == (byte)'/')
             {
-                _pos += 2;
-                _column += 2;
-                while (_pos < _text.Length && _text[_pos] != (byte)'\n')
+                Advance(2);
+                while (true)
                 {
-                    _pos++;
-                    _column++;
+                    var inner = _reader.GetSpan(1);
+                    if (inner.Length == 0 || inner[0] == (byte)'\n') break;
+                    Advance(1);
                 }
                 continue;
             }
 
-            // Multi-line comment /* */
-            if (_pos + 1 < _text.Length && _text[_pos] == (byte)'/' && _text[_pos + 1] == (byte)'*')
+            if (buf.Length >= 2 && b == (byte)'/' && buf[1] == (byte)'*')
             {
-                _pos += 2;
-                _column += 2;
-                while (_pos + 1 < _text.Length && !(_text[_pos] == (byte)'*' && _text[_pos + 1] == (byte)'/'))
+                Advance(2);
+                while (true)
                 {
-                    if (_text[_pos] == (byte)'\n')
+                    var inner = _reader.GetSpan(2);
+                    if (inner.Length < 2)
+                        throw new EdfParseException("Unterminated block comment", _line, _column);
+                    if (inner[0] == (byte)'*' && inner[1] == (byte)'/')
                     {
-                        _line++;
-                        _column = 1;
+                        Advance(2);
+                        break;
                     }
-                    else
-                    {
-                        _column++;
-                    }
-                    _pos++;
+                    Advance(1);
                 }
-                if (_pos + 1 >= _text.Length)
-                    throw new EdfParseException("Unterminated block comment", _line, _column);
-                _pos += 2;   // skip */
-                _column += 2;
                 continue;
             }
 
@@ -215,31 +232,19 @@ public ref struct EdfTokenizer
         }
     }
 
-    private void Advance()
-    {
-        if (_pos >= _text.Length) return;
-        if (_text[_pos] == (byte)'\n')
-        {
-            _line++;
-            _column = 1;
-        }
-        else
-        {
-            _column++;
-        }
-        _pos++;
-    }
-
-    private static bool IsAsciiWhitespace(byte b) =>
+    // -----------------------------------------------------------------
+    //  Хелперы
+    // -----------------------------------------------------------------
+    public static bool IsAsciiWhitespace(byte b) =>
         b is 0x09 or 0x0A or 0x0B or 0x0C or 0x0D or 0x20;
 
-    private static bool IsAsciiLetter(byte b) =>
+    public static bool IsAsciiLetter(byte b) =>
         (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z');
 
-    private static bool IsAsciiDigit(byte b) =>
+    public static bool IsAsciiDigit(byte b) =>
         b >= '0' && b <= '9';
 
-    private static bool IsAsciiLetterOrDigitOrUnderscore(byte b) =>
+    public static bool IsAsciiLetterOrDigitOrUnderscore(byte b) =>
         IsAsciiLetter(b) || IsAsciiDigit(b) || b == (byte)'_';
 
     private static string Describe(TextTokenType type) => type switch

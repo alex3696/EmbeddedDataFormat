@@ -16,7 +16,7 @@ public class TxtToBin
             : base(stream, cfg)
         {
         }
-        public BufStateTxt State => _state;
+        //public BufStateTxt State => _state;
     }
 
     public static void Convert(string srcBin, string dstTxt)
@@ -44,7 +44,7 @@ public class TxtToBin
                         break;
                     case BlockType.Data:
                         ArgumentNullException.ThrowIfNull(writer.CurrentSchema?.Type);
-                        Convert(reader.State, writer.State);
+                        //Convert(reader.State, writer.State);
                         break;
                 }
             }
@@ -55,6 +55,7 @@ public class TxtToBin
         }
         writer.Flush();
     }
+    /*
     private static void Convert(BufStateTxt readerState, BufStateBin writerState)
     {
         BufReaderTxt br = new(readerState);
@@ -82,4 +83,5 @@ public class TxtToBin
             }
         }
     }
+    */
 }

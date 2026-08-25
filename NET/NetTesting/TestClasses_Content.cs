@@ -8,7 +8,7 @@ public struct PlainStruct
 }
 
 [EdfSerializable]
-public partial class SubVal
+public partial class SubVal : IEquatable<SubVal>
 {
     public SubVal()
     {
@@ -16,9 +16,18 @@ public partial class SubVal
     public double ValDouble { get; set; } = 0x11;
     public byte ValByte { get; set; } = 0x22;
     public sbyte ValSByte { get; set; } = 0x33;
+
+    public bool Equals(SubVal? other)
+    {
+        if (other == null) return false;
+        if (other.ValDouble != ValDouble) return false;
+        if (other.ValByte != ValByte) return false;
+        if (other.ValSByte != ValSByte) return false;
+        return true;
+    }
 }
 [EdfSerializable]
-public partial class ComplexType
+public partial class ComplexType: IEquatable<ComplexType>
 {
     //public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }
@@ -36,6 +45,40 @@ public partial class ComplexType
     public SubVal Sub1 { get; set; } = new();
     [EdfArray([2, 2])]
     public SubVal[,]? Sub { get; set; } = new SubVal[2, 2];
+
+    public bool Equals(ComplexType? other)
+    {
+        if (other == null) return false;
+        if (other.Test1 != Test1) return false;
+        if (other.Key != Key) return false;
+        if (other.Val != Val) return false;
+        if (other.NVal != NVal) return false;
+        if (other.Arr.Rank != Arr.Rank || other.Arr.Length != Arr.Length) return false;
+        for (int i = 0; i < Arr.Length; i++)
+        {
+            ref var otherElement = ref other.Arr.GetElementAtFlatIndex<int>(i);
+            ref var thisElement = ref Arr.GetElementAtFlatIndex<int>(i);
+            if (otherElement != thisElement)
+                return false;
+        }
+        if (!Sub1.Equals(other.Sub1)) return false;
+
+        if (Sub == null) return false;
+        if (other.Sub == null) return false;
+        if (other.Sub.Rank != Sub.Rank || other.Sub.Length != Sub?.Length) return false;
+        for (int i = 0; i < Sub.Length; i++)
+        {
+            ref var otherElement = ref other.Sub.GetElementAtFlatIndex<SubVal>(i);
+            ref var thisElement = ref Sub.GetElementAtFlatIndex<SubVal>(i);
+            if(!otherElement.Equals(thisElement)) return false;
+        }
+        return true;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as ComplexType);
+    }
 }
 
 public static class TestClasses_Content
