@@ -1,3 +1,4 @@
+using EdfNet.Buffers;
 using System.Buffers;
 using System.Text.Unicode;
 

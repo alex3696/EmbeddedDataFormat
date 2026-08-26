@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Core.Text;
 
 public static class EdfTokenLiterals
 {

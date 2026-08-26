@@ -7,7 +7,7 @@ public enum PoType : byte
 {
     Struct = 0,
     Char,
-    // integres
+    // Integers
     Int8,
     UInt8,
     Int16,

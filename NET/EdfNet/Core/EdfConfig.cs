@@ -6,7 +6,7 @@ namespace EdfNet.Core;
 // https://learn.microsoft.com/en-us/windows/win32/intl/code-page-identifiers
 
 [Flags]
-public enum Options : uint
+public enum EdfConfigOptions : uint
 {
     Default = 0,
 };
@@ -38,41 +38,40 @@ public struct EdfConfig
 }
 */
 
-public class Config : IEquatable<Config>
+public class EdfConfig : IEquatable<EdfConfig>
 {
     public const byte Major = 0x00;
     public const byte Minor = 0x03;
 
-
     public byte VersMajor = Major;
     public byte VersMinor = Minor;
     public ushort Encoding = 65001;
-    public ushort Blocksize = 256;
-    public Options Flags = Options.Default;
+    public ushort BlockSize = 256;
+    public EdfConfigOptions Flags = EdfConfigOptions.Default;
 
-    public Config()
+    public EdfConfig()
     {
         //Name = "bdf ".ToCharArray();
     }
-    public Config(ushort blocksize)
+    public EdfConfig(ushort blocksize)
     {
-        Blocksize = blocksize;
+        BlockSize = blocksize;
     }
 
-    public static readonly Config Default = new();
+    public static readonly EdfConfig Default = new();
 
-    public bool Equals(Config? other)
+    public bool Equals(EdfConfig? other)
     {
         if (null == other)
             return false;
         if (VersMajor != other.VersMajor) return false;
         if (VersMinor != other.VersMinor) return false;
         if (Encoding != other.Encoding) return false;
-        if (Blocksize != other.Blocksize) return false;
+        if (BlockSize != other.BlockSize) return false;
         if (Flags != other.Flags) return false;
         return true;
     }
-    public override bool Equals(object? obj) => obj is Config header && Equals(header);
+    public override bool Equals(object? obj) => obj is EdfConfig header && Equals(header);
     public override int GetHashCode() => throw new NotImplementedException();
 
 

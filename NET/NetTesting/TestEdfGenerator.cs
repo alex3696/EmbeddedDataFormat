@@ -7,7 +7,7 @@ public class GenSerializationTests
     public void Generate_Schema()
     {
         // 1. ACT: Получаем сгенерированную бинарную схему напрямую без создания объектов
-        Schema schema = ComplexType.GetEdfSchema();
+        EdfSchema schema = ComplexType.GetEdfSchema();
 
         // 2. ASSERT: Базовые проверки корневого контейнера схемы
         Assert.IsNotNull(schema, "Схема не должна быть null");

@@ -4,12 +4,12 @@ namespace EdfNet.Core;
 
 public class PrimitiveFormatter<T> : IFormatter<T> where T : struct
 {
-    public void Serialize<TWriter>(ref TWriter writer, in T val, EdfOptions options)
+    public void Serialize<TWriter>(ref TWriter writer, in T val, Interfaces.EdfOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
         writer.Write(val);
     }
-    public T Deserialize<TReader>(ref TReader reader, EdfOptions options)
+    public T Deserialize<TReader>(ref TReader reader, Interfaces.EdfOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
         return reader.Read<T>();
@@ -18,12 +18,12 @@ public class PrimitiveFormatter<T> : IFormatter<T> where T : struct
 
 public class PrimitiveFormatterString : IFormatter<string?>
 {
-    public void Serialize<TWriter>(ref TWriter writer, in string? val, EdfOptions options)
+    public void Serialize<TWriter>(ref TWriter writer, in string? val, Interfaces.EdfOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
         writer.Write(val);
     }
-    public string? Deserialize<TReader>(ref TReader reader, EdfOptions options)
+    public string? Deserialize<TReader>(ref TReader reader, Interfaces.EdfOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
         return reader.ReadString();
@@ -32,7 +32,7 @@ public class PrimitiveFormatterString : IFormatter<string?>
 public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
     where TITEM : struct
 {
-    public void Serialize<TWriter>(ref TWriter writer, in TARRAY arrObj, EdfOptions options)
+    public void Serialize<TWriter>(ref TWriter writer, in TARRAY arrObj, Interfaces.EdfOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
         var edfType = writer.CurrentType;
@@ -51,7 +51,7 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
             writer.Write(item);
         }
     }
-    public TARRAY Deserialize<TReader>(ref TReader reader, EdfOptions options)
+    public TARRAY Deserialize<TReader>(ref TReader reader, Interfaces.EdfOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
         var edfType = reader.CurrentType;

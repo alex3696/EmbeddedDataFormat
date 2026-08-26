@@ -1,6 +1,6 @@
 using System.Buffers.Text;
 
-namespace EdfNet.Core;
+namespace EdfNet.Core.Text;
 
 public readonly ref struct BufReaderTxt : IBufReader
 {
@@ -21,12 +21,12 @@ public readonly ref struct BufReaderTxt : IBufReader
         var token = Enum.CurrentToken;
         switch (token)
         {
-            case Token.BeginRecord: _tokenizer.ExpectAdvance(TextTokenType.RecBegin); break;
-            case Token.EndRecord: _tokenizer.ExpectAdvance(TextTokenType.BlockEnd); break;
-            case Token.BeginStruct: _tokenizer.ExpectAdvance(TextTokenType.StructBegin); break;
-            case Token.EndStruct: _tokenizer.ExpectAdvance(TextTokenType.StructEnd); break;
-            case Token.BeginArray: _tokenizer.ExpectAdvance(TextTokenType.ArrayBegin); break;
-            case Token.EndArray: _tokenizer.ExpectAdvance(TextTokenType.ArrayEnd); break;
+            case TypeTokenType.BeginRecord: _tokenizer.ExpectAdvance(TextTokenType.RecBegin); break;
+            case TypeTokenType.EndRecord: _tokenizer.ExpectAdvance(TextTokenType.BlockEnd); break;
+            case TypeTokenType.BeginStruct: _tokenizer.ExpectAdvance(TextTokenType.StructBegin); break;
+            case TypeTokenType.EndStruct: _tokenizer.ExpectAdvance(TextTokenType.StructEnd); break;
+            case TypeTokenType.BeginArray: _tokenizer.ExpectAdvance(TextTokenType.ArrayBegin); break;
+            case TypeTokenType.EndArray: _tokenizer.ExpectAdvance(TextTokenType.ArrayEnd); break;
             default: throw new NotSupportedException($"Token {token} not supported.");
         }
         Enum.MoveNext();
@@ -34,7 +34,7 @@ public readonly ref struct BufReaderTxt : IBufReader
     private void EnsureSchemaAndToken(PoType pot, TextTokenType tokenType)
     {
         // skip non value Enum.CurrentToken
-        while (Enum.CurrentToken != Token.Value)
+        while (Enum.CurrentToken != TypeTokenType.Value)
             SkipNonValueItem();
 
         if (CurrentType.Type != pot)
@@ -51,7 +51,7 @@ public readonly ref struct BufReaderTxt : IBufReader
         _tokenizer.Advance(); // skip current value
         _tokenizer.ExpectAdvance(TextTokenType.VarEnd); // skip ';'
         Enum.MoveNext();
-        while (Enum.CurrentToken != Token.Value && Enum.CurrentToken != Token.EndRecord)
+        while (Enum.CurrentToken != TypeTokenType.Value && Enum.CurrentToken != TypeTokenType.EndRecord)
             SkipNonValueItem();
     }
 

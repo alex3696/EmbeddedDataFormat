@@ -1,4 +1,6 @@
 using EdfNet.Interfaces;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetTest;
 
@@ -83,7 +85,7 @@ public partial class ComplexType: IEquatable<ComplexType>
 
 public static class TestClasses_Content
 {
-    public static readonly Schema KeyValSchema = new()
+    public static readonly EdfSchema KeyValSchema = new()
     {
         Id = 0,
         Name = "KeyValSchema",
@@ -167,6 +169,16 @@ public static class TestClasses_Content
     };
 
 
+    public static int TryWrite<T>(Span<byte> dst, T val)
+    where T : struct
+    {
+        var len = Unsafe.SizeOf<T>();
+        if (dst.Length < len)
+            return -1; //throw new EdfDstBufOverflowException();
+        MemoryMarshal.Write(dst, val);
+        return len;
+    }
+
     static TestClasses_Content()
     {
         Span<byte> dst = new byte[1000];
@@ -175,39 +187,39 @@ public static class TestClasses_Content
         n += EdfBinString.WriteBin(TestValue.Test1, dst.Slice(n));
         n += EdfBinString.WriteBin(TestValue.Key, dst.Slice(n));
 
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Val);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.NVal.Value);
+        n += TryWrite(dst.Slice(n), TestValue.Val);
+        n += TryWrite(dst.Slice(n), TestValue.NVal.Value);
 
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[0, 0, 0]);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[0, 1, 0]);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[1, 0, 0]);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[1, 1, 0]);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[2, 0, 0]);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Arr[2, 1, 0]);
+        n += TryWrite(dst.Slice(n), TestValue.Arr[0, 0, 0]);
+        n += TryWrite(dst.Slice(n), TestValue.Arr[0, 1, 0]);
+        n += TryWrite(dst.Slice(n), TestValue.Arr[1, 0, 0]);
+        n += TryWrite(dst.Slice(n), TestValue.Arr[1, 1, 0]);
+        n += TryWrite(dst.Slice(n), TestValue.Arr[2, 0, 0]);
+        n += TryWrite(dst.Slice(n), TestValue.Arr[2, 1, 0]);
 
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub0.ValDouble);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub0.ValByte);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub0.ValSByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub0.ValDouble);
+        n += TryWrite(dst.Slice(n), TestValue.Sub0.ValByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub0.ValSByte);
 
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub1.ValDouble);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub1.ValByte);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub1.ValSByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub1.ValDouble);
+        n += TryWrite(dst.Slice(n), TestValue.Sub1.ValByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub1.ValSByte);
 
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValDouble);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValByte);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValSByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValDouble);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[0, 0].ValSByte);
 
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValDouble);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValByte);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValSByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValDouble);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[0, 1].ValSByte);
 
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValDouble);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValByte);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValSByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValDouble);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[1, 0].ValSByte);
 
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValDouble);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValByte);
-        n += PrimitiveWritersBin.TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValSByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValDouble);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValByte);
+        n += TryWrite(dst.Slice(n), TestValue.Sub[1, 1].ValSByte);
 
         TestValueBin = dst.Slice(0, n).ToArray();
     }

@@ -1,15 +1,17 @@
+using EdfNet.Core.Text;
+
 namespace EdfNet.Core;
 
 public abstract class BaseWriterTxt : BaseDisposable, IWriter
 {
     private readonly byte[] _stringBuf = new byte[4096];
-    public Config Cfg { get; }
-    public Schema? CurrentSchema;
+    public EdfConfig Cfg { get; }
+    public EdfSchema? CurrentSchema;
     protected readonly Stream _st;
 
-    public BaseWriterTxt(Stream stream, Config? cfg = null)
+    public BaseWriterTxt(Stream stream, EdfConfig? cfg = null)
     {
-        Cfg = cfg ?? Config.Default;
+        Cfg = cfg ?? EdfConfig.Default;
         _st = stream;
         if (0 == stream.Position)
             WriteConfig(Cfg);
@@ -24,21 +26,21 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
     {
         _st.Flush();
     }
-    public void WriteConfig(Config h)
+    public void WriteConfig(EdfConfig h)
     {
         Flush();
         Write("//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags");
         Write(EdfTokenLiterals.EndLine);
         Write(EdfTokenLiterals.ConfigBegin);
         Write(EdfTokenLiterals.StructBegin);
-        Write($"{h.VersMajor};{h.VersMinor};{h.Blocksize};{h.Encoding};{(uint)h.Flags};");
+        Write($"{h.VersMajor};{h.VersMinor};{h.BlockSize};{h.Encoding};{(uint)h.Flags};");
         Write(EdfTokenLiterals.StructEnd);
         Write(EdfTokenLiterals.BlockEnd);
         Write(EdfTokenLiterals.EndLine);
         //Write($"// ? - struct @ - data // - comment");
         CurrentSchema = null;
     }
-    public virtual void WriteSchema(Schema? sch)
+    public virtual void WriteSchema(EdfSchema? sch)
     {
         CurrentSchema = sch;
         if (null == sch)
@@ -63,7 +65,7 @@ public abstract class BaseWriterTxt : BaseDisposable, IWriter
     }
     public EdfErr WriteInfData<T>(ushort id, PoType pt, string name, T d)
     {
-        WriteSchema(new Schema() { Id = id, Type = new(pt), Name = name, });
+        WriteSchema(new EdfSchema() { Id = id, Type = new(pt), Name = name, });
         return WriteValue(d);
     }
     protected void Write(ReadOnlySpan<byte> b)

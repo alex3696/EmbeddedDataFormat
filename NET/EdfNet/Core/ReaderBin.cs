@@ -1,11 +1,13 @@
+using EdfNet.Core.Binary;
+
 namespace EdfNet.Core;
 
 public class ReaderBin : BaseReaderBin
 {
     protected readonly BufStateBin _state;
-    protected readonly EdfOptions _options = EdfOptions.Default;
+    protected readonly Interfaces.EdfOptions _options = Interfaces.EdfOptions.Default;
 
-    public ReaderBin(Stream stream, Config? cfg = default)
+    public ReaderBin(Stream stream, EdfConfig? cfg = default)
         : base(stream, cfg)
     {
         _state = new BufStateBin(stream, _blkData);

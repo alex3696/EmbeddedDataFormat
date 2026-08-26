@@ -1,10 +1,13 @@
+using EdfNet.Core.Binary;
+using EdfNet.Core.Text;
+
 namespace EdfNet.Converters;
 
 public class BinToTxt
 {
     class StateWriterTxt : WriterTxt
     {
-        public StateWriterTxt(Stream stream, Config? cfg = default)
+        public StateWriterTxt(Stream stream, EdfConfig? cfg = default)
             : base(stream, cfg)
         {
         }
@@ -12,7 +15,7 @@ public class BinToTxt
     }
     class StateReaderBin : ReaderBin
     {
-        public StateReaderBin(Stream stream, Config? cfg = default)
+        public StateReaderBin(Stream stream, EdfConfig? cfg = default)
             : base(stream, cfg)
         {
         }

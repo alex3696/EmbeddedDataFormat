@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Core.Binary;
 
 public readonly ref struct BufReaderBin : IBufReader
 {

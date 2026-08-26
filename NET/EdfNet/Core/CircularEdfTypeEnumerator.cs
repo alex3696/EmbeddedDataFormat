@@ -60,5 +60,5 @@ public sealed class CircularEdfTypeEnumeratorTxt
         return false;
     }
     public EdfType CurrentType => _enm.Current;
-    public Token CurrentToken => _enm.CurrentToken;
+    public TypeTokenType CurrentToken => _enm.CurrentToken;
 }

@@ -1,6 +1,6 @@
 namespace EdfNet.Core;
 
-public class Schema
+public class EdfSchema
 {
     public ushort Id; // var id
     public string? Name; // var name

@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Buffers;
 
 /// <summary>
 /// Буферизированный reader для Stream.
@@ -13,8 +13,6 @@ public class StreamBufferedReader : IBufferedReader
     private int _start;
     private int _end;
     private long _consumed;
-
-    public string? BufferText => Encoding.UTF8.GetString(_buffer, _start, _end - _start);
 
     public StreamBufferedReader(Stream stream, byte[] buffer)
     {

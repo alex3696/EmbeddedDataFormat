@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Core.Binary;
 
 public class BinBlock
 {
@@ -96,38 +96,5 @@ public static class EdfBinBlockExt
                 throw new Exception($"Wrong CRC block");
         }
         return BinBlock.OverheadLen + block.ContentLen;
-    }
-    public static Config? ReadConfig(this BinBlock block)
-    {
-        if (block.Type != BlockType.Config)
-            return null;
-        var b = block.CurrentContent;
-        return new Config()
-        {
-            VersMajor = b[0],
-            VersMinor = b[1],
-            Encoding = MemoryMarshal.Read<ushort>(b[2..]),
-            Blocksize = MemoryMarshal.Read<ushort>(b[4..]),
-            Flags = MemoryMarshal.Read<Options>(b[8..]),
-        };
-    }
-    public static Schema? ReadSchema(this BinBlock block)
-    {
-        if (block.Type != BlockType.Schema)
-            return null;
-        var b = block.CurrentContent;
-        int pos = 0;
-        ushort id = MemoryMarshal.Read<ushort>(b[..sizeof(ushort)]);
-        pos += sizeof(ushort);
-        pos += EdfBinString.ReadBin(b[pos..], out string? name);
-        pos += EdfBinString.ReadBin(b[pos..], out string? desc);
-        var type = EdfType.Parse(b[pos..]);
-        return new Schema()
-        {
-            Id = id,
-            Name = name,
-            Desc = desc,
-            Type = type
-        };
     }
 }

@@ -1,4 +1,3 @@
-using EdfSchema = EdfNet.Core.Schema;
 
 namespace NetTest;
 

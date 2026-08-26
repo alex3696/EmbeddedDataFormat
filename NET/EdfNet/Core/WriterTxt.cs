@@ -1,16 +1,18 @@
+using EdfNet.Core.Text;
+
 namespace EdfNet.Core;
 
 public class WriterTxt : BaseWriterTxt
 {
     protected readonly BufStateTxt _state;
-    protected readonly EdfOptions _options = EdfOptions.Default;
+    protected readonly Interfaces.EdfOptions _options = Interfaces.EdfOptions.Default;
 
-    public WriterTxt(Stream stream, Config? cfg = default)
+    public WriterTxt(Stream stream, EdfConfig? cfg = default)
         : base(stream, cfg)
     {
-        _state = new BufStateTxt(stream, new byte[cfg?.Blocksize ?? Config.Default.Blocksize]);
+        _state = new BufStateTxt(stream, new byte[cfg?.BlockSize ?? EdfConfig.Default.BlockSize]);
     }
-    public override void WriteSchema(Schema? sch)
+    public override void WriteSchema(EdfSchema? sch)
     {
         base.WriteSchema(sch);
         if (sch != null)

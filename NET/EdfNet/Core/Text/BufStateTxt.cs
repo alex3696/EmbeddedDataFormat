@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Core.Text;
 
 public class BufStateTxt
 {
@@ -7,14 +7,13 @@ public class BufStateTxt
     public readonly CircularEdfTypeEnumeratorTxt Enum = new();
 
     public Span<byte> Buf => _Buf;
-    public int Readed;   // сколько байт из Buf уже разобрано (потреблено)
     public int Writed;   // сколько байт реально загружено в Buf из Stream
 
     public BufStateTxt(Stream stream, byte[] buf)
     {
         Stream = stream;
         _Buf = buf;
-        Readed = 0;
+        //Readed = 0;
         Writed = 0;
     }
 }

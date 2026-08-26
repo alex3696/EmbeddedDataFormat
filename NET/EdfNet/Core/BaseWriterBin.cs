@@ -1,20 +1,23 @@
+using EdfNet.Buffers;
+using EdfNet.Core.Binary;
+
 namespace EdfNet.Core;
 
 public abstract class BaseWriterBin : BaseDisposable, IWriter
 {
-    public Config Cfg { get; }
-    public Schema? CurrentSchema;
+    public EdfConfig Cfg { get; }
+    public EdfSchema? CurrentSchema;
     protected readonly Stream _stream;
     private readonly byte[] _blkBuf;
     private readonly BinBlock _blk;
     protected readonly BinDataBlock _blkData;
     public ushort CurrentDataLen => _blkData.DataLen;
 
-    public BaseWriterBin(Stream stream, Config? cfg = default)
+    public BaseWriterBin(Stream stream, EdfConfig? cfg = default)
     {
-        Cfg = cfg ?? Config.Default;
+        Cfg = cfg ?? EdfConfig.Default;
         _stream = stream;
-        _blkBuf = new byte[Cfg.Blocksize];
+        _blkBuf = new byte[Cfg.BlockSize];
         _blk = new(_blkBuf);
         _blkData = new(_blkBuf);
         if (0 == stream.Position)
@@ -45,7 +48,7 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
                 break;
         }
     }
-    public void WriteConfig(Config cfg)
+    public void WriteConfig(EdfConfig cfg)
     {
         Flush();
         _blk.Reset();
@@ -54,7 +57,7 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         buf.Append(cfg.VersMajor);
         buf.Append(cfg.VersMinor);
         buf.Append(cfg.Encoding);
-        buf.Append(cfg.Blocksize);
+        buf.Append(cfg.BlockSize);
         buf.Append((ushort)0);
         buf.Append(cfg.Flags);
         _blk.ContentLen = (ushort)buf.WrittedCount;
@@ -62,7 +65,7 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         _stream.Write(_blk);
         _blk.Reset();
     }
-    public virtual void WriteSchema(Schema sch)
+    public virtual void WriteSchema(EdfSchema sch)
     {
         Flush();
         _blk.Reset();
@@ -89,7 +92,7 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
     }
     public EdfErr WriteInfData<T>(ushort id, PoType pt, string name, T d)
     {
-        WriteSchema(new Schema() { Id = id, Type = new(pt), Name = name, });
+        WriteSchema(new EdfSchema() { Id = id, Type = new(pt), Name = name, });
         return WriteValue(d);
     }
 

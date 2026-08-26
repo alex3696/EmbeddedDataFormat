@@ -1,18 +1,20 @@
+using EdfNet.Core.Binary;
+
 namespace EdfNet.Core;
 
 public abstract class BaseReaderBin
 {
-    public Config Cfg { get; }
-    public Schema? CurrentSchema;
+    public EdfConfig Cfg { get; }
+    public EdfSchema? CurrentSchema;
     protected readonly Stream _stream;
     private readonly byte[] _blkBuf;
     private readonly BinBlock _blk;
     protected readonly BinDataBlock _blkData;
 
-    public BaseReaderBin(Stream stream, Config? cfg = default)
+    public BaseReaderBin(Stream stream, EdfConfig? cfg = default)
     {
         _stream = stream;
-        Cfg = cfg ?? Config.Default;
+        Cfg = cfg ?? EdfConfig.Default;
         _blk = new BinBlock(new byte[32]);
         if (ReadBlock())
         {
@@ -20,7 +22,7 @@ public abstract class BaseReaderBin
             if (newCfg != null)
                 Cfg = newCfg;
         }
-        _blkBuf = new byte[Cfg.Blocksize];
+        _blkBuf = new byte[Cfg.BlockSize];
         _blk = new(_blkBuf);
         _blkData = new(_blkBuf);
     }
@@ -45,8 +47,8 @@ public abstract class BaseReaderBin
     public ushort GetBlockLen() => _blk.TotalLen;
     public ReadOnlySpan<byte> GetBlockData() => _blkData.CurrentData;
 
-    public Config? ReadConfig() => _blk.ReadConfig();
-    public Schema? ReadSchema()
+    public EdfConfig? ReadConfig() => _blk.ReadConfig();
+    public EdfSchema? ReadSchema()
     {
         CurrentSchema = _blk.ReadSchema();
         OnSchemaBlockRead();

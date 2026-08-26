@@ -1,7 +1,6 @@
 using EdfNet.Interfaces;
 using System.Collections.Generic;
 using System.Diagnostics;
-using EdfSchema = EdfNet.Core.Schema;
 
 namespace NetTest;
 
@@ -69,7 +68,7 @@ public class EdfTypeEnumerator_Test
     [DebuggerDisplay("{DebugString(),nq}")]
     struct StackItem
     {
-        public Token Token;
+        public TypeTokenType Token;
         public EdfType? Type;
         public string DebugString()
         {
@@ -106,7 +105,7 @@ public class EdfTypeEnumerator_Test
             _lstTokenCount++;
         }
         var result = _lstToken.Take(_lstTokenCount)
-                              .Where(item => item.Token == Token.Value)
+                              .Where(item => item.Token == TypeTokenType.Value)
                               .Select(it => it.Type).ToList();
         //Assert.IsTrue(lst.SequenceEqual(result), "EdfTypeEnumeratorToken");
     }
@@ -131,7 +130,7 @@ public class EdfTypeEnumerator_Test
         _enmToken.Reset(null);
         EdfTypeEnumeratorToken();
         var result = _lstToken.Take(_lstTokenCount)
-                              .Where(item => item.Token == Token.Value)
+                              .Where(item => item.Token == TypeTokenType.Value)
                               .Select(it => it.Type).ToList();
         Assert.IsTrue(lst.SequenceEqual(result), "EdfTypeEnumeratorToken");
 
@@ -139,7 +138,7 @@ public class EdfTypeEnumerator_Test
         _lstTokenCount = 0;
         EdfTypeEnumeratorToken();
         result = _lstToken.Take(_lstTokenCount)
-                      .Where(item => item.Token == Token.Value)
+                      .Where(item => item.Token == TypeTokenType.Value)
                       .Select(it => it.Type).ToList();
         Assert.IsTrue(lst.SequenceEqual(result), "EdfTypeEnumeratorToken cache");
     }

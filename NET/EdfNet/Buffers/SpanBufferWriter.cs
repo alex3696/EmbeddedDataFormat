@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace EdfNet.Core;
+namespace EdfNet.Buffers;
 
 public ref struct SpanBufferWriter : IBufferWriter<byte>
 {

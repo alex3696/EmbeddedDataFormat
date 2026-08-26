@@ -1,6 +1,6 @@
 using System.Buffers.Text;
 
-namespace EdfNet.Core;
+namespace EdfNet.Core.Text;
 
 public readonly ref struct BufWriterTxt : IBufWriter
 {
@@ -16,23 +16,23 @@ public readonly ref struct BufWriterTxt : IBufWriter
 
     private void EnsureValueToken()
     {
-        while (_state.Enum.CurrentToken != Token.Value)
+        while (_state.Enum.CurrentToken != TypeTokenType.Value)
         {
             var token = _state.Enum.CurrentToken;
             switch (token)
             {
-                case Token.BeginRecord:
+                case TypeTokenType.BeginRecord:
                     WriteSepAndMoveNext(EdfTokenLiterals.RecBegin);
                     WriteSep(EdfTokenLiterals.Space);
                     break;
-                case Token.EndRecord:
+                case TypeTokenType.EndRecord:
                     WriteSepAndMoveNext(EdfTokenLiterals.BlockEnd);
                     WriteSep(EdfTokenLiterals.EndLine);
                     EnsureEmpty(); return;
-                case Token.BeginStruct: WriteSepAndMoveNext(EdfTokenLiterals.StructBegin); break;
-                case Token.EndStruct: WriteSepAndMoveNext(EdfTokenLiterals.StructEnd); break;
-                case Token.BeginArray: WriteSepAndMoveNext(EdfTokenLiterals.ArrayBegin); break;
-                case Token.EndArray: WriteSepAndMoveNext(EdfTokenLiterals.ArrayEnd); break;
+                case TypeTokenType.BeginStruct: WriteSepAndMoveNext(EdfTokenLiterals.StructBegin); break;
+                case TypeTokenType.EndStruct: WriteSepAndMoveNext(EdfTokenLiterals.StructEnd); break;
+                case TypeTokenType.BeginArray: WriteSepAndMoveNext(EdfTokenLiterals.ArrayBegin); break;
+                case TypeTokenType.EndArray: WriteSepAndMoveNext(EdfTokenLiterals.ArrayEnd); break;
                 default: throw new NotSupportedException($"Token {token} not supported.");
             }
             //_state.Enum.MoveNext();

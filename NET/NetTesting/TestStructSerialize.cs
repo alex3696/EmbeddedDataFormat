@@ -92,7 +92,7 @@ public class TestStructSerialize
     [TestMethod]
     public void TestPackUnpack()
     {
-        Schema TestStructInf = new()
+        EdfSchema TestStructInf = new()
         {
             Type = new()
             {
@@ -144,7 +144,7 @@ public class TestStructSerialize
 
     static int WriteSample(IWriter dw)
     {
-        Schema keyValueType = new()
+        EdfSchema keyValueType = new()
         {
             Id = 0,
             Name = "VariableKV",
@@ -182,23 +182,23 @@ public class TestStructSerialize
         }
         Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "test 260 string", sb.ToString()));
 
-        Schema t = new() { Type = new(PoType.Int32), Id = 0, Name = "weight variable" };
+        EdfSchema t = new() { Type = new(PoType.Int32), Id = 0, Name = "weight variable" };
         dw.WriteSchema(t);
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(unchecked((int)0xFFFFFFFF)));
 
-        Schema td = new() { Type = new(PoType.Double), Id = 0, Name = "TestDouble" };
+        EdfSchema td = new() { Type = new(PoType.Double), Id = 0, Name = "TestDouble" };
         dw.WriteSchema(td);
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(1.1d));
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(2.1d));
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(3.1d));
 
-        Schema tchar = new() { Type = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
+        EdfSchema tchar = new() { Type = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
         dw.WriteSchema(tchar);
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(GetCString("Char", 20)));
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(GetCString("Value", 20)));
         Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(GetCString("Array     Value", 20)));
 
-        Schema schComlexChar = new()
+        EdfSchema schComlexChar = new()
         {
             Type = new()
             {
@@ -245,7 +245,7 @@ public class TestStructSerialize
                 }
             ]
         };
-        dw.WriteSchema(new Schema() { Type = comlexVarInf });
+        dw.WriteSchema(new EdfSchema() { Type = comlexVarInf });
         var cv = new ComplexVariable()
         {
             Time = -123,
@@ -267,14 +267,14 @@ public class TestStructSerialize
         string txtConvFile = GetTestFilePath("t_writeConv.tdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
-        using (var w = new WriterBin(file, new Config() { Blocksize = 300 }))
+        using (var w = new WriterBin(file, new EdfConfig() { BlockSize = 300 }))
         {
             WriteSample(w);
         }
         // BIN append
         using (var file = new FileStream(binFile, FileMode.Open))
         {
-            Config cfg;
+            EdfConfig cfg;
             {
                 var edf = new ReaderBin(file);
                 cfg = edf.Cfg;
@@ -296,7 +296,7 @@ public class TestStructSerialize
         }
         // TXT write
         using (var file = new FileStream(txtFile, FileMode.Create))
-        using (var w = new WriterTxt(file, new Config(300)))
+        using (var w = new WriterTxt(file, new EdfConfig(300)))
         {
             WriteSample(w);
         }
@@ -314,7 +314,7 @@ public class TestStructSerialize
     static int WriteBigVar(IWriter dw)
     {
         int arrLen = 160;
-        Schema rec = new()
+        EdfSchema rec = new()
         {
             Id = 0xF1F2,
             Type = new() { Type = PoType.Int32, Name = "variable", Dims = [(ushort)arrLen], },

@@ -1,21 +1,24 @@
+using EdfNet.Buffers;
+using EdfNet.Core.Text;
+
 namespace EdfNet.Core;
 
 public class ReaderTxt
 {
-    protected Config _cfg;
+    protected EdfConfig _cfg;
     private BlockType _currentBlockType;
     private readonly StreamBufferedReader _bufferedReader;
     private readonly EdfTokenReader _tokenReader;
 
     private readonly CircularEdfTypeEnumeratorTxt _enum = new();
-    protected readonly EdfOptions _options = EdfOptions.Default;
+    protected readonly Interfaces.EdfOptions _options = Interfaces.EdfOptions.Default;
 
-    public Config Cfg => _cfg;
-    public Schema? CurrentSchema;
+    public EdfConfig Cfg => _cfg;
+    public EdfSchema? CurrentSchema;
 
-    public ReaderTxt(Stream stream, Config? cfg = default)
+    public ReaderTxt(Stream stream, EdfConfig? cfg = default)
     {
-        _cfg = cfg ?? Config.Default;
+        _cfg = cfg ?? EdfConfig.Default;
         _bufferedReader = new StreamBufferedReader(stream, 1024);
         _tokenReader = new(_bufferedReader);
     }
@@ -24,7 +27,7 @@ public class ReaderTxt
     {
         if (!_tokenReader.HasValidToken)
         {
-            if(!_tokenReader.MoveNext())
+            if (!_tokenReader.MoveNext())
                 return false;
         }
         switch (_tokenReader.TokenType)
@@ -56,7 +59,7 @@ public class ReaderTxt
         try
         {
             _currentBlockType = BlockType.Schema;
-            CurrentSchema = EdfTypeParser.ParseSchema(_tokenReader);
+            CurrentSchema = EdfSchemaParser.ParseBlock(_tokenReader);
             _enum.Reset(CurrentSchema.Type);
         }
         catch (EdfParseException ex)

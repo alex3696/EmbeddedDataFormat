@@ -51,7 +51,6 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("using EdfNet.Interfaces;");
         sb.AppendLine("using EdfNet.Core;");
         sb.AppendLine("using EdfNet.Gen;");
-        sb.AppendLine("using EdfSchema = EdfNet.Core.Schema;");
         sb.AppendLine();
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine($"public static class {typeLabel}_EdfExtension");

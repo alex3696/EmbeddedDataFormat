@@ -1,6 +1,6 @@
 using System.Buffers.Text;
 
-namespace EdfNet.Core;
+namespace EdfNet.Core.Text;
 
 public static class ConfigParser
 {
@@ -8,7 +8,7 @@ public static class ConfigParser
     /// Парсит содержимое блока конфигурации (без маркера &lt;~).
     /// Ожидает: { VersMajor; VersMinor; Blocksize; Encoding; Flags; }
     /// </summary>
-    public static Config ParseContent(EdfTokenReader tokenizer)
+    public static EdfConfig ParseContent(EdfTokenReader tokenizer)
     {
         tokenizer.ExpectAdvance(TextTokenType.StructBegin); // {
 
@@ -49,19 +49,19 @@ public static class ConfigParser
 
         tokenizer.ExpectAdvance(TextTokenType.StructEnd); // }
 
-        return new Config(blocksize)
+        return new EdfConfig(blocksize)
         {
             VersMajor = versMajor,
             VersMinor = versMinor,
             Encoding = encoding,
-            Flags = (Options)flags
+            Flags = (EdfConfigOptions)flags
         };
     }
 
     /// <summary>
     /// Standalone парсинг полного блока конфигурации (с маркером <~ ... >).
     /// </summary>
-    public static Config Parse(EdfTokenReader tokenizer)
+    public static EdfConfig Parse(EdfTokenReader tokenizer)
     {
         tokenizer.ExpectAdvance(TextTokenType.ConfigBegin); // <~
         var cfg = ParseContent(tokenizer);

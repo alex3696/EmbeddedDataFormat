@@ -1,17 +1,19 @@
+using EdfNet.Core.Binary;
+
 namespace EdfNet.Core;
 
 public class WriterBin : BaseWriterBin
 {
     protected readonly BufStateBin _state;
-    protected readonly EdfOptions _options = EdfOptions.Default;
+    protected readonly Interfaces.EdfOptions _options = Interfaces.EdfOptions.Default;
 
-    public WriterBin(Stream stream, Config? cfg = default)
+    public WriterBin(Stream stream, EdfConfig? cfg = default)
         : base(stream, cfg)
     {
         _state = new(_stream, _blkData);
     }
 
-    public override void WriteSchema(Schema sch)
+    public override void WriteSchema(EdfSchema sch)
     {
         base.WriteSchema(sch);
         _state.Enum.Reset(sch.Type);

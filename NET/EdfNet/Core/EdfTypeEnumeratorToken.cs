@@ -1,6 +1,6 @@
 namespace EdfNet.Core;
 
-public enum Token
+public enum TypeTokenType
 {
     Node = 0,       // Внутренний маркер — развернуть EdfType
     Value,          // Обычное значение (примитив)
@@ -16,9 +16,9 @@ public enum Token
 [DebuggerDisplay("{DebugString(),nq}")]
 public struct TokenElement
 {
-    public Token Token;
+    public TypeTokenType Token;
     public EdfType? Type;
-    public void Set(Token token, EdfType? type) { Token = token; Type = type; }
+    public void Set(TypeTokenType token, EdfType? type) { Token = token; Type = type; }
     public readonly string DebugString() => $"{Token} : {Type?.DebugString()}";
 }
 
@@ -52,7 +52,7 @@ public struct EdfTypeEnumeratorToken
     private EdfType? _pendingType;
 
     public readonly EdfType Current => _currentElement.Type!;
-    public readonly Token CurrentToken => _currentElement.Token;
+    public readonly TypeTokenType CurrentToken => _currentElement.Token;
 
     public EdfTypeEnumeratorToken() => Reset(null);
 
@@ -135,9 +135,9 @@ public struct EdfTypeEnumeratorToken
         _cacheLen = -1;
         _pendingCount = 0;
         uint count = root.GetTotalElements();
-        Push(Token.EndRecord, root);
+        Push(TypeTokenType.EndRecord, root);
         PushNode(root, count);
-        Push(Token.BeginRecord, root);
+        Push(TypeTokenType.BeginRecord, root);
     }
 
     public bool MoveNext()
@@ -170,7 +170,7 @@ public struct EdfTypeEnumeratorToken
         if (_pendingCount == 0) return false;
 
         _pendingCount--;
-        _currentElement.Set(Token.Value, _pendingType);
+        _currentElement.Set(TypeTokenType.Value, _pendingType);
         return true;
     }
     // -----------------------------------------------------------------
@@ -180,7 +180,7 @@ public struct EdfTypeEnumeratorToken
     private bool EmitTopToken()
     {
         ref var top = ref _stack[_sp - 1];
-        if (top.Element.Token == Token.Node) return false;
+        if (top.Element.Token == TypeTokenType.Node) return false;
 
         _currentElement = top.Element;
         _sp--;
@@ -198,7 +198,7 @@ public struct EdfTypeEnumeratorToken
         if (node.Type == PoType.Char)
         {
             _sp--;
-            _currentElement.Set(Token.Value, node);
+            _currentElement.Set(TypeTokenType.Value, node);
             return true;
         }
         if (node.Type == PoType.Struct)
@@ -209,24 +209,24 @@ public struct EdfTypeEnumeratorToken
                 // Не снимаем Node со стека — инкрементируем индекс на месте.
                 // Экономим 2 операции (pop+push) на каждый элемент массива.
                 top.ArrayIndex = idx + 1;
-                Push(Token.EndStruct, node);
+                Push(TypeTokenType.EndStruct, node);
                 var childs = node.Childs;
                 for (int c = childs.Length - 1; c >= 0; c--)
                 {
                     var child = childs[c];
                     PushNode(child, child.GetTotalElements());
                 }
-                Push(Token.BeginStruct, node);
+                Push(TypeTokenType.BeginStruct, node);
 
                 if (count > 1 && idx == 0)
-                    Push(Token.BeginArray, node);
+                    Push(TypeTokenType.BeginArray, node);
                 return false; // пусть MoveNext продолжит цикл
             }
             // Элементы исчерпаны — убираем Node
             _sp--;
             if (count > 1)
             {
-                _currentElement.Set(Token.EndArray, node);
+                _currentElement.Set(TypeTokenType.EndArray, node);
                 return true;
             }
             return false; // EndStruct уже был выдан ранее
@@ -238,14 +238,14 @@ public struct EdfTypeEnumeratorToken
             if (count > 1)
             {
                 // Массив примитивов: EndArray на стек, Values — лениво
-                Push(Token.EndArray, node);
+                Push(TypeTokenType.EndArray, node);
                 _pendingType = node;
                 _pendingCount = count;
-                _currentElement.Set(Token.BeginArray, node);
+                _currentElement.Set(TypeTokenType.BeginArray, node);
                 return true;
             }
             // Скаляр — выдаём Value напрямую, не трогая стек
-            _currentElement.Set(Token.Value, node);
+            _currentElement.Set(TypeTokenType.Value, node);
             return true;
         }
     }
@@ -253,7 +253,7 @@ public struct EdfTypeEnumeratorToken
     //  Хелперы записи в inline-array — без аллокаций
     // -----------------------------------------------------------------
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Push(Token token, EdfType? type)
+    private void Push(TypeTokenType token, EdfType? type)
     {
         if ((uint)_sp >= MaxStackSize) ThrowOverflow();
         ref var s = ref _stack[_sp++];
@@ -264,7 +264,7 @@ public struct EdfTypeEnumeratorToken
     {
         if ((uint)_sp >= MaxStackSize) ThrowOverflow();
         ref var s = ref _stack[_sp++];
-        s.Element.Set(Token.Node, node);
+        s.Element.Set(TypeTokenType.Node, node);
         s.ArrayIndex = 0;
         s.ArrayCount = count;
     }

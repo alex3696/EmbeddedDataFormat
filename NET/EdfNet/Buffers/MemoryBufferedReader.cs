@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Buffers;
 
 /// <summary>
 /// Адаптер IBufferedReader для уже загруженных в память данных.
