@@ -5,11 +5,11 @@ namespace EdfNet.Core.Text;
 public readonly ref struct BufReaderTxt : IBufReader
 {
     private readonly EdfTokenReader _tokenizer;
-    public readonly CircularEdfTypeEnumeratorTxt Enum;
+    public readonly TextCircularEdfTypeEnumerator Enum;
 
     public EdfType CurrentType => Enum.CurrentType;
 
-    public BufReaderTxt(EdfTokenReader tokenizer, CircularEdfTypeEnumeratorTxt circularEdfType)
+    public BufReaderTxt(EdfTokenReader tokenizer, TextCircularEdfTypeEnumerator circularEdfType)
     {
         _tokenizer = tokenizer;
         Enum = circularEdfType;
@@ -31,7 +31,7 @@ public readonly ref struct BufReaderTxt : IBufReader
         }
         Enum.MoveNext();
     }
-    private void EnsureSchemaAndToken(PoType pot, TextTokenType tokenType)
+    private void EnsureSchemaAndToken(EdfPrimitiveType pot, TextTokenType tokenType)
     {
         // skip non value Enum.CurrentToken
         while (Enum.CurrentToken != TypeTokenType.Value)
@@ -52,6 +52,10 @@ public readonly ref struct BufReaderTxt : IBufReader
         _tokenizer.ExpectAdvance(TextTokenType.VarEnd); // skip ';'
         Enum.MoveNext();
         while (Enum.CurrentToken != TypeTokenType.Value && Enum.CurrentToken != TypeTokenType.EndRecord)
+        {
+            SkipNonValueItem();
+        }
+        if (Enum.CurrentToken == TypeTokenType.EndRecord) // set to first value of next record
             SkipNonValueItem();
     }
 
@@ -138,14 +142,14 @@ public readonly ref struct BufReaderTxt : IBufReader
     }
     public string? ReadString()
     {
-        EnsureSchemaAndToken(PoType.String, TextTokenType.StringLiteral);
+        EnsureSchemaAndToken(EdfPrimitiveType.String, TextTokenType.StringLiteral);
         var str = _tokenizer.GetString();
         EnsureNextValueOrBlockEnd();
         return str;
     }
     public byte[] ReadCharArray()
     {
-        EnsureSchemaAndToken(PoType.String, TextTokenType.StringLiteral);
+        EnsureSchemaAndToken(EdfPrimitiveType.Char, TextTokenType.StringLiteral);
         var content = _tokenizer.TokenValue;
         int len = (int)CurrentType.GetTotalElements();
         var result = new byte[len];

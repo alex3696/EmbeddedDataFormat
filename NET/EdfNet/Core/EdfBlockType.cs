@@ -3,7 +3,7 @@ namespace EdfNet.Core;
 /// <summary>
 ///  logic block type
 /// </summary>
-public enum BlockType : byte
+public enum EdfBlockType : byte
 {
     Config = 126, //0xB0, ~
     Schema = 63, //0x3f, ?

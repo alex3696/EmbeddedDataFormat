@@ -6,11 +6,11 @@ public static class EmptyObjectCache<T> where T : new()
     public static readonly T Instance = new();
 }
 
-public static class EdfProvider<T>
+public static class EdfFormatterProvider<T>
 {
     // Поле инициализируется один раз для каждого типа T
     public static IFormatter<T> Formatter;
-    static EdfProvider()
+    static EdfFormatterProvider()
     {
         var formatter = CompositeResolver.Instance.GetFormatter<T>();
         if (formatter is null)

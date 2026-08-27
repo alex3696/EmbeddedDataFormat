@@ -1,6 +1,8 @@
-namespace EdfNet.Core;
+using EdfNet.Core.Text;
 
-public static class EdfTypeWalkerBin
+namespace EdfNet.Core.Binary;
+
+public static class BinaryEdfTypeWalker
 {
     public static void Process(EdfType et, IPrimitiveIo io)
     {
@@ -14,7 +16,7 @@ public static class EdfTypeWalkerBin
     private static void WriteObj<T>(EdfType et, ref T io)
         where T : IPrimitiveIo, allows ref struct
     {
-        if (PoType.Char == et.Type)
+        if (EdfPrimitiveType.Char == et.Type)
         {
             io.Primitive(et);
             return;
@@ -26,7 +28,7 @@ public static class EdfTypeWalkerBin
     private static void WriteObjElement<T>(EdfType et, ref T io)
         where T : IPrimitiveIo, allows ref struct
     {
-        if (PoType.Struct == et.Type)
+        if (EdfPrimitiveType.Struct == et.Type)
         {
             if (et.Childs != null && 0 != et.Childs.Length)
             {

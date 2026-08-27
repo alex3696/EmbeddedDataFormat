@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Core.Text;
 
 public interface IPrimitiveIo
 {
@@ -16,7 +16,7 @@ public interface IPrimitiveIo
     //int Skip { get; set; }
 }
 
-public static class EdfTypeWalker
+public static class TextEdfTypeWalker
 {
     public static void Process(EdfType et, IPrimitiveIo io)
     {
@@ -34,7 +34,7 @@ public static class EdfTypeWalker
     private static void WriteObj<T>(EdfType inf, ref T io)
         where T : IPrimitiveIo, allows ref struct
     {
-        if (PoType.Char == inf.Type)
+        if (EdfPrimitiveType.Char == inf.Type)
         {
             io.Primitive(inf);
             io.SepVarEnd();
@@ -51,7 +51,7 @@ public static class EdfTypeWalker
     private static void WriteObjElement<T>(EdfType inf, ref T io)
         where T : IPrimitiveIo, allows ref struct
     {
-        if (PoType.Struct == inf.Type)
+        if (EdfPrimitiveType.Struct == inf.Type)
         {
             if (inf.Childs != null && 0 != inf.Childs.Length)
             {

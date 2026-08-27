@@ -4,7 +4,7 @@ namespace EdfNet.Converters;
 
 public class TxtToBin
 {
-    class StateWriterBin : WriterBin
+    class StateWriterBin : EdfBinaryWriter
     {
         public StateWriterBin(Stream stream, EdfConfig? cfg = default)
             : base(stream, cfg)
@@ -12,7 +12,7 @@ public class TxtToBin
         }
         public BufStateBin State => _state;
     }
-    class StateReaderTxt : ReaderTxt
+    class StateReaderTxt : EdfTextReader
     {
         public StateReaderTxt(Stream stream, EdfConfig? cfg = default)
             : base(stream, cfg)
@@ -39,12 +39,12 @@ public class TxtToBin
                 switch (reader.GetBlockType())
                 {
                     default: Console.WriteLine($"Block type {reader.GetBlockType()} not supported here."); break;
-                    case BlockType.Schema:
+                    case EdfBlockType.Schema:
                         var rec = reader.CurrentSchema;
                         if (rec != null)
                             writer.WriteSchema(rec);
                         break;
-                    case BlockType.Data:
+                    case EdfBlockType.Data:
                         ArgumentNullException.ThrowIfNull(writer.CurrentSchema?.Type);
                         //Convert(reader.State, writer.State);
                         break;

@@ -26,3 +26,18 @@ public class EdfParseException : EdfException
         Column = column;
     }
 }
+
+public class EdfFormatterNotRegistredException : EdfException
+{
+    public EdfFormatterNotRegistredException(string? msg) : base(msg) { }
+    public EdfFormatterNotRegistredException(Type type)
+        : base($"Formatter for type {type.FullName} not registred")
+    {
+    }
+
+    public static void ThrowIfNull<T>(T obj)
+    {
+        if (obj is null)
+            throw new EdfFormatterNotRegistredException(typeof(T));
+    }
+}

@@ -26,7 +26,7 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public void Write(string? str)
     {
-        if (CurrentType.Type != PoType.String)
+        if (CurrentType.Type != EdfPrimitiveType.String)
             throw new EdfWrongTypeException();
         var len = string.IsNullOrEmpty(str) ? 1 : 1 + int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
         EnsureCapacity(len);
@@ -36,7 +36,7 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public void WriteCharArray(ReadOnlySpan<byte> charArray)
     {
-        if (CurrentType.Type != PoType.Char)
+        if (CurrentType.Type != EdfPrimitiveType.Char)
             throw new EdfWrongTypeException();
         int len = (int)CurrentType.GetTotalElements();
         EnsureCapacity(len);

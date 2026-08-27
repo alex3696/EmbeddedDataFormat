@@ -1,3 +1,5 @@
+using EdfNet.Core.Binary;
+using EdfNet.Extensions;
 using EdfNet.Interfaces;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -10,7 +12,7 @@ public struct PlainStruct
 }
 
 [EdfSerializable]
-public partial class SubVal : IEquatable<SubVal>
+public class SubVal : IEquatable<SubVal>
 {
     public SubVal()
     {
@@ -29,7 +31,7 @@ public partial class SubVal : IEquatable<SubVal>
     }
 }
 [EdfSerializable]
-public partial class ComplexType: IEquatable<ComplexType>
+public class ComplexType: IEquatable<ComplexType>
 {
     //public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }
@@ -76,11 +78,6 @@ public partial class ComplexType: IEquatable<ComplexType>
         }
         return true;
     }
-
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as ComplexType);
-    }
 }
 
 public static class TestClasses_Content
@@ -92,40 +89,40 @@ public static class TestClasses_Content
         Desc = "Schema for KeyVal class",
         Type = new()
         {
-            Type = PoType.Struct,
+            Type = EdfPrimitiveType.Struct,
             Name = "ComplexType",
             Childs =
         [
-            new (PoType.String, "Test1"),
-                new (PoType.String, "Key"),
-                new (PoType.Int32, "Val"),
-                new (PoType.Int32, "NVal"),
-                new (PoType.Int32, "Arr", [3, 2, 1]),
-                new (PoType.Struct, "Sub0")
+            new (EdfPrimitiveType.String, "Test1"),
+                new (EdfPrimitiveType.String, "Key"),
+                new (EdfPrimitiveType.Int32, "Val"),
+                new (EdfPrimitiveType.Int32, "NVal"),
+                new (EdfPrimitiveType.Int32, "Arr", [3, 2, 1]),
+                new (EdfPrimitiveType.Struct, "Sub0")
                 {
                     Childs =
                     [
-                        new (PoType.Double, "ValDouble"),
-                        new (PoType.UInt8, "ValByte"),
-                        new (PoType.Int8, "ValSByte"),
+                        new (EdfPrimitiveType.Double, "ValDouble"),
+                        new (EdfPrimitiveType.UInt8, "ValByte"),
+                        new (EdfPrimitiveType.Int8, "ValSByte"),
                     ]
                 },
-                new (PoType.Struct, "Sub1")
+                new (EdfPrimitiveType.Struct, "Sub1")
                 {
                     Childs =
                     [
-                        new (PoType.Double, "ValDouble"),
-                        new (PoType.UInt8, "ValByte"),
-                        new (PoType.Int8, "ValSByte"),
+                        new (EdfPrimitiveType.Double, "ValDouble"),
+                        new (EdfPrimitiveType.UInt8, "ValByte"),
+                        new (EdfPrimitiveType.Int8, "ValSByte"),
                     ]
                 },
-                new (PoType.Struct, "Sub", [2, 2])
+                new (EdfPrimitiveType.Struct, "Sub", [2, 2])
                 {
                     Childs =
                     [
-                        new (PoType.Double, "ValDouble"),
-                        new (PoType.UInt8, "ValByte"),
-                        new (PoType.Int8, "ValSByte"),
+                        new (EdfPrimitiveType.Double, "ValDouble"),
+                        new (EdfPrimitiveType.UInt8, "ValByte"),
+                        new (EdfPrimitiveType.Int8, "ValSByte"),
                     ]
                 }
         ]

@@ -1,15 +1,16 @@
+using EdfNet.Extensions;
 using System.Buffers;
 
 namespace EdfNet.Core;
 
 public class PrimitiveFormatter<T> : IFormatter<T> where T : struct
 {
-    public void Serialize<TWriter>(ref TWriter writer, in T val, Interfaces.EdfOptions options)
+    public void Serialize<TWriter>(ref TWriter writer, in T val, Interfaces.EdfFormatterOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
         writer.Write(val);
     }
-    public T Deserialize<TReader>(ref TReader reader, Interfaces.EdfOptions options)
+    public T Deserialize<TReader>(ref TReader reader, Interfaces.EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
         return reader.Read<T>();
@@ -18,12 +19,12 @@ public class PrimitiveFormatter<T> : IFormatter<T> where T : struct
 
 public class PrimitiveFormatterString : IFormatter<string?>
 {
-    public void Serialize<TWriter>(ref TWriter writer, in string? val, Interfaces.EdfOptions options)
+    public void Serialize<TWriter>(ref TWriter writer, in string? val, Interfaces.EdfFormatterOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
         writer.Write(val);
     }
-    public string? Deserialize<TReader>(ref TReader reader, Interfaces.EdfOptions options)
+    public string? Deserialize<TReader>(ref TReader reader, Interfaces.EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
         return reader.ReadString();
@@ -32,13 +33,13 @@ public class PrimitiveFormatterString : IFormatter<string?>
 public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
     where TITEM : struct
 {
-    public void Serialize<TWriter>(ref TWriter writer, in TARRAY arrObj, Interfaces.EdfOptions options)
+    public void Serialize<TWriter>(ref TWriter writer, in TARRAY arrObj, Interfaces.EdfFormatterOptions options)
         where TWriter : struct, IBufWriter, allows ref struct
     {
         var edfType = writer.CurrentType;
         if (null == edfType || 0 == edfType.Dims.Length)
             throw new InvalidOperationException("Current type is null or not an array.");
-        if (PoType.Char == edfType.Type && arrObj is byte[] chArr)
+        if (EdfPrimitiveType.Char == edfType.Type && arrObj is byte[] chArr)
         {
             writer.WriteCharArray(chArr);
             return;
@@ -51,13 +52,13 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
             writer.Write(item);
         }
     }
-    public TARRAY Deserialize<TReader>(ref TReader reader, Interfaces.EdfOptions options)
+    public TARRAY Deserialize<TReader>(ref TReader reader, Interfaces.EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
         var edfType = reader.CurrentType;
         if (null == edfType)
             throw new InvalidOperationException("Current type is not an array or has no dimensions.");
-        if (PoType.Char == edfType.Type)
+        if (EdfPrimitiveType.Char == edfType.Type)
         {
             var len = (int)edfType.GetTotalElements();
             var chArr = reader.ReadCharArray() as Array;

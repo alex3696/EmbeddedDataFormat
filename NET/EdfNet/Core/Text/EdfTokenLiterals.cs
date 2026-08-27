@@ -2,6 +2,8 @@ namespace EdfNet.Core.Text;
 
 public static class EdfTokenLiterals
 {
+    public static ReadOnlySpan<byte> Zero => "\0"u8;
+    public static ReadOnlySpan<byte> Quote => "\""u8;
     public static ReadOnlySpan<byte> Space => " "u8;
     public static ReadOnlySpan<byte> EndLine => "\n"u8;
     public static ReadOnlySpan<byte> ConfigBegin => "<~"u8;

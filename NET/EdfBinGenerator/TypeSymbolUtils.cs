@@ -24,7 +24,7 @@ public static class TypeSymbolUtils
         };
     }
 
-    public static string MapToPoType(this ITypeSymbol typeSymbol)
+    public static string MapToEdfPrimitiveType(this ITypeSymbol typeSymbol)
     {
         return typeSymbol.SpecialType switch
         {

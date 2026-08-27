@@ -35,6 +35,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         sb.AppendLine("using System;");
         sb.AppendLine("using EdfNet.Interfaces;");
         sb.AppendLine("using EdfNet.Core;");
+        sb.AppendLine("using EdfNet.Extensions;");
         sb.AppendLine("using EdfNet.Gen;");
 
         if (!string.IsNullOrEmpty(ns))
@@ -61,7 +62,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         sb.AppendLine("{");
         sb.AppendLine($"    public static {formatterName} Instance = new();");
         sb.AppendLine();
-        sb.AppendLine($"    public void Serialize<TWriter>(ref TWriter writer, in {typeName} val, EdfOptions options)");
+        sb.AppendLine($"    public void Serialize<TWriter>(ref TWriter writer, in {typeName} val, EdfFormatterOptions options)");
         sb.AppendLine("        where TWriter : struct, IBufWriter, allows ref struct");
         sb.AppendLine("    {");
         foreach (var member in GetSerializableMembers(type))
@@ -70,7 +71,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         }
         sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine($"    public {typeName} Deserialize<TReader>(ref TReader reader, EdfOptions options)");
+        sb.AppendLine($"    public {typeName} Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)");
         sb.AppendLine("        where TReader : struct, IBufReader, allows ref struct");
         sb.AppendLine("    {");
         sb.AppendLine($"        {typeName} result = new {typeName}();");
@@ -192,7 +193,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
                 if (string.IsNullOrEmpty(access))
                     access = $"default({typeName})";
             }
-            sb.AppendLine($"{indent}EdfProvider<{typeName}>.Formatter.Serialize(ref writer, {access}, options);");
+            sb.AppendLine($"{indent}EdfFormatterProvider<{typeName}>.Formatter.Serialize(ref writer, {access}, options);");
         }
         else
         {
@@ -214,7 +215,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         else if (type.IsSerializable())
         {
             string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
-            return $"EdfProvider<{typeName}>.Formatter.Deserialize(ref reader, options)";
+            return $"EdfFormatterProvider<{typeName}>.Formatter.Deserialize(ref reader, options)";
         }
         else
         {

@@ -1,6 +1,6 @@
-namespace EdfNet.Core;
+namespace EdfNet.Extensions;
 
-public static class ArrayExt
+public static class ArrayExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetElementAtFlatIndex<T>(this Array arr, int flatIndex)

@@ -1,6 +1,6 @@
 namespace EdfNet.Core;
 
-public enum EdfErr : int
+public enum EdfErrorCode : int
 {
     WrongType = -2,
     SrcDataRequred = -1,

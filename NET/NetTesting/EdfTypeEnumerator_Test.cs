@@ -1,3 +1,5 @@
+using EdfNet.Core.Binary;
+using EdfNet.Core.Text;
 using EdfNet.Interfaces;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -83,14 +85,14 @@ public class EdfTypeEnumerator_Test
 
     private readonly EdfSchema _schema;
     private readonly RecursiveClass _rcls;
-    public EdfTypeEnumeratorStackInlineArray _enm;
-    public EdfTypeEnumeratorToken _enmToken = new();
+    public BinaryEdfTypeEnumerator _enm;
+    public TextEdfTypeEnumerator _enmToken = new();
 
     public EdfTypeEnumerator_Test()
     {
         _schema = NetTest.ComplexType.GetEdfSchema();
         _rcls = new(_lst);
-        _enm = new EdfTypeEnumeratorStackInlineArray();
+        _enm = new BinaryEdfTypeEnumerator();
     }
 
     [TestMethod]
@@ -164,12 +166,12 @@ public class EdfTypeEnumerator_Test
     {
         _lst.Clear();
         var enm = new Recursive(_lst);
-        EdfTypeWalkerBin.Process(_schema.Type, ref enm);
+        BinaryEdfTypeWalker.Process(_schema.Type, ref enm);
     }
     public void EdfTypeEnumeratorRecursiveClass()
     {
         _lst.Clear();
-        EdfTypeWalkerBin.Process(_schema.Type, _rcls);
+        BinaryEdfTypeWalker.Process(_schema.Type, _rcls);
     }
     public void EdfTypeEnumeratorToken()
     {

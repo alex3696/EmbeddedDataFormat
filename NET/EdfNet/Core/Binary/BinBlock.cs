@@ -2,13 +2,13 @@ namespace EdfNet.Core.Binary;
 
 public class BinBlock
 {
-    public const int HeaderLen = sizeof(BlockType) + sizeof(ushort);
+    public const int HeaderLen = sizeof(EdfBlockType) + sizeof(ushort);
     public const int CrcLen = sizeof(ushort);
     public const int OverheadLen = HeaderLen + CrcLen;
     public readonly int MaxPayloadLen;
-    public BlockType Type
+    public EdfBlockType Type
     {
-        get => (BlockType)_buffer[0];
+        get => (EdfBlockType)_buffer[0];
         set => _buffer[0] = (byte)value;
     }
     public ushort TotalLen => (ushort)(HeaderLen + ContentLen + CrcLen);

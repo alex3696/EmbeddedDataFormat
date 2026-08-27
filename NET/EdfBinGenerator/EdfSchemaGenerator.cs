@@ -50,6 +50,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("using System;");
         sb.AppendLine("using EdfNet.Interfaces;");
         sb.AppendLine("using EdfNet.Core;");
+        sb.AppendLine("using EdfNet.Extensions;");
         sb.AppendLine("using EdfNet.Gen;");
         sb.AppendLine();
         sb.AppendLine($"namespace {namespaceName};");
@@ -80,7 +81,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine($"            Desc = \"Schema for {typeName} class\",");
         sb.AppendLine("             Type = new()");
         sb.AppendLine("            {");
-        sb.AppendLine("                Type = PoType.Struct,");
+        sb.AppendLine("                Type = EdfPrimitiveType.Struct,");
         sb.AppendLine($"                Name = \"{typeName}\",");
         sb.AppendLine("                Childs =");
         sb.AppendLine("                [");
@@ -93,18 +94,18 @@ public class EdfSchemaGenerator : IIncrementalGenerator
             {
                 // Сценарий 1: Свойства-массивы (примитивы или вложенные объекты)
                 string dimensionsStr = TypeSymbolUtils.ExtractArrayDimensions(f);
-                string elemPoType = arraySymbol.ElementType.MapToPoType();
+                string elemEdfPrimitiveType = arraySymbol.ElementType.MapToEdfPrimitiveType();
 
-                if (!string.IsNullOrEmpty(elemPoType))
+                if (!string.IsNullOrEmpty(elemEdfPrimitiveType))
                 {
-                    // Массив примитивов, например: new (PoType.Int32, "Arr", [3, 2, 1])
-                    sb.AppendLine($"                    new (PoType.{elemPoType}, \"{f.Name}\", [{dimensionsStr}]),");
+                    // Массив примитивов, например: new (EdfPrimitiveType.Int32, "Arr", [3, 2, 1])
+                    sb.AppendLine($"                    new (EdfPrimitiveType.{elemEdfPrimitiveType}, \"{f.Name}\", [{dimensionsStr}]),");
                 }
                 else
                 {
                     // Массив объектов: рекурсивно вытаскиваем Childs из энумератора вложенного типа
-                    // Вид: new (PoType.Struct, "Sub", [2, 2]) { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
-                    sb.AppendLine($"                    new (PoType.Struct, \"{f.Name}\", [{dimensionsStr}])");
+                    // Вид: new (EdfPrimitiveType.Struct, "Sub", [2, 2]) { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
+                    sb.AppendLine($"                    new (EdfPrimitiveType.Struct, \"{f.Name}\", [{dimensionsStr}])");
                     sb.AppendLine("                    {");
                     sb.AppendLine($"                        Childs = {TypeSymbolUtils.GetShortTypeName(arraySymbol.ElementType, ns)}.GetEdfSchema().Type.Childs");
                     sb.AppendLine("                    },");
@@ -113,8 +114,8 @@ public class EdfSchemaGenerator : IIncrementalGenerator
             else if (true == fType?.IsNestedSerializable())
             {
                 // Сценарий 2: Одиночный вложенный сериализуемый объект (класс или структура)
-                // Вид: new (PoType.Struct, "Sub0") { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
-                sb.AppendLine($"                    new (PoType.Struct, \"{f.Name}\")");
+                // Вид: new (EdfPrimitiveType.Struct, "Sub0") { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
+                sb.AppendLine($"                    new (EdfPrimitiveType.Struct, \"{f.Name}\")");
                 sb.AppendLine("                    {");
                 sb.AppendLine($"                        Childs = {TypeSymbolUtils.GetShortTypeName(fType, ns)}.GetEdfSchema().Type.Childs");
                 sb.AppendLine("                    },");
@@ -122,8 +123,8 @@ public class EdfSchemaGenerator : IIncrementalGenerator
             else
             {
                 // Сценарий 3: Обычный плоский базовый примитив
-                // Вид: new (PoType.String, "Test1"),
-                sb.AppendLine($"                    new (PoType.{fType!.MapToPoType()}, \"{f.Name}\"),");
+                // Вид: new (EdfPrimitiveType.String, "Test1"),
+                sb.AppendLine($"                    new (EdfPrimitiveType.{fType!.MapToEdfPrimitiveType()}, \"{f.Name}\"),");
             }
         }
         sb.AppendLine("                ]");

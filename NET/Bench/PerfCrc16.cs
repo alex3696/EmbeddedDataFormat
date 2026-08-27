@@ -1,6 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
-using EdfNet.Core;
+using EdfNet.Core.Binary;
 using System;
 using System.Linq;
 using System.Text;

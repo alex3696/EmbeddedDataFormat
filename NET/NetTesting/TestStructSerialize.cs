@@ -96,14 +96,14 @@ public class TestStructSerialize
         {
             Type = new()
             {
-                Type = PoType.Struct,
+                Type = EdfPrimitiveType.Struct,
                 Name = "KeyValue",
                 Dims = [2],
                 Childs =
                 [
-                    new (PoType.String, "Key"),
-                    new (PoType.String, "Value"),
-                    new (PoType.UInt8, "Test", [3]),
+                    new (EdfPrimitiveType.String, "Key"),
+                    new (EdfPrimitiveType.String, "Value"),
+                    new (EdfPrimitiveType.UInt8, "Test", [3]),
                 ]
             }
         };
@@ -113,7 +113,7 @@ public class TestStructSerialize
 
         byte[] binBuf = new byte[1024];
         using (var memStream = new MemoryStream(binBuf))
-        using (var bw = new WriterBin(memStream))
+        using (var bw = new EdfBinaryWriter(memStream))
         {
             //CompositeResolver.Instance.TryRegister([new GeneratedEdfResolver()]);
             bw.WriteSchema(TestStructInf);
@@ -122,7 +122,7 @@ public class TestStructSerialize
             Assert.AreEqual(30, bw.CurrentDataLen);
         }
         var mssrc = new MemoryStream(binBuf);
-        var reader = new ReaderBin(mssrc);
+        var reader = new EdfBinaryReader(mssrc);
 
         //if (!reader.ReadBlock())
         //    Assert.Fail("there are no block");
@@ -151,24 +151,24 @@ public class TestStructSerialize
             Desc = "comment",
             Type = new()
             {
-                Type = PoType.Struct,
+                Type = EdfPrimitiveType.Struct,
                 Name = "KeyValue",
                 Childs =
                 [
-                    new (PoType.String, "Key"),
-                    new (PoType.String, "Value"),
+                    new (EdfPrimitiveType.String, "Key"),
+                    new (EdfPrimitiveType.String, "Value"),
                 ]
             }
         };
         dw.WriteSchema(keyValueType);
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new KeyValue() { Key = "Key1", Value = "Value1" }));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new KeyValue() { Key = "Key2", Value = "Value2" }));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(new KeyValue() { Key = "Key3", Value = "Value3" }));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(new KeyValue() { Key = "Key1", Value = "Value1" }));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(new KeyValue() { Key = "Key2", Value = "Value2" }));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(new KeyValue() { Key = "Key3", Value = "Value3" }));
 
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ 1", "Value 1"));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ 2", "Value 2"));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "тестовый ключ 3", "Value 3"));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "test NULL string", string.Empty));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "тестовый ключ 1", "Value 1"));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "тестовый ключ 2", "Value 2"));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "тестовый ключ 3", "Value 3"));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "test NULL string", string.Empty));
 
         const char chBegin = '0'; const char chEnd = '9';
         char ch = chBegin;
@@ -180,35 +180,35 @@ public class TestStructSerialize
             if (chEnd < ch)
                 ch = chBegin;
         }
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteInfData(0, PoType.String, "test 260 string", sb.ToString()));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "test 260 string", sb.ToString()));
 
-        EdfSchema t = new() { Type = new(PoType.Int32), Id = 0, Name = "weight variable" };
+        EdfSchema t = new() { Type = new(EdfPrimitiveType.Int32), Id = 0, Name = "weight variable" };
         dw.WriteSchema(t);
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(unchecked((int)0xFFFFFFFF)));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(unchecked((int)0xFFFFFFFF)));
 
-        EdfSchema td = new() { Type = new(PoType.Double), Id = 0, Name = "TestDouble" };
+        EdfSchema td = new() { Type = new(EdfPrimitiveType.Double), Id = 0, Name = "TestDouble" };
         dw.WriteSchema(td);
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(1.1d));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(2.1d));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(3.1d));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(1.1d));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(2.1d));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(3.1d));
 
-        EdfSchema tchar = new() { Type = new(PoType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
+        EdfSchema tchar = new() { Type = new(EdfPrimitiveType.Char, string.Empty, [20]), Id = 0, Name = "Char Text" };
         dw.WriteSchema(tchar);
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(GetCString("Char", 20)));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(GetCString("Value", 20)));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(GetCString("Array     Value", 20)));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(GetCString("Char", 20)));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(GetCString("Value", 20)));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(GetCString("Array     Value", 20)));
 
         EdfSchema schComlexChar = new()
         {
             Type = new()
             {
-                Type = PoType.Struct,
+                Type = EdfPrimitiveType.Struct,
                 Name = "Chat10Test",
                 Childs =
                 [
-                    new (PoType.UInt8),
-                    new (PoType.Char, name: null, dims:[10]),
-                    new (PoType.UInt16),
+                    new (EdfPrimitiveType.UInt8),
+                    new (EdfPrimitiveType.Char, name: null, dims:[10]),
+                    new (EdfPrimitiveType.UInt16),
                 ]
             }
         };
@@ -221,26 +221,26 @@ public class TestStructSerialize
 
         EdfType comlexVarInf = new()
         {
-            Type = PoType.Struct,
+            Type = EdfPrimitiveType.Struct,
             Name = "ComplexVariable",
             Childs =
             [
-                new (PoType.Int64, "time"),
+                new (EdfPrimitiveType.Int64, "time"),
                 new ()
                 {
-                    Type = PoType.Struct, Name = "State", Dims = [3],
+                    Type = EdfPrimitiveType.Struct, Name = "State", Dims = [3],
                     Childs =
                     [
-                        new (PoType.Int8, "text"),
-                        new(PoType.Struct,"Pos")
+                        new (EdfPrimitiveType.Int8, "text"),
+                        new(EdfPrimitiveType.Struct,"Pos")
                         {
                             Childs =
                             [
-                                new (PoType.Int32, "x"),
-                                new (PoType.Int32, "y"),
+                                new (EdfPrimitiveType.Int32, "x"),
+                                new (EdfPrimitiveType.Int32, "y"),
                             ]
                         },
-                        new (PoType.Double, "Temp", [2,2]),
+                        new (EdfPrimitiveType.Double, "Temp", [2,2]),
                     ]
                 }
             ]
@@ -256,7 +256,7 @@ public class TestStructSerialize
                 new(){ Text = 3,Pos = new (){X=31,Y=32 },Temp = new double[2,2]{ {3.1,3.2 },{3.3,3.4 } }  },
             ]
         };
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(cv));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(cv));
         return 0;
     }
     [TestMethod]
@@ -267,7 +267,7 @@ public class TestStructSerialize
         string txtConvFile = GetTestFilePath("t_writeConv.tdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
-        using (var w = new WriterBin(file, new EdfConfig() { BlockSize = 300 }))
+        using (var w = new EdfBinaryWriter(file, new EdfConfig() { BlockSize = 300 }))
         {
             WriteSample(w);
         }
@@ -276,7 +276,7 @@ public class TestStructSerialize
         {
             EdfConfig cfg;
             {
-                var edf = new ReaderBin(file);
+                var edf = new EdfBinaryReader(file);
                 cfg = edf.Cfg;
                 //try
                 //{
@@ -289,22 +289,22 @@ public class TestStructSerialize
                 //}
             }
             file.Seek(0, SeekOrigin.End);
-            using (var edf = new WriterBin(file, cfg))
+            using (var edf = new EdfBinaryWriter(file, cfg))
             {
-                edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
+                edf.WriteInfData(0, EdfPrimitiveType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
             }
         }
         // TXT write
         using (var file = new FileStream(txtFile, FileMode.Create))
-        using (var w = new WriterTxt(file, new EdfConfig(300)))
+        using (var w = new EdfTextWriter(file, new EdfConfig(300)))
         {
             WriteSample(w);
         }
         // TXT append
         using (var file = new FileStream(txtFile, FileMode.Append))
-        using (var edf = new WriterTxt(file))
+        using (var edf = new EdfTextWriter(file))
         {
-            edf.WriteInfData(0, PoType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
+            edf.WriteInfData(0, EdfPrimitiveType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
         }
         BinToTxt.Convert(binFile, txtConvFile);
         bool isEqual = FileUtils.FileCompare(txtFile, txtConvFile);
@@ -317,16 +317,16 @@ public class TestStructSerialize
         EdfSchema rec = new()
         {
             Id = 0xF1F2,
-            Type = new() { Type = PoType.Int32, Name = "variable", Dims = [(ushort)arrLen], },
+            Type = new() { Type = EdfPrimitiveType.Int32, Name = "variable", Dims = [(ushort)arrLen], },
         };
         dw.WriteSchema(rec);
         int[] test = new int[arrLen];
         for (uint i = 0; i < arrLen; i++)
             test[i] = (int)i;
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test));//write all
-        Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(0, 15).ToArray()));
-        Assert.AreEqual(EdfErr.SrcDataRequred, dw.WriteValue(test.AsSpan(15, arrLen - 30).ToArray()));
-        Assert.AreEqual(EdfErr.IsOk, dw.WriteValue(test.AsSpan(arrLen - 15).ToArray()));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(test));//write all
+        Assert.AreEqual(EdfErrorCode.SrcDataRequred, dw.WriteValue(test.AsSpan(0, 15).ToArray()));
+        Assert.AreEqual(EdfErrorCode.SrcDataRequred, dw.WriteValue(test.AsSpan(15, arrLen - 30).ToArray()));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(test.AsSpan(arrLen - 15).ToArray()));
         dw.Flush();
         return 0;
     }
@@ -338,13 +338,13 @@ public class TestStructSerialize
         string txtConvFile = GetTestFilePath("t_bigConv.tdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
-        using (var w = new WriterBin(file))//dw.Write(Header.Default);
+        using (var w = new EdfBinaryWriter(file))//dw.Write(Header.Default);
         {
             WriteBigVar(w);
         }
         // TXT write
         using (var file = new FileStream(txtFile, FileMode.Create))
-        using (var w = new WriterTxt(file))
+        using (var w = new EdfTextWriter(file))
         {
             WriteBigVar(w);
         }
@@ -359,39 +359,39 @@ public class TestStructSerialize
     {
         EdfType inf1 = new()
         {
-            Type = PoType.Struct,
+            Type = EdfPrimitiveType.Struct,
             Name = "KeyValue",
             Dims = [2],
             Childs =
             [
-                new (PoType.String, "Key"),
-                new (PoType.String, "Value"),
-                new (PoType.UInt8, "Test", [3]),
+                new (EdfPrimitiveType.String, "Key"),
+                new (EdfPrimitiveType.String, "Value"),
+                new (EdfPrimitiveType.UInt8, "Test", [3]),
             ]
         };
         EdfType inf2 = new()
         {
-            Type = PoType.Struct,
+            Type = EdfPrimitiveType.Struct,
             Name = "KeyValue",
             Dims = [2],
             Childs =
             [
-                new (PoType.String, "Key"),
-                new (PoType.String, "Value"),
-                new (PoType.UInt8, "Test", [3]),
+                new (EdfPrimitiveType.String, "Key"),
+                new (EdfPrimitiveType.String, "Value"),
+                new (EdfPrimitiveType.UInt8, "Test", [3]),
             ]
         };
         EdfType inf3 = new()
         {
-            Type = PoType.Struct,
+            Type = EdfPrimitiveType.Struct,
             Name = "KeyValue",
             Dims = [2],
             Childs =
             [
-                new (PoType.String, "Key2"),
-                new (PoType.String, "Value"),
-                new (PoType.UInt8, "Test", [3]),
-                new (PoType.String, "Key3"),
+                new (EdfPrimitiveType.String, "Key2"),
+                new (EdfPrimitiveType.String, "Value"),
+                new (EdfPrimitiveType.UInt8, "Test", [3]),
+                new (EdfPrimitiveType.String, "Key3"),
             ]
         };
         EdfType? nullInf = default; // null

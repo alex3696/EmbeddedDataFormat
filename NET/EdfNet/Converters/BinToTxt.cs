@@ -5,15 +5,16 @@ namespace EdfNet.Converters;
 
 public class BinToTxt
 {
-    class StateWriterTxt : WriterTxt
+    class StateWriterTxt : EdfTextWriter
     {
         public StateWriterTxt(Stream stream, EdfConfig? cfg = default)
             : base(stream, cfg)
         {
         }
-        public BufStateTxt State => _state;
+        public TextCircularEdfTypeEnumerator Enum => _enum;
+        public BufferedTextWriter Writer => _textWriter;
     }
-    class StateReaderBin : ReaderBin
+    class StateReaderBin : EdfBinaryReader
     {
         public StateReaderBin(Stream stream, EdfConfig? cfg = default)
             : base(stream, cfg)
@@ -40,14 +41,15 @@ public class BinToTxt
                 switch (reader.GetBlockType())
                 {
                     default: Console.WriteLine($"Block type {reader.GetBlockType()} not supported here."); break;
-                    case BlockType.Schema:
+                    case EdfBlockType.Schema:
                         var rec = reader.CurrentSchema;
                         if (rec != null)
                             writer.WriteSchema(rec);
                         break;
-                    case BlockType.Data:
+                    case EdfBlockType.Data:
                         ArgumentNullException.ThrowIfNull(writer.CurrentSchema?.Type);
-                        Convert(reader.State, writer.State);
+                        while (0 < reader.State.ReadAvailableLen)
+                            Convert(new BufReaderBin(reader.State), new BufWriterTxt(writer.Writer, writer.Enum));
                         break;
                 }
             }
@@ -58,31 +60,24 @@ public class BinToTxt
         }
         writer.Flush();
     }
-    private static void Convert(BufStateBin readerState, BufStateTxt writerState)
+    private static void Convert(BufReaderBin br, BufWriterTxt bw)
     {
-        BufReaderBin br = new(readerState);
-        BufWriterTxt bw = new(writerState);
-
-        while (0 < readerState.ReadAvailableLen)
+        switch (br.CurrentType.Type)
         {
-            var et = readerState.Enum.CurrentType;
-            switch (et.Type)
-            {
-                default:
-                case PoType.Struct: throw new EdfWrongTypeException();
-                case PoType.UInt8: bw.Write(br.Read<byte>()); break;
-                case PoType.Int8: bw.Write(br.Read<sbyte>()); break;
-                case PoType.UInt16: bw.Write(br.Read<ushort>()); break;
-                case PoType.Int16: bw.Write(br.Read<short>()); break;
-                case PoType.UInt32: bw.Write(br.Read<uint>()); break;
-                case PoType.Int32: bw.Write(br.Read<int>()); break;
-                case PoType.UInt64: bw.Write(br.Read<ulong>()); break;
-                case PoType.Int64: bw.Write(br.Read<long>()); break;
-                case PoType.Single: bw.Write(br.Read<float>()); break;
-                case PoType.Double: bw.Write(br.Read<double>()); break;
-                case PoType.String: bw.Write(br.ReadString()); break;
-                case PoType.Char: bw.WriteCharArray(br.ReadCharArray()); break;
-            }
+            default:
+            case EdfPrimitiveType.Struct: throw new EdfWrongTypeException();
+            case EdfPrimitiveType.UInt8: bw.Write(br.Read<byte>()); break;
+            case EdfPrimitiveType.Int8: bw.Write(br.Read<sbyte>()); break;
+            case EdfPrimitiveType.UInt16: bw.Write(br.Read<ushort>()); break;
+            case EdfPrimitiveType.Int16: bw.Write(br.Read<short>()); break;
+            case EdfPrimitiveType.UInt32: bw.Write(br.Read<uint>()); break;
+            case EdfPrimitiveType.Int32: bw.Write(br.Read<int>()); break;
+            case EdfPrimitiveType.UInt64: bw.Write(br.Read<ulong>()); break;
+            case EdfPrimitiveType.Int64: bw.Write(br.Read<long>()); break;
+            case EdfPrimitiveType.Single: bw.Write(br.Read<float>()); break;
+            case EdfPrimitiveType.Double: bw.Write(br.Read<double>()); break;
+            case EdfPrimitiveType.String: bw.Write(br.ReadString()); break;
+            case EdfPrimitiveType.Char: bw.WriteCharArray(br.ReadCharArray()); break;
         }
     }
 }

@@ -1,4 +1,4 @@
-namespace EdfNet.Core;
+namespace EdfNet.Core.Text;
 
 public enum TypeTokenType
 {
@@ -22,7 +22,7 @@ public struct TokenElement
     public readonly string DebugString() => $"{Token} : {Type?.DebugString()}";
 }
 
-public struct EdfTypeEnumeratorToken
+public struct TextEdfTypeEnumerator
 {
     public const int MaxStackSize = 256;
     struct StackItem
@@ -54,7 +54,7 @@ public struct EdfTypeEnumeratorToken
     public readonly EdfType Current => _currentElement.Type!;
     public readonly TypeTokenType CurrentToken => _currentElement.Token;
 
-    public EdfTypeEnumeratorToken() => Reset(null);
+    public TextEdfTypeEnumerator() => Reset(null);
 
     public readonly bool IsInitialized => _cachedRoot is not null;
     // _sp используем как индекс чтения кэша, когда _cacheLen > 0
@@ -195,13 +195,13 @@ public struct EdfTypeEnumeratorToken
         var node = top.Element.Type!;
         uint idx = top.ArrayIndex;
         uint count = top.ArrayCount;
-        if (node.Type == PoType.Char)
+        if (node.Type == EdfPrimitiveType.Char)
         {
             _sp--;
             _currentElement.Set(TypeTokenType.Value, node);
             return true;
         }
-        if (node.Type == PoType.Struct)
+        if (node.Type == EdfPrimitiveType.Struct)
         {
             // ---- Массив / скаляр структуры ----
             if (idx < count)

@@ -1,6 +1,4 @@
-using EdfNet.Core.Binary;
-
-namespace EdfNet.Core;
+namespace EdfNet.Core.Binary;
 
 public abstract class BaseReaderBin
 {
@@ -33,9 +31,9 @@ public abstract class BaseReaderBin
             switch (_blk.Type)
             {
                 default: throw new Exception($"Wrong block Type: {_blk.Type}");
-                case BlockType.Config: break;
-                case BlockType.Schema: ReadSchema(); break;
-                case BlockType.Data: OnReadDatBlockStart(); break;
+                case EdfBlockType.Config: break;
+                case EdfBlockType.Schema: ReadSchema(); break;
+                case EdfBlockType.Data: OnReadDatBlockStart(); break;
             }
             return true;
         }
@@ -43,14 +41,14 @@ public abstract class BaseReaderBin
     }
 
 
-    public BlockType GetBlockType() => _blk.Type;
+    public EdfBlockType GetBlockType() => _blk.Type;
     public ushort GetBlockLen() => _blk.TotalLen;
     public ReadOnlySpan<byte> GetBlockData() => _blkData.CurrentData;
 
-    public EdfConfig? ReadConfig() => _blk.ReadConfig();
+    public EdfConfig? ReadConfig() => _blk.TryReadConfig();
     public EdfSchema? ReadSchema()
     {
-        CurrentSchema = _blk.ReadSchema();
+        CurrentSchema = _blk.TryReadSchema();
         OnSchemaBlockRead();
         return CurrentSchema;
     }

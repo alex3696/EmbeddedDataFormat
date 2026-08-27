@@ -2,13 +2,13 @@ using System.Buffers.Text;
 
 namespace EdfNet.Core.Text;
 
-public static class ConfigParser
+internal static class TextEdfConfigConfigSerializer
 {
     /// <summary>
     /// Парсит содержимое блока конфигурации (без маркера &lt;~).
     /// Ожидает: { VersMajor; VersMinor; Blocksize; Encoding; Flags; }
     /// </summary>
-    public static EdfConfig ParseContent(EdfTokenReader tokenizer)
+    public static EdfConfig TryReadConfigBlockContent(EdfTokenReader tokenizer)
     {
         tokenizer.ExpectAdvance(TextTokenType.StructBegin); // {
 
@@ -61,12 +61,25 @@ public static class ConfigParser
     /// <summary>
     /// Standalone парсинг полного блока конфигурации (с маркером <~ ... >).
     /// </summary>
-    public static EdfConfig Parse(EdfTokenReader tokenizer)
+    public static EdfConfig TryReadConfig(this EdfTokenReader tokenizer)
     {
         tokenizer.ExpectAdvance(TextTokenType.ConfigBegin); // <~
-        var cfg = ParseContent(tokenizer);
+        var cfg = TryReadConfigBlockContent(tokenizer);
         tokenizer.ExpectAdvance(TextTokenType.BlockEnd);    // >
         return cfg;
     }
 
+    public static void WriteConfig(this BufferedTextWriter writer, EdfConfig config)
+    {
+        writer.Flush();
+        writer.Write("//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags");
+        writer.Write(EdfTokenLiterals.EndLine);
+        writer.Write(EdfTokenLiterals.ConfigBegin);
+        writer.Write(EdfTokenLiterals.StructBegin);
+        writer.Write($"{config.VersMajor};{config.VersMinor};{config.BlockSize};{config.Encoding};{(uint)config.Flags};");
+        writer.Write(EdfTokenLiterals.StructEnd);
+        writer.Write(EdfTokenLiterals.BlockEnd);
+        writer.Write(EdfTokenLiterals.EndLine);
+        writer.Flush();
+    }
 }

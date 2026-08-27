@@ -2,12 +2,12 @@ using EdfNet.Core.Binary;
 
 namespace EdfNet.Core;
 
-public class ReaderBin : BaseReaderBin
+public class EdfBinaryReader : BaseReaderBin
 {
     protected readonly BufStateBin _state;
-    protected readonly Interfaces.EdfOptions _options = Interfaces.EdfOptions.Default;
+    protected readonly Interfaces.EdfFormatterOptions _options = Interfaces.EdfFormatterOptions.Default;
 
-    public ReaderBin(Stream stream, EdfConfig? cfg = default)
+    public EdfBinaryReader(Stream stream, EdfConfig? cfg = default)
         : base(stream, cfg)
     {
         _state = new BufStateBin(stream, _blkData);
@@ -26,9 +26,8 @@ public class ReaderBin : BaseReaderBin
     public T ReadValue<T>()
     {
         //ObjectDisposedException.ThrowIf(IsDisposed, this);
-        IFormatter<T> formatter = EdfProvider<T>.Formatter;
-        if (formatter == null)
-            throw new InvalidOperationException($"Тип {typeof(T).FullName} не зарегистрирован в системе сериализации.");
+        IFormatter<T> formatter = EdfFormatterProvider<T>.Formatter;
+        EdfFormatterNotRegistredException.ThrowIfNull(formatter);
         var reader = new BufReaderBin(_state);
         return formatter.Deserialize(ref reader, _options);
     }

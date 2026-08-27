@@ -3,20 +3,20 @@ using EdfNet.Core.Text;
 
 namespace EdfNet.Core;
 
-public class ReaderTxt
+public class EdfTextReader
 {
     protected EdfConfig _cfg;
-    private BlockType _currentBlockType;
+    private EdfBlockType _currentBlockType;
     private readonly StreamBufferedReader _bufferedReader;
     private readonly EdfTokenReader _tokenReader;
 
-    private readonly CircularEdfTypeEnumeratorTxt _enum = new();
-    protected readonly Interfaces.EdfOptions _options = Interfaces.EdfOptions.Default;
+    private readonly TextCircularEdfTypeEnumerator _enum = new();
+    protected readonly Interfaces.EdfFormatterOptions _options = Interfaces.EdfFormatterOptions.Default;
 
     public EdfConfig Cfg => _cfg;
     public EdfSchema? CurrentSchema;
 
-    public ReaderTxt(Stream stream, EdfConfig? cfg = default)
+    public EdfTextReader(Stream stream, EdfConfig? cfg = default)
     {
         _cfg = cfg ?? EdfConfig.Default;
         _bufferedReader = new StreamBufferedReader(stream, 1024);
@@ -40,14 +40,14 @@ public class ReaderTxt
         }
         return true;
     }
-    public BlockType GetBlockType() => _currentBlockType;
+    public EdfBlockType GetBlockType() => _currentBlockType;
 
     private void ReadConfig()
     {
         try
         {
-            _currentBlockType = BlockType.Config;
-            _cfg = ConfigParser.Parse(_tokenReader);
+            _currentBlockType = EdfBlockType.Config;
+            _cfg = _tokenReader.TryReadConfig();
         }
         catch (EdfParseException ex)
         {
@@ -58,8 +58,8 @@ public class ReaderTxt
     {
         try
         {
-            _currentBlockType = BlockType.Schema;
-            CurrentSchema = EdfSchemaParser.ParseBlock(_tokenReader);
+            _currentBlockType = EdfBlockType.Schema;
+            CurrentSchema = TextEdfSchemaSerializer.ReadSchema(_tokenReader);
             _enum.Reset(CurrentSchema.Type);
         }
         catch (EdfParseException ex)
@@ -69,20 +69,15 @@ public class ReaderTxt
     }
     private void ReadRecord()
     {
-        _currentBlockType = BlockType.Data;
+        _currentBlockType = EdfBlockType.Data;
     }
 
     public T ReadValue<T>()
     {
-        IFormatter<T> formatter = EdfProvider<T>.Formatter ?? throw GetException(typeof(T));
+        IFormatter<T> formatter = EdfFormatterProvider<T>.Formatter;
+        EdfFormatterNotRegistredException.ThrowIfNull(formatter);
         var reader = new BufReaderTxt(_tokenReader, _enum);
         var result = formatter.Deserialize(ref reader, _options);
         return result;
-    }
-
-
-    private static InvalidOperationException GetException(Type type)
-    {
-        return new InvalidOperationException($"Тип {type.FullName} не зарегистрирован в системе сериализации.");
     }
 }

@@ -15,7 +15,7 @@ public class GenSerializationTests
         Assert.AreEqual("ComplexTypeSchema", schema.Name);
 
         Assert.IsNotNull(schema.Type, "Корневой тип схемы не должен быть null");
-        Assert.AreEqual(PoType.Struct, schema.Type.Type, "Корневой тип схемы должен быть PoType.Struct");
+        Assert.AreEqual(EdfPrimitiveType.Struct, schema.Type.Type, "Корневой тип схемы должен быть PoType.Struct");
         Assert.AreEqual("ComplexType", schema.Type.Name);
         Assert.IsNotNull(schema.Type.Childs, "Список дочерних элементов схемы не должен быть null");
 
@@ -25,28 +25,28 @@ public class GenSerializationTests
         // 3. ASSERT: Поэлементная проверка плоских примитивов
         // Поле 1: public string? Test1 { get; set; }
         var pTest1 = schema.Type.Childs[0];
-        Assert.AreEqual(PoType.String, pTest1.Type);
+        Assert.AreEqual(EdfPrimitiveType.String, pTest1.Type);
         Assert.AreEqual("Test1", pTest1.Name);
 
         // Поле 2: public string? Key { get; set; }
         var pKey = schema.Type.Childs[1];
-        Assert.AreEqual(PoType.String, pKey.Type);
+        Assert.AreEqual(EdfPrimitiveType.String, pKey.Type);
         Assert.AreEqual("Key", pKey.Name);
 
         // Поле 3: public int Val { get; set; }
         var pVal = schema.Type.Childs[2];
-        Assert.AreEqual(PoType.Int32, pVal.Type);
+        Assert.AreEqual(EdfPrimitiveType.Int32, pVal.Type);
         Assert.AreEqual("Val", pVal.Name);
 
         // Поле 4: public int NVal { get; set; } (присутствует в вашей схеме)
         var pNVal = schema.Type.Childs[3];
-        Assert.AreEqual(PoType.Int32, pNVal.Type);
+        Assert.AreEqual(EdfPrimitiveType.Int32, pNVal.Type);
         Assert.AreEqual("NVal", pNVal.Name);
 
         // 4. ASSERT: Проверка многомерного числового массива int[,,]
         // Поле 5: public int[,,] Arr { get; set; } с атрибутом [3, 2, 1]
         var pArr = schema.Type.Childs[4];
-        Assert.AreEqual(PoType.Int32, pArr.Type);
+        Assert.AreEqual(EdfPrimitiveType.Int32, pArr.Type);
         Assert.AreEqual("Arr", pArr.Name);
         Assert.IsNotNull(pArr.Dims, "Размерности массива Arr не должны быть null");
         Assert.HasCount(3, pArr.Dims, "Массив Arr должен быть трехмерным");
@@ -57,27 +57,27 @@ public class GenSerializationTests
         // 5. ASSERT: Проверка вложенной Nullable-структуры Sub0
         // Поле 6: public SubVal? Sub0 { get; set; }
         var pSub0 = schema.Type.Childs[5];
-        Assert.AreEqual(PoType.Struct, pSub0.Type);
+        Assert.AreEqual(EdfPrimitiveType.Struct, pSub0.Type);
         Assert.AreEqual("Sub0", pSub0.Name);
         Assert.IsNotNull(pSub0.Childs, "Внутренние поля Sub0 не должны быть null");
         Assert.HasCount(3, pSub0.Childs, "Структура SubVal должна содержать 3 поля");
 
         // Проверяем внутренности SubVal внутри Sub0
-        Assert.AreEqual(PoType.Double, pSub0.Childs[0].Type); Assert.AreEqual("ValDouble", pSub0.Childs[0].Name);
-        Assert.AreEqual(PoType.UInt8, pSub0.Childs[1].Type); Assert.AreEqual("ValByte", pSub0.Childs[1].Name);
-        Assert.AreEqual(PoType.Int8, pSub0.Childs[2].Type); Assert.AreEqual("ValSByte", pSub0.Childs[2].Name);
+        Assert.AreEqual(EdfPrimitiveType.Double, pSub0.Childs[0].Type); Assert.AreEqual("ValDouble", pSub0.Childs[0].Name);
+        Assert.AreEqual(EdfPrimitiveType.UInt8, pSub0.Childs[1].Type); Assert.AreEqual("ValByte", pSub0.Childs[1].Name);
+        Assert.AreEqual(EdfPrimitiveType.Int8, pSub0.Childs[2].Type); Assert.AreEqual("ValSByte", pSub0.Childs[2].Name);
 
         // Поле 7: public SubVal Sub1 { get; set; } (Обычная структура — внутренности должны совпадать)
         EdfType? pSub1 = schema.Type.Childs[6];
         Assert.IsNotNull(pSub1.Childs, "Внутренние поля Sub1 не должны быть null");
-        Assert.AreEqual(PoType.Struct, pSub1.Type);
+        Assert.AreEqual(EdfPrimitiveType.Struct, pSub1.Type);
         Assert.AreEqual("Sub1", pSub1.Name);
         Assert.HasCount(3, pSub1.Childs);
 
         // 6. ASSERT: Проверка многомерного массива вложенных объектов SubVal[,]
         // Поле 8: public SubVal[,]? Sub { get; set; } с атрибутом [2, 2]
         var pSubArray = schema.Type.Childs[7];
-        Assert.AreEqual(PoType.Struct, pSubArray.Type);
+        Assert.AreEqual(EdfPrimitiveType.Struct, pSubArray.Type);
         Assert.AreEqual("Sub", pSubArray.Name);
 
         // Проверяем размерности самого двухмерного массива
@@ -89,9 +89,9 @@ public class GenSerializationTests
         // Проверяем, что внутри каждой ячейки массива корректно развернулись поля структуры SubVal
         Assert.IsNotNull(pSubArray.Childs, "Поля структуры внутри массива объектов не должны быть null");
         Assert.HasCount(3, pSubArray.Childs);
-        Assert.AreEqual(PoType.Double, pSubArray.Childs[0].Type);
-        Assert.AreEqual(PoType.UInt8, pSubArray.Childs[1].Type);
-        Assert.AreEqual(PoType.Int8, pSubArray.Childs[2].Type);
+        Assert.AreEqual(EdfPrimitiveType.Double, pSubArray.Childs[0].Type);
+        Assert.AreEqual(EdfPrimitiveType.UInt8, pSubArray.Childs[1].Type);
+        Assert.AreEqual(EdfPrimitiveType.Int8, pSubArray.Childs[2].Type);
     }
 
     [TestMethod]
@@ -102,18 +102,18 @@ public class GenSerializationTests
 
         // Создаем буфер в памяти (имитация файла/флеш-блока)
         using var memoryStream = new MemoryStream(1024);
-        using var writer = new WriterBin(memoryStream);
+        using var writer = new EdfBinaryWriter(memoryStream);
 
         // 2. ACT (WRITE): Записываем объект через универсальный метод генерации
         writer.WriteSchema(ComplexType.GetEdfSchema());
-        EdfErr writeResult = writer.WriteValue(original);
+        EdfErrorCode writeResult = writer.WriteValue(original);
         writer.Flush(); // Сбрасываем остатки буфера в поток
 
-        Assert.AreEqual(EdfErr.IsOk, writeResult);
+        Assert.AreEqual(EdfErrorCode.IsOk, writeResult);
 
         // Сбрасываем поток в начало для чтения
         memoryStream.Position = 0;
-        var reader = new ReaderBin(memoryStream);
+        var reader = new EdfBinaryReader(memoryStream);
 
         // 3. ACT (READ): Читаем объект обратно из бинарного потока
         if (!reader.ReadBlock())
@@ -170,23 +170,23 @@ public class GenSerializationTests
 
         using var memoryStream = new MemoryStream(1024);
         {
-            using var writer = new WriterTxt(memoryStream);
+            using var writer = new EdfTextWriter(memoryStream);
             //writer.WriteConfig(Config.Default);
             writer.WriteSchema(TestClasses_Content.KeyValSchema);
-            EdfErr writeResult = writer.WriteValue(original);
+            EdfErrorCode writeResult = writer.WriteValue(original);
             writer.Flush(); // Сбрасываем остатки буфера в поток
-            Assert.AreEqual(EdfErr.IsOk, writeResult);
+            Assert.AreEqual(EdfErrorCode.IsOk, writeResult);
         }
         // Сбрасываем поток в начало для чтения
         memoryStream.Position = 0;
-        var reader = new ReaderTxt(memoryStream);
+        var reader = new EdfTextReader(memoryStream);
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
-        if(reader.GetBlockType() != BlockType.Config)
+        if(reader.GetBlockType() != EdfBlockType.Config)
             Assert.Fail("there are no config block");
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
-        if (reader.GetBlockType() != BlockType.Schema)
+        if (reader.GetBlockType() != EdfBlockType.Schema)
             Assert.Fail("there are no schema block");
 
         Assert.AreEqual(TestClasses_Content.KeyValSchema.Id, reader.CurrentSchema?.Id);
@@ -197,7 +197,7 @@ public class GenSerializationTests
         if (!reader.ReadBlock())
             Assert.Fail("there are no block");
 
-        if (reader.GetBlockType() != BlockType.Data)
+        if (reader.GetBlockType() != EdfBlockType.Data)
             Assert.Fail("there are no data block");
 
         var restored = reader.ReadValue<ComplexType>();
@@ -227,11 +227,11 @@ public class GenSerializationTests
         };
 
         using var memoryStream = new MemoryStream();
-        using var writer = new WriterBin(memoryStream);
+        using var writer = new EdfBinaryWriter(memoryStream);
         writer.WriteSchema(ComplexType.GetEdfSchema());
-        EdfErr writeResult = writer.WriteValue(original);
+        EdfErrorCode writeResult = writer.WriteValue(original);
         writer.Flush();
-        Assert.AreEqual(EdfErr.IsOk, writeResult);
+        Assert.AreEqual(EdfErrorCode.IsOk, writeResult);
     }
 
 }

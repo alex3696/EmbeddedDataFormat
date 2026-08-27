@@ -23,7 +23,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public string? ReadString()
     {
-        if (CurrentType.Type != PoType.String)
+        if (CurrentType.Type != EdfPrimitiveType.String)
             throw new EdfWrongTypeException();
         EnsureData(1);
         var lenByte = _state.ReadAvailableBuf[0];
@@ -37,7 +37,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public byte[] ReadCharArray()
     {
-        if (CurrentType.Type != PoType.Char)
+        if (CurrentType.Type != EdfPrimitiveType.Char)
             throw new EdfWrongTypeException();
         int len = (int)CurrentType.GetTotalElements();
         EnsureData(len);

@@ -4,7 +4,7 @@ public class BufStateBin
 {
     public readonly Stream Stream;
     public readonly BinDataBlock Blk;
-    public readonly CircularEdfTypeEnumerator Enum = new();
+    public readonly BinaryCircularEdfTypeEnumerator Enum = new();
     public int Readed;
 
     public ReadOnlySpan<byte> ReadAvailableBuf => Blk.DataBuffer.Slice(Readed);

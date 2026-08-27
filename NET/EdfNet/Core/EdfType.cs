@@ -3,7 +3,7 @@ namespace EdfNet.Core;
 [DebuggerDisplay("{DebugString(),nq}")]
 public class EdfType : IEquatable<EdfType>
 {
-    public PoType Type;// { get; set; }
+    public EdfPrimitiveType Type;// { get; set; }
     public string? Name;// { get; set; }
     public ushort[] Dims;// { get; set; }
     public EdfType[] Childs = [];// { get; set; }
@@ -22,7 +22,7 @@ public class EdfType : IEquatable<EdfType>
             foreach (var d in Dims)
                 dims += $"[{d}]";
         string childs = string.Empty;
-        if (PoType.Struct == Type && null != Childs && 0 < Childs.Length)
+        if (EdfPrimitiveType.Struct == Type && null != Childs && 0 < Childs.Length)
         {
             string offset = GetOffset(noffset);
             childs += $"\n{offset}{{";
@@ -32,15 +32,15 @@ public class EdfType : IEquatable<EdfType>
         }
         return $"{Type} \"{Name}\"{dims}{childs}";
     }
-    public EdfType(PoType type, string? name = default, ushort[]? dims = default, EdfType[]? childs = default)
+    public EdfType(EdfPrimitiveType type, string? name = default, ushort[]? dims = default, EdfType[]? childs = default)
     {
         Name = name;
         Type = type;
         Dims = dims ?? [];
-        Childs = (PoType.Struct == type) ? (Childs = childs ?? []) : [];
+        Childs = (EdfPrimitiveType.Struct == type) ? (Childs = childs ?? []) : [];
     }
     public EdfType()
-        : this(PoType.Int32)
+        : this(EdfPrimitiveType.Int32)
     {
     }
     public bool Equals(EdfType? y)

@@ -1,8 +1,7 @@
-using EdfNet.Buffers;
 using System.Buffers;
 using System.Text.Unicode;
 
-namespace EdfNet.Core;
+namespace EdfNet.Core.Binary;
 
 public static class EdfBinString
 {
@@ -43,17 +42,17 @@ public static class EdfBinString
     }
     public static int WriteTxt(string? str, Span<byte> dst)
     {
-        if (1 > dst.Length)
+        if (2 > dst.Length)
             return -1;
-        var len = string.IsNullOrEmpty(str) ? 0 : (byte)int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
-        if (len + 2 > dst.Length)
-            return -1;
-        SpanBufferWriter writer = new(dst);
-        writer.Append<byte>(34);
-        var writed = EdfBinString.CopyStringToSpan(str, writer.GetSpan().Slice(0, len));
-        writer.Advance(writed);
-        writer.Append<byte>(34);
-        return writer.WrittedCount;
+        dst[0] = 34; // "
+        OperationStatus status = Utf8.FromUtf16(
+            str.AsSpan(),
+            dst.Slice(1, MaxLen),
+            out int charsRead,
+            out int bytesWritten,
+            replaceInvalidSequences: false);
+        dst[1 + bytesWritten] = 34; // "
+        return 2 + bytesWritten;
     }
     public static int ReadBin(ReadOnlySpan<byte> b, out string? str)
     {
