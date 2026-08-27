@@ -23,6 +23,8 @@ public class EdfBinaryReader : BaseReaderBin
         _state.Readed = 0;
     }
 
+    public int DataAvailable => _state.ReadAvailableLen;
+
     public T ReadValue<T>()
     {
         //ObjectDisposedException.ThrowIf(IsDisposed, this);

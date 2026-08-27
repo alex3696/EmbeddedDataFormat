@@ -5,30 +5,14 @@ using NetTest;
 namespace Bench;
 
 /*
-// ref fn
-| Method      | Job            | Runtime        | Mean     | Error   | StdDev  | Ratio | Allocated | Alloc Ratio |
-|------------ |--------------- |--------------- |---------:|--------:|--------:|------:|----------:|------------:|
-| Writer_Enum | .NET 10.0      | .NET 10.0      | 365.8 ns | 1.73 ns | 1.45 ns |  1.00 |         - |          NA |
-| Writer_Enum | NativeAOT 10.0 | NativeAOT 10.0 | 505.5 ns | 1.96 ns | 1.74 ns |  1.38 |         - |          NA |
-
-fixed Marshal.SizeOf >> Unsafe.SizeO
-| Method      | Job            | Mean     | Ratio | Allocated | Alloc Ratio |
-|------------ |--------------- |---------:|------:|----------:|------------:|
-| Writer_Gen2 | .NET 10.0      | 282.2 ns |  1.00 |         - |          NA |
-| Writer_Gen2 | NativeAOT 10.0 | 376.7 ns |  1.33 |         - |          NA |
-
-// GetElementAtFlatIndexUnsafe
-| Method      | Job            | Mean     | Ratio | Allocated | Alloc Ratio |
-|------------ |--------------- |---------:|------:|----------:|------------:|
-| Writer_Gen2 | .NET 10.0      | 373.7 ns |  1.00 |         - |          NA |
-| Writer_Gen2 | NativeAOT 10.0 | 510.9 ns |  1.37 |         - |          NA |
-
-
-| Method      | Job            | Mean     | Ratio | Allocated | Alloc Ratio |
-|------------ |--------------- |---------:|------:|----------:|------------:|
-| Writer_Gen2 | .NET 10.0      | 511.3 ns |  1.00 |         - |          NA |
-| Writer_Gen2 | NativeAOT 10.0 | 756.2 ns |  1.48 |         - |          NA |
- */
+| Method      | Job            | Size | Mean         | Ratio | Allocated | Alloc Ratio |
+|------------ |--------------- |----- |-------------:|------:|----------:|------------:|
+| Writer_Gen2 | .NET 10.0      | 1    |     434.7 ns |  1.00 |         - |          NA |
+| Writer_Gen2 | NativeAOT 10.0 | 1    |     624.0 ns |  1.44 |         - |          NA |
+|             |                |      |              |       |           |             |
+| Writer_Gen2 | .NET 10.0      | 1000 | 422,381.0 ns |  1.00 |         - |          NA |
+| Writer_Gen2 | NativeAOT 10.0 | 1000 | 617,021.6 ns |  1.46 |       6 B |          NA |
+*/
 
 
 [MemoryDiagnoser(false)]
