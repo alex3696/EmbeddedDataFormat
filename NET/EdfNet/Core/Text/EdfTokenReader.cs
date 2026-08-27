@@ -62,7 +62,11 @@ public class EdfTokenReader
 
     public bool MoveNext()
     {
-        if (_advanceLen >= 0) throw new InvalidOperationException("Previous token not consumed. Call Advance() first.");
+        if (_advanceLen > 0)
+            throw new InvalidOperationException("Previous token not consumed. Call Advance() first.");
+        if (_advanceLen == 0)
+            return false;
+
         SkipWhitespaceAndComments();
 
         var buf = _reader.GetSpan(2);

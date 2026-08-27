@@ -5,13 +5,12 @@ namespace EdfNet.Core;
 
 public class EdfTextReader
 {
-    protected EdfConfig _cfg;
+    private EdfConfig _cfg;
     private EdfBlockType _currentBlockType;
     private readonly StreamBufferedReader _bufferedReader;
-    private readonly EdfTokenReader _tokenReader;
-
-    private readonly TextCircularEdfTypeEnumerator _enum = new();
-    protected readonly Interfaces.EdfFormatterOptions _options = Interfaces.EdfFormatterOptions.Default;
+    protected readonly EdfTokenReader _tokenReader;
+    protected readonly TextCircularEdfTypeEnumerator _enum = new();
+    protected readonly EdfFormatterOptions _options = EdfFormatterOptions.Default;
 
     public EdfConfig Cfg => _cfg;
     public EdfSchema? CurrentSchema;

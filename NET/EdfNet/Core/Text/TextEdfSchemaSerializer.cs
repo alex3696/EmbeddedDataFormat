@@ -61,9 +61,12 @@ internal static class TextEdfSchemaSerializer
 
         var dims = ParseDimensions(tokenizer);
 
-        tokenizer.Expect(TextTokenType.StringLiteral);
-        string name = tokenizer.GetString();
-        tokenizer.Advance();
+        string name = string.Empty;
+        if (tokenizer.TokenType == TextTokenType.StringLiteral)
+        {
+            name = tokenizer.GetString();
+            tokenizer.Advance();
+        }
 
         if (poType == EdfPrimitiveType.Struct)
         {

@@ -265,6 +265,8 @@ public class TestStructSerialize
         string binFile = GetTestFilePath("t_write.bdf");
         string txtFile = GetTestFilePath("t_write.tdf");
         string txtConvFile = GetTestFilePath("t_writeConv.tdf");
+        string binConvFile = GetTestFilePath("t_writeConv.bdf");
+
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
         using (var w = new EdfBinaryWriter(file, new EdfConfig() { BlockSize = 300 }))
@@ -309,6 +311,9 @@ public class TestStructSerialize
         BinToTxt.Convert(binFile, txtConvFile);
         bool isEqual = FileUtils.FileCompare(txtFile, txtConvFile);
         Assert.IsTrue(isEqual);
+
+        TxtToBin.Convert(txtFile, binConvFile);
+        Assert.IsTrue(FileUtils.FileCompare(binFile, binConvFile));
     }
 
     static int WriteBigVar(IWriter dw)
@@ -336,6 +341,7 @@ public class TestStructSerialize
         string binFile = GetTestFilePath("t_big.bdf");
         string txtFile = GetTestFilePath("t_big.tdf");
         string txtConvFile = GetTestFilePath("t_bigConv.tdf");
+        string binConvFile = GetTestFilePath("t_bigConv.bdf");
         // BIN write
         using (var file = new FileStream(binFile, FileMode.Create))
         using (var w = new EdfBinaryWriter(file))//dw.Write(Header.Default);
@@ -352,6 +358,9 @@ public class TestStructSerialize
 
         bool isEqual = FileUtils.FileCompare(txtFile, txtConvFile);
         Assert.IsTrue(isEqual, "WriteBigVar file does not match ");
+
+        TxtToBin.Convert(txtFile, binConvFile);
+        Assert.IsTrue(FileUtils.FileCompare(binFile, binConvFile));
     }
 
     [TestMethod]

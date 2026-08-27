@@ -39,7 +39,12 @@ public readonly ref struct BufReaderTxt : IBufReader
 
         if (CurrentType.Type != pot)
             throw new EdfWrongTypeException($"expected from schema {CurrentType.Type} got {pot}");
-        if (!_tokenizer.MoveNext() || tokenType != _tokenizer.TokenType)
+        if (!_tokenizer.HasValidToken)
+        {
+            if (_tokenizer.MoveNext())
+                return;
+        }
+        if (tokenType != _tokenizer.TokenType)
         {
             throw new EdfParseException(
                 $"Expected {EdfTokenReader.Describe(tokenType)} but got {EdfTokenReader.Describe(_tokenizer.TokenType)}",
