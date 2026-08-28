@@ -33,7 +33,7 @@ public class BinToTxt
     public static void Convert(Stream srcBin, Stream dstTxt)
     {
         StateReaderBin reader = new(srcBin);
-        StateWriterTxt writer = new(dstTxt, reader.Cfg);
+        using StateWriterTxt writer = new(dstTxt, reader.Cfg);
         try
         {
             while (reader.ReadBlock())
@@ -76,8 +76,16 @@ public class BinToTxt
             case EdfPrimitiveType.Int64: bw.Write(br.Read<long>()); break;
             case EdfPrimitiveType.Single: bw.Write(br.Read<float>()); break;
             case EdfPrimitiveType.Double: bw.Write(br.Read<double>()); break;
-            case EdfPrimitiveType.String: bw.Write(br.ReadString()); break;
+            case EdfPrimitiveType.String:
+                bw.WriteStringRaw(br.ReadStringRawSpan()); break;
+                //PrintRawString(br, bw); break;
+                //bw.Write(br.ReadString()); break;
             case EdfPrimitiveType.Char: bw.WriteCharArray(br.ReadCharArray()); break;
         }
+    }
+    private static void PrintRawString(BufReaderBin br, BufWriterTxt bw)
+    {
+        ReadOnlySpan<byte> strRaw = br.ReadStringRawSpan();
+        bw.WriteStringRaw(strRaw);
     }
 }

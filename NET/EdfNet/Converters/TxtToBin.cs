@@ -35,7 +35,7 @@ public class TxtToBin
         StateReaderTxt reader = new(srcBin);
         if(!reader.ReadBlock() || EdfBlockType.Config != reader.GetBlockType() )
             throw new Exception("There are no config block");
-        StateWriterBin writer = new(dstTxt, reader.Cfg);
+        using StateWriterBin writer = new(dstTxt, reader.Cfg);
         try
         {
             while (reader.ReadBlock())

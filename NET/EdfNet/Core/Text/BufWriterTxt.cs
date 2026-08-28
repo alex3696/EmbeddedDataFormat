@@ -20,6 +20,14 @@ public readonly ref struct BufWriterTxt : IBufWriter
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
+    public void WriteStringRaw(ReadOnlySpan<byte> strRaw)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.String, typeof(string));
+        _writer.Write(EdfTokenLiterals.Quote);
+        _writer.Write(strRaw);
+        _writer.Write(EdfTokenLiterals.Quote);
+        EnsureNextValueOrBlockEnd();
+    }
     public void Write(string? str)
     {
         EnsureSchemaAndToken(EdfPrimitiveType.String, typeof(string));

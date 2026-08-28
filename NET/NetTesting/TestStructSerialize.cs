@@ -78,8 +78,8 @@ public class ComplexVariable
 [TestClass]
 public class TestStructSerialize
 {
-    static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
-    static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
+    public static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
+    public static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
     static byte[] GetCString(string str, int len)
     {

@@ -21,6 +21,21 @@ public readonly ref struct BufReaderBin : IBufReader
         _state.Enum.MoveNext();
         return val;
     }
+
+    public ReadOnlySpan<byte> ReadStringRawSpan()
+    {
+        if (CurrentType.Type != EdfPrimitiveType.String)
+            throw new EdfWrongTypeException();
+        EnsureData(1);
+        var lenByte = _state.ReadAvailableBuf[0];
+        _state.Readed++;
+        if (lenByte == 0) return null;
+        EnsureData(lenByte);
+        ReadOnlySpan<byte> dirtyBuf = _state.ReadAvailableBuf.Slice(0, lenByte);
+        _state.Readed += lenByte;
+        _state.Enum.MoveNext();
+        return dirtyBuf;
+    }
     public string? ReadString()
     {
         if (CurrentType.Type != EdfPrimitiveType.String)
