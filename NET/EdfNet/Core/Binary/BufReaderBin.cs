@@ -21,21 +21,6 @@ public readonly ref struct BufReaderBin : IBufReader
         _state.Enum.MoveNext();
         return val;
     }
-
-    public ReadOnlySpan<byte> ReadStringRawSpan()
-    {
-        if (CurrentType.Type != EdfPrimitiveType.String)
-            throw new EdfWrongTypeException();
-        EnsureData(1);
-        var lenByte = _state.ReadAvailableBuf[0];
-        _state.Readed++;
-        if (lenByte == 0) return null;
-        EnsureData(lenByte);
-        ReadOnlySpan<byte> dirtyBuf = _state.ReadAvailableBuf.Slice(0, lenByte);
-        _state.Readed += lenByte;
-        _state.Enum.MoveNext();
-        return dirtyBuf;
-    }
     public string? ReadString()
     {
         if (CurrentType.Type != EdfPrimitiveType.String)
@@ -74,5 +59,33 @@ public readonly ref struct BufReaderBin : IBufReader
             if (_state.ReadAvailableLen < len)
                 throw new EndOfStreamException();
         }
+    }
+    public void ReadToSpan(Span<byte> dst, out EdfPrimitiveType pt, out int len)
+    {
+        pt = CurrentType.Type;
+        switch (pt)
+        {
+            default: throw new EdfWrongTypeException();
+            case EdfPrimitiveType.UInt8:
+            case EdfPrimitiveType.Int8: len = 1; break;
+            case EdfPrimitiveType.UInt16:
+            case EdfPrimitiveType.Int16: len = 2; break;
+            case EdfPrimitiveType.UInt32:
+            case EdfPrimitiveType.Int32:
+            case EdfPrimitiveType.Single: len = 4; break;
+            case EdfPrimitiveType.UInt64:
+            case EdfPrimitiveType.Int64:
+            case EdfPrimitiveType.Double: len = 8; break;
+            case EdfPrimitiveType.String:
+                len = _state.ReadAvailableBuf[0];
+                _state.ReadAvailableBuf.Slice(1, len).CopyTo(dst);
+                _state.Readed += len + 1;
+                _state.Enum.MoveNext();
+                return;
+
+        }
+        _state.ReadAvailableBuf.Slice(0, len).CopyTo(dst);
+        _state.Readed += len;
+        _state.Enum.MoveNext();
     }
 }

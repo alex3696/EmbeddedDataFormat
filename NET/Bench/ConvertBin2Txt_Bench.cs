@@ -9,15 +9,25 @@ using System.IO;
 
 namespace Bench;
 
+/*
+| Method           | Runtime        | Mean    | Ratio | Allocated | Alloc Ratio |
+|----------------- |--------------- |--------:|------:|----------:|------------:|
+| 'Binary -> Text' | .NET 10.0      | 1.759 s |  1.00 |  49.98 KB |        1.00 |
+| 'Binary -> Text' | NativeAOT 10.0 | 2.434 s |  1.38 |  58.06 KB |        1.16 |
+|                  |                |         |       |           |             |
+| 'Text -> Binary' | .NET 10.0      | 2.097 s |  1.00 |  48.27 KB |        1.00 |
+| 'Text -> Binary' | NativeAOT 10.0 | 3.261 s |  1.55 |  57.43 KB |        1.19 |
+*/
+
 [MemoryDiagnoser(true)]
 [HideColumns("Error", "StdDev", "Median", "RatioSD")]
-[SimpleJob(warmupCount: 0, iterationCount: 1, invocationCount: 1, launchCount: 1, runtimeMoniker: RuntimeMoniker.HostProcess, baseline: false)]
-//[SimpleJob(warmupCount: 0, iterationCount: 1, invocationCount: 1, launchCount: 1, runtimeMoniker: RuntimeMoniker.Net10_0, baseline: true)]
-//[SimpleJob(warmupCount: 0, iterationCount: 1, invocationCount: 1, launchCount: 1, runtimeMoniker: RuntimeMoniker.NativeAot10_0, baseline: false)]
+//[SimpleJob(warmupCount: 0, iterationCount: 1, invocationCount: 1, launchCount: 1, runtimeMoniker: RuntimeMoniker.HostProcess, baseline: false)]
+[SimpleJob(warmupCount: 0, iterationCount: 1, invocationCount: 1, launchCount: 1, runtimeMoniker: RuntimeMoniker.Net10_0, baseline: true)]
+[SimpleJob(warmupCount: 0, iterationCount: 1, invocationCount: 1, launchCount: 1, runtimeMoniker: RuntimeMoniker.NativeAot10_0, baseline: false)]
 public class ConvertBin2Txt_Bench
 {
-    private const int NCOUNT = 1_000_000;
-    private static readonly string FileName = "ConvertTest";
+    public const int NCOUNT = 1_000_000;
+    public static readonly string FileName = "ConvertTest";
 
     private string _binFile;
     private string _txtFile;
@@ -30,18 +40,12 @@ public class ConvertBin2Txt_Bench
         _txtFile = TestStructSerialize.GetTestFilePath($"{FileName}.tdf");
 
         // Создаем тестовые файлы если их нет
-        CreateTestFiles();
-    }
-
-    private void CreateTestFiles()
-    {
         if (!File.Exists(_binFile))
             CreateFile(_binFile, st => new EdfBinaryWriter(st));
 
         if (!File.Exists(_txtFile))
             CreateFile(_txtFile, st => new EdfTextWriter(st));
     }
-
     private void CreateFile(string fileName, Func<Stream, IWriter> factory)
     {
         using var file = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read);

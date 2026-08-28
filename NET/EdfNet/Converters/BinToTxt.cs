@@ -32,6 +32,7 @@ public class BinToTxt
 
     public static void Convert(Stream srcBin, Stream dstTxt)
     {
+        Span<byte> buf = stackalloc byte[256];
         StateReaderBin reader = new(srcBin);
         using StateWriterTxt writer = new(dstTxt, reader.Cfg);
         try
@@ -48,8 +49,14 @@ public class BinToTxt
                         break;
                     case EdfBlockType.Data:
                         ArgumentNullException.ThrowIfNull(writer.CurrentSchema?.Type);
+                        var br = new BufReaderBin(reader.State);
+                        var tw = new BufWriterTxt(writer.Writer, writer.Enum);
                         while (0 < reader.State.ReadAvailableLen)
-                            Convert(new BufReaderBin(reader.State), new BufWriterTxt(writer.Writer, writer.Enum));
+                        {
+                            Convert(new BufReaderBin(reader.State),
+                                    new BufWriterTxt(writer.Writer, writer.Enum),
+                                    buf);
+                        }
                         break;
                 }
             }
@@ -60,7 +67,7 @@ public class BinToTxt
         }
         writer.Flush();
     }
-    private static void Convert(BufReaderBin br, BufWriterTxt bw)
+    private static void Convert(BufReaderBin br, BufWriterTxt bw, Span<byte> buf)
     {
         switch (br.CurrentType.Type)
         {
@@ -77,15 +84,10 @@ public class BinToTxt
             case EdfPrimitiveType.Single: bw.Write(br.Read<float>()); break;
             case EdfPrimitiveType.Double: bw.Write(br.Read<double>()); break;
             case EdfPrimitiveType.String:
-                bw.WriteStringRaw(br.ReadStringRawSpan()); break;
-                //PrintRawString(br, bw); break;
-                //bw.Write(br.ReadString()); break;
+                br.ReadToSpan(buf, out var pt, out var len);
+                bw.WriteSpan(buf.Slice(0, len), pt); break;
+            //bw.Write(br.ReadString()); break;
             case EdfPrimitiveType.Char: bw.WriteCharArray(br.ReadCharArray()); break;
         }
-    }
-    private static void PrintRawString(BufReaderBin br, BufWriterTxt bw)
-    {
-        ReadOnlySpan<byte> strRaw = br.ReadStringRawSpan();
-        bw.WriteStringRaw(strRaw);
     }
 }

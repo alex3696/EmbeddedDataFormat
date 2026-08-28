@@ -145,6 +145,22 @@ public readonly ref struct BufReaderTxt : IBufReader
         }
         throw new NotSupportedException($"Type {typeof(T).Name} not supported.");
     }
+    public void ReadToSpan(Span<byte> dst, out EdfPrimitiveType pt, out int len)
+    {
+        // skip non value Enum.CurrentToken
+        while (Enum.CurrentToken != TypeTokenType.Value)
+            SkipNonValueItem();
+
+        len = 0; pt = Enum.CurrentType.Type;
+        if (!_tokenizer.HasValidToken)
+        {
+            if (!_tokenizer.MoveNext())
+                throw new EndOfStreamException();
+        }
+        len = _tokenizer.TokenValue.Length;
+        _tokenizer.TokenValue.CopyTo(dst);
+        EnsureNextValueOrBlockEnd();
+    }
     public string? ReadString()
     {
         EnsureSchemaAndToken(EdfPrimitiveType.String, TextTokenType.StringLiteral);

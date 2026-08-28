@@ -20,14 +20,6 @@ public readonly ref struct BufWriterTxt : IBufWriter
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
-    public void WriteStringRaw(ReadOnlySpan<byte> strRaw)
-    {
-        EnsureSchemaAndToken(EdfPrimitiveType.String, typeof(string));
-        _writer.Write(EdfTokenLiterals.Quote);
-        _writer.Write(strRaw);
-        _writer.Write(EdfTokenLiterals.Quote);
-        EnsureNextValueOrBlockEnd();
-    }
     public void Write(string? str)
     {
         EnsureSchemaAndToken(EdfPrimitiveType.String, typeof(string));
@@ -48,7 +40,33 @@ public readonly ref struct BufWriterTxt : IBufWriter
         _writer.Write(EdfTokenLiterals.Quote);
         EnsureNextValueOrBlockEnd();
     }
-
+    public void WriteSpan(ReadOnlySpan<byte> src, EdfPrimitiveType pt)
+    {
+        switch (pt)
+        {
+            default: throw new EdfWrongTypeException();
+            case EdfPrimitiveType.Int8: Write(MemoryMarshal.Read<sbyte>(src)); break;
+            case EdfPrimitiveType.UInt8: Write(MemoryMarshal.Read<byte>(src)); break;
+            case EdfPrimitiveType.Int16: Write(MemoryMarshal.Read<short>(src)); break;
+            case EdfPrimitiveType.UInt16: Write(MemoryMarshal.Read<ushort>(src)); break;
+            case EdfPrimitiveType.Int32: Write(MemoryMarshal.Read<int>(src)); break;
+            case EdfPrimitiveType.UInt32: Write(MemoryMarshal.Read<uint>(src)); break;
+            case EdfPrimitiveType.Int64: Write(MemoryMarshal.Read<long>(src)); break;
+            case EdfPrimitiveType.UInt64: Write(MemoryMarshal.Read<ulong>(src)); break;
+            case EdfPrimitiveType.Single: Write(MemoryMarshal.Read<float>(src)); break;
+            case EdfPrimitiveType.Double: Write(MemoryMarshal.Read<double>(src)); break;
+            case EdfPrimitiveType.String:
+                EnsureSchemaAndToken(EdfPrimitiveType.String, typeof(string));
+                _writer.Write(EdfTokenLiterals.Quote);
+                _writer.Write(src);
+                _writer.Write(EdfTokenLiterals.Quote);
+                EnsureNextValueOrBlockEnd();
+                break;
+            case EdfPrimitiveType.Char:
+                WriteCharArray(src);
+                break;
+        }
+    }
     private void EnsureSchemaAndToken(EdfPrimitiveType pot, Type valueType)
     {
         while (Enum.CurrentToken != TypeTokenType.Value)
