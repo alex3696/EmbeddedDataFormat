@@ -1,10 +1,15 @@
 namespace EdfNet.Core.Binary;
 
-public sealed class BinaryCircularEdfTypeEnumerator
+public sealed class BinaryCircularEdfTypeEnumerator : IDisposable
 {
     public int PrimOffset = 0;
     public uint RecordId = 0;
     private BinaryEdfTypeEnumerator _enm = new();
+
+    public void Dispose()
+    {
+        _enm.Dispose();
+    }
     public void Reset(EdfType rootType)
     {
         RecordId = 0;

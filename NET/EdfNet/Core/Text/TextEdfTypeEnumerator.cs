@@ -22,27 +22,22 @@ public struct TokenElement
     public readonly string DebugString() => $"{Token} : {Type?.DebugString()}";
 }
 
-public struct TextEdfTypeEnumerator
+public struct TextEdfTypeEnumerator : IDisposable
 {
-    public const int MaxStackSize = 256;
+    public const int MaxStackSize = 64;
     struct StackItem
     {
         public TokenElement Element;
         public uint ArrayIndex;
         public uint ArrayCount;
     }
-    [InlineArray(MaxStackSize)]
-    private struct StackBuffer { public StackItem Slot; }
-
     // Кэш для flatten-токенов
     public const int CacheSize = 1024;          // 16 KB , покрывает ~90% типов
-    [InlineArray(CacheSize)]
-    private struct CacheBuffer { public TokenElement Slot; }
-    private CacheBuffer _cache;
+    private readonly TokenElement[] _cache;
     private int _cacheLen;                      // >0 = cached, 0 = empty, -1 = overflow
     private EdfType? _cachedRoot;               // root, для которого построен кэш
 
-    private StackBuffer _stack;
+    private readonly StackItem[] _stack;
     private int _sp;
 
     private TokenElement _currentElement;
@@ -54,7 +49,17 @@ public struct TextEdfTypeEnumerator
     public readonly EdfType Current => _currentElement.Type!;
     public readonly TypeTokenType CurrentToken => _currentElement.Token;
 
-    public TextEdfTypeEnumerator() => Reset(null);
+    public TextEdfTypeEnumerator()
+    {
+        _stack = ArrayPool<StackItem>.Shared.Rent(MaxStackSize);
+        _cache = ArrayPool<TokenElement>.Shared.Rent(CacheSize);
+        Reset(null);
+    }
+    public readonly void Dispose()
+    {
+        ArrayPool<StackItem>.Shared.Return(_stack);
+        ArrayPool<TokenElement>.Shared.Return(_cache);
+    }
 
     public readonly bool IsInitialized => _cachedRoot is not null;
     // _sp используем как индекс чтения кэша, когда _cacheLen > 0

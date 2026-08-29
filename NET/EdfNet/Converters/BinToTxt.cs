@@ -33,7 +33,7 @@ public class BinToTxt
     public static void Convert(Stream srcBin, Stream dstTxt)
     {
         Span<byte> buf = stackalloc byte[256];
-        StateReaderBin reader = new(srcBin);
+        using StateReaderBin reader = new(srcBin);
         using StateWriterTxt writer = new(dstTxt, reader.Cfg);
         try
         {

@@ -1,4 +1,4 @@
-namespace EdfNet.Core.Text;
+namespace EdfNet.Core.Binary;
 
 // ============================================================
 //  Duck-typing для foreach
@@ -12,7 +12,7 @@ public readonly ref struct EdfTypesStack
         _root = root;
         _stack = stack;
     }
-    public readonly TextEdfTypeEnumeratorStack GetEnumerator() => new(_root, _stack);
+    public readonly BinaryEdfTypeEnumeratorStack GetEnumerator() => new(_root, _stack);
 }
 // ============================================================
 //  Extension
@@ -25,7 +25,7 @@ public static class EdfTypeExtensionsStack
 // ============================================================
 //  EdfTypeEnumeratorStack
 // ============================================================
-public ref struct TextEdfTypeEnumeratorStack
+public ref struct BinaryEdfTypeEnumeratorStack
 {
     private readonly Span<EdfType> _stack;
     private int _sp;
@@ -34,7 +34,7 @@ public ref struct TextEdfTypeEnumeratorStack
     private uint _pendingRemaining;
 
     public readonly EdfType Current => _current!;
-    public TextEdfTypeEnumeratorStack(EdfType root, Span<EdfType> stack)
+    public BinaryEdfTypeEnumeratorStack(EdfType root, Span<EdfType> stack)
     {
         _stack = stack;
         _sp = 0;

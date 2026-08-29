@@ -1,10 +1,10 @@
 namespace EdfNet.Core.Binary;
 
-public class BufStateBin
+public sealed class BufStateBin : IDisposable
 {
     public readonly Stream Stream;
     public readonly BinDataBlock Blk;
-    public readonly BinaryCircularEdfTypeEnumerator Enum = new();
+    public BinaryCircularEdfTypeEnumerator Enum { get; private set; } = new();
     public int Readed;
 
     public ReadOnlySpan<byte> ReadAvailableBuf => Blk.DataBuffer.Slice(Readed);
@@ -14,5 +14,9 @@ public class BufStateBin
     {
         Stream = stream;
         Blk = blk;
+    }
+    public void Dispose()
+    {
+        Enum?.Dispose(); Enum = null!;
     }
 }

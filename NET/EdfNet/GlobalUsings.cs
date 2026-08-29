@@ -2,6 +2,7 @@ global using EdfNet.Base;
 global using EdfNet.Core;
 global using EdfNet.Interfaces;
 global using System;
+global using System.Buffers;
 global using System.Buffers.Binary;
 global using System.Collections.Generic;
 global using System.Diagnostics;

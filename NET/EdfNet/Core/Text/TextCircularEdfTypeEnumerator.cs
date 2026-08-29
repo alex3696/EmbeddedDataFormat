@@ -1,6 +1,6 @@
 namespace EdfNet.Core.Text;
 
-public sealed class TextCircularEdfTypeEnumerator
+public sealed class TextCircularEdfTypeEnumerator : IDisposable
 {
     public int PrimOffset = 0;
     public uint RecordId = 0;
@@ -27,6 +27,10 @@ public sealed class TextCircularEdfTypeEnumerator
                 return _enm.MoveNext();
         }
         return false;
+    }
+    public void Dispose()
+    {
+        _enm.Dispose();
     }
     public EdfType CurrentType => _enm.Current;
     public TypeTokenType CurrentToken => _enm.CurrentToken;

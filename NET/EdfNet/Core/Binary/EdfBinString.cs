@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Text.Unicode;
 
 namespace EdfNet.Core.Binary;

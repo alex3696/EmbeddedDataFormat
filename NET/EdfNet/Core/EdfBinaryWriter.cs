@@ -12,6 +12,11 @@ public class EdfBinaryWriter : BaseWriterBin
     {
         _state = new(_stream, _blkData);
     }
+    protected override void Dispose(bool disposing)
+    {
+        _state?.Dispose();
+        base.Dispose(disposing);
+    }
 
     public override void WriteSchema(EdfSchema sch)
     {

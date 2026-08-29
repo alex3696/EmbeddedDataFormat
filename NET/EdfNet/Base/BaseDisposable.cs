@@ -1,9 +1,6 @@
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace EdfNet.Base;
 
-public class BaseDisposable : IAnyDisposable
+public class BaseDisposable : IDisposable
 {
     public delegate void LogMessage(string? msg);
 
@@ -26,25 +23,19 @@ public class BaseDisposable : IAnyDisposable
         if (IsDisposed)
             return;
         Log($"MEMORY LEAK: {this.GetType().FullName}");
-        DisposeInternal().SynchronousWait();
     }
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
-        await DisposeInternal().ConfigureAwait(false);
+        DisposeInternal();
         GC.SuppressFinalize(this);
     }
-    public async void Dispose()
+    private void DisposeInternal()
     {
-        await DisposeInternal().ConfigureAwait(false);
-        GC.SuppressFinalize(this);
-    }
-    private async Task DisposeInternal()
-    {
-        if (0 != Interlocked.Exchange(ref _isDisposed, 1))
+        if (0 != _isDisposed)
             return;
+        _isDisposed = 1;
         try
         {
-            await DisposeAsyncCore().ConfigureAwait(false);
             Dispose(true);
         }
         catch (Exception ex)
@@ -54,13 +45,5 @@ public class BaseDisposable : IAnyDisposable
     }
     protected virtual void Dispose(bool disposing)
     {
-    }
-    protected virtual ValueTask DisposeAsyncCore()
-    {
-# if NET8_0_OR_GREATER
-        return ValueTask.CompletedTask;
-#else
-        return new ValueTask();
-#endif
     }
 }

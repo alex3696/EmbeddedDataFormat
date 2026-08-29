@@ -3,10 +3,11 @@ using EdfNet.Core.Text;
 
 namespace EdfNet.Core;
 
-public class EdfTextReader
+public class EdfTextReader : BaseDisposable
 {
     private EdfConfig _cfg;
     private EdfBlockType _currentBlockType;
+    private readonly byte[] _readerBuf;
     private readonly StreamBufferedReader _bufferedReader;
     protected readonly EdfTokenReader _tokenReader;
     protected readonly TextCircularEdfTypeEnumerator _enum = new();
@@ -18,10 +19,16 @@ public class EdfTextReader
     public EdfTextReader(Stream stream, EdfConfig? cfg = default)
     {
         _cfg = cfg ?? EdfConfig.Default;
-        _bufferedReader = new StreamBufferedReader(stream, 1024);
+        _readerBuf = ArrayPool<byte>.Shared.Rent(1024);
+        _bufferedReader = new StreamBufferedReader(stream, _readerBuf);
         _tokenReader = new(_bufferedReader);
     }
-
+    protected override void Dispose(bool disposing)
+    {
+        _enum.Dispose();
+        ArrayPool<byte>.Shared.Return(_readerBuf);
+        base.Dispose(disposing);
+    }
     public bool ReadBlock()
     {
         if (!_tokenReader.HasValidToken)

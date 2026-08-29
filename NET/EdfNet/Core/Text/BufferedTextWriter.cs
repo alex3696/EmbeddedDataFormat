@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Buffers.Text;
 using System.Text.Unicode;
 
@@ -9,7 +8,6 @@ public sealed class BufferedTextWriter
     private readonly byte[] _buf;
     private readonly Stream _stream;
 
-    public BufferedTextWriter(Stream stream, int bufferSize) : this(stream, new byte[bufferSize]) { }
     public BufferedTextWriter(Stream stream, byte[] buf)
     {
         _stream = stream;

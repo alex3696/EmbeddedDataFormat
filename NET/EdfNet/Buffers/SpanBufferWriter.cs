@@ -1,5 +1,4 @@
 using EdfNet.Core.Binary;
-using System.Buffers;
 
 namespace EdfNet.Buffers;
 

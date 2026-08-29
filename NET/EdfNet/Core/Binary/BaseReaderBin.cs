@@ -1,6 +1,6 @@
 namespace EdfNet.Core.Binary;
 
-public abstract class BaseReaderBin
+public abstract class BaseReaderBin : BaseDisposable
 {
     public EdfConfig Cfg { get; }
     public EdfSchema? CurrentSchema;
@@ -13,16 +13,23 @@ public abstract class BaseReaderBin
     {
         _stream = stream;
         Cfg = cfg ?? EdfConfig.Default;
-        _blk = new BinBlock(new byte[32]);
+        var tmpBuf = ArrayPool<byte>.Shared.Rent(32);
+        _blk = new BinBlock(tmpBuf);
         if (ReadBlock())
         {
             var newCfg = ReadConfig();
             if (newCfg != null)
                 Cfg = newCfg;
         }
-        _blkBuf = new byte[Cfg.BlockSize];
+        ArrayPool<byte>.Shared.Return(tmpBuf);
+        _blkBuf = ArrayPool<byte>.Shared.Rent(Cfg.BlockSize);
         _blk = new(_blkBuf);
         _blkData = new(_blkBuf);
+    }
+    protected override void Dispose(bool disposing)
+    {
+        ArrayPool<byte>.Shared.Return(_blkBuf);
+        base.Dispose(disposing);
     }
     public bool ReadBlock()
     {
@@ -39,7 +46,6 @@ public abstract class BaseReaderBin
         }
         return false;
     }
-
 
     public EdfBlockType GetBlockType() => _blk.Type;
     public ushort GetBlockLen() => _blk.TotalLen;

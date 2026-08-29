@@ -1,16 +1,12 @@
 namespace EdfNet.Core.Binary;
 
-public struct BinaryEdfTypeEnumerator
+public struct BinaryEdfTypeEnumerator : IDisposable
 {
-    public const int MaxStackSize = 256;
-    [InlineArray(MaxStackSize)]
-    private struct StackBuffer { public EdfType Slot; }
-    private StackBuffer _stack;
+    public const int MaxStackSize = 64;
+    private readonly EdfType[] _stack;
 
     public const int CacheSize = 1024;          // 16 KB , покрывает ~90% типов
-    [InlineArray(CacheSize)]
-    private struct CacheBuffer { public EdfType Slot; }
-    private CacheBuffer _cache;
+    private readonly EdfType[] _cache;
     private int _cacheLen;                      // >0 = cached, 0 = empty, -1 = overflow
     private EdfType? _cachedRoot;               // root, для которого построен кэш
 
@@ -20,7 +16,17 @@ public struct BinaryEdfTypeEnumerator
     private uint _pendingRemaining;
     public readonly EdfType Current => _current!;
 
-    public BinaryEdfTypeEnumerator() => Reset(null);
+    public BinaryEdfTypeEnumerator()
+    {
+        _stack = ArrayPool<EdfType>.Shared.Rent(MaxStackSize);
+        _cache = ArrayPool<EdfType>.Shared.Rent(CacheSize);
+        Reset(null);
+    }
+    public readonly void Dispose()
+    {
+        ArrayPool<EdfType>.Shared.Return(_stack);
+        ArrayPool<EdfType>.Shared.Return(_cache);
+    }
     public readonly bool IsEnded => _cacheLen > 0 ? _sp >= _cacheLen : _sp == 0;
     public bool Restart()
     {

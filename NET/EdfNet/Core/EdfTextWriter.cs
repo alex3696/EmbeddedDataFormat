@@ -7,6 +7,7 @@ public class EdfTextWriter : BaseDisposable, IWriter
     protected readonly TextCircularEdfTypeEnumerator _enum = new();
     protected readonly EdfFormatterOptions _options = EdfFormatterOptions.Default;
     protected readonly BufferedTextWriter _textWriter;
+    private readonly byte[] _textWriterBuffer;
 
     public EdfConfig Cfg { get; }
     public EdfSchema? CurrentSchema;
@@ -14,16 +15,18 @@ public class EdfTextWriter : BaseDisposable, IWriter
     public EdfTextWriter(Stream stream, EdfConfig? cfg = null)
     {
         Cfg = cfg ?? EdfConfig.Default;
-        _textWriter = new BufferedTextWriter(stream, 1024);
+        _textWriterBuffer = ArrayPool<byte>.Shared.Rent(256);
+        _textWriter = new BufferedTextWriter(stream, _textWriterBuffer);
         if (0 == stream.Position)
             WriteConfig(Cfg);
     }
     protected override void Dispose(bool disposing)
     {
         Flush();
+        ArrayPool<byte>.Shared.Return(_textWriterBuffer);
+        _enum.Dispose();
         base.Dispose(disposing);
     }
-
     public void WriteConfig(EdfConfig h)
     {
         _textWriter.WriteConfig(h);

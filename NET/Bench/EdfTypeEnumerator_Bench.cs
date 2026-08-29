@@ -24,10 +24,10 @@ namespace Bench;
 | EdfTypeEnumeratorYield                    | NativeAOT 10.0 | 1,945.2 ns | 11.21 |    3968 B |          NA | 
  */
 
-[MemoryDiagnoser(false)]
+[MemoryDiagnoser(true)]
 [HideColumns("Runtime", "Error", "StdDev", "Median", "RatioSD")]
-[SimpleJob(RuntimeMoniker.Net10_0, baseline: true)]
-[SimpleJob(RuntimeMoniker.NativeAot10_0)]
+//[SimpleJob(RuntimeMoniker.Net10_0, baseline: true)]
+//[SimpleJob(RuntimeMoniker.NativeAot10_0)]
 public class EdfTypeEnumerator_Bench
 {
     readonly EdfTypeEnumerator_Test _tst = new();
@@ -56,6 +56,6 @@ public class EdfTypeEnumerator_Bench
         _tst._enmToken.EnableCache = true;
         _tst.EdfTypeEnumeratorToken();
     }
-    [Benchmark] public void EdfTypeEnumeratorRecursive() => _tst.EdfTypeEnumeratorRecursive();
-    [Benchmark] public void EdfTypeEnumeratorRecursiveClass() => _tst.EdfTypeEnumeratorRecursiveClass();
+    //[Benchmark] public void EdfTypeEnumeratorRecursive() => _tst.EdfTypeEnumeratorRecursive();
+    //[Benchmark] public void EdfTypeEnumeratorRecursiveClass() => _tst.EdfTypeEnumeratorRecursiveClass();
 }

@@ -33,7 +33,7 @@ public class TxtToBin
     public static void Convert(Stream srcBin, Stream dstTxt)
     {
         Span<byte> buf = stackalloc byte[256];
-        StateReaderTxt reader = new(srcBin);
+        using StateReaderTxt reader = new(srcBin);
         if (!reader.ReadBlock() || EdfBlockType.Config != reader.GetBlockType())
             throw new Exception("There are no config block");
         using StateWriterBin writer = new(dstTxt, reader.Cfg);

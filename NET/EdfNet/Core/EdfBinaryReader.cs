@@ -12,6 +12,11 @@ public class EdfBinaryReader : BaseReaderBin
     {
         _state = new BufStateBin(stream, _blkData);
     }
+    protected override void Dispose(bool disposing)
+    {
+        _state.Dispose();
+        base.Dispose(disposing);
+    }
     protected override void OnSchemaBlockRead()
     {
         if (CurrentSchema?.Type != null)
