@@ -14,6 +14,67 @@ public readonly ref struct BufWriterTxt : IBufWriter
         _writer = writer;
         Enum = enm;
     }
+    public void Write(byte val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.UInt8, typeof(byte));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(sbyte val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Int8, typeof(sbyte));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(ushort val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.UInt16, typeof(ushort));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(short val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Int16, typeof(short));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(uint val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.UInt32, typeof(uint));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(int val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Int32, typeof(int));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(ulong val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.UInt64, typeof(ulong));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(long val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Int64, typeof(long));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(double val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Double, typeof(double));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+    public void Write(float val)
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Single, typeof(float));
+        _writer.WriteNumber(val);
+        EnsureNextValueOrBlockEnd();
+    }
+
     public void Write<T>(T val) where T : struct
     {
         EnsureSchemaAndToken(typeof(T).GetPoType(), typeof(T));
@@ -45,16 +106,16 @@ public readonly ref struct BufWriterTxt : IBufWriter
         switch (pt)
         {
             default: throw new EdfWrongTypeException();
-            case EdfPrimitiveType.Int8: Write(MemoryMarshal.Read<sbyte>(src)); break;
-            case EdfPrimitiveType.UInt8: Write(MemoryMarshal.Read<byte>(src)); break;
-            case EdfPrimitiveType.Int16: Write(MemoryMarshal.Read<short>(src)); break;
-            case EdfPrimitiveType.UInt16: Write(MemoryMarshal.Read<ushort>(src)); break;
-            case EdfPrimitiveType.Int32: Write(MemoryMarshal.Read<int>(src)); break;
-            case EdfPrimitiveType.UInt32: Write(MemoryMarshal.Read<uint>(src)); break;
-            case EdfPrimitiveType.Int64: Write(MemoryMarshal.Read<long>(src)); break;
-            case EdfPrimitiveType.UInt64: Write(MemoryMarshal.Read<ulong>(src)); break;
-            case EdfPrimitiveType.Single: Write(MemoryMarshal.Read<float>(src)); break;
-            case EdfPrimitiveType.Double: Write(MemoryMarshal.Read<double>(src)); break;
+            case EdfPrimitiveType.Int8: Write(Unsafe.As<byte, sbyte>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.UInt8: Write(Unsafe.As<byte, byte>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.Int16: Write(Unsafe.As<byte, short>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.UInt16: Write(Unsafe.As<byte, ushort>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.Int32: Write(Unsafe.As<byte, int>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.UInt32: Write(Unsafe.As<byte, uint>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.Int64: Write(Unsafe.As<byte, long>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.UInt64: Write(Unsafe.As<byte, ulong>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.Single: Write(Unsafe.As<byte, float>(ref MemoryMarshal.GetReference(src))); break;
+            case EdfPrimitiveType.Double: Write(Unsafe.As<byte, double>(ref MemoryMarshal.GetReference(src))); break;
             case EdfPrimitiveType.String:
                 EnsureSchemaAndToken(EdfPrimitiveType.String, typeof(string));
                 _writer.Write(EdfTokenLiterals.Quote);

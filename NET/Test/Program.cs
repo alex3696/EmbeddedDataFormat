@@ -23,7 +23,7 @@ internal class Program
     public static int Main(string[] args)
     {
         var conv = new NetTest.TestConverters();
-        conv.BinToTxtConvert();
+        conv.TxtToBinConvert();
         var reflTests = new TestStructSerialize();
         //ExecTryCatch(reflTests.TestPrimitiveDecomposer);
         ExecTryCatch(reflTests.TestPackUnpack);

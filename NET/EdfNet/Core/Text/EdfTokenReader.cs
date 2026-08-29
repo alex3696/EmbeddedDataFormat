@@ -201,7 +201,10 @@ public class EdfTokenReader
             byte b = buf[0];
             if (IsAsciiWhitespace(b))
             {
-                AdvanceReader(1);
+                int whitespaceCount = 1;
+                while (whitespaceCount < buf.Length && IsAsciiWhitespace(buf[whitespaceCount]))
+                    whitespaceCount++;
+                AdvanceReader(whitespaceCount);
                 continue;
             }
 

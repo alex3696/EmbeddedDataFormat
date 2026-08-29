@@ -14,6 +14,97 @@ public readonly ref struct BufWriterBin : IBufWriter
     {
         _state.Enum.MoveNext();
     }
+    public void Write(byte val)
+    {
+        if (EdfPrimitiveType.UInt8 != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(1);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);//MemoryMarshal.Write(_state.Blk.GetEmptyBuffer(), val);
+        _state.Blk.DataLen += 1;
+        EnsureValueToken();
+    }
+    public void Write(sbyte val)
+    {
+        if (EdfPrimitiveType.Int8 != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(1);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 1;
+        EnsureValueToken();
+    }
+    public void Write(ushort val)
+    {
+        if (EdfPrimitiveType.UInt16 != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(2);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 2;
+        EnsureValueToken();
+    }
+    public void Write(short val)
+    {
+        if (EdfPrimitiveType.Int16 != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(2);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 2;
+        EnsureValueToken();
+    }
+    public void Write(uint val)
+    {
+        if (EdfPrimitiveType.UInt32 != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(4);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 4;
+        EnsureValueToken();
+    }
+    public void Write(int val)
+    {
+        if (EdfPrimitiveType.Int32 != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(4);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 4;
+        EnsureValueToken();
+    }
+    public void Write(ulong val)
+    {
+        if (EdfPrimitiveType.UInt64 != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(8);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 8;
+        EnsureValueToken();
+    }
+    public void Write(long val)
+    {
+        if (EdfPrimitiveType.Int64 != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(8);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 8;
+        EnsureValueToken();
+    }
+    public void Write(float val)
+    {
+        if (EdfPrimitiveType.Single != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(4);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 4;
+        EnsureValueToken();
+    }
+    public void Write(double val)
+    {
+        if (EdfPrimitiveType.Double != CurrentType.Type)
+            throw new EdfWrongTypeException();
+        EnsureCapacity(8);
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.DataLen += 8;
+        EnsureValueToken();
+    }
+
     public void Write<T>(T val) where T : struct
     {
         if (CurrentType.Type != typeof(T).GetPoType())
@@ -65,29 +156,40 @@ public readonly ref struct BufWriterBin : IBufWriter
     {
         if (CurrentType.Type != pt)
             throw new EdfWrongTypeException();
+        ushort len;
         switch (pt)
         {
             default: throw new EdfWrongTypeException();
-            //case EdfPrimitiveType.UInt8: Write(MemoryMarshal.Read<byte>(src)); break;
-            //case EdfPrimitiveType.Int8: Write(MemoryMarshal.Read<sbyte>(src)); break;
-            //case EdfPrimitiveType.UInt16: Write(MemoryMarshal.Read<ushort>(src)); break;
-            //case EdfPrimitiveType.Int16: Write(MemoryMarshal.Read<short>(src)); break;
-            //case EdfPrimitiveType.UInt32: Write(MemoryMarshal.Read<uint>(src)); break;
-            //case EdfPrimitiveType.Int32: Write(MemoryMarshal.Read<int>(src)); break;
-            //case EdfPrimitiveType.UInt64: Write(MemoryMarshal.Read<ulong>(src)); break;
-            //case EdfPrimitiveType.Int64: Write(MemoryMarshal.Read<long>(src)); break;
-            //case EdfPrimitiveType.Single: Write(MemoryMarshal.Read<float>(src)); break;
-            //case EdfPrimitiveType.Double: Write(MemoryMarshal.Read<double>(src)); break;
-            //case EdfPrimitiveType.Char: WriteCharArray(src); break;
+            case EdfPrimitiveType.UInt8:
+            case EdfPrimitiveType.Int8: len = 1; break;
+            case EdfPrimitiveType.UInt16:
+            case EdfPrimitiveType.Int16: len = 2; break;
+            case EdfPrimitiveType.Single:
+            case EdfPrimitiveType.UInt32:
+            case EdfPrimitiveType.Int32: len = 4; break;
+            case EdfPrimitiveType.Double:
+            case EdfPrimitiveType.UInt64:
+            case EdfPrimitiveType.Int64: len = 8; break;
+            case EdfPrimitiveType.Char: WriteCharArray(src); return;
             case EdfPrimitiveType.String:
-                var len = int.Min(EdfBinString.MaxLen, src.Length);
-                EnsureCapacity(len + 1);
-                var dst = _state.Blk.GetEmptyBuffer();
-                dst[0] = (byte)len;
-                src.Slice(0, len).CopyTo(dst.Slice(1, len));
-                _state.Blk.DataLen += (ushort)(len + 1);
-                EnsureValueToken();
-                break;
+                {
+                    len = (ushort)int.Min(EdfBinString.MaxLen, src.Length);
+                    EnsureCapacity(len + 1);
+                    var dst = _state.Blk.GetEmptyBuffer();
+                    dst[0] = (byte)len;
+                    src.Slice(0, len).CopyTo(dst.Slice(1, len));
+                    _state.Blk.DataLen += (ushort)(len + 1);
+                    EnsureValueToken();
+                    return;
+                }
+        }
+        // write number
+        {
+            EnsureCapacity(len);
+            var dst = _state.Blk.GetEmptyBuffer();
+            src.Slice(0, len).CopyTo(dst);
+            _state.Blk.DataLen += len;
+            EnsureValueToken();
         }
     }
 }

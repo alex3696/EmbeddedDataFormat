@@ -10,14 +10,15 @@ using System.IO;
 namespace Bench;
 
 /*
+direct
 | Method           | Runtime        | Mean    | Ratio | Allocated | Alloc Ratio |
 |----------------- |--------------- |--------:|------:|----------:|------------:|
-| 'Binary -> Text' | .NET 10.0      | 1.759 s |  1.00 |  49.98 KB |        1.00 |
-| 'Binary -> Text' | NativeAOT 10.0 | 2.434 s |  1.38 |  58.06 KB |        1.16 |
+| 'Binary -> Text' | .NET 10.0      | 1.506 s |  1.00 |  16.52 KB |        1.00 |
+| 'Binary -> Text' | NativeAOT 10.0 | 2.073 s |  1.38 |  26.13 KB |        1.58 |
 |                  |                |         |       |           |             |
-| 'Text -> Binary' | .NET 10.0      | 2.097 s |  1.00 |  48.27 KB |        1.00 |
-| 'Text -> Binary' | NativeAOT 10.0 | 3.261 s |  1.55 |  57.43 KB |        1.19 |
-*/
+| 'Text -> Binary' | .NET 10.0      | 2.063 s |  1.00 |  14.64 KB |        1.00 |
+| 'Text -> Binary' | NativeAOT 10.0 | 2.785 s |  1.35 |  25.44 KB |        1.74 |
+ */
 
 [MemoryDiagnoser(true)]
 [HideColumns("Error", "StdDev", "Median", "RatioSD")]

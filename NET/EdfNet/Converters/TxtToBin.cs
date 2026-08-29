@@ -37,6 +37,8 @@ public class TxtToBin
         if (!reader.ReadBlock() || EdfBlockType.Config != reader.GetBlockType())
             throw new Exception("There are no config block");
         using StateWriterBin writer = new(dstTxt, reader.Cfg);
+        BufReaderTxt tr = new();
+        BufWriterBin bw = new();
         try
         {
             while (reader.ReadBlock())
@@ -47,17 +49,35 @@ public class TxtToBin
                     case EdfBlockType.Schema:
                         var rec = reader.CurrentSchema;
                         if (rec != null)
+                        {
                             writer.WriteSchema(rec);
+                            tr = new(reader.TokenReader, reader.Enum);
+                            bw = new(writer.State);
+                        }
                         break;
                     case EdfBlockType.Data:
                         ArgumentNullException.ThrowIfNull(writer.CurrentSchema?.Type);
-                        BufReaderTxt tr = new(reader.TokenReader, reader.Enum);
-                        BufWriterBin bw = new(writer.State);
                         do
                         {
-                            Convert(tr, bw, buf);
-                            //tr.ReadToSpan(buf, out var pt, out var len);
-                            //bw.WriteSpan(buf.Slice(0, len), pt);
+                            switch (bw.CurrentType.Type)
+                            {
+                                default:
+                                case EdfPrimitiveType.Struct: throw new EdfWrongTypeException();
+                                case EdfPrimitiveType.UInt8: bw.Write(tr.ReadUInt8()); break;
+                                case EdfPrimitiveType.Int8: bw.Write(tr.ReadInt8()); break;
+                                case EdfPrimitiveType.UInt16: bw.Write(tr.ReadUInt16()); break;
+                                case EdfPrimitiveType.Int16: bw.Write(tr.ReadInt16()); break;
+                                case EdfPrimitiveType.UInt32: bw.Write(tr.ReadUInt32()); break;
+                                case EdfPrimitiveType.Int32: bw.Write(tr.ReadInt32()); break;
+                                case EdfPrimitiveType.UInt64: bw.Write(tr.ReadUInt64()); break;
+                                case EdfPrimitiveType.Int64: bw.Write(tr.ReadInt64()); break;
+                                case EdfPrimitiveType.Single: bw.Write(tr.ReadSingle()); break;
+                                case EdfPrimitiveType.Double: bw.Write(tr.ReadDouble()); break;
+                                case EdfPrimitiveType.Char:
+                                case EdfPrimitiveType.String:
+                                    tr.ReadToSpan(buf, out var pt, out var len);
+                                    bw.WriteSpan(buf.Slice(0, len), pt); break;
+                            }
                         }
                         while (reader.TokenReader.MoveNext()
                             && reader.TokenReader.TokenType != TextTokenType.EOF
@@ -73,29 +93,5 @@ public class TxtToBin
 
         }
         writer.Flush();
-    }
-
-    private static void Convert(BufReaderTxt br, BufWriterBin bw, Span<byte> buf)
-    {
-        switch (bw.CurrentType.Type)
-        {
-            default:
-            case EdfPrimitiveType.Struct: throw new EdfWrongTypeException();
-            case EdfPrimitiveType.UInt8: bw.Write(br.Read<byte>()); break;
-            case EdfPrimitiveType.Int8: bw.Write(br.Read<sbyte>()); break;
-            case EdfPrimitiveType.UInt16: bw.Write(br.Read<ushort>()); break;
-            case EdfPrimitiveType.Int16: bw.Write(br.Read<short>()); break;
-            case EdfPrimitiveType.UInt32: bw.Write(br.Read<uint>()); break;
-            case EdfPrimitiveType.Int32: bw.Write(br.Read<int>()); break;
-            case EdfPrimitiveType.UInt64: bw.Write(br.Read<ulong>()); break;
-            case EdfPrimitiveType.Int64: bw.Write(br.Read<long>()); break;
-            case EdfPrimitiveType.Single: bw.Write(br.Read<float>()); break;
-            case EdfPrimitiveType.Double: bw.Write(br.Read<double>()); break;
-            case EdfPrimitiveType.String:
-                br.ReadToSpan(buf, out var pt, out var len);
-                bw.WriteSpan(buf.Slice(0, len), pt); break;
-            //bw.Write(br.ReadString()); break;
-            case EdfPrimitiveType.Char: bw.WriteCharArray(br.ReadCharArray()); break;
-        }
     }
 }

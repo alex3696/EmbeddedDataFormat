@@ -15,7 +15,7 @@ public class BinBlock
     //public ushort FreeDataLen => (ushort)(MaxPayloadLen - DataLen);
     public ushort ContentLen
     {
-        get => MemoryMarshal.Read<ushort>(_buffer.AsSpan(1, 2));
+        get => Unsafe.ReadUnaligned<ushort>(ref _buffer[1]); //MemoryMarshal.Read<ushort>(_buffer.AsSpan(1, 2));
         set => MemoryMarshal.Write(_buffer.AsSpan(1, 2), value);
     }
     public ushort Crc => MemoryMarshal.Read<ushort>(_buffer.AsSpan(HeaderLen + ContentLen, CrcLen));

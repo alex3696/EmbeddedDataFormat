@@ -310,10 +310,10 @@ public class TestStructSerialize
         }
         BinToTxt.Convert(binFile, txtConvFile);
         bool isEqual = FileUtils.FileCompare(txtFile, txtConvFile);
-        Assert.IsTrue(isEqual);
+        Assert.IsTrue(isEqual, "failed converter BinToTxt");
 
         TxtToBin.Convert(txtFile, binConvFile);
-        Assert.IsTrue(FileUtils.FileCompare(binFile, binConvFile));
+        Assert.IsTrue(FileUtils.FileCompare(binFile, binConvFile), "failed converter TxtToBin");
     }
 
     static int WriteBigVar(IWriter dw)

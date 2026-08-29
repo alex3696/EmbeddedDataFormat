@@ -1,4 +1,4 @@
-using System.Buffers.Text;
+using System.Globalization;
 
 namespace EdfNet.Core.Text;
 
@@ -18,8 +18,7 @@ public readonly ref struct BufReaderTxt : IBufReader
 
     private void SkipNonValueItem()
     {
-        var token = Enum.CurrentToken;
-        switch (token)
+        switch (Enum.CurrentToken)
         {
             case TypeTokenType.BeginRecord: _tokenizer.ExpectAdvance(TextTokenType.RecBegin); break;
             case TypeTokenType.EndRecord: _tokenizer.ExpectAdvance(TextTokenType.BlockEnd); break;
@@ -27,7 +26,7 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeTokenType.EndStruct: _tokenizer.ExpectAdvance(TextTokenType.StructEnd); break;
             case TypeTokenType.BeginArray: _tokenizer.ExpectAdvance(TextTokenType.ArrayBegin); break;
             case TypeTokenType.EndArray: _tokenizer.ExpectAdvance(TextTokenType.ArrayEnd); break;
-            default: throw new NotSupportedException($"Token {token} not supported.");
+            default: throw new NotSupportedException($"Token {Enum.CurrentToken} not supported.");
         }
         Enum.MoveNext();
     }
@@ -64,84 +63,102 @@ public readonly ref struct BufReaderTxt : IBufReader
             SkipNonValueItem();
     }
 
+    public byte ReadUInt8()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.UInt8, TextTokenType.Number);
+        if (!byte.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public sbyte ReadInt8()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Int8, TextTokenType.Number);
+        if (!sbyte.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public ushort ReadUInt16()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.UInt16, TextTokenType.Number);
+        if (!ushort.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public short ReadInt16()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Int16, TextTokenType.Number);
+        if (!short.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public uint ReadUInt32()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.UInt32, TextTokenType.Number);
+        if (!uint.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public int ReadInt32()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Int32, TextTokenType.Number);
+        if (!int.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public ulong ReadUInt64()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.UInt64, TextTokenType.Number);
+        if (!ulong.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public long ReadInt64()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Int64, TextTokenType.Number);
+        if (!long.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public float ReadSingle()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Single, TextTokenType.Number);
+        if (!float.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+    public double ReadDouble()
+    {
+        EnsureSchemaAndToken(EdfPrimitiveType.Double, TextTokenType.Number);
+        if (!double.TryParse(_tokenizer.TokenValue, CultureInfo.InvariantCulture, out var b))
+            throw new NotSupportedException($"Can`t parse byte");
+        EnsureNextValueOrBlockEnd();
+        return b;
+    }
+
     public T Read<T>() where T : struct
     {
-        EnsureSchemaAndToken(typeof(T).GetPoType(), TextTokenType.Number);
-        var buf = _tokenizer.TokenValue;
-        var code = Type.GetTypeCode(typeof(T));
-        switch (code)
+        switch (Type.GetTypeCode(typeof(T)))
         {
             default: break;
-            case TypeCode.Byte:
-                if (Utf8Parser.TryParse(buf, out byte b, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<byte, T>(ref b);
-                }
-                break;
-            case TypeCode.SByte:
-                if (Utf8Parser.TryParse(buf, out sbyte sb, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<sbyte, T>(ref sb);
-                }
-                break;
-            case TypeCode.UInt16:
-                if (Utf8Parser.TryParse(buf, out ushort us, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<ushort, T>(ref us);
-                }
-                break;
-            case TypeCode.Int16:
-                if (Utf8Parser.TryParse(buf, out short s, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<short, T>(ref s);
-                }
-                break;
-            case TypeCode.UInt32:
-                if (Utf8Parser.TryParse(buf, out uint ui, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<uint, T>(ref ui);
-                }
-                break;
-            case TypeCode.Int32:
-                if (Utf8Parser.TryParse(buf, out int i, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<int, T>(ref i);
-                }
-                break;
-            case TypeCode.UInt64:
-                if (Utf8Parser.TryParse(buf, out ulong ul, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<ulong, T>(ref ul);
-                }
-                break;
-            case TypeCode.Int64:
-                if (Utf8Parser.TryParse(buf, out long l, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<long, T>(ref l);
-                }
-                break;
-            case TypeCode.Single:
-                if (Utf8Parser.TryParse(buf, out float f, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<float, T>(ref f);
-                }
-                break;
-            case TypeCode.Double:
-                if (Utf8Parser.TryParse(buf, out double d, out _))
-                {
-                    EnsureNextValueOrBlockEnd();
-                    return Unsafe.As<double, T>(ref d);
-                }
-                break;
+            case TypeCode.Byte: { var b = ReadUInt8(); return Unsafe.As<byte, T>(ref b); }
+            case TypeCode.SByte: { var b = ReadInt8(); return Unsafe.As<sbyte, T>(ref b); }
+            case TypeCode.UInt16: { var b = ReadUInt16(); return Unsafe.As<ushort, T>(ref b); }
+            case TypeCode.Int16: { var b = ReadInt16(); return Unsafe.As<short, T>(ref b); }
+            case TypeCode.UInt32: { var b = ReadUInt32(); return Unsafe.As<uint, T>(ref b); }
+            case TypeCode.Int32: { var b = ReadInt32(); return Unsafe.As<int, T>(ref b); }
+            case TypeCode.UInt64: { var b = ReadUInt64(); return Unsafe.As<ulong, T>(ref b); }
+            case TypeCode.Int64: { var b = ReadInt64(); return Unsafe.As<long, T>(ref b); }
+            case TypeCode.Single: { var b = ReadSingle(); return Unsafe.As<float, T>(ref b); }
+            case TypeCode.Double: { var b = ReadDouble(); return Unsafe.As<double, T>(ref b); }
         }
         throw new NotSupportedException($"Type {typeof(T).Name} not supported.");
     }
@@ -150,16 +167,36 @@ public readonly ref struct BufReaderTxt : IBufReader
         // skip non value Enum.CurrentToken
         while (Enum.CurrentToken != TypeTokenType.Value)
             SkipNonValueItem();
-
-        len = 0; pt = Enum.CurrentType.Type;
-        if (!_tokenizer.HasValidToken)
+        pt = Enum.CurrentType.Type;
+        switch (pt)
         {
-            if (!_tokenizer.MoveNext())
-                throw new EndOfStreamException();
+            default: throw new EdfWrongTypeException();
+            case EdfPrimitiveType.UInt8: MemoryMarshal.Write(dst, ReadUInt8()); len = 1; return;
+            case EdfPrimitiveType.Int8: MemoryMarshal.Write(dst, ReadInt8()); len = 1; return;
+            case EdfPrimitiveType.UInt16: MemoryMarshal.Write(dst, ReadUInt16()); len = 2; return;
+            case EdfPrimitiveType.Int16: MemoryMarshal.Write(dst, ReadInt16()); len = 2; return;
+            case EdfPrimitiveType.UInt32: MemoryMarshal.Write(dst, ReadUInt32()); len = 4; return;
+            case EdfPrimitiveType.Int32: MemoryMarshal.Write(dst, ReadInt32()); len = 4; return;
+            case EdfPrimitiveType.UInt64: MemoryMarshal.Write(dst, ReadUInt64()); len = 8; return;
+            case EdfPrimitiveType.Int64: MemoryMarshal.Write(dst, ReadInt64()); len = 8; return;
+            case EdfPrimitiveType.Single: MemoryMarshal.Write(dst, ReadSingle()); len = 4; return;
+            case EdfPrimitiveType.Double: MemoryMarshal.Write(dst, ReadDouble()); len = 8; return;
+            case EdfPrimitiveType.Char:
+                EnsureSchemaAndToken(EdfPrimitiveType.Char, TextTokenType.StringLiteral);
+                var content = _tokenizer.TokenValue;
+                len = (int)CurrentType.GetTotalElements();
+                content.Slice(0, int.Min(len, content.Length)).CopyTo(dst);
+                if (content.Length < len)
+                    dst.Slice(content.Length, len - content.Length).Clear();
+                EnsureNextValueOrBlockEnd();
+                return;
+            case EdfPrimitiveType.String:
+                EnsureSchemaAndToken(EdfPrimitiveType.String, TextTokenType.StringLiteral);
+                len = _tokenizer.TokenValue.Length;
+                _tokenizer.TokenValue.CopyTo(dst);
+                EnsureNextValueOrBlockEnd();
+                return;
         }
-        len = _tokenizer.TokenValue.Length;
-        _tokenizer.TokenValue.CopyTo(dst);
-        EnsureNextValueOrBlockEnd();
     }
     public string? ReadString()
     {

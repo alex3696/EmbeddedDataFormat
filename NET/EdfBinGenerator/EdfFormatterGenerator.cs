@@ -188,7 +188,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
                 else
                     access += $" ?? EmptyObjectCache<{typeName}>.Instance";
             }
-            else if(type.IsValueType)
+            else if (type.IsValueType)
             {
                 if (string.IsNullOrEmpty(access))
                     access = $"default({typeName})";
@@ -209,8 +209,8 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         }
         else if (TypeSymbolUtils.IsSupportedPrimitive(type))
         {
-            string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
-            return $"reader.Read<{typeName}>()";
+            var primSuffix = type.MapToEdfPrimitiveType();
+            return $"reader.Read{primSuffix}()";
         }
         else if (type.IsSerializable())
         {

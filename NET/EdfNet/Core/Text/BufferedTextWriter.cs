@@ -1,4 +1,5 @@
-using System.Buffers.Text;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.Unicode;
 
 namespace EdfNet.Core.Text;
@@ -40,25 +41,86 @@ public sealed class BufferedTextWriter
         if (quoted)
             _stream.Write(EdfTokenLiterals.Quote); // Write the opening quote
     }
+    public void WriteNumber(byte val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(sbyte val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(ushort val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(short val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(uint val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(int val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(ulong val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(long val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(float val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+    public void WriteNumber(double val)
+    {
+        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+            ThrowFormatError(val);
+        _stream.Write(_buf, 0, len);
+    }
+
     public void WriteNumber<T>(T val) where T : struct
     {
         int len = 0;
         switch (Type.GetTypeCode(typeof(T)))
         {
-            default: ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.Byte: if (!Utf8Formatter.TryFormat(Unsafe.As<T, byte>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.SByte: if (!Utf8Formatter.TryFormat(Unsafe.As<T, sbyte>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.UInt16: if (!Utf8Formatter.TryFormat(Unsafe.As<T, ushort>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.Int16: if (!Utf8Formatter.TryFormat(Unsafe.As<T, short>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.UInt32: if (!Utf8Formatter.TryFormat(Unsafe.As<T, uint>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.Int32: if (!Utf8Formatter.TryFormat(Unsafe.As<T, int>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.UInt64: if (!Utf8Formatter.TryFormat(Unsafe.As<T, ulong>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.Int64: if (!Utf8Formatter.TryFormat(Unsafe.As<T, long>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.Single: if (!Utf8Formatter.TryFormat(Unsafe.As<T, float>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
-            case TypeCode.Double: if (!Utf8Formatter.TryFormat(Unsafe.As<T, double>(ref val), _buf, out len)) ThrowNotSupportedType(typeof(T)); break;
+            default: throw new NotSupportedException($"Type {typeof(T).Name} not supported.");
+            case TypeCode.Byte: WriteNumber(Unsafe.As<T, byte>(ref val)); break;
+            case TypeCode.SByte: WriteNumber(Unsafe.As<T, sbyte>(ref val)); break;
+            case TypeCode.UInt16: WriteNumber(Unsafe.As<T, ushort>(ref val)); break;
+            case TypeCode.Int16: WriteNumber(Unsafe.As<T, short>(ref val)); break;
+            case TypeCode.UInt32: WriteNumber(Unsafe.As<T, uint>(ref val)); break;
+            case TypeCode.Int32: WriteNumber(Unsafe.As<T, int>(ref val)); break;
+            case TypeCode.UInt64: WriteNumber(Unsafe.As<T, ulong>(ref val)); break;
+            case TypeCode.Int64: WriteNumber(Unsafe.As<T, long>(ref val)); break;
+            case TypeCode.Single: WriteNumber(Unsafe.As<T, float>(ref val)); break;
+            case TypeCode.Double: WriteNumber(Unsafe.As<T, double>(ref val)); break;
         }
         _stream.Write(_buf, 0, len);
     }
     public void Flush() => _stream.Flush();
-    private void ThrowNotSupportedType(Type t) => throw new NotSupportedException($"Type {t.Name} not supported.");
+    [DoesNotReturn] private static void ThrowFormatError<T>(T val) => throw new Exception($"{typeof(T)} {val} format error.");
 }

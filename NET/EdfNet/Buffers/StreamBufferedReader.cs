@@ -23,7 +23,6 @@ public class StreamBufferedReader : IBufferedReader
         : this(stream, new byte[bufferSize])
     {
     }
-
     public ReadOnlySpan<byte> GetSpan(int minimumLength = 0)
     {
         int available = _end - _start;
@@ -46,8 +45,7 @@ public class StreamBufferedReader : IBufferedReader
                 _end += read;
             }
         }
-
-        return _buffer.AsSpan(_start, _end - _start);
+        return new ReadOnlySpan<byte>(_buffer, _start, _end - _start);
     }
 
     public void Advance(int count)
