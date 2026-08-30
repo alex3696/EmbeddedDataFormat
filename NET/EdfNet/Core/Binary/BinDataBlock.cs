@@ -26,7 +26,8 @@ public class BinDataBlock : BinBlock
         set => ContentLen = (ushort)(value + ServiceLen);
     }
     public Span<byte> DataBuffer => _buffer.AsSpan(DataBeпinIndex, MaxDataLen);
-    public ReadOnlySpan<byte> CurrentData => _buffer.AsSpan(DataBeпinIndex, DataLen);
+    public ReadOnlySpan<byte> CurrentData => new(_buffer, DataBeпinIndex, DataLen);
+    public ReadOnlySpan<byte> ReadAvailable(int readed) => new(_buffer, DataBeпinIndex + readed, DataLen - readed);
 
     public Span<byte> GetEmptyBuffer() => _buffer.AsSpan(DataBeпinIndex + DataLen, MaxDataLen - DataLen);
     public BinDataBlock(byte[] buf)

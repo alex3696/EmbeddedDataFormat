@@ -1,5 +1,3 @@
-using System.Numerics;
-
 namespace EdfNet.Utils;
 
 // https://habr.com/ru/articles/350796/

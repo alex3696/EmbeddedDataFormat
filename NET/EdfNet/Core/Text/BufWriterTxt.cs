@@ -16,80 +16,81 @@ public readonly ref struct BufWriterTxt : IBufWriter
     }
     public void Write(byte val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.UInt8, typeof(byte));
+        ValidatePrimitiveAndType(typeof(byte));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(sbyte val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.Int8, typeof(sbyte));
+        ValidatePrimitiveAndType(typeof(sbyte));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(ushort val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.UInt16, typeof(ushort));
+        ValidatePrimitiveAndType(typeof(ushort));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(short val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.Int16, typeof(short));
+        ValidatePrimitiveAndType(typeof(short));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(uint val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.UInt32, typeof(uint));
+        ValidatePrimitiveAndType(typeof(uint));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(int val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.Int32, typeof(int));
+        ValidatePrimitiveAndType(typeof(int));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(ulong val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.UInt64, typeof(ulong));
+        ValidatePrimitiveAndType(typeof(ulong));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(long val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.Int64, typeof(long));
+        ValidatePrimitiveAndType(typeof(long));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(double val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.Double, typeof(double));
+        ValidatePrimitiveAndType(typeof(double));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(float val)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.Single, typeof(float));
+        ValidatePrimitiveAndType(typeof(float));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
-
-    public void Write<T>(T val) where T : struct
+    public void Write<T>(T val) where T : struct, IBinaryNumber<T>
     {
-        EnsureSchemaAndToken(typeof(T).GetPoType(), typeof(T));
+        while (TypeTokenType.Value != Enum.CurrentToken)
+            SkipNonValueItem();
+        IncomatiblePrimitiveAndValueException.ThrowIfNotComatible(CurrentType.Type, typeof(T));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
     public void Write(string? str)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.String, typeof(string));
+        ValidatePrimitiveAndType(typeof(string));
         _writer.WriteString(str, quoted: true, EdfBinString.MaxLen);
         EnsureNextValueOrBlockEnd();
     }
     public void WriteCharArray(ReadOnlySpan<byte> charArray)
     {
-        EnsureSchemaAndToken(EdfPrimitiveType.Char, typeof(byte[]));
+        ValidatePrimitiveAndType(typeof(byte[]));
         int len = (int)CurrentType.GetTotalElements();
         ArgumentOutOfRangeException.ThrowIfNegative(len);
         int datLen = int.Min(len, charArray.Length);
@@ -117,7 +118,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
             case EdfPrimitiveType.Single: Write(Unsafe.As<byte, float>(ref MemoryMarshal.GetReference(src))); break;
             case EdfPrimitiveType.Double: Write(Unsafe.As<byte, double>(ref MemoryMarshal.GetReference(src))); break;
             case EdfPrimitiveType.String:
-                EnsureSchemaAndToken(EdfPrimitiveType.String, typeof(string));
+                ValidatePrimitiveAndType(typeof(string));
                 _writer.Write(EdfTokenLiterals.Quote);
                 _writer.Write(src);
                 _writer.Write(EdfTokenLiterals.Quote);
@@ -128,21 +129,12 @@ public readonly ref struct BufWriterTxt : IBufWriter
                 break;
         }
     }
-    private void EnsureSchemaAndToken(EdfPrimitiveType pot, Type valueType)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ValidatePrimitiveAndType(Type valueType)
     {
-        while (Enum.CurrentToken != TypeTokenType.Value)
+        while (TypeTokenType.Value != Enum.CurrentToken)
             SkipNonValueItem();
-        if (CurrentType.Type != pot)
-            throw new EdfWrongTypeException($"expected from schema {CurrentType.Type} got {pot}");
-
-        if (EdfPrimitiveType.Char == pot)
-        {
-            if (!valueType.IsArray || valueType.GetElementType() != typeof(byte))
-                throw new EdfWrongTypeException($"Expected {pot} but got {valueType.Name}");
-        }
-        else if (valueType.GetPoType() != pot)
-            throw new EdfWrongTypeException($"Expected {pot} but got {valueType.Name}");
-
+        IncomatiblePrimitiveAndValueException.ThrowIfNotComatible(CurrentType.Type, valueType);
     }
     private void EnsureNextValueOrBlockEnd()
     {
@@ -172,7 +164,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
             case TypeTokenType.EndStruct: _writer.Write(EdfTokenLiterals.StructEnd); break;
             case TypeTokenType.BeginArray: _writer.Write(EdfTokenLiterals.ArrayBegin); break;
             case TypeTokenType.EndArray: _writer.Write(EdfTokenLiterals.ArrayEnd); break;
-            default: throw new NotSupportedException($"Token {token} not supported.");
+            default: throw new EdfTokenNotSupportedException(token);
         }
         Enum.MoveNext();
     }

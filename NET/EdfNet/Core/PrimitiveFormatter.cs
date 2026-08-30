@@ -146,7 +146,7 @@ public class PrimitiveFormatterString : IFormatter<string?>
     }
 }
 public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
-    where TITEM : struct
+    where TITEM : struct, IBinaryNumber<TITEM>
 {
     public void Serialize<TWriter>(ref TWriter writer, in TARRAY arrObj, Interfaces.EdfFormatterOptions options)
         where TWriter : struct, IBufWriter, allows ref struct

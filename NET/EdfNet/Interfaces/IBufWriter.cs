@@ -13,7 +13,7 @@ public interface IBufWriter
     void Write(long val);
     void Write(double val);
     void Write(float val);
-    void Write<T>(T val) where T : struct; // + void VarEnd();
+    void Write<T>(T val) where T : struct, IBinaryNumber<T>; // + void VarEnd();
     void Write(string? val); // + void VarEnd();
     void WriteCharArray(ReadOnlySpan<byte> charArray); // + void VarEnd();
     EdfType CurrentType { get; }

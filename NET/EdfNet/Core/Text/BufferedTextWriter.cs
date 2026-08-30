@@ -14,6 +14,7 @@ public sealed class BufferedTextWriter
         _stream = stream;
         _buf = buf;
     }
+    public void Write(byte b) => _stream.WriteByte(b);
     public void Write(ReadOnlySpan<byte> b) => _stream.Write(b);
     public void Write(string? str)
     {
@@ -25,7 +26,7 @@ public sealed class BufferedTextWriter
     public void WriteString(string? str, bool quoted, int maxByteCount)
     {
         if (quoted)
-            _stream.Write(EdfTokenLiterals.Quote); // Write the opening quote
+            Write(EdfTokenLiterals.Quote); // Write the opening quote
         if (!string.IsNullOrEmpty(str))
         {
             maxByteCount = 0 < maxByteCount ? maxByteCount : _buf.Length;
@@ -39,7 +40,7 @@ public sealed class BufferedTextWriter
             _stream.Write(_buf, 0, bytesWritten);
         }
         if (quoted)
-            _stream.Write(EdfTokenLiterals.Quote); // Write the opening quote
+            Write(EdfTokenLiterals.Quote); // Write the opening quote
     }
     public void WriteNumber(byte val)
     {
@@ -102,7 +103,7 @@ public sealed class BufferedTextWriter
         _stream.Write(_buf, 0, len);
     }
 
-    public void WriteNumber<T>(T val) where T : struct
+    public void WriteNumber<T>(T val) where T : struct, IBinaryNumber<T>
     {
         int len = 0;
         switch (Type.GetTypeCode(typeof(T)))

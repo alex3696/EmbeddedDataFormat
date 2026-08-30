@@ -60,4 +60,23 @@ public static class PoTypeExt
             _ => throw new ArgumentOutOfRangeException(nameof(t), t, "Unsupported type"),
         };
     }
+    public static bool IsSame(this EdfPrimitiveType po, Type t)
+    {
+        switch (po)
+        {
+            default: throw new NetTypeNotSupportedException(t);
+            case EdfPrimitiveType.UInt8: return TypeCode.Byte == Type.GetTypeCode(t);
+            case EdfPrimitiveType.Int8: return TypeCode.SByte == Type.GetTypeCode(t);
+            case EdfPrimitiveType.UInt16: return TypeCode.UInt16 == Type.GetTypeCode(t);
+            case EdfPrimitiveType.Int16: return TypeCode.Int16 == Type.GetTypeCode(t);
+            case EdfPrimitiveType.UInt32: return TypeCode.UInt32 == Type.GetTypeCode(t);
+            case EdfPrimitiveType.Int32: return TypeCode.Int32 == Type.GetTypeCode(t);
+            case EdfPrimitiveType.UInt64: return TypeCode.UInt64 == Type.GetTypeCode(t);
+            case EdfPrimitiveType.Int64: return TypeCode.Int64 == Type.GetTypeCode(t);
+            case EdfPrimitiveType.Single: return TypeCode.Single == Type.GetTypeCode(t);
+            case EdfPrimitiveType.Double: return TypeCode.Double == Type.GetTypeCode(t);
+            case EdfPrimitiveType.String: return TypeCode.String == Type.GetTypeCode(t);
+            case EdfPrimitiveType.Char: return t.IsArray && t.GetElementType() == typeof(byte);
+        }
+    }
 }

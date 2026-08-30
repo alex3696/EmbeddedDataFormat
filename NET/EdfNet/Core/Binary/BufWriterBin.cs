@@ -14,101 +14,88 @@ public readonly ref struct BufWriterBin : IBufWriter
     {
         _state.Enum.MoveNext();
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ValidatePrimitiveAndEnsureLen(EdfPrimitiveType got, int len)
+    {
+        WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, got);
+        EnsureCapacity(len);
+    }
     public void Write(byte val)
     {
-        if (EdfPrimitiveType.UInt8 != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(1);
-        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);//MemoryMarshal.Write(_state.Blk.GetEmptyBuffer(), val);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.UInt8, 1);
+        //Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);//MemoryMarshal.Write(_state.Blk.GetEmptyBuffer(), val);
+        _state.Blk.GetEmptyBuffer()[0] = val;
         _state.Blk.DataLen += 1;
         EnsureValueToken();
     }
     public void Write(sbyte val)
     {
-        if (EdfPrimitiveType.Int8 != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(1);
-        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Int8, 1);
+        //Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
+        _state.Blk.GetEmptyBuffer()[0] = unchecked((byte)val);
         _state.Blk.DataLen += 1;
         EnsureValueToken();
     }
     public void Write(ushort val)
     {
-        if (EdfPrimitiveType.UInt16 != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(2);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.UInt16, 2);
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
         _state.Blk.DataLen += 2;
         EnsureValueToken();
     }
     public void Write(short val)
     {
-        if (EdfPrimitiveType.Int16 != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(2);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Int16, 2);
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
         _state.Blk.DataLen += 2;
         EnsureValueToken();
     }
     public void Write(uint val)
     {
-        if (EdfPrimitiveType.UInt32 != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(4);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.UInt32, 4);
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
         _state.Blk.DataLen += 4;
         EnsureValueToken();
     }
     public void Write(int val)
     {
-        if (EdfPrimitiveType.Int32 != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(4);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Int32, 4);
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
         _state.Blk.DataLen += 4;
         EnsureValueToken();
     }
     public void Write(ulong val)
     {
-        if (EdfPrimitiveType.UInt64 != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(8);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.UInt64, 8);
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
         _state.Blk.DataLen += 8;
         EnsureValueToken();
     }
     public void Write(long val)
     {
-        if (EdfPrimitiveType.Int64 != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(8);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Int64, 8);
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
         _state.Blk.DataLen += 8;
         EnsureValueToken();
     }
     public void Write(float val)
     {
-        if (EdfPrimitiveType.Single != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(4);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Single, 4);
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
         _state.Blk.DataLen += 4;
         EnsureValueToken();
     }
     public void Write(double val)
     {
-        if (EdfPrimitiveType.Double != CurrentType.Type)
-            throw new EdfWrongTypeException();
-        EnsureCapacity(8);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Double, 8);
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(_state.Blk.GetEmptyBuffer()), val);
         _state.Blk.DataLen += 8;
         EnsureValueToken();
     }
 
-    public void Write<T>(T val) where T : struct
+    public void Write<T>(T val) where T : struct, IBinaryNumber<T>
     {
-        if (CurrentType.Type != typeof(T).GetPoType())
-            throw new EdfWrongTypeException();
+        IncomatiblePrimitiveAndValueException.ThrowIfNotComatible(CurrentType.Type, typeof(T));
         var len = Unsafe.SizeOf<T>();
         EnsureCapacity(len);
         MemoryMarshal.Write(_state.Blk.GetEmptyBuffer(), val);
@@ -117,8 +104,7 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public void Write(string? str)
     {
-        if (CurrentType.Type != EdfPrimitiveType.String)
-            throw new EdfWrongTypeException();
+        WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, EdfPrimitiveType.String);
         var len = string.IsNullOrEmpty(str) ? 1 : 1 + int.Min(EdfBinString.MaxLen, Encoding.UTF8.GetByteCount(str));
         EnsureCapacity(len);
         EdfBinString.WriteBin(str, _state.Blk.GetEmptyBuffer());
@@ -127,8 +113,7 @@ public readonly ref struct BufWriterBin : IBufWriter
     }
     public void WriteCharArray(ReadOnlySpan<byte> charArray)
     {
-        if (CurrentType.Type != EdfPrimitiveType.Char)
-            throw new EdfWrongTypeException();
+        WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, EdfPrimitiveType.Char);
         int len = (int)CurrentType.GetTotalElements();
         EnsureCapacity(len);
         var datalen = int.Min(len, charArray.Length);
@@ -159,7 +144,7 @@ public readonly ref struct BufWriterBin : IBufWriter
         ushort len;
         switch (pt)
         {
-            default: throw new EdfWrongTypeException();
+            default: throw new PrimitiveNotSupportedException(pt);
             case EdfPrimitiveType.UInt8:
             case EdfPrimitiveType.Int8: len = 1; break;
             case EdfPrimitiveType.UInt16:

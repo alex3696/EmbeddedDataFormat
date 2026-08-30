@@ -10,11 +10,15 @@ public readonly ref struct BufReaderBin : IBufReader
         _state = state;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ValidatePrimitiveAndEnsureLen(EdfPrimitiveType got, int len)
+    {
+        WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, got);
+        EnsureData(len);
+    }
     public byte ReadUInt8()
     {
-        if (CurrentType.Type != EdfPrimitiveType.UInt8)
-            throw new EdfWrongTypeException();
-        EnsureData(1);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.UInt8, 1);
         byte val = _state.ReadAvailableBuf[0];
         _state.Readed += 1;
         _state.Enum.MoveNext();
@@ -22,9 +26,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public sbyte ReadInt8()
     {
-        if (CurrentType.Type != EdfPrimitiveType.Int8)
-            throw new EdfWrongTypeException();
-        EnsureData(1);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Int8, 1);
         sbyte val = unchecked((sbyte)_state.ReadAvailableBuf[0]);
         _state.Readed += 1;
         _state.Enum.MoveNext();
@@ -32,9 +34,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public ushort ReadUInt16()
     {
-        if (CurrentType.Type != EdfPrimitiveType.UInt16)
-            throw new EdfWrongTypeException();
-        EnsureData(2);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.UInt16, 2);
         var val = Unsafe.As<byte, ushort>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
         _state.Readed += 2;
         _state.Enum.MoveNext();
@@ -42,9 +42,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public short ReadInt16()
     {
-        if (CurrentType.Type != EdfPrimitiveType.Int16)
-            throw new EdfWrongTypeException();
-        EnsureData(2);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Int16, 2);
         var val = Unsafe.As<byte, short>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
         _state.Readed += 2;
         _state.Enum.MoveNext();
@@ -52,9 +50,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public uint ReadUInt32()
     {
-        if (CurrentType.Type != EdfPrimitiveType.UInt32)
-            throw new EdfWrongTypeException();
-        EnsureData(4);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.UInt32, 4);
         var val = Unsafe.As<byte, uint>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
         _state.Readed += 4;
         _state.Enum.MoveNext();
@@ -62,9 +58,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public int ReadInt32()
     {
-        if (CurrentType.Type != EdfPrimitiveType.Int32)
-            throw new EdfWrongTypeException();
-        EnsureData(4);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Int32, 4);
         var val = Unsafe.As<byte, int>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
         _state.Readed += 4;
         _state.Enum.MoveNext();
@@ -72,9 +66,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public ulong ReadUInt64()
     {
-        if (CurrentType.Type != EdfPrimitiveType.UInt64)
-            throw new EdfWrongTypeException();
-        EnsureData(8);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.UInt64, 8);
         var val = Unsafe.As<byte, ulong>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
         _state.Readed += 8;
         _state.Enum.MoveNext();
@@ -82,9 +74,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public long ReadInt64()
     {
-        if (CurrentType.Type != EdfPrimitiveType.Int64)
-            throw new EdfWrongTypeException();
-        EnsureData(8);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Int64, 8);
         var val = Unsafe.As<byte, long>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
         _state.Readed += 8;
         _state.Enum.MoveNext();
@@ -92,9 +82,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public float ReadSingle()
     {
-        if (CurrentType.Type != EdfPrimitiveType.Single)
-            throw new EdfWrongTypeException();
-        EnsureData(4);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Single, 4);
         var val = Unsafe.As<byte, float>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
         _state.Readed += 4;
         _state.Enum.MoveNext();
@@ -102,9 +90,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public double ReadDouble()
     {
-        if (CurrentType.Type != EdfPrimitiveType.Double)
-            throw new EdfWrongTypeException();
-        EnsureData(8);
+        ValidatePrimitiveAndEnsureLen(EdfPrimitiveType.Double, 8);
         var val = Unsafe.As<byte, double>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
         _state.Readed += 8;
         _state.Enum.MoveNext();
@@ -113,8 +99,7 @@ public readonly ref struct BufReaderBin : IBufReader
 
     public T Read<T>() where T : struct
     {
-        if (CurrentType.Type != typeof(T).GetPoType())
-            throw new EdfWrongTypeException();
+        IncomatiblePrimitiveAndValueException.ThrowIfNotComatible(CurrentType.Type, typeof(T));
         var len = Unsafe.SizeOf<T>();
         EnsureData(len);
         T val = Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
@@ -124,8 +109,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public string? ReadString()
     {
-        if (CurrentType.Type != EdfPrimitiveType.String)
-            throw new EdfWrongTypeException();
+        WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, EdfPrimitiveType.String);
         EnsureData(1);
         var src = _state.ReadAvailableBuf;
         var lenByte = src[0];
@@ -142,8 +126,7 @@ public readonly ref struct BufReaderBin : IBufReader
     }
     public byte[] ReadCharArray()
     {
-        if (CurrentType.Type != EdfPrimitiveType.Char)
-            throw new EdfWrongTypeException();
+        WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, EdfPrimitiveType.Char);
         int len = (int)CurrentType.GetTotalElements();
         EnsureData(len);
         var result = new byte[len];
@@ -152,25 +135,39 @@ public readonly ref struct BufReaderBin : IBufReader
         _state.Enum.MoveNext();
         return result;
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void EnsureData(int len)
     {
         if (len > _state.ReadAvailableLen)
-        {
-            var read = _state.Stream.Read(_state.Blk);// ReadNextBlock
-            _state.Readed = 0;
-
-            if (read == 0)
-                throw new EndOfStreamException();
-            if (_state.ReadAvailableLen < len)
-                throw new EndOfStreamException();
-        }
+            DownloadBlock(len);
+    }
+    private void DownloadBlock(int len)
+    {
+        var available = _state.ReadAvailableLen;
+        var currentSchema = _state.Blk.SchemaId;
+        _state.Readed = 0;
+        if (0 < available)
+            throw new EdfException($"not consumed bytes {available}");
+        var read = _state.Stream.Read(_state.Blk);// ReadNextBlock
+        if (read == 0)
+            throw new EndOfStreamException();
+        if (EdfBlockType.Data != _state.Blk.Type)
+            throw new EdfException($"Wrong block type {_state.Blk.Type}");
+        if (currentSchema != _state.Blk.SchemaId)
+            throw new EdfException($"Wrong block SchemaId: expected {currentSchema} got {_state.Blk.SchemaId}");
+        if (_state.Enum.RecordId != _state.Blk.RecordId)
+            throw new EdfException($"Wrong block RecordId: expected {_state.Enum.RecordId} got {_state.Blk.RecordId}");
+        if (_state.Enum.PrimOffset != _state.Blk.PrimOffset)
+            throw new EdfException($"Wrong block PrimOffset: expected {_state.Enum.PrimOffset} got {_state.Blk.PrimOffset}");
+        if (_state.ReadAvailableLen < len)
+            throw new EdfException($"Wrong block Len: expected {len} got {_state.ReadAvailableLen}");
     }
     public void ReadToSpan(Span<byte> dst, out EdfPrimitiveType pt, out int len)
     {
         pt = CurrentType.Type;
         switch (pt)
         {
-            default: throw new EdfWrongTypeException();
+            default: throw new PrimitiveNotSupportedException(pt);
             case EdfPrimitiveType.UInt8:
             case EdfPrimitiveType.Int8: len = 1; break;
             case EdfPrimitiveType.UInt16:

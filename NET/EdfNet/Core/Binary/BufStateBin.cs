@@ -7,7 +7,7 @@ public sealed class BufStateBin : IDisposable
     public BinaryCircularEdfTypeEnumerator Enum { get; private set; } = new();
     public int Readed;
 
-    public ReadOnlySpan<byte> ReadAvailableBuf => Blk.DataBuffer.Slice(Readed);
+    public ReadOnlySpan<byte> ReadAvailableBuf => Blk.ReadAvailable(Readed);
     public int ReadAvailableLen => Blk.DataLen - Readed;
 
     public BufStateBin(Stream stream, BinDataBlock blk)
