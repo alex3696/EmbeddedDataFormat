@@ -78,9 +78,9 @@ public class EdfBinaryReader : BaseDisposable
     protected virtual void OnReadDatBlockStart()
     {
         _state.Readed = 0;
-        BinaryBlockSequenceException.ThrowIfNotEqualSchemaId(_blk.SchemaId, CurrentSchema?.Id ?? ushort.MaxValue);
-        BinaryBlockSequenceException.ThrowIfNotEqualRecordId(_blk.RecordId, _state.Enum.RecordId);
-        BinaryBlockSequenceException.ThrowIfNotEqualPrimOffset(_blk.PrimOffset, _state.Enum.PrimOffset);
+        BinaryBlockSequenceException.ThrowIfNotEqualSchemaId(CurrentSchema?.Id ?? ushort.MaxValue, _blk.SchemaId);
+        BinaryBlockSequenceException.ThrowIfNotEqualRecordId(_state.Enum.RecordId, _blk.RecordId);
+        BinaryBlockSequenceException.ThrowIfNotEqualPrimOffset(_state.Enum.PrimOffset, _blk.PrimOffset);
     }
 
     public T ReadValue<T>()

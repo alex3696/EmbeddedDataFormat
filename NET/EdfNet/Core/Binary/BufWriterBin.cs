@@ -95,7 +95,7 @@ public readonly ref struct BufWriterBin : IBufWriter
 
     public void Write<T>(T val) where T : struct, IBinaryNumber<T>
     {
-        IncomatiblePrimitiveAndValueException.ThrowIfNotComatible(CurrentType.Type, typeof(T));
+        IncompatiblePrimitiveAndValueException.ThrowIfNotCompatible(CurrentType.Type, typeof(T));
         var len = Unsafe.SizeOf<T>();
         EnsureCapacity(len);
         MemoryMarshal.Write(_state.Blk.GetEmptyBuffer(), val);
@@ -139,8 +139,7 @@ public readonly ref struct BufWriterBin : IBufWriter
 
     public void WriteSpan(ReadOnlySpan<byte> src, EdfPrimitiveType pt)
     {
-        if (CurrentType.Type != pt)
-            throw new EdfWrongTypeException();
+        WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, pt);
         ushort len;
         switch (pt)
         {

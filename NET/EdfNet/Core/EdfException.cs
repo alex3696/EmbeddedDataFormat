@@ -14,7 +14,7 @@ public class EdfWrongTypeException : EdfException
     public EdfWrongTypeException(string? msg) : base(msg) { }
 
 }
-public class EdfSrcDataRequredException : EdfException { }
+public class EdfSrcDataRequiredException : EdfException { }
 public class EdfDstBufOverflowException : EdfException { }
 
 public class EdfParseException : EdfException
@@ -63,16 +63,16 @@ public class WrongPrimitiveException : EdfException
             throw new WrongPrimitiveException(expected, got);
     }
 }
-public class IncomatiblePrimitiveAndValueException : EdfException
+public class IncompatiblePrimitiveAndValueException : EdfException
 {
-    public IncomatiblePrimitiveAndValueException(EdfPrimitiveType expected, Type got)
+    public IncompatiblePrimitiveAndValueException(EdfPrimitiveType expected, Type got)
         : base($"EdfPrimitiveType: {expected} not compatible to value {got.Name}")
     { }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ThrowIfNotComatible(EdfPrimitiveType expected, Type got)
+    public static void ThrowIfNotCompatible(EdfPrimitiveType expected, Type got)
     {
         if (!expected.IsSame(got))
-            throw new IncomatiblePrimitiveAndValueException(expected, got);
+            throw new IncompatiblePrimitiveAndValueException(expected, got);
     }
 }
 
@@ -107,5 +107,26 @@ public class BinaryBlockSequenceException : EdfException
         => ThrowIfNotEqual("RecordId", expected, got);
     public static void ThrowIfNotEqualPrimOffset(ushort expected, ushort got)
         => ThrowIfNotEqual("PrimOffset", expected, got);
+    public static void ThrowIfBlockTypeNotEqual(EdfBlockType expected, EdfBlockType got)
+        => ThrowIfNotEqual("EdfBlockType", expected, got);
+}
+
+public class BinaryBlockWrongLengthException : EdfException
+{
+    public BinaryBlockWrongLengthException(long expected, long got)
+        : base($"Lenght expected {expected} got {got}")
+    { }
+    public static void ThrowIfLess(long expected, long got)
+    {
+        if (expected != got)
+            throw new BinaryBlockWrongLengthException(expected, got);
+    }
+}
+
+public class BinaryBlockHasTrashException : EdfException
+{
+    public BinaryBlockHasTrashException(int available)
+        : base($"not consumed bytes {available}")
+    { }
 
 }

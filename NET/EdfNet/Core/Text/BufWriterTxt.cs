@@ -78,7 +78,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
     {
         while (TypeTokenType.Value != Enum.CurrentToken)
             SkipNonValueItem();
-        IncomatiblePrimitiveAndValueException.ThrowIfNotComatible(CurrentType.Type, typeof(T));
+        IncompatiblePrimitiveAndValueException.ThrowIfNotCompatible(CurrentType.Type, typeof(T));
         _writer.WriteNumber(val);
         EnsureNextValueOrBlockEnd();
     }
@@ -134,7 +134,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
     {
         while (TypeTokenType.Value != Enum.CurrentToken)
             SkipNonValueItem();
-        IncomatiblePrimitiveAndValueException.ThrowIfNotComatible(CurrentType.Type, valueType);
+        IncompatiblePrimitiveAndValueException.ThrowIfNotCompatible(CurrentType.Type, valueType);
     }
     private void EnsureNextValueOrBlockEnd()
     {

@@ -99,7 +99,7 @@ public readonly ref struct BufReaderBin : IBufReader
 
     public T Read<T>() where T : struct
     {
-        IncomatiblePrimitiveAndValueException.ThrowIfNotComatible(CurrentType.Type, typeof(T));
+        IncompatiblePrimitiveAndValueException.ThrowIfNotCompatible(CurrentType.Type, typeof(T));
         var len = Unsafe.SizeOf<T>();
         EnsureData(len);
         T val = Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(_state.ReadAvailableBuf));
@@ -147,20 +147,15 @@ public readonly ref struct BufReaderBin : IBufReader
         var currentSchema = _state.Blk.SchemaId;
         _state.Readed = 0;
         if (0 < available)
-            throw new EdfException($"not consumed bytes {available}");
+            throw new BinaryBlockHasTrashException(available);
         var read = _state.Stream.Read(_state.Blk);// ReadNextBlock
         if (read == 0)
             throw new EndOfStreamException();
-        if (EdfBlockType.Data != _state.Blk.Type)
-            throw new EdfException($"Wrong block type {_state.Blk.Type}");
-        if (currentSchema != _state.Blk.SchemaId)
-            throw new EdfException($"Wrong block SchemaId: expected {currentSchema} got {_state.Blk.SchemaId}");
-        if (_state.Enum.RecordId != _state.Blk.RecordId)
-            throw new EdfException($"Wrong block RecordId: expected {_state.Enum.RecordId} got {_state.Blk.RecordId}");
-        if (_state.Enum.PrimOffset != _state.Blk.PrimOffset)
-            throw new EdfException($"Wrong block PrimOffset: expected {_state.Enum.PrimOffset} got {_state.Blk.PrimOffset}");
-        if (_state.ReadAvailableLen < len)
-            throw new EdfException($"Wrong block Len: expected {len} got {_state.ReadAvailableLen}");
+        BinaryBlockSequenceException.ThrowIfBlockTypeNotEqual(EdfBlockType.Data, _state.Blk.Type);
+        BinaryBlockSequenceException.ThrowIfNotEqualSchemaId(currentSchema, _state.Blk.SchemaId);
+        BinaryBlockSequenceException.ThrowIfNotEqualRecordId(_state.Enum.RecordId, _state.Blk.RecordId);
+        BinaryBlockSequenceException.ThrowIfNotEqualPrimOffset(_state.Enum.PrimOffset, _state.Blk.PrimOffset);
+        BinaryBlockWrongLengthException.ThrowIfLess(len, _state.ReadAvailableLen);
     }
     public void ReadToSpan(Span<byte> dst, out EdfPrimitiveType pt, out int len)
     {
