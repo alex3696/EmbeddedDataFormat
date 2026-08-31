@@ -19,7 +19,7 @@ public class BinBlock
         set => Unsafe.WriteUnaligned(ref _buffer[1], value);
     }
     public const ushort ServiceLen = 8;
-    public const ushort DataBeпinIndex = HeaderLen + ServiceLen;
+    public const ushort DataBeginIndex = HeaderLen + ServiceLen;
     public readonly int MaxDataLen;
     public ushort SchemaId
     {
@@ -47,9 +47,9 @@ public class BinBlock
     public ReadOnlySpan<byte> BinaryBlock => new(_buffer, 0, OverheadLen + ContentLen);
     public Span<byte> ContentBuffer => new(_buffer, HeaderLen, MaxPayloadLen);
     public ReadOnlySpan<byte> CurrentContent => new(_buffer, HeaderLen, ContentLen);
-    public ReadOnlySpan<byte> CurrentData => new(_buffer, DataBeпinIndex, DataLen);
-    public ReadOnlySpan<byte> ReadAvailable(int readed) => new(_buffer, DataBeпinIndex + readed, DataLen - readed);
-    public Span<byte> GetEmptyBuffer() => _buffer.AsSpan(DataBeпinIndex + DataLen, MaxDataLen - DataLen);
+    public ReadOnlySpan<byte> CurrentData => new(_buffer, DataBeginIndex, DataLen);
+    public ReadOnlySpan<byte> ReadAvailable(int readed) => new(_buffer, DataBeginIndex + readed, DataLen - readed);
+    public Span<byte> GetEmptyBuffer() => _buffer.AsSpan(DataBeginIndex + DataLen, MaxDataLen - DataLen);
 
     public BinBlock(byte[] buf)
     {

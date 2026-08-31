@@ -56,7 +56,7 @@ public class EdfTextReader : BaseDisposable
         }
         catch (EdfParseException ex)
         {
-            throw new Exception($"Ошибка чтения блока конфигурации: {ex.Message}", ex);
+            throw new AggregateException($"Config block parse error", ex);
         }
     }
     private void ReadSchema()
@@ -69,7 +69,7 @@ public class EdfTextReader : BaseDisposable
         }
         catch (EdfParseException ex)
         {
-            throw new Exception($"Ошибка чтения блока схемы: {ex.Message}", ex);
+            throw new AggregateException($"Schema block parse error", ex);
         }
     }
     private void ReadRecord()

@@ -13,13 +13,14 @@ namespace Bench;
 | 'Text -> Binary' | .NET 10.0      | 1.997 s |  1.00 |  14.64 KB |        1.00 |
 | 'Text -> Binary' | NativeAOT 10.0 | 2.515 s |  1.26 |  26.05 KB |        1.78 |
 
+8845hs
 | Method           | Runtime        | Mean    | Ratio | Allocated | Alloc Ratio |
 |----------------- |--------------- |--------:|------:|----------:|------------:|
-| 'Binary -> Text' | .NET 10.0      | 1.606 s |  1.00 |  16.32 KB |        1.00 |
-| 'Binary -> Text' | NativeAOT 10.0 | 2.433 s |  1.51 |  26.38 KB |        1.62 |
+| 'Binary -> Text' | .NET 10.0      | 1.561 s |  1.00 |  16.32 KB |        1.00 |
+| 'Binary -> Text' | NativeAOT 10.0 | 2.566 s |  1.64 |  24.41 KB |        1.50 |
 |                  |                |         |       |           |             |
-| 'Text -> Binary' | .NET 10.0      | 2.376 s |  1.00 |  14.28 KB |        1.00 |
-| 'Text -> Binary' | NativeAOT 10.0 | 3.073 s |  1.29 |  23.77 KB |        1.66 |
+| 'Text -> Binary' | .NET 10.0      | 2.453 s |  1.00 |  14.28 KB |        1.00 |
+| 'Text -> Binary' | NativeAOT 10.0 | 3.090 s |  1.26 |  23.72 KB |        1.66 |
  */
 
 [MemoryDiagnoser(true)]
