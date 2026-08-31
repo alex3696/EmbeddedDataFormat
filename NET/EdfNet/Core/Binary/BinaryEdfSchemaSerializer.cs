@@ -1,5 +1,3 @@
-using EdfNet.Buffers;
-
 namespace EdfNet.Core.Binary;
 
 internal static class BinaryEdfSchemaSerializer

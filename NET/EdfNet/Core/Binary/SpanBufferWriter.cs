@@ -1,6 +1,4 @@
-using EdfNet.Core.Binary;
-
-namespace EdfNet.Buffers;
+namespace EdfNet.Core.Binary;
 
 public ref struct SpanBufferWriter : IBufferWriter<byte>
 {
