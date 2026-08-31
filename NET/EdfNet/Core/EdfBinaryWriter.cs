@@ -5,12 +5,12 @@ namespace EdfNet.Core;
 public class EdfBinaryWriter : BaseWriterBin
 {
     protected readonly BufStateBin _state;
-    protected readonly Interfaces.EdfFormatterOptions _options = Interfaces.EdfFormatterOptions.Default;
+    protected readonly EdfFormatterOptions _options = EdfFormatterOptions.Default;
 
     public EdfBinaryWriter(Stream stream, EdfConfig? cfg = default)
         : base(stream, cfg)
     {
-        _state = new(_stream, _blkData);
+        _state = new(_stream, _blk);
     }
     protected override void Dispose(bool disposing)
     {

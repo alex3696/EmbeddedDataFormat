@@ -1,4 +1,3 @@
-using EdfNet.Buffers;
 using EdfNet.Core.Text;
 
 namespace EdfNet.Core;
@@ -8,7 +7,7 @@ public class EdfTextReader : BaseDisposable
     private EdfConfig _cfg;
     private EdfBlockType _currentBlockType;
     private readonly byte[] _readerBuf;
-    private readonly StreamBufferedReader _bufferedReader;
+    private readonly TextStreamReader _bufferedReader;
     protected readonly EdfTokenReader _tokenReader;
     protected readonly TextCircularEdfTypeEnumerator _enum = new();
     protected readonly EdfFormatterOptions _options = EdfFormatterOptions.Default;
@@ -20,7 +19,7 @@ public class EdfTextReader : BaseDisposable
     {
         _cfg = cfg ?? EdfConfig.Default;
         _readerBuf = ArrayPool<byte>.Shared.Rent(1024);
-        _bufferedReader = new StreamBufferedReader(stream, _readerBuf);
+        _bufferedReader = new TextStreamReader(stream, _readerBuf);
         _tokenReader = new(_bufferedReader);
     }
     protected override void Dispose(bool disposing)

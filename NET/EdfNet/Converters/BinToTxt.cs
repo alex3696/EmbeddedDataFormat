@@ -12,7 +12,7 @@ public class BinToTxt
         {
         }
         public TextCircularEdfTypeEnumerator Enum => _enum;
-        public BufferedTextWriter Writer => _textWriter;
+        public TextStreamWriter Writer => _textWriter;
     }
     class StateReaderBin : EdfBinaryReader
     {

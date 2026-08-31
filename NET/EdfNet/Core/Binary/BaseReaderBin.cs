@@ -6,15 +6,14 @@ public abstract class BaseReaderBin : BaseDisposable
     public EdfSchema? CurrentSchema;
     protected readonly Stream _stream;
     private readonly byte[] _blkBuf;
-    private readonly BinBlock _blk;
-    protected readonly BinDataBlock _blkData;
+    protected readonly BinBlock _blk;
 
     public BaseReaderBin(Stream stream, EdfConfig? cfg = default)
     {
         _stream = stream;
         Cfg = cfg ?? EdfConfig.Default;
         var tmpBuf = ArrayPool<byte>.Shared.Rent(32);
-        _blk = new BinBlock(tmpBuf);
+        _blk = new(tmpBuf);
         if (ReadBlock())
         {
             var newCfg = ReadConfig();
@@ -24,7 +23,6 @@ public abstract class BaseReaderBin : BaseDisposable
         ArrayPool<byte>.Shared.Return(tmpBuf);
         _blkBuf = ArrayPool<byte>.Shared.Rent(Cfg.BlockSize);
         _blk = new(_blkBuf);
-        _blkData = new(_blkBuf);
     }
     protected override void Dispose(bool disposing)
     {
@@ -49,7 +47,7 @@ public abstract class BaseReaderBin : BaseDisposable
 
     public EdfBlockType GetBlockType() => _blk.Type;
     public ushort GetBlockLen() => _blk.TotalLen;
-    public ReadOnlySpan<byte> GetBlockData() => _blkData.CurrentData;
+    public ReadOnlySpan<byte> GetBlockData() => _blk.CurrentData;
 
     public EdfConfig? ReadConfig() => _blk.TryReadConfig();
     public EdfSchema? ReadSchema()

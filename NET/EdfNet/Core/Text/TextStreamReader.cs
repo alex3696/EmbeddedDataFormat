@@ -1,11 +1,11 @@
-namespace EdfNet.Buffers;
+namespace EdfNet.Core.Text;
 
 /// <summary>
 /// Буферизированный reader для Stream.
 /// Сдвигает остаток в начало и дочитывает поток только если остаток мньше MinThreshold = 256 байт
 /// или недостаточен для запрошенного minimumLength.
 /// </summary>
-public sealed class StreamBufferedReader : IBufferedReader
+public sealed class TextStreamReader : IBufferedReader
 {
     public ushort MinThreshold { get; set; } = 256;
     private readonly Stream _stream;
@@ -14,14 +14,10 @@ public sealed class StreamBufferedReader : IBufferedReader
     private int _end;
     private long _consumed;
 
-    public StreamBufferedReader(Stream stream, byte[] buffer)
+    public TextStreamReader(Stream stream, byte[] buffer)
     {
         _stream = stream;
         _buffer = buffer;
-    }
-    public StreamBufferedReader(Stream stream, int bufferSize = 1024)
-        : this(stream, new byte[bufferSize])
-    {
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> GetSpan(int minimumLength = 0)

@@ -4,12 +4,12 @@ using System.Text.Unicode;
 
 namespace EdfNet.Core.Text;
 
-public sealed class BufferedTextWriter
+public sealed class TextStreamWriter
 {
     private readonly byte[] _buf;
     private readonly Stream _stream;
 
-    public BufferedTextWriter(Stream stream, byte[] buf)
+    public TextStreamWriter(Stream stream, byte[] buf)
     {
         _stream = stream;
         _buf = buf;

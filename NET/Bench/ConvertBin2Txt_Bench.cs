@@ -28,11 +28,11 @@ public class ConvertBin2Txt_Bench
 {
     public const int NCOUNT = 1_000_000;
     public static readonly string FileName = "ConvertTest";
-
+#pragma warning disable CS8618
     private string _binFile;
     private string _txtFile;
     private string _tempFile;
-
+#pragma warning restore CS8618
     [GlobalSetup]
     public void Setup()
     {

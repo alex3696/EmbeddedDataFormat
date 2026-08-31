@@ -15,23 +15,47 @@ public class BinBlock
     //public ushort FreeDataLen => (ushort)(MaxPayloadLen - DataLen);
     public ushort ContentLen
     {
-        get => Unsafe.ReadUnaligned<ushort>(ref _buffer[1]); //MemoryMarshal.Read<ushort>(_buffer.AsSpan(1, 2));
-        set => MemoryMarshal.Write(_buffer.AsSpan(1, 2), value);
+        get => Unsafe.ReadUnaligned<ushort>(ref _buffer[1]);
+        set => Unsafe.WriteUnaligned(ref _buffer[1], value);
     }
+    public const ushort ServiceLen = 8;
+    public const ushort DataBeпinIndex = HeaderLen + ServiceLen;
+    public readonly int MaxDataLen;
+    public ushort SchemaId
+    {
+        get => Unsafe.ReadUnaligned<ushort>(ref _buffer[HeaderLen]);
+        set => Unsafe.WriteUnaligned(ref _buffer[HeaderLen], value);
+    }
+    public ushort PrimOffset
+    {
+        get => Unsafe.ReadUnaligned<ushort>(ref _buffer[HeaderLen + 2]);
+        set => Unsafe.WriteUnaligned(ref _buffer[HeaderLen + 2], value);
+    }
+    public uint RecordId
+    {
+        get => Unsafe.ReadUnaligned<uint>(ref _buffer[HeaderLen + 4]);
+        set => Unsafe.WriteUnaligned(ref _buffer[HeaderLen + 4], value);
+    }
+    public ushort DataLen
+    {
+        get => (ushort)(ContentLen - ServiceLen);
+        set => ContentLen = (ushort)(value + ServiceLen);
+    }
+
     public ushort Crc => MemoryMarshal.Read<ushort>(_buffer.AsSpan(HeaderLen + ContentLen, CrcLen));
     public Span<byte> Buffer => _buffer.AsSpan();
-    public ReadOnlySpan<byte> BinaryBlock => _buffer.AsSpan(0, OverheadLen + ContentLen);
-    public Span<byte> ContentBuffer => _buffer.AsSpan(HeaderLen, MaxPayloadLen);
-    public ReadOnlySpan<byte> CurrentContent => _buffer.AsSpan(HeaderLen, ContentLen);
+    public ReadOnlySpan<byte> BinaryBlock => new(_buffer, 0, OverheadLen + ContentLen);
+    public Span<byte> ContentBuffer => new(_buffer, HeaderLen, MaxPayloadLen);
+    public ReadOnlySpan<byte> CurrentContent => new(_buffer, HeaderLen, ContentLen);
+    public ReadOnlySpan<byte> CurrentData => new(_buffer, DataBeпinIndex, DataLen);
+    public ReadOnlySpan<byte> ReadAvailable(int readed) => new(_buffer, DataBeпinIndex + readed, DataLen - readed);
+    public Span<byte> GetEmptyBuffer() => _buffer.AsSpan(DataBeпinIndex + DataLen, MaxDataLen - DataLen);
 
     public BinBlock(byte[] buf)
     {
         _buffer = buf;
         MaxPayloadLen = _buffer.Length - OverheadLen;
-    }
-    public BinBlock(int len)
-        : this(new byte[len])
-    {
+        MaxDataLen = MaxPayloadLen - ServiceLen;
     }
     public int Clear() => ContentLen = 0;
     public void Reset()
@@ -61,40 +85,3 @@ public class BinBlock
 }
 
 
-public static class EdfBinBlockExt
-{
-    public static int Write(this Stream stream, BinBlock block)
-    {
-        if (!Enum.IsDefined(block.Type))
-            throw new ArgumentException(nameof(block.Type));
-        ArgumentOutOfRangeException.ThrowIfEqual(block.ContentLen, 0);
-        block.UpdateCrc();
-        var bb = block.BinaryBlock;
-        stream.Write(bb);
-        return bb.Length;
-    }
-
-    public static int Read(this Stream stream, BinBlock block)
-    {
-        do
-        {
-            if (1 != stream.Read(block.Buffer[..1]))
-                throw new EndOfStreamException();
-        }
-        while (!Enum.IsDefined(block.Type));
-        var spanContentLen = block.Buffer.Slice(1, 2);
-
-        if (2 != stream.Read(spanContentLen))
-            throw new EndOfStreamException();
-        if (0 < block.ContentLen)
-        {
-            int dataLenAndCrcLen = block.ContentLen + BinBlock.CrcLen;
-            int readed = stream.Read(block.ContentBuffer[..dataLenAndCrcLen]);
-            if (readed != dataLenAndCrcLen)
-                throw new EndOfStreamException();
-            if (!block.CheckCrc())
-                throw new Exception($"Wrong CRC block");
-        }
-        return BinBlock.OverheadLen + block.ContentLen;
-    }
-}

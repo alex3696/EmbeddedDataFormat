@@ -10,7 +10,7 @@ public class EdfBinaryReader : BaseReaderBin
     public EdfBinaryReader(Stream stream, EdfConfig? cfg = default)
         : base(stream, cfg)
     {
-        _state = new BufStateBin(stream, _blkData);
+        _state = new BufStateBin(stream, _blk);
     }
     protected override void Dispose(bool disposing)
     {

@@ -6,9 +6,8 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
     public EdfSchema? CurrentSchema;
     protected readonly Stream _stream;
     private readonly byte[] _blkBuf;
-    private readonly BinBlock _blk;
-    protected readonly BinDataBlock _blkData;
-    public ushort CurrentDataLen => _blkData.DataLen;
+    protected readonly BinBlock _blk;
+    public ushort CurrentDataLen => _blk.DataLen;
 
     public BaseWriterBin(Stream stream, EdfConfig? cfg = default)
     {
@@ -16,7 +15,6 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         _stream = stream;
         _blkBuf = new byte[Cfg.BlockSize];
         _blk = new(_blkBuf);
-        _blkData = new(_blkBuf);
         if (0 == stream.Position)
             WriteConfig(Cfg);
     }
@@ -37,10 +35,10 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
                     _blk.Reset();
                 break;
             case EdfBlockType.Data:
-                if (null != CurrentSchema && 0 != _blkData.DataLen)
+                if (null != CurrentSchema && 0 != _blk.DataLen)
                 {
                     _stream.Write(_blk);
-                    _blkData.DataLen = 0;
+                    _blk.DataLen = 0;
                 }
                 break;
         }
@@ -59,11 +57,11 @@ public abstract class BaseWriterBin : BaseDisposable, IWriter
         _stream.Write(_blk);
         _blk.Reset();
         CurrentSchema = sch;
-        _blkData.Type = EdfBlockType.Data;
-        _blkData.SchemaId = sch.Id;
-        _blkData.PrimOffset = 0;
-        _blkData.RecordId = 0;
-        _blkData.DataLen = 0;
+        _blk.Type = EdfBlockType.Data;
+        _blk.SchemaId = sch.Id;
+        _blk.PrimOffset = 0;
+        _blk.RecordId = 0;
+        _blk.DataLen = 0;
     }
 
     public virtual EdfErrorCode WriteValue<T>(in T val)

@@ -7,14 +7,14 @@ public class EdfException : Exception
     public EdfException() : base() { }
     public EdfException(string? msg) : base(msg) { }
 }
-public class EdfWrongTypeException : Exception
+public class EdfWrongTypeException : EdfException
 {
     public EdfWrongTypeException() : base() { }
     public EdfWrongTypeException(string? msg) : base(msg) { }
 
 }
-public class EdfSrcDataRequredException : Exception { }
-public class EdfDstBufOverflowException : Exception { }
+public class EdfSrcDataRequredException : EdfException { }
+public class EdfDstBufOverflowException : EdfException { }
 
 public class EdfParseException : EdfException
 {

@@ -69,7 +69,7 @@ internal static class TextEdfConfigConfigSerializer
         return cfg;
     }
 
-    public static void WriteConfig(this BufferedTextWriter writer, EdfConfig config)
+    public static void WriteConfig(this TextStreamWriter writer, EdfConfig config)
     {
         writer.Flush();
         writer.Write("//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags");

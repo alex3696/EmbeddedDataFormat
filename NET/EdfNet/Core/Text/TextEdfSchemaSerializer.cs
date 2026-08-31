@@ -118,7 +118,7 @@ internal static class TextEdfSchemaSerializer
         return result;
     }
 
-    public static void WriteSchema(this BufferedTextWriter writer, EdfSchema sch)
+    public static void WriteSchema(this TextStreamWriter writer, EdfSchema sch)
     {
         writer.Flush();
         writer.Write(EdfTokenLiterals.EndLine);
@@ -135,7 +135,7 @@ internal static class TextEdfSchemaSerializer
         writer.Write(EdfTokenLiterals.EndLine);
         writer.Flush();
     }
-    private static void ToString(this BufferedTextWriter writer, EdfType t, int noffset = 0)
+    private static void ToString(this TextStreamWriter writer, EdfType t, int noffset = 0)
     {
         string offset = GetOffset(noffset);
         writer.Write(offset);

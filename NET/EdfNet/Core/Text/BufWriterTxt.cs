@@ -4,12 +4,12 @@ namespace EdfNet.Core.Text;
 
 public readonly ref struct BufWriterTxt : IBufWriter
 {
-    private readonly BufferedTextWriter _writer;
+    private readonly TextStreamWriter _writer;
     public readonly TextCircularEdfTypeEnumerator Enum;
 
     public EdfType CurrentType => Enum.CurrentType;
 
-    public BufWriterTxt(BufferedTextWriter writer, TextCircularEdfTypeEnumerator enm)
+    public BufWriterTxt(TextStreamWriter writer, TextCircularEdfTypeEnumerator enm)
     {
         _writer = writer;
         Enum = enm;
