@@ -1,3 +1,4 @@
+using EdfNet.Core.Binary;
 using EdfNet.Core.Text;
 
 namespace EdfNet.Core;
@@ -29,14 +30,10 @@ public class EdfParseException : EdfException
     }
 }
 
-public class EdfFormatterNotRegistredException : EdfException
-{
-    public EdfFormatterNotRegistredException(string? msg) : base(msg) { }
-    public EdfFormatterNotRegistredException(Type type)
-        : base($"Formatter for type {type.FullName} not registred")
-    {
-    }
 
+public class EdfFormatterNotRegistredException(Type type)
+    : EdfException($"Formatter for type {type.FullName} not registred")
+{
     public static void ThrowIfNull<T>(T obj)
     {
         if (obj is null)
@@ -77,4 +74,38 @@ public class IncomatiblePrimitiveAndValueException : EdfException
         if (!expected.IsSame(got))
             throw new IncomatiblePrimitiveAndValueException(expected, got);
     }
+}
+
+public class BinaryBlockIntegrityException : EdfException
+{
+    public BinaryBlockIntegrityException(ushort expected, ushort got)
+        : base($"Crc expected {expected} got {got}")
+    { }
+    public static void ThrowIfCrcWrong(BinBlock block)
+    {
+        var calculatedCrc = block.CalcCrc();
+        if (calculatedCrc != block.Crc)
+            throw new BinaryBlockIntegrityException(calculatedCrc, block.Crc);
+    }
+}
+public class BinaryBlockSequenceException : EdfException
+{
+    public BinaryBlockSequenceException(string what)
+        : base("Wrong Sequence " + what)
+    {
+    }
+    private static void ThrowIfNotEqual<T>(string what, T expected, T got)
+    {
+        if (0 == Comparer<T>.Default.Compare(expected, got))
+            return;
+        var msg = $"expected {what} {expected} got {got}";
+        throw new BinaryBlockSequenceException(msg);
+    }
+    public static void ThrowIfNotEqualSchemaId(ushort expected, ushort got)
+        => ThrowIfNotEqual("SchemaId", expected, got);
+    public static void ThrowIfNotEqualRecordId(uint expected, uint got)
+        => ThrowIfNotEqual("RecordId", expected, got);
+    public static void ThrowIfNotEqualPrimOffset(ushort expected, ushort got)
+        => ThrowIfNotEqual("PrimOffset", expected, got);
+
 }

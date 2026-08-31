@@ -2,9 +2,9 @@ namespace EdfNet.Core.Text;
 
 public sealed class TextCircularEdfTypeEnumerator : IDisposable
 {
-    public int PrimOffset = 0;
-    public uint RecordId = 0;
     private TextEdfTypeEnumerator _enm = new();
+    public uint RecordId = 0;
+    public ushort PrimOffset = 0;
     public void Reset(EdfType rootType)
     {
         RecordId = 0;

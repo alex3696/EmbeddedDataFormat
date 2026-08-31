@@ -72,11 +72,10 @@ public class BinBlock
         MemoryMarshal.Write(crcSpan, crc);
         return crc;
     }
-    public bool CheckCrc()
+    public ushort CalcCrc()
     {
-        int blockLenWithoutCrc = HeaderLen + ContentLen;
-        var blkSpan = _buffer.AsSpan(0, blockLenWithoutCrc);
-        return ModbusCRC.Calc(blkSpan) == Crc;
+        ReadOnlySpan<byte> blkSpan = new(_buffer, 0, HeaderLen + ContentLen);
+        return ModbusCRC.Calc(blkSpan);
     }
 
     #region Privates

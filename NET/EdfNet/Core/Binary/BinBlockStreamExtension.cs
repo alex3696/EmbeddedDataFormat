@@ -31,8 +31,7 @@ public static class BinBlockStreamExtension
             int readed = stream.Read(block.ContentBuffer[..dataLenAndCrcLen]);
             if (readed != dataLenAndCrcLen)
                 throw new EndOfStreamException();
-            if (!block.CheckCrc())
-                throw new Exception($"Wrong CRC block");
+            BinaryBlockIntegrityException.ThrowIfCrcWrong(block);
         }
         return BinBlock.OverheadLen + block.ContentLen;
     }
