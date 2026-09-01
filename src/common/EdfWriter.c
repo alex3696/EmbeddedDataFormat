@@ -37,7 +37,12 @@ static int EdfWriteConfigBin(EdfContext_t* dw, const EdfConfig_t* h, size_t* wri
 //-----------------------------------------------------------------------------
 static int EdfWriteConfigTxt(EdfContext_t* dw, const EdfConfig_t* h, size_t* writed)
 {
-	return StreamWriteFmt(&dw->Stream, writed, "<~ {version=%d.%d; bs=%d; encoding=%d; flags=%d; } >\n"
+	int err = 0;
+	const char info[] = "//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags\n";
+	if ((err = StreamWrite(&dw->Stream, writed, info, sizeof(info) - 1)))
+		return err;
+
+	return StreamWriteFmt(&dw->Stream, writed, "<~{%d;%d;%d;%d;%d;}>\n"
 		, h->VersMajor, h->VersMinor
 		, h->Blocksize, h->Encoding, h->Flags);
 }

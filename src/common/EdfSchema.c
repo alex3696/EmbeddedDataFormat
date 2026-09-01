@@ -161,18 +161,18 @@ static int StreamWriteTypeTxt(Stream_t* s, const EdfType_t* t, int noffset, size
 int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 {
 	int err = 0;
-	if ((err = StreamWrite(st, writed, "\n\n<? ", 5)))
+	if ((err = StreamWrite(st, writed, "\n<? ", 4)))
 		return err;
 
-	if ((err = StreamWriteFmt(st, writed, "{%lu;\"%.255s\"", t->Id, t->Name ? t->Name : "")) ||
-		(t->Desc && (err = StreamWriteFmt(st, writed, ";\"%.255s\"", t->Desc))) ||
+	if ((err = StreamWriteFmt(st, writed, "{%lu;\"%.255s\";", t->Id, t->Name ? t->Name : "")) ||
+		(t->Desc && (err = StreamWriteFmt(st, writed, "\"%.255s\";", t->Desc))) ||
 		(err = StreamWrite(st, writed, "} ", 2)))
 		return err;
 
 	if ((err = StreamWriteTypeTxt(st, &t->Type, 0, writed)))
 		return err;
 
-	if ((err = StreamWrite(st, writed, ">", 1)))
+	if ((err = StreamWrite(st, writed, ">\n", 2)))
 		return err;
 
 	return err;

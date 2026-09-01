@@ -1,14 +1,14 @@
-<~ {version=0.3; bs=256; encoding=65001; flags=0; } >
+//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags
+<~{0;3;256;65001;0;}>
 
-
-<? {10;""} Struct "FileTypeId"
+<? {10;"";} Struct "FileTypeId"
 {
   Int16 "Type";
   Int16 "Version";
 }>
 <= {11;1;}>
 
-<? {11;"BeginDateTime"} Struct "DateTime"
+<? {11;"BeginDateTime";} Struct "DateTime"
 {
   Int16 "Year";
   UInt8 "Month";
@@ -21,7 +21,7 @@
 }>
 <= {2024;10;26;0;0;0;0;0;}>
 
-<? {12;"Position"} Struct "Position"
+<? {12;"Position";} Struct "Position"
 {
   String "Field";
   String "Cluster";
@@ -32,13 +32,13 @@
 }>
 <= {"302";"000001";"000001";"1";0;0;}>
 
-<? {0;"PlaceId";"место установки"} UInt16;>
+<? {0;"PlaceId";"место установки";} UInt16;>
 <= 0;>
 
-<? {0;"Depth";"глубина установки"} Int32;>
+<? {0;"Depth";"глубина установки";} Int32;>
 <= 0;>
 
-<? {13;"DevInfo";"скважный прибор"} Struct "DeviceInfo"
+<? {13;"DevInfo";"скважный прибор";} Struct "DeviceInfo"
 {
   UInt16 "SwId";
   UInt16 "SwModel";
@@ -49,7 +49,7 @@
 }>
 <= {5765;0;0;0;0;310;}>
 
-<? {14;"RegInfo";"наземный регистратор"} Struct "DeviceInfo"
+<? {14;"RegInfo";"наземный регистратор";} Struct "DeviceInfo"
 {
   UInt16 "SwId";
   UInt16 "SwModel";
@@ -60,7 +60,7 @@
 }>
 <= {49;1806;0;0;0;1;}>
 
-<? {0;"ChartInfo"} Struct "ChartNType"
+<? {0;"ChartInfo";} Struct "ChartNType"
 {
   String "Name";
   String "Unit";
@@ -72,7 +72,7 @@
 <= {"Temp";"0.001 °С";"";"температура";}>
 <= {"Vbat";"0.001 V";"";"напряжение батареи";}>
 
-<? {15;""} Struct "OMEGA_DATA_V1_1"
+<? {15;"";} Struct "OMEGA_DATA_V1_1"
 {
   UInt32 "Time";
   Int32 "Press";

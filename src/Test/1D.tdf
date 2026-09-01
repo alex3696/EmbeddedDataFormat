@@ -1,14 +1,14 @@
-<~ {version=0.3; bs=256; encoding=65001; flags=0; } >
+//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags
+<~{0;3;256;65001;0;}>
 
-
-<? {10;""} Struct "FileTypeId"
+<? {10;"";} Struct "FileTypeId"
 {
   Int16 "Type";
   Int16 "Version";
 }>
 <= {6;1;}>
 
-<? {11;"BeginDateTime"} Struct "DateTime"
+<? {11;"BeginDateTime";} Struct "DateTime"
 {
   Int16 "Year";
   UInt8 "Month";
@@ -21,7 +21,7 @@
 }>
 <= {2001;7;15;4;45;26;0;0;}>
 
-<? {12;"Position"} Struct "Position"
+<? {12;"Position";} Struct "Position"
 {
   String "Field";
   String "Cluster";
@@ -32,7 +32,7 @@
 }>
 <= {"222";"000222";"000222";"222";0;0;}>
 
-<? {13;"DevInfo";"прибор"} Struct "DeviceInfo"
+<? {13;"DevInfo";"прибор";} Struct "DeviceInfo"
 {
   UInt16 "SwId";
   UInt16 "SwModel";
@@ -43,7 +43,7 @@
 }>
 <= {4866;0;0;0;0;7;}>
 
-<? {14;"RegInfo";"регистратор"} Struct "DeviceInfo"
+<? {14;"RegInfo";"регистратор";} Struct "DeviceInfo"
 {
   UInt16 "SwId";
   UInt16 "SwModel";
@@ -54,67 +54,67 @@
 }>
 <= {2;0;0;0;0;4;}>
 
-<? {0;"Oper"} UInt16;>
+<? {0;"Oper";} UInt16;>
 <= 0;>
 
-<? {0;"TravelStep";"величина дискреты перемещения 0.1мм/1"} UInt16;>
+<? {0;"TravelStep";"величина дискреты перемещения 0.1мм/1";} UInt16;>
 <= 50;>
 
-<? {0;"LoadStep";"величина дискреты нагрузки кг/1"} UInt16;>
+<? {0;"LoadStep";"величина дискреты нагрузки кг/1";} UInt16;>
 <= 5;>
 
-<? {0;"TimeStep";"величина дискреты времени мс/1"} UInt16;>
+<? {0;"TimeStep";"величина дискреты времени мс/1";} UInt16;>
 <= 20;>
 
-<? {0;"Rod";"диаметр штока"} Single;>
+<? {0;"Rod";"диаметр штока";} Single;>
 <= 32;>
 
-<? {0;"Aperture";"номер отверстия"} UInt16;>
+<? {0;"Aperture";"номер отверстия";} UInt16;>
 <= 5;>
 
-<? {0;"MaxWeight";"максимальная нагрузка (кг)"} UInt32;>
+<? {0;"MaxWeight";"максимальная нагрузка (кг)";} UInt32;>
 <= 230;>
 
-<? {0;"MinWeight";"минимальная нагрузка (кг)"} UInt32;>
+<? {0;"MinWeight";"минимальная нагрузка (кг)";} UInt32;>
 <= 0;>
 
-<? {0;"TopWeight";"вес штанг вверху (кг)"} UInt32;>
+<? {0;"TopWeight";"вес штанг вверху (кг)";} UInt32;>
 <= 0;>
 
-<? {0;"BotWeight";"вес штанг внизу (кг)"} UInt32;>
+<? {0;"BotWeight";"вес штанг внизу (кг)";} UInt32;>
 <= 0;>
 
-<? {0;"Travel";"ход штока (мм)"} Double;>
+<? {0;"Travel";"ход штока (мм)";} Double;>
 <= 3000;>
 
-<? {0;"BeginPos";"положение штока перед первым измерением (мм)"} Double;>
+<? {0;"BeginPos";"положение штока перед первым измерением (мм)";} Double;>
 <= 0;>
 
-<? {0;"Period";"период качаний (мс)"} UInt32;>
+<? {0;"Period";"период качаний (мс)";} UInt32;>
 <= 14820;>
 
-<? {0;"Cycles";"пропущено циклов"} UInt16;>
+<? {0;"Cycles";"пропущено циклов";} UInt16;>
 <= 1;>
 
-<? {0;"Pressure";"затрубное давление (атм)"} Double;>
+<? {0;"Pressure";"затрубное давление (атм)";} Double;>
 <= 0;>
 
-<? {0;"BufPressure";"буферное давление (атм)"} Double;>
+<? {0;"BufPressure";"буферное давление (атм)";} Double;>
 <= 0;>
 
-<? {0;"LinePressure";"линейное давление (атм)"} Double;>
+<? {0;"LinePressure";"линейное давление (атм)";} Double;>
 <= 0;>
 
-<? {0;"PumpType";"тип привода станка-качалки {}"} UInt16;>
+<? {0;"PumpType";"тип привода станка-качалки {}";} UInt16;>
 <= 0;>
 
-<? {0;"Acc";"напряжение аккумулятора датчика, (В)"} Single;>
+<? {0;"Acc";"напряжение аккумулятора датчика, (В)";} Single;>
 <= 3.5999999;>
 
-<? {0;"Temp";"температура датчика, (°С)"} Single;>
+<? {0;"Temp";"температура датчика, (°С)";} Single;>
 <= 23.4;>
 
-<? {0;"DynamogrammChartInfo"} Struct "ChartNType"
+<? {0;"DynamogrammChartInfo";} Struct "ChartNType"
 {
   String "Name";
   String "Unit";
@@ -124,7 +124,7 @@
 <= {"Position";"m";"";"перемещение";}>
 <= {"Weight";"T";"";"вес";}>
 
-<? {0;"DynChart"} Struct "Chart2D"
+<? {0;"DynChart";} Struct "Chart2D"
 {
   Single "x";
   Single "y";

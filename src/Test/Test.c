@@ -380,10 +380,10 @@ static int WriteSample(EdfContext_t* dw)
 	};
 	writed = 0;
 	err = EdfWriteSchema(dw, &(EdfSchema_t){.Type = comlexChar}, &writed);
-	assert(ERR_SRC_SHORT == EdfWriteData(dw, &(uint8_t){8}, sizeof(uint8_t), &consumed));
+	runtime_assert(ERR_SRC_SHORT == EdfWriteData(dw, &(uint8_t){8}, sizeof(uint8_t), &consumed), "fail Chat10Test field 0 UInt8", ERR_SRC_SHORT);
 	len = GetCString("Char", 10, test, sizeof(test));
-	assert(ERR_SRC_SHORT == EdfWriteData(dw, test, len, &consumed));
-	assert(ERR_NO == EdfWriteData(dw, &(uint16_t){16}, sizeof(uint16_t), &consumed));
+	runtime_assert(ERR_SRC_SHORT == EdfWriteData(dw, test, len, &consumed), "fail Chat10Test field 1 Char", ERR_SRC_SHORT);
+	runtime_assert(ERR_NO == EdfWriteData(dw, &(uint16_t){16}, sizeof(uint16_t), &consumed), "fail Chat10Test field 2 UInt16", ERR_SRC_SHORT);
 
 	EdfType_t comlexVarType =
 	{
@@ -477,7 +477,8 @@ static int Test_WriteSample()
 	
 	// TEXT write
 	err = EdfOpenFile(edf, txtFile, "wt");
-	WriteSample(edf);
+	if((err=WriteSample(edf)))
+		return err;
 	EdfClose(edf);
 	// test append
 	err = EdfOpenFile(edf, txtFile, "at");
@@ -488,7 +489,8 @@ static int Test_WriteSample()
 
 	// BINary write
 	err = EdfOpenFile(edf, binFile, "wb");
-	WriteSample(edf);
+	if ((err = WriteSample(edf)))
+		return err;
 	EdfClose(edf);
 	// test append
 	if ((err = EdfOpenFile(edf, binFile, "ab")))

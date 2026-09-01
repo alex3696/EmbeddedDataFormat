@@ -41,4 +41,12 @@ void Log_ErrF(const char* const fmt, ...);
 #define LOG_ERRF(fmt, ...) Log_ErrF(fmt, __VA_ARGS__)
 #endif
 
+#define runtime_assert(condition, message, code) \
+    do { \
+        if (!(condition)) { \
+            fprintf(stderr, "Runtime assert: [%u]%s (%s:%d)\n", code, message, __FILE__, __LINE__); \
+            abort(); \
+        } \
+    } while(0)
+
 #endif //EDFUTILS_H

@@ -45,7 +45,8 @@ int DatToEdf(const char* src, const char* edfFile, char mode)
 
 	const EdfSchema_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
 	const DateTime_t beginDtDat = { dat.Year + 2000, dat.Month, dat.Day, };
-	EdfWriteSchemaData(edf, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
+	err = EdfWriteSchemaData(edf, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
+	runtime_assert(0 == err, "", err);
 
 	char field[256] = { 0 };
 	char cluster[256] = { 0 };

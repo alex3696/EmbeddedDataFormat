@@ -1,7 +1,7 @@
-<~ {version=0.3; bs=300; encoding=65001; flags=0; } >
+//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags
+<~{0;3;300;65001;0;}>
 
-
-<? {0;"VariableKV";"comment"} Struct "KeyValue"
+<? {0;"VariableKV";"comment";} Struct "KeyValue"
 {
   String "Key";
   String "Value";
@@ -10,35 +10,35 @@
 <= {"Key2";"Value2";}>
 <= {"Key3";"Value3";}>
 
-<? {0;"тестовый ключ 1"} String;>
+<? {0;"тестовый ключ 1";} String;>
 <= "Value 1";>
 
-<? {0;"тестовый ключ 2"} String;>
+<? {0;"тестовый ключ 2";} String;>
 <= "Value 2";>
 
-<? {0;"тестовый ключ 3"} String;>
+<? {0;"тестовый ключ 3";} String;>
 <= "Value 3";>
 
-<? {0;"test NULL string"} String;>
+<? {0;"test NULL string";} String;>
 <= "";>
 
-<? {0;"test 260 string"} String;>
+<? {0;"test 260 string";} String;>
 <= "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234";>
 
-<? {0;"weight variable"} Int32;>
+<? {0;"weight variable";} Int32;>
 <= -1;>
 
-<? {0;"TestDouble"} Double;>
+<? {0;"TestDouble";} Double;>
 <= 1.1;>
 <= 2.1;>
 <= 3.1;>
 
-<? {0;"Char Text"} Char[20];>
+<? {0;"Char Text";} Char[20];>
 <= "Char";>
 <= "Value";>
 <= "Array     Value";>
 
-<? {0;""} Struct "Chat10Test"
+<? {0;"";} Struct "Chat10Test"
 {
   UInt8;
   Char[10];
@@ -46,7 +46,7 @@
 }>
 <= {8;"Char";16;}>
 
-<? {0;""} Struct "ComplexVariable"
+<? {0;"";} Struct "ComplexVariable"
 {
   Int64 "time";
   Struct[3] "State"
@@ -62,5 +62,5 @@
 }>
 <= {-123;[{1;{11;12;}[1.1;1.2;1.3;1.4;]}{2;{21;22;}[2.1;2.2;2.3;2.4;]}{3;{31;32;}[3.1;3.2;3.3;3.4;]}]}>
 
-<? {0;"Int32 Key"} Int32;>
+<? {0;"Int32 Key";} Int32;>
 <= -1313688652;>

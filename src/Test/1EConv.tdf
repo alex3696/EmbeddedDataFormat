@@ -1,14 +1,14 @@
-<~ {version=0.3; bs=256; encoding=65001; flags=0; } >
+//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags
+<~{0;3;256;65001;0;}>
 
-
-<? {10;""} Struct "FileTypeId"
+<? {10;"";} Struct "FileTypeId"
 {
   Int16 "Type";
   Int16 "Version";
 }>
 <= {5;1;}>
 
-<? {11;"BeginDateTime"} Struct "DateTime"
+<? {11;"BeginDateTime";} Struct "DateTime"
 {
   Int16 "Year";
   UInt8 "Month";
@@ -21,7 +21,7 @@
 }>
 <= {2001;11;19;5;3;52;0;0;}>
 
-<? {12;"Position"} Struct "Position"
+<? {12;"Position";} Struct "Position"
 {
   String "Field";
   String "Cluster";
@@ -32,7 +32,7 @@
 }>
 <= {"52";"000006";"083512";"5";0;0;}>
 
-<? {13;"DevInfo";"прибор"} Struct "DeviceInfo"
+<? {13;"DevInfo";"прибор";} Struct "DeviceInfo"
 {
   UInt16 "SwId";
   UInt16 "SwModel";
@@ -43,7 +43,7 @@
 }>
 <= {4353;0;0;0;0;9037;}>
 
-<? {14;"RegInfo";"регистратор"} Struct "DeviceInfo"
+<? {14;"RegInfo";"регистратор";} Struct "DeviceInfo"
 {
   UInt16 "SwId";
   UInt16 "SwModel";
@@ -54,52 +54,52 @@
 }>
 <= {2;0;0;0;0;5;}>
 
-<? {0;"Oper"} UInt16;>
+<? {0;"Oper";} UInt16;>
 <= 4;>
 
-<? {0;"Discrete";"величина дискреты"} Double;>
+<? {0;"Discrete";"величина дискреты";} Double;>
 <= 0.00585938;>
 
-<? {0;"Reflections";"число отражений"} UInt16;>
+<? {0;"Reflections";"число отражений";} UInt16;>
 <= 6;>
 
-<? {0;"Level";"уровень без поправки на скорость звука (для скорости 341.333 м/с), м"} Double;>
+<? {0;"Level";"уровень без поправки на скорость звука (для скорости 341.333 м/с), м";} Double;>
 <= 39;>
 
-<? {0;"Pressure";"затрубное давление (атм)"} Double;>
+<? {0;"Pressure";"затрубное давление (атм)";} Double;>
 <= 0;>
 
-<? {0;"Table";"номер таблицы скоростей"} UInt16;>
+<? {0;"Table";"номер таблицы скоростей";} UInt16;>
 <= 0;>
 
-<? {0;"Speed";"скорость звука, м/с"} Single;>
+<? {0;"Speed";"скорость звука, м/с";} Single;>
 <= 346;>
 
-<? {0;"BufPressure";"буферное давление (атм)"} Double;>
+<? {0;"BufPressure";"буферное давление (атм)";} Double;>
 <= 4.5;>
 
-<? {0;"LinePressure";"линейное давление (атм)"} Double;>
+<? {0;"LinePressure";"линейное давление (атм)";} Double;>
 <= 6.699999809265137;>
 
-<? {0;"Current";"ток, 0.1А"} UInt16;>
+<? {0;"Current";"ток, 0.1А";} UInt16;>
 <= 0;>
 
-<? {0;"IdleHour";"время простоя, ч"} UInt8;>
+<? {0;"IdleHour";"время простоя, ч";} UInt8;>
 <= 0;>
 
-<? {0;"IdleMin";"время простоя, мин"} UInt8;>
+<? {0;"IdleMin";"время простоя, мин";} UInt8;>
 <= 0;>
 
-<? {0;"Mode";"режим исследования"} UInt8;>
+<? {0;"Mode";"режим исследования";} UInt8;>
 <= 0;>
 
-<? {0;"Acc";"напряжение аккумулятора датчика, (В)"} Single;>
+<? {0;"Acc";"напряжение аккумулятора датчика, (В)";} Single;>
 <= 4;>
 
-<? {0;"Temp";"температура датчика, (°С)"} Single;>
+<? {0;"Temp";"температура датчика, (°С)";} Single;>
 <= 0;>
 
-<? {0;"EchoChartInfo"} Struct "ChartNType"
+<? {0;"EchoChartInfo";} Struct "ChartNType"
 {
   String "Name";
   String "Unit";
@@ -109,7 +109,7 @@
 <= {"Depth";"m";"";"глубина";}>
 <= {"Val";"adc";"";"амплитуда";}>
 
-<? {0;"EchoChart"} Struct "Chart2D"
+<? {0;"EchoChart";} Struct "Chart2D"
 {
   Single "x";
   Single "y";
