@@ -339,26 +339,4 @@ using (var reader = new EdfBinaryReader(file))
 
 ### Thread Safety
 
-⚠️ **Не thread-safe!**
-
-- Используйте **один экземпляр** `EdfBinaryWriter` на поток
-- Используйте **один экземпляр** `EdfBinaryReader` на поток
-- Для параллельной записи создавайте отдельные `Writer`/`Reader` для каждого потока
-
-```csharp
-// ❌ ОПАСНО
-var writer = new EdfBinaryWriter(stream);
-Task.Run(() => writer.WriteValue(data1));  // Race condition!
-Task.Run(() => writer.WriteValue(data2));
-
-// ✅ ПРАВИЛЬНО
-Task.Run(() => {
-    var localWriter = new EdfBinaryWriter(stream1);
-    localWriter.WriteValue(data1);
-});
-Task.Run(() => {
-    var localWriter = new EdfBinaryWriter(stream2);
-    localWriter.WriteValue(data2);
-});
-```
-
+⚠️ **Не thread-safe!** - по определению, т.к. последовательная запись/чтение примитивов и блоков

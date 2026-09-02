@@ -56,6 +56,11 @@
 | **Запись**  | Полностью сериализованный объект данных  |
 | **Примитив**| Базовый тип данных (например, Int32)     |
 
+**Для фукционирования требуется реализовать для своей платформы**
+- FileStreamImpl.c, FileStreamOpen основная функция для определения,
+    которая инициализирует имплементацию StreamFnImpl_t: Write, Read, WriteFmt, Close, Seek
+- MbCrc.c, MbCrc16acc - табличный расчёт контрольной суммы модбас
+
 ---
 
 ## Структура файла и блоков
@@ -93,11 +98,18 @@
 | Reserved  | uint16_t | Зарезервировано (0)      |
 | Flags     | uint32_t | Зарезервировано (0)      |
 
+**Пример:** бинарный вид
+
+| Type | Len   | Content                            | CRC  |
+|------|-------|------------------------------------|------|
+| 7E   | 0C 00 | 00 03 E9 FD 00 02 00 00 00 00 00 00|16 FA |
+
 **Текущая версия:** 0.3
 
 **Пример текстового блока конфига:**
 ```
-<~ {version=1.0; bs=512; encoding=65001; flags=0;} >
+//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags
+<~{0;3;256;65001;0;}>
 ```
 
 ### Блок схемы (Schema–block)
@@ -114,8 +126,25 @@
 |------------|-----------------|-----------------------------------------------------|
 | Id         | 2               | Идентификатор схемы (0…65535)                       |
 | Name       | 1+N             | Имя схемы (byte length + bytes, ≤255)               |
-| Desc       | 1+M             | Описание схемы (опционально)                        |
-| Type       | переменный      | Состав полей (см. EdfType_t, рекурсивно)            |
+| Desc       | 1+M             | Описание схемы (опционально, как строка)            |
+| Type       | переменный      | Cостав поля (см. EdfType_t, рекурсивно)             |
+
+#### Формат EdfType_t:
+
+| Поле        | Размер (байт)    | Описание                                                        |
+|-------------|------------------|-----------------------------------------------------------------|
+| Type        | 1                | Примитивный или составной тип , см. PoType                      |
+| DimsCount   | 1                | Кол-во измерений массива (0–255)                                |
+| Dims        | DimsCount×2      | Размеры измерений (uint16_t)                                    |
+| Name        | 1+N              | Имя типа/поля (строка)                                          |
+| FieldsCount | 1 or отсутствует | Число полей (Struct) **Только если Type==Struct и FieldsCount>0**|
+| Fields      | переменный       | (FieldsCount × EdfType_t)                                       |
+
+**Примечания:**
+- FieldsCount есть ТОЛЬКО если Type==Struct и FieldsCount>0
+- Поля структуры хранятся строго в порядке объявления
+- Максимум 255 полей в одной структуре (uint8_t)
+- Общее число примитивов в структуре (включая вложенные и массивы) ≤ 65535
 
 #### Полная таблица примитивных типов PoType
 
@@ -149,11 +178,29 @@
   String "unit";
 } >
 ```
+**Пример бинарного блока схемы:**
+```
+3F 											// BlockType
+33 											// BlockLen 51dec
+00 00										// Id
+0A 'S' 'e' 'n' 's' 'o' 'r' 'D' 'a' 't' 'a'	// Name
+00											// Desc
+00											// Type Struct
+00											// Dims
+06 'S' 'e' 'n' 's' 'o' 'r'					// Struct Name
+03											// Fields
+07 00 09 't' 'i' 'm' 'e' 's' 't' 'a' 'm' 'p'// Field0
+0B 00 05 'v' 'a' 'l' 'u' 'e'				// Field1
+0D 00 04 'u' 'n' 'i' 't'					// Field2
+AB CD 										// BlockCrc sample CRC16
+```
 
 > **Важно:** После записи блока схемы через `EdfWriteSchema()` состояние контекста автоматически сбрасывается:
 > - `SchId` устанавливается в соответствии с переданной схемой
 > - `PrimOffset` и `RecordId` обнуляются
 > - Счетчик длины блока данных сбрасывается
+
+Это гарантирует, что следующие вызовы `EdfWriteData` будут начинать новую последовательность записей с корректными заголовками.
 
 ### Блок данных (Data–block)
 
@@ -170,6 +217,8 @@
 
 **Пример бинарных данных для схемы SensorData:**
 ```
+3D 			// BlockType 
+13			// BlockLen 19dec
 00 00       // SchId = 0
 00 00       // PrmOffset = 0 (начало записи)
 00 00 00 00 // RecId = 0
@@ -177,6 +226,7 @@
 00 00 BC 41 // value = 23.5 (float, little-endian)
 02          // len = 2 (String prefix)
 D0 C2       // 'Р' 'С' (°C в UTF-8)
+AB CD 		// BlockCrc sample CRC16
 ```
 
 **Правила сериализации:**
@@ -242,49 +292,9 @@ const char* str = "hello";
 EdfWriteData(ctx, &str, sizeof(char*), NULL);
 ```
 
-### .NET API (C# wrapper)
+### .NET API (C#)
 
-```csharp
-// ===== Бинарная запись =====
-using (var writer = new EdfBinaryWriter(stream))
-{
-    writer.WriteSchema(mySchema);
-    EdfErrorCode result = writer.WriteValue(myObject);
-    writer.Flush();
-}
-
-// ===== Бинарное чтение =====
-using (var reader = new EdfBinaryReader(stream))
-{
-    if (reader.ReadBlock())  // Config блок
-    {
-        reader.ReadBlock();  // Schema блок
-        if (reader.ReadBlock())  // Data блок
-        {
-            MyType restored = reader.ReadValue<MyType>();
-        }
-    }
-}
-
-// ===== Текстовая запись =====
-using (var writer = new EdfTextWriter(stream))
-{
-    writer.WriteSchema(mySchema);
-    writer.WriteValue(myObject);
-}
-
-// ===== С атрибутами (автогенерация схемы) =====
-[EdfSerializable]
-public class MyData
-{
-    public string? Name { get; set; }
-    public int Value { get; set; }
-    [EdfArray([2, 3])]
-    public int[,] Matrix { get; set; }
-}
-
-var schema = MyData.GetEdfSchema();
-```
+[.NET API и примеры](DOTNET_API_REFERENCE.md)
 
 ---
 
@@ -413,84 +423,6 @@ if (err == ERR_EOF)
 EdfClose(ctx);
 ```
 
-### Пример 3: .NET использование
-
-```csharp
-using (var stream = File.Create("data.bdf"))
-using (var writer = new EdfBinaryWriter(stream))
-{
-    var schema = new EdfSchema
-    {
-        Id = 0,
-        Name = "SensorData",
-        Type = new EdfType
-        {
-            Type = EdfPrimitiveType.Struct,
-            Childs = new[]
-            {
-                new EdfType(EdfPrimitiveType.UInt32, "timestamp"),
-                new EdfType(EdfPrimitiveType.Single, "value"),
-                new EdfType(EdfPrimitiveType.String, "unit"),
-            }
-        }
-    };
-    
-    writer.WriteSchema(schema);
-    
-    var data = new[] {
-        new { timestamp = 1700000000u, value = 23.5f, unit = "°C" },
-        new { timestamp = 1700000060u, value = 23.6f, unit = "°C" }
-    };
-    
-    foreach (var record in data)
-        writer.WriteValue(record);
-}
-
-// Чтение
-using (var stream = File.OpenRead("data.bdf"))
-using (var reader = new EdfBinaryReader(stream))
-{
-    reader.ReadBlock();  // Config
-    reader.ReadBlock();  // Schema
-    
-    while (reader.ReadBlock() && reader.GetBlockType() == EdfBlockType.Data)
-    {
-        dynamic obj = reader.ReadValue<dynamic>();
-        Console.WriteLine($"ts={obj.timestamp}, val={obj.value}");
-    }
-}
-```
-
-### Пример 4: .NET с автогенерацией схемы
-
-```csharp
-[EdfSerializable]
-public class SensorReading
-{
-    public uint Timestamp { get; set; }
-    public float Value { get; set; }
-    public string Unit { get; set; }
-}
-
-using (var stream = File.Create("data.bdf"))
-using (var writer = new EdfBinaryWriter(stream))
-{
-    // Схема генерируется автоматически из атрибутов
-    var schema = SensorReading.GetEdfSchema();
-    writer.WriteSchema(schema);
-    
-    var reading = new SensorReading 
-    { 
-        Timestamp = 1700000000, 
-        Value = 23.5f, 
-        Unit = "°C" 
-    };
-    writer.WriteValue(reading);
-}
-```
-
----
-
 ## Практические ограничения и FAQ
 
 ### Текущее состояние реализации
@@ -498,11 +430,11 @@ using (var writer = new EdfBinaryWriter(stream))
 - [x] Бинарная сериализация/десериализация (C и .NET)
 - [x] Текстовое представление для отладки (C и .NET)
 - [x] Конвертеры легаси-форматов (.D, .E, .DAT → EDF)
-- [ ] Парсер текстового формата (конвертер из .tdf в .bdf) — **в разработке**
-- [ ] Сжатие целых чисел (Variable-length quantity) — **опционально**
-- [ ] Разностное сжатие для временных рядов — **опционально**
+- [x] Парсер текстового формата (конвертер из .tdf в .bdf) — **только в .NET версии**
+- [ ] Сжатие целых чисел (Variable-length quantity) — **опционально, в будущих версиях**
+- [ ] Разностное сжатие для временных рядов — **опционально, в будущих версиях**
 - [x] Текстовая запись ("wt" режим) — **поддерживается**
-- [ ] Текстовое чтение ("rt" режим) — **НЕ поддерживается**
+- [ ] Текстовое чтение ("rt" режим) — **НЕ реализована в С версии библиотеки**
 
 ### ⚠️ Критические замечания
 
@@ -527,7 +459,7 @@ if (len > 255) {
 
 #### 2. Кэширование схемы в контексте
 
-**После `EdfWriteSchema()` контекст кэ��ирует указатель на схему!**
+**После `EdfWriteSchema()` контекст кэширует указатель на схему! **
 
 ```c
 // ✅ Правильно: схема — статическая
@@ -543,23 +475,12 @@ EdfWriteSchema(ctx, &schema, NULL);
 ```
 
 **Правило:** Гарантируйте, что схема остаётся в памяти на весь сеанс записи.
+пока сойдёт и так, но в будущем будет исправлено
 
 #### 3. Многопоточность
 
 ⚠️ **Объекты `EdfContext`, `EdfBinaryWriter`, `EdfBinaryReader` НЕ thread-safe!**
-
-```c
-// ❌ ОПАСНО: Race condition
-EdfWriteData(ctx, data1, ...);  // поток 1
-EdfWriteData(ctx, data2, ...);  // поток 2 одновременно → corruption
-
-// ✅ Правильно: каждому потоку свой контекст
-EdfContext_t* ctx1 = ...;
-EdfContext_t* ctx2 = ...;
-// Используйте отдельно
-```
-
-**Правило:** Используйте одну запись/чтение на поток или добавьте синхронизацию.
+- по определению, т.к. последовательная запись/чтение примитивов и блоков
 
 #### 4. Текстовое чтение НЕ поддерживается
 
@@ -570,7 +491,7 @@ EdfOpenFile(ctx, "file.tdf", "rt");
 // ✅ Поддерживается: текстовая запись
 EdfOpenFile(ctx, "file.tdf", "wt");
 
-// Для текстового чтения используйте собственный парсер или конвертер
+// Для текстового чтения используйте C#
 ```
 
 #### 5. Восстановление после ошибок
@@ -591,7 +512,7 @@ uint32_t recordId = ctx->Blk->Content.Record.RecId;         // номер зап
 |--------|------------|-------|--------|
 | 256    | Микроконтроллеры, минимальная память | Экономия памяти | Больше служебных данных |
 | 512    | Типичные embedded системы | Баланс | — |
-| 1024   | С��стемы с достатком памяти | Хорошая компактность | Больше требований к памяти |
+| 1024   | Схстемы с достатком памяти | Хорошая компактность | Больше требований к памяти |
 | 2048-4096 | ПК, высокопроизводительность | Максимальная компактность | Значительное требование памяти |
 
 **Правило:** Больший блок = лучшая компактность (% служебных данных мал). Меньший блок = меньше требований к памяти.
