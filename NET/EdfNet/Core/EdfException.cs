@@ -28,8 +28,15 @@ public class EdfParseException : EdfException
         Line = line;
         Column = column;
     }
+    public static void ThrowExpected(TextTokenType expected, TextTokenType got, EdfTokenReader reader)
+            => throw new EdfParseException($"Expected {EdfTokenReader.Describe(expected)} " +
+                $"but got {EdfTokenReader.Describe(got)}", reader.TokenLine, reader.TokenColumn);
+    public static void ThrowIfNotEqual(TextTokenType expected, TextTokenType got, EdfTokenReader reader)
+    {
+        if (expected != got)
+            ThrowExpected(expected, got, reader);
+    }
 }
-
 
 public class EdfFormatterNotRegistredException(Type type)
     : EdfException($"Formatter for type {type.FullName} not registred")

@@ -32,7 +32,7 @@ public class TxtToBin
 
     public static void Convert(Stream srcBin, Stream dstTxt)
     {
-        Span<byte> buf = stackalloc byte[256];
+        //Span<byte> buf = stackalloc byte[256];
         using StateReaderTxt reader = new(srcBin);
         if (!reader.ReadBlock() || EdfBlockType.Config != reader.GetBlockType())
             throw new Exception("There are no config block");
@@ -75,8 +75,10 @@ public class TxtToBin
                                 case EdfPrimitiveType.Double: bw.Write(tr.ReadDouble()); break;
                                 case EdfPrimitiveType.Char:
                                 case EdfPrimitiveType.String:
-                                    tr.ReadToSpan(buf, out var pt, out var len);
-                                    bw.WriteSpan(buf.Slice(0, len), pt); break;
+                                    //tr.ReadToSpan(buf, out var pt, out var len);
+                                    //bw.WriteSpan(buf.Slice(0, len), pt);
+                                    tr.ReadTo(ref bw);
+                                    break;
                             }
                         }
                         while (reader.TokenReader.MoveNext()

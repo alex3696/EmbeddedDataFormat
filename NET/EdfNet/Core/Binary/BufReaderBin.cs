@@ -157,8 +157,35 @@ public readonly ref struct BufReaderBin : IBufReader
         BinaryBlockSequenceException.ThrowIfNotEqualPrimOffset(_state.Enum.PrimOffset, _state.Blk.PrimOffset);
         BinaryBlockWrongLengthException.ThrowIfLess(len, _state.ReadAvailableLen);
     }
+    public void ReadTo<TWriter>(ref TWriter writer) where TWriter : IBufWriter, allows ref struct
+    {
+        int begin = 0;
+        int len;
+        var pt = CurrentType.Type;
+        switch (pt)
+        {
+            default: throw new PrimitiveNotSupportedException(pt);
+            case EdfPrimitiveType.UInt8:
+            case EdfPrimitiveType.Int8: len = 1; break;
+            case EdfPrimitiveType.UInt16:
+            case EdfPrimitiveType.Int16: len = 2; break;
+            case EdfPrimitiveType.UInt32:
+            case EdfPrimitiveType.Int32:
+            case EdfPrimitiveType.Single: len = 4; break;
+            case EdfPrimitiveType.UInt64:
+            case EdfPrimitiveType.Int64:
+            case EdfPrimitiveType.Double: len = 8; break;
+            case EdfPrimitiveType.Char: len = (int)CurrentType.GetTotalElements(); break;
+            case EdfPrimitiveType.String: EnsureData(1); begin = 1; len = _state.ReadAvailableBuf[0]; break;
+        }
+        EnsureData(len);
+        writer.WriteSpan(_state.ReadAvailableBuf.Slice(begin, len), pt);
+        _state.Readed += begin + len;
+        _state.Enum.MoveNext();
+    }
     public void ReadToSpan(Span<byte> dst, out EdfPrimitiveType pt, out int len)
     {
+        int begin = 0;
         pt = CurrentType.Type;
         switch (pt)
         {
@@ -173,27 +200,12 @@ public readonly ref struct BufReaderBin : IBufReader
             case EdfPrimitiveType.UInt64:
             case EdfPrimitiveType.Int64:
             case EdfPrimitiveType.Double: len = 8; break;
-            case EdfPrimitiveType.Char:
-                {
-                    len = (int)CurrentType.GetTotalElements();
-                    EnsureData(len);
-                    _state.ReadAvailableBuf.Slice(0, len).CopyTo(dst);
-                    _state.Readed += len;
-                    _state.Enum.MoveNext();
-                    return;
-                }
-            case EdfPrimitiveType.String:
-                {
-                    var src = _state.ReadAvailableBuf;
-                    len = src[0];
-                    src.Slice(1, len).CopyTo(dst);
-                    _state.Readed += len + 1;
-                    _state.Enum.MoveNext();
-                    return;
-                }
+            case EdfPrimitiveType.Char: len = (int)CurrentType.GetTotalElements(); break;
+            case EdfPrimitiveType.String: EnsureData(1); begin = 1; len = _state.ReadAvailableBuf[0]; break;
         }
-        _state.ReadAvailableBuf.Slice(0, len).CopyTo(dst);
-        _state.Readed += len;
+        EnsureData(len);
+        _state.ReadAvailableBuf.Slice(begin, len).CopyTo(dst);
+        _state.Readed += begin + len;
         _state.Enum.MoveNext();
     }
 }

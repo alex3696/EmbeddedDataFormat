@@ -5,22 +5,15 @@ using NetTest;
 namespace Bench;
 
 /*
-| Method           | Runtime        | Mean    | Ratio | Allocated | Alloc Ratio |
-|----------------- |--------------- |--------:|------:|----------:|------------:|
-| 'Binary -> Text' | .NET 10.0      | 1.384 s |  1.00 |  16.68 KB |        1.00 |
-| 'Binary -> Text' | NativeAOT 10.0 | 1.816 s |  1.31 |   25.8 KB |        1.55 |
-|                  |                |         |       |           |             |
-| 'Text -> Binary' | .NET 10.0      | 1.997 s |  1.00 |  14.64 KB |        1.00 |
-| 'Text -> Binary' | NativeAOT 10.0 | 2.515 s |  1.26 |  26.05 KB |        1.78 |
-
 8845hs
 | Method           | Runtime        | Mean    | Ratio | Allocated | Alloc Ratio |
 |----------------- |--------------- |--------:|------:|----------:|------------:|
-| 'Binary -> Text' | .NET 10.0      | 1.561 s |  1.00 |  16.32 KB |        1.00 |
-| 'Binary -> Text' | NativeAOT 10.0 | 2.566 s |  1.64 |  24.41 KB |        1.50 |
+| 'Binary -> Text' | .NET 10.0      | 1.572 s |  1.00 |  16.32 KB |        1.00 |
+| 'Binary -> Text' | NativeAOT 10.0 | 2.471 s |  1.57 |  24.41 KB |        1.50 |
 |                  |                |         |       |           |             |
-| 'Text -> Binary' | .NET 10.0      | 2.453 s |  1.00 |  14.28 KB |        1.00 |
-| 'Text -> Binary' | NativeAOT 10.0 | 3.090 s |  1.26 |  23.72 KB |        1.66 |
+| 'Text -> Binary' | .NET 10.0      | 2.449 s |  1.00 |  14.28 KB |        1.00 |
+| 'Text -> Binary' | NativeAOT 10.0 | 2.724 s |  1.11 |  25.41 KB |        1.78 |
+
  */
 
 [MemoryDiagnoser(true)]

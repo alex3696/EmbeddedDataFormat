@@ -106,7 +106,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
     {
         switch (pt)
         {
-            default: throw new EdfWrongTypeException();
+            default: throw new PrimitiveNotSupportedException(pt);
             case EdfPrimitiveType.Int8: Write(Unsafe.As<byte, sbyte>(ref MemoryMarshal.GetReference(src))); break;
             case EdfPrimitiveType.UInt8: Write(Unsafe.As<byte, byte>(ref MemoryMarshal.GetReference(src))); break;
             case EdfPrimitiveType.Int16: Write(Unsafe.As<byte, short>(ref MemoryMarshal.GetReference(src))); break;
@@ -152,6 +152,7 @@ public readonly ref struct BufWriterTxt : IBufWriter
         var token = Enum.CurrentToken;
         switch (token)
         {
+            default: throw new EdfTokenNotSupportedException(token);
             case TypeTokenType.BeginRecord:
                 _writer.Write(EdfTokenLiterals.RecBegin);
                 _writer.Write(EdfTokenLiterals.Space);
@@ -164,7 +165,6 @@ public readonly ref struct BufWriterTxt : IBufWriter
             case TypeTokenType.EndStruct: _writer.Write(EdfTokenLiterals.StructEnd); break;
             case TypeTokenType.BeginArray: _writer.Write(EdfTokenLiterals.ArrayBegin); break;
             case TypeTokenType.EndArray: _writer.Write(EdfTokenLiterals.ArrayEnd); break;
-            default: throw new EdfTokenNotSupportedException(token);
         }
         Enum.MoveNext();
     }

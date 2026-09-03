@@ -2,6 +2,7 @@ namespace EdfNet.Interfaces;
 
 public interface IBufReader
 {
+    public void ReadTo<TWriter>(ref TWriter writer) where TWriter : IBufWriter, allows ref struct;
     void ReadToSpan(Span<byte> dst, out EdfPrimitiveType pt, out int len);
     T Read<T>() where T : struct; // + void ReadVarEnd();
     byte ReadUInt8();

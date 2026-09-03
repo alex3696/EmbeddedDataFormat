@@ -15,7 +15,7 @@ public readonly ref struct BufReaderTxt : IBufReader
         Enum = circularEdfType;
     }
 
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SkipNonValueItem()
     {
         switch (Enum.CurrentToken)
@@ -26,27 +26,29 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeTokenType.EndStruct: _tokenizer.ExpectAdvance(TextTokenType.StructEnd); break;
             case TypeTokenType.BeginArray: _tokenizer.ExpectAdvance(TextTokenType.ArrayBegin); break;
             case TypeTokenType.EndArray: _tokenizer.ExpectAdvance(TextTokenType.ArrayEnd); break;
-            default: throw new NotSupportedException($"Token {Enum.CurrentToken} not supported.");
+            default: throw new EdfTokenNotSupportedException(Enum.CurrentToken);
         }
         Enum.MoveNext();
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void EnsureToken(TextTokenType tokenType)
+    {
+        if (!_tokenizer.HasValidToken)
+        {
+            if (!_tokenizer.MoveNext())
+                EdfParseException.ThrowIfNotEqual(tokenType, TextTokenType.EOF, _tokenizer);
+        }
+        EdfParseException.ThrowIfNotEqual(tokenType, _tokenizer.TokenType, _tokenizer);
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ValidatePrimitiveAndTextToken(EdfPrimitiveType got, TextTokenType tokenType)
     {
         while (TypeTokenType.Value != Enum.CurrentToken)// skip non value Enum.CurrentToken
             SkipNonValueItem();
         WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, got);
-        if (!_tokenizer.HasValidToken)
-        {
-            if (_tokenizer.MoveNext())
-                return;
-        }
-        if (tokenType != _tokenizer.TokenType)
-        {
-            throw new EdfParseException(
-                $"Expected {EdfTokenReader.Describe(tokenType)} but got {EdfTokenReader.Describe(_tokenizer.TokenType)}",
-                _tokenizer.TokenLine, _tokenizer.TokenColumn);
-        }
+        EnsureToken(tokenType);
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void EnsureNextValueOrBlockEnd()
     {
         _tokenizer.Advance(); // skip current value
@@ -148,10 +150,39 @@ public readonly ref struct BufReaderTxt : IBufReader
             case TypeCode.Double: { var b = ReadDouble(); return Unsafe.As<double, T>(ref b); }
         }
     }
+    public void ReadTo<TWriter>(ref TWriter writer) where TWriter : IBufWriter, allows ref struct
+    {
+        while (Enum.CurrentToken != TypeTokenType.Value)
+            SkipNonValueItem();
+        EdfPrimitiveType pt = Enum.CurrentType.Type;
+        switch (pt)
+        {
+            default: throw new PrimitiveNotSupportedException(pt);
+            case EdfPrimitiveType.UInt8: writer.Write(ReadUInt8()); return;
+            case EdfPrimitiveType.Int8: writer.Write(ReadInt8()); return;
+            case EdfPrimitiveType.UInt16: writer.Write(ReadUInt16()); return;
+            case EdfPrimitiveType.Int16: writer.Write(ReadInt16()); return;
+            case EdfPrimitiveType.UInt32: writer.Write(ReadUInt32()); return;
+            case EdfPrimitiveType.Int32: writer.Write(ReadInt32()); return;
+            case EdfPrimitiveType.UInt64: writer.Write(ReadUInt64()); return;
+            case EdfPrimitiveType.Int64: writer.Write(ReadInt64()); return;
+            case EdfPrimitiveType.Single: writer.Write(ReadSingle()); return;
+            case EdfPrimitiveType.Double: writer.Write(ReadDouble()); return;
+            case EdfPrimitiveType.Char:
+                EnsureToken(TextTokenType.StringLiteral);
+                writer.WriteSpan(_tokenizer.TokenValue, EdfPrimitiveType.Char);
+                EnsureNextValueOrBlockEnd();
+                return;
+            case EdfPrimitiveType.String:
+                EnsureToken(TextTokenType.StringLiteral);
+                writer.WriteSpan(_tokenizer.TokenValue, EdfPrimitiveType.String);
+                EnsureNextValueOrBlockEnd();
+                return;
+        }
+    }
     public void ReadToSpan(Span<byte> dst, out EdfPrimitiveType pt, out int len)
     {
-        // skip non value Enum.CurrentToken
-        while (Enum.CurrentToken != TypeTokenType.Value)
+        while (Enum.CurrentToken != TypeTokenType.Value)// skip non value Enum.CurrentToken
             SkipNonValueItem();
         pt = Enum.CurrentType.Type;
         switch (pt)

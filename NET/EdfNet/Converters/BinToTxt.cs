@@ -32,7 +32,7 @@ public class BinToTxt
 
     public static void Convert(Stream srcBin, Stream dstTxt)
     {
-        Span<byte> buf = stackalloc byte[256];
+        //Span<byte> buf = stackalloc byte[256];
         using StateReaderBin reader = new(srcBin);
         using StateWriterTxt writer = new(dstTxt, reader.Cfg);
         BufReaderBin br = new();
@@ -57,7 +57,6 @@ public class BinToTxt
                         ArgumentNullException.ThrowIfNull(writer.CurrentSchema?.Type);
                         while (0 < reader.State.ReadAvailableLen)
                         {
-                            //Convert(ref br, ref tw, buf);
                             switch (br.CurrentType.Type)
                             {
                                 default:
@@ -74,8 +73,9 @@ public class BinToTxt
                                 case EdfPrimitiveType.Double: tw.Write(br.ReadDouble()); break;
                                 case EdfPrimitiveType.Char:
                                 case EdfPrimitiveType.String: //bw.Write(br.ReadString()); break;
-                                    br.ReadToSpan(buf, out var pt, out var len);
-                                    tw.WriteSpan(buf.Slice(0, len), pt);
+                                    //br.ReadToSpan(buf, out var pt, out var len);
+                                    //tw.WriteSpan(buf.Slice(0, len), pt);
+                                    br.ReadTo(ref tw);
                                     break;
                             }
                         }
