@@ -39,6 +39,19 @@ public class TestConverters
         if (_writerGen is IDisposable d)
             d.Dispose();
     }
+    static void ReadTest(string fileName, int count, Func<Stream, IEdfReader> factory)
+    {
+        using var file = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+        var reader = factory.Invoke(file);
+        reader.ReadBlock();// read schema
+        reader.ReadBlock();// read fist block
+        for (int i = 0; i < count; i++)
+        {
+            var ret = reader.ReadValue<ComplexType>();
+        }
+        if (reader is IDisposable d)
+            d.Dispose();
+    }
     public void DeleteConvertedFiles()
     {
         try
@@ -56,29 +69,21 @@ public class TestConverters
     }
     public void CreateBin() => CreateEdfFiles(_binFile, NCOUNT, st => new EdfBinaryWriter(st));
     public void CreateText() => CreateEdfFiles(_txtFile, NCOUNT, st => new EdfTextWriter(st));
-
-    void ReadTest(string fileName, int count, Func<Stream, IEdfReader> factory)
-    {
-        using var file = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-        var reader = factory.Invoke(file);
-        reader.ReadBlock();// read schema
-        reader.ReadBlock();// read fist block
-        for (int i = 0; i < count; i++)
-        {
-            var ret = reader.ReadValue<ComplexType>();
-        }
-        if (reader is IDisposable d)
-            d.Dispose();
-    }
-
-    [TestMethod]
     public void BinaryReader() => ReadTest(_binFile, NCOUNT, st => new EdfBinaryReader(st));
     public void TextReader() => ReadTest(_txtFile, NCOUNT, st => new EdfTextReader(st));
+    [TestMethod]
+    public void ReaderWriterTest()
+    {
+        RunSingleTest("CreateBin", CreateBin);
+        RunSingleTest("CreateText", CreateText);
+        RunSingleTest("BinaryReader", BinaryReader);
+        RunSingleTest("TextReader", TextReader);
+    }
 
     public void BinToTxtConvert() => BinToTxt.Convert(_binFile, _txtFileConv);
     public void TxtToBinConvert() => TxtToBin.Convert(_txtFile, _binFileConv);
     [TestMethod]
-    public void TestBinToTxtConvert()
+    public void ConvertBinToTxtTest()
     {
         {
             using var src = new FileStream(_binFile, FileMode.Open, FileAccess.Read);
@@ -92,7 +97,7 @@ public class TestConverters
         Assert.IsTrue(isEqual);
     }
     [TestMethod]
-    public void TestTxtToBinConvert()
+    public void ConvertTxtToBinTest()
     {
         {
             using var src = new FileStream(_txtFile, FileMode.Open, FileAccess.Read);
