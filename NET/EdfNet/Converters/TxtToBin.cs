@@ -62,7 +62,7 @@ public class TxtToBin
                             switch (bw.CurrentType.Type)
                             {
                                 default:
-                                case EdfPrimitiveType.Struct: throw new EdfWrongTypeException();
+                                case EdfPrimitiveType.Struct: throw new PrimitiveNotSupportedException(bw.CurrentType.Type);
                                 case EdfPrimitiveType.UInt8: bw.Write(tr.ReadUInt8()); break;
                                 case EdfPrimitiveType.Int8: bw.Write(tr.ReadInt8()); break;
                                 case EdfPrimitiveType.UInt16: bw.Write(tr.ReadUInt16()); break;

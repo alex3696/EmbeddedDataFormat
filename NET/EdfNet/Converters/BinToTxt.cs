@@ -60,7 +60,7 @@ public class BinToTxt
                             switch (br.CurrentType.Type)
                             {
                                 default:
-                                case EdfPrimitiveType.Struct: throw new EdfWrongTypeException();
+                                case EdfPrimitiveType.Struct: throw new PrimitiveNotSupportedException(br.CurrentType.Type);
                                 case EdfPrimitiveType.UInt8: tw.Write(br.ReadUInt8()); break;
                                 case EdfPrimitiveType.Int8: tw.Write(br.ReadInt8()); break;
                                 case EdfPrimitiveType.UInt16: tw.Write(br.ReadUInt16()); break;

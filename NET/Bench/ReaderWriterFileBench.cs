@@ -5,6 +5,22 @@ using NetTest;
 namespace Bench;
 
 /*
+12700
+| Method       | Runtime        | Mean       | Ratio | Gen0       | Allocated    | Alloc Ratio |
+|------------- |--------------- |-----------:|------:|-----------:|-------------:|------------:|
+| BinaryWriter | .NET 10.0      |   532.3 ms |  1.00 |          - |      5.22 KB |        1.00 |
+| BinaryWriter | NativeAOT 10.0 |   605.8 ms |  1.14 |          - |     10.72 KB |        2.05 |
+|              |                |            |       |            |              |             |
+| TextWriter   | .NET 10.0      | 1,032.3 ms |  1.00 |          - |      8.68 KB |        1.00 |
+| TextWriter   | NativeAOT 10.0 | 1,550.4 ms |  1.50 |          - |     13.97 KB |        1.61 |
+|              |                |            |       |            |              |             |
+| BinaryReader | .NET 10.0      |   695.9 ms |  1.00 | 58000.0000 | 750021.14 KB |        1.00 |
+| BinaryReader | NativeAOT 10.0 |   696.6 ms |  1.00 | 58000.0000 | 750307.11 KB |        1.00 |
+|              |                |            |       |            |              |             |
+| TextReader   | .NET 10.0      | 1,891.9 ms |  1.00 | 58000.0000 | 750009.28 KB |        1.00 |
+| TextReader   | NativeAOT 10.0 | 2,122.1 ms |  1.12 | 58000.0000 | 750015.63 KB |        1.00 |
+
+
 | Method       | Runtime        | Mean       | Ratio | Gen0       | Allocated    | Alloc Ratio |
 |------------- |--------------- |-----------:|------:|-----------:|-------------:|------------:|
 | BinaryWriter | .NET 10.0      |   586.5 ms |  1.00 |          - |      5.22 KB |        1.00 |

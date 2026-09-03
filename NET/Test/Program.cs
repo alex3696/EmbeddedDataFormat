@@ -1,7 +1,8 @@
+
 internal class Program
 {
     static int UseStreams<T>(string srcFile, string dstFile
-    , Func<Stream, Stream, T, int> func, Func<Stream, T> factory)
+        , Func<Stream, Stream, T, int> func, Func<Stream, T> factory)
     {
         using var src = new FileStream(srcFile, FileMode.Open, FileAccess.Read);
         using var dst = new FileStream(dstFile, FileMode.Create, FileAccess.Write);
@@ -14,49 +15,55 @@ internal class Program
         func.Invoke(src, dst);
         return 0;
     }
-    static int ConvertEdf(string srcFile, string dstFile, Func<Stream, IEdfWriter> factory)
+    static int ConvertToEdf(string srcFile, string dstFile, Func<Stream, IEdfWriter> factory)
     {
-        var ext = Path.GetExtension(srcFile).ToLower();
-        switch (ext)
+        var srcExt = Path.GetExtension(srcFile).ToLower();
+        var dstExt = Path.GetExtension(srcFile).ToLower();
+        if (0 != dstExt.CompareTo(dstExt))
+            throw new ConvertException($"Same extension {srcExt}");
+        return srcExt switch
         {
-            default: Console.WriteLine($"Unknow extension {ext}"); return -1;
-            case ".bdf": UseStreams(srcFile, dstFile, BinToTxt.Convert); break;
-            case ".tdf": UseStreams(srcFile, dstFile, TxtToBin.Convert); break;
-            case ".dat": UseStreams(srcFile, dstFile, ConverterDat.DatToEdf, factory); break;
-            case ".d": UseStreams(srcFile, dstFile, ConverterD.DToEdf, factory); break;
-            case ".e": UseStreams(srcFile, dstFile, ConverterE.EToEdf, factory); break;
-        }
-        return 0;
+            ".bdf" => UseStreams(srcFile, dstFile, BinToTxt.Convert),
+            ".tdf" => UseStreams(srcFile, dstFile, TxtToBin.Convert),
+            ".dat" => UseStreams(srcFile, dstFile, ConverterDat.DatToEdf, factory),
+            ".d" => UseStreams(srcFile, dstFile, ConverterD.DToEdf, factory),
+            ".e" => UseStreams(srcFile, dstFile, ConverterE.EToEdf, factory),
+            _ => throw new ConvertException($"Unknow extension {srcExt}"),
+        };
     }
-    static int ConvertEdfToSiam(string srcFile, string dstFile, Func<Stream, Stream, IEdfReader, int> func)
+    static int ConvertToSiam(string srcFile, string dstFile, Func<Stream, Stream, IEdfReader, int> func)
     {
         var ext = Path.GetExtension(srcFile).ToLower();
-        switch (ext)
+        return ext switch
         {
-            default: Console.WriteLine($"Unknow extension {ext}"); return -1;
-            case ".bdf": return UseStreams(srcFile, dstFile, func, st => new EdfBinaryReader(st));
-            case ".tdf": return UseStreams(srcFile, dstFile, func, st => new EdfTextReader(st));
-        }
+            ".bdf" => UseStreams(srcFile, dstFile, func, st => new EdfBinaryReader(st)),
+            ".tdf" => UseStreams(srcFile, dstFile, func, st => new EdfTextReader(st)),
+            _ => throw new ConvertException($"Unknow extension {ext}"),
+        };
     }
 
     public static int Main(string[] args)
     {
-        string srcFile = args[0];
-        if (!File.Exists(srcFile))
+        try
         {
-            Console.WriteLine($"File not exist {srcFile}");
-            return -1;
+            string srcFile = args[0];
+            if (!File.Exists(srcFile))
+                throw new ConvertException($"File not exist {srcFile}");
+            switch (args[1].ToLower())
+            {
+                case "t": return ConvertToEdf(srcFile, Path.ChangeExtension(srcFile, ".tdf"), st => new EdfTextWriter(st));
+                case "b": return ConvertToEdf(srcFile, Path.ChangeExtension(srcFile, ".bdf"), st => new EdfBinaryWriter(st));
+                case "dat": return ConvertToSiam(srcFile, Path.ChangeExtension(srcFile, ".dat"), ConverterDat.EdfToDat);
+                case "e": return ConvertToSiam(srcFile, Path.ChangeExtension(srcFile, ".e"), ConverterE.EdfToE);
+                case "d": return ConvertToSiam(srcFile, Path.ChangeExtension(srcFile, ".d"), ConverterD.EdfToD);
+                default: break;
+            }
+            throw new ConvertException($"Unknow command {args[1].ToLower()}");
         }
-        switch (args[1].ToLower())
+        catch (Exception ex)
         {
-            case "t": return ConvertEdf(srcFile, Path.ChangeExtension(srcFile, ".tdf"), st => new EdfTextWriter(st));
-            case "b": return ConvertEdf(srcFile, Path.ChangeExtension(srcFile, ".bdf"), st => new EdfBinaryWriter(st));
-            case "dat": return ConvertEdfToSiam(srcFile, Path.ChangeExtension(srcFile, ".dat"), ConverterDat.EdfToDat);
-            case "e": return ConvertEdfToSiam(srcFile, Path.ChangeExtension(srcFile, ".e"), ConverterE.EdfToE);
-            case "d": return ConvertEdfToSiam(srcFile, Path.ChangeExtension(srcFile, ".d"), ConverterD.EdfToD);
-            default: break;
+            Console.WriteLine(ex.ToString());
         }
-        Console.WriteLine($"Unknow parametr {args[1]}");
         return -1;
     }
 }

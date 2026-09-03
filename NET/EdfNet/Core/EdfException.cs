@@ -17,6 +17,8 @@ public class EdfWrongTypeException : EdfException
 public class EdfSrcDataRequiredException : EdfException { }
 public class EdfDstBufOverflowException : EdfException { }
 
+public class ConvertException(string msg) : Exception(msg) { }
+
 public class EdfParseException : EdfException
 {
     public int Line { get; }

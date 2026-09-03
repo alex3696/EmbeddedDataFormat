@@ -5,6 +5,15 @@ using NetTest;
 namespace Bench;
 
 /*
+12700
+| Method           | Runtime        | Mean    | Ratio | Allocated | Alloc Ratio |
+|----------------- |--------------- |--------:|------:|----------:|------------:|
+| 'Binary -> Text' | .NET 10.0      | 1.425 s |  1.00 |  16.32 KB |        1.00 |
+| 'Binary -> Text' | NativeAOT 10.0 | 2.008 s |  1.41 |  26.38 KB |        1.62 |
+|                  |                |         |       |           |             |
+| 'Text -> Binary' | .NET 10.0      | 1.991 s |  1.00 |  14.28 KB |        1.00 |
+| 'Text -> Binary' | NativeAOT 10.0 | 2.409 s |  1.21 |  25.69 KB |        1.80 |
+
 8845hs
 | Method           | Runtime        | Mean    | Ratio | Allocated | Alloc Ratio |
 |----------------- |--------------- |--------:|------:|----------:|------------:|
