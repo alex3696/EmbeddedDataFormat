@@ -106,7 +106,7 @@ public class EdfTokenReader
                     return ReadNumber();
                 if (IsAsciiLetter(b) || b == (byte)'_')
                     return ReadIdentifier();
-                throw new EdfParseException($"Unexpected character '{(char)b}'", _line, _column);
+                throw new EdfParseException($"Unexpected character 0x{b:X2}", _line, _column);
         }
     }
 
@@ -125,6 +125,7 @@ public class EdfTokenReader
                 $"Expected {Describe(type)} but got {Describe(_tokenType)}",
                 _tokenLine, _tokenColumn);
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ExpectAdvance(TextTokenType type)
     {
         Expect(type);
@@ -145,6 +146,7 @@ public class EdfTokenReader
     // -----------------------------------------------------------------
     //  Внутренние читалки токенов
     // -----------------------------------------------------------------
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SetToken(TextTokenType type, int advanceLen)
     {
         _tokenType = type;
@@ -207,6 +209,12 @@ public class EdfTokenReader
                 AdvanceReader(whitespaceCount);
                 continue;
             }
+            //var idx = buf.IndexOfAnyExcept(WhitespaceValues);
+            //if (0 != idx)
+            //{
+            //    AdvanceReader(0 < idx ? idx : buf.Length);
+            //    continue;
+            //}
 
             if (buf.Length >= 2 && b == (byte)'/' && buf[1] == (byte)'/')
             {
@@ -258,15 +266,23 @@ public class EdfTokenReader
     // -----------------------------------------------------------------
     //  Публичные хелперы
     // -----------------------------------------------------------------
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiWhitespace(byte b) =>
+        b <= 0x20 && ((1UL << b) & 0x0000000100003E00UL) != 0;
+    public static bool IsAsciiWhitespace1(byte b) =>
         b is 0x09 or 0x0A or 0x0B or 0x0C or 0x0D or 0x20;
+    public static readonly SearchValues<byte> WhitespaceValues =
+         SearchValues.Create((ReadOnlySpan<byte>)[0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20]);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiLetter(byte b) =>
         (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z');
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiDigit(byte b) =>
         b >= '0' && b <= '9';
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiLetterOrDigitOrUnderscore(byte b) =>
         IsAsciiLetter(b) || IsAsciiDigit(b) || b == (byte)'_';
 
