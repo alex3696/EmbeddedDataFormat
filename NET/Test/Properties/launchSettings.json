@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Test": {
+      "commandName": "Project",
+      "commandLineArgs": "t_write.bdf t",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    }
+  }
+}

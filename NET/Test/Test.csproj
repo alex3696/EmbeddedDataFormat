@@ -18,7 +18,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
-    <ProjectReference Include="..\NetTesting\NetTest.csproj" />
-  </ItemGroup>
+	  <!--
+	  <ProjectReference Include="..\NetTesting\NetTest.csproj" />
+		-->
+</ItemGroup>
 
 </Project>
