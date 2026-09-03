@@ -142,7 +142,7 @@ public class TestStructSerialize
     }
 
 
-    static int WriteSample(IWriter dw)
+    static int WriteSample(IEdfWriter dw)
     {
         EdfSchema keyValueType = new()
         {
@@ -316,7 +316,7 @@ public class TestStructSerialize
         Assert.IsTrue(FileUtils.FileCompare(binFile, binConvFile), "failed converter TxtToBin");
     }
 
-    static int WriteBigVar(IWriter dw)
+    static int WriteBigVar(IEdfWriter dw)
     {
         int arrLen = 160;
         EdfSchema rec = new()

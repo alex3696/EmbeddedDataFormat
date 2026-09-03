@@ -2,7 +2,7 @@ using EdfNet.Core.Binary;
 
 namespace EdfNet.Core;
 
-public class EdfBinaryWriter : BaseDisposable, IWriter
+public class EdfBinaryWriter : BaseDisposable, IEdfWriter
 {
     public EdfConfig Cfg { get; }
     public EdfSchema? CurrentSchema;

@@ -16,9 +16,9 @@ internal class Program
         //BenchmarkRunner.Run<PerfCrc16>();
         //BenchmarkRunner.Run<Schema>();
         //BenchmarkRunner.Run<DecomposersBench>();
-        //BenchmarkRunner.Run<WriterBin_Bench>();
+        BenchmarkRunner.Run<ReaderWriterFileBench>();
         //BenchmarkRunner.Run<ReadBin_Bench>();
-        BenchmarkRunner.Run<ConvertBin2Txt_Bench>();
+        //BenchmarkRunner.Run<ConvertBin2Txt_Bench>();
         //BenchmarkRunner.Run<EdfTypeEnumerator_Bench>();
         //BenchmarkRunner.Run<EdfTypeCreator_Bench>();
     }

@@ -2,7 +2,7 @@ using EdfNet.Core.Binary;
 
 namespace EdfNet.Core;
 
-public class EdfBinaryReader : BaseDisposable
+public class EdfBinaryReader : BaseDisposable, IEdfReader
 {
     public EdfConfig Cfg { get; }
     public EdfSchema? CurrentSchema;
@@ -87,6 +87,7 @@ public class EdfBinaryReader : BaseDisposable
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
+        BinaryBlockSequenceException.ThrowIfBlockTypeNotEqual(EdfBlockType.Data, _state.Blk.Type);
         IFormatter<T> formatter = EdfFormatterProvider<T>.Formatter;
         EdfFormatterNotRegistredException.ThrowIfNull(formatter);
         var reader = new BufReaderBin(_state);

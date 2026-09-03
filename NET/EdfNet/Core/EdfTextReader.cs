@@ -2,7 +2,7 @@ using EdfNet.Core.Text;
 
 namespace EdfNet.Core;
 
-public class EdfTextReader : BaseDisposable
+public class EdfTextReader : BaseDisposable, IEdfReader
 {
     private EdfConfig _cfg;
     private EdfBlockType _currentBlockType;

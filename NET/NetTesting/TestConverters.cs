@@ -17,13 +17,17 @@ public class TestConverters
 
     public TestConverters()
     {
-        CreateBinFilesIfNotExist(_binFile, NCOUNT, st => new EdfBinaryWriter(st));
-        CreateBinFilesIfNotExist(_txtFile, NCOUNT, st => new EdfTextWriter(st));
+        CreateEdfFilesIfNotExist(_binFile, NCOUNT, st => new EdfBinaryWriter(st));
+        CreateEdfFilesIfNotExist(_txtFile, NCOUNT, st => new EdfTextWriter(st));
     }
-    static void CreateBinFilesIfNotExist(string fileName, int count, Func<Stream, IWriter> factory)
+    static void CreateEdfFilesIfNotExist(string fileName, int count, Func<Stream, IEdfWriter> factory)
     {
         if (File.Exists(fileName))
             return;
+        CreateEdfFiles(fileName, count, factory);
+    }
+    static void CreateEdfFiles(string fileName, int count, Func<Stream, IEdfWriter> factory)
+    {
         using var file = new FileStream(fileName, FileMode.Create);
         var _writerGen = factory.Invoke(file);
         _writerGen.WriteSchema(TestClasses_Content.KeyValSchema);
@@ -50,6 +54,26 @@ public class TestConverters
         }
         catch { }
     }
+    public void CreateBin() => CreateEdfFiles(_binFile, NCOUNT, st => new EdfBinaryWriter(st));
+    public void CreateText() => CreateEdfFiles(_txtFile, NCOUNT, st => new EdfTextWriter(st));
+
+    void ReadTest(string fileName, int count, Func<Stream, IEdfReader> factory)
+    {
+        using var file = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+        var reader = factory.Invoke(file);
+        reader.ReadBlock();// read schema
+        reader.ReadBlock();// read fist block
+        for (int i = 0; i < count; i++)
+        {
+            var ret = reader.ReadValue<ComplexType>();
+        }
+        if (reader is IDisposable d)
+            d.Dispose();
+    }
+
+    [TestMethod]
+    public void BinaryReader() => ReadTest(_binFile, NCOUNT, st => new EdfBinaryReader(st));
+    public void TextReader() => ReadTest(_txtFile, NCOUNT, st => new EdfTextReader(st));
 
     public void BinToTxtConvert() => BinToTxt.Convert(_binFile, _txtFileConv);
     public void TxtToBinConvert() => TxtToBin.Convert(_txtFile, _binFileConv);

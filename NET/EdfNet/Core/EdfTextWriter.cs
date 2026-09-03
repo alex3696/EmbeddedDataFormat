@@ -2,7 +2,7 @@ using EdfNet.Core.Text;
 
 namespace EdfNet.Core;
 
-public class EdfTextWriter : BaseDisposable, IWriter
+public class EdfTextWriter : BaseDisposable, IEdfWriter
 {
     protected readonly TextCircularEdfTypeEnumerator _enum = new();
     protected readonly EdfFormatterOptions _options = EdfFormatterOptions.Default;

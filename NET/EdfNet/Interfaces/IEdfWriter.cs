@@ -1,6 +1,6 @@
 namespace EdfNet.Interfaces;
 
-public interface IWriter
+public interface IEdfWriter
 {
     public EdfConfig Cfg { get; }
     void WriteConfig(EdfConfig cfg);

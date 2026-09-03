@@ -125,7 +125,7 @@ public class BinaryBlockWrongLengthException : EdfException
     { }
     public static void ThrowIfLess(long expected, long got)
     {
-        if (expected != got)
+        if (expected > got)
             throw new BinaryBlockWrongLengthException(expected, got);
     }
 }
