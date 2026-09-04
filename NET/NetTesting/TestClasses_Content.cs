@@ -30,8 +30,8 @@ public class SubVal : IEquatable<SubVal>
         return true;
     }
 }
-[EdfSerializable]
-public class ComplexType: IEquatable<ComplexType>
+[EdfSerializable(0, "ComplexTypeSchema")]
+public class ComplexType : IEquatable<ComplexType>
 {
     //public PlainStruct NotUsed { get; set; } // not used in serialization
     public string? Test1 { get; set; }
@@ -74,7 +74,7 @@ public class ComplexType: IEquatable<ComplexType>
         {
             ref var otherElement = ref other.Sub.GetElementAtFlatIndex<SubVal>(i);
             ref var thisElement = ref Sub.GetElementAtFlatIndex<SubVal>(i);
-            if(!otherElement.Equals(thisElement)) return false;
+            if (!otherElement.Equals(thisElement)) return false;
         }
         return true;
     }

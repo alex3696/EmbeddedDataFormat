@@ -82,6 +82,38 @@ public static class TypeSymbolUtils
         bool hasAttribute = ntype.IsSerializable();
         return hasAttribute || IsSupportedPrimitive(ntype);
     }
+    public static void ExtractSerialize(this ISymbol symbol, out ushort id, out string? name, out string? desc)
+    {
+        id = default;
+        name = default;
+        desc = default;
+        var schAttr = GetAttribute(symbol, Common.SerializeAttribute);
+        if (schAttr == null)
+            return;
+        if (schAttr.ConstructorArguments.Length > 0)
+        {
+            var args = schAttr.ConstructorArguments;
+            if (args.Length > 0 && args[0].Value is ushort idVal) id = idVal;
+            if (args.Length > 1 && args[1].Value is string nameVal) name = nameVal;
+            if (args.Length > 2 && args[2].Value is string descVal) desc = descVal;
+            return;
+        }
+        foreach (var namedArg in schAttr.NamedArguments)
+        {
+            switch (namedArg.Key)
+            {
+                case "id":
+                    if (namedArg.Value.Value is ushort idVal) id = idVal;
+                    break;
+                case "name":
+                    name = namedArg.Value.Value as string;
+                    break;
+                case "desc":
+                    desc = namedArg.Value.Value as string;
+                    break;
+            }
+        }
+    }
     public static ushort[] ExtractArrayDims(this ISymbol symbol)
     {
         var arrayAttr = symbol.GetArrayAttribute();

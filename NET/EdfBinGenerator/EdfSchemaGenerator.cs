@@ -68,6 +68,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
     private static void GenerateSchema(StringBuilder sb, List<ISymbol> fields, INamedTypeSymbol structSymbol, string ns)
     {
         string typeName = TypeSymbolUtils.GetShortTypeName(structSymbol, ns);
+        structSymbol.ExtractSerialize(out var id, out var name, out var desc);
         string typeLabel = typeName.Replace(".", "_");
         sb.AppendLine("    /// <summary>");
         sb.AppendLine("    /// Возвращает автоматически сгенерированный бинарный объект Schema для данного типа.");
@@ -76,9 +77,9 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("    {");
         sb.AppendLine("        return new EdfSchema()");
         sb.AppendLine("        {");
-        sb.AppendLine("            Id = 0,");
-        sb.AppendLine($"            Name = \"{typeName}Schema\",");
-        sb.AppendLine($"            Desc = \"Schema for {typeName} class\",");
+        sb.AppendLine($"            Id = {id},");
+        sb.AppendLine($"            Name = \"{name}\",");
+        sb.AppendLine($"            Desc = \"{desc}\",");
         sb.AppendLine("             Type = new()");
         sb.AppendLine("            {");
         sb.AppendLine("                Type = EdfPrimitiveType.Struct,");
