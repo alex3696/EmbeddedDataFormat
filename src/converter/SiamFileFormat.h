@@ -149,8 +149,8 @@ static const EdfType_t FileTypeIdType =
 		.Count = 2,
 		.Item = (EdfType_t[])
 		{
-			{ Int16, "Type" },
-			{ Int16, "Version" },
+			{ UInt16, "Type" },
+			{ UInt16, "Version" },
 		}
 	}
 };

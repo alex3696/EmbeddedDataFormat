@@ -18,7 +18,7 @@ internal class Program
     static int ConvertToEdf(string srcFile, string dstFile, Func<Stream, IEdfWriter> factory)
     {
         var srcExt = Path.GetExtension(srcFile).ToLower();
-        var dstExt = Path.GetExtension(srcFile).ToLower();
+        var dstExt = Path.GetExtension(dstFile).ToLower();
         if (0 != dstExt.CompareTo(dstExt))
             throw new ConvertException($"Same extension {srcExt}");
         return srcExt switch

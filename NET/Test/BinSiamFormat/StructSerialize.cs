@@ -4,6 +4,19 @@ namespace Test.BinSiamFormat;
 
 public static class StructSerialize
 {
+    public static T FromBytes<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(ReadOnlySpan<byte> rawData)
+        where T : struct
+    {
+        int rawSize = Marshal.SizeOf<T>();
+        if (rawSize > rawData.Length)
+            throw new ArgumentException($"Not enough data to fill struct. Span length from position: {rawData.Length}, Struct length: {rawSize}");
+        ref byte srcPtr = ref MemoryMarshal.GetReference(rawData);
+        GCHandle handle = GCHandle.Alloc(srcPtr, GCHandleType.Pinned);
+        T retobj = Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject());
+        handle.Free();
+        return retobj;
+    }
+
 #if NET8_0_OR_GREATER
     public static T FromBytes<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(byte[] rawData, int position = 0)
 #else
