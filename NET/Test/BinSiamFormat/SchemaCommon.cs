@@ -9,8 +9,23 @@ public class FileTypeId
 }
 
 [EdfSerializable(11, "BeginDateTime")]
-public class DateTimeZ
+public class DateTimeTz
 {
+    public static DateTimeTz FromDateTime(DateTime date, byte tz = 0)
+    {
+        return new DateTimeTz()
+        {
+            Year = (byte)(date.Year - 2000),
+            Month = (byte)date.Month,
+            Day = (byte)date.Day,
+            Hour = (byte)date.Hour,
+            Min = (byte)date.Minute,
+            Sec = (byte)date.Second,
+            mSec = (byte)date.Millisecond,
+            Tz = tz
+        };
+    }
+
     public ushort Year;
     public byte Month;
     public byte Day;
@@ -19,4 +34,13 @@ public class DateTimeZ
     public byte Sec;
     public ushort mSec;
     public byte Tz;
+}
+
+[EdfSerializable(11, "BeginDateTime")]
+public class Position
+{
+    public string? Field;
+    public string? Cluster;
+    public string? Well;
+    public string? Shop;
 }

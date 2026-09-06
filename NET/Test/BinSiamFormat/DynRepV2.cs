@@ -1,20 +1,17 @@
 namespace Test.BinSiamFormat;
 
+// 2 122
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
 public struct DynRepV2
 {
-    public DynRepV2()
+    public uint FileType;           //тип файла
+    ByteArray40 _rawDescription;     //описание файла
+    public string? Description
     {
-        Id = new();
-        Data = new byte[2000];
+        get => Encoding.UTF8.GetString(_rawDescription);
+        set => Encoding.UTF8.GetBytes(value, _rawDescription);
     }
-
-    public uint FileType;         //тип файла
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
-    public string? Description;     //описание файла
-
-    public ResearchIdV2 Id;         //идентификаторы исследования
-
+    public ResearchIdV2 Id;         //идентификаторы исследования // 40
     public ushort Rod;              //диаметр штока, 0.1 мм
     public ushort Aperture;         //номер отверстия
     public ushort MaxWeight;        //максимальная нагрузка, дискрет (изм)
@@ -34,11 +31,7 @@ public struct DynRepV2
     public ushort PumpType;         //тип привода станка-качалки (new)
     public ushort Acc;              //напряжение аккумулятора датчика, 0.1В (new)
     public short Temp;              //температура датчика, 0.1С (new)
-
-    //[MarshalAs(UnmanagedType.SafeArray, SafeArraySubType = VarEnum.VT_DATE)]
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2000)]
-    public byte[] Data;           //данные динамограммы [1000]
-
-    public ushort crc;						//crc16
+    public ByteArray2000 Data;      //данные динамограммы [1000]
+    public ushort crc;              //crc16
 
 }

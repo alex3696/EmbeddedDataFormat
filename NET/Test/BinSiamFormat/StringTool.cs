@@ -74,6 +74,12 @@ public static class StringTool
         }
         return string.Empty;
     }
+    public static readonly byte[] TrailingSymBytes = [(byte)'\0', (byte)'\t', (byte)'\n', (byte)'\r', (byte)' '];
+    public static string GetStringEndTrim(this Encoding enc, ReadOnlySpan<byte> bytes)
+    {
+        var idx = bytes.IndexOf(TrailingSymBytes);
+        return 0 >= idx ? string.Empty : enc.GetString(bytes[..idx]);
+    }
     private static string GetString(Encoding enc, byte[] bytes, int index, int count, bool removeBreakSymols)
     {
         try

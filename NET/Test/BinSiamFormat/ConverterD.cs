@@ -4,13 +4,16 @@ public static class ConverterD
 {
     public static int DToEdf(Stream src, Stream dst, IEdfWriter writer)
     {
-        Span<byte> buf = stackalloc byte[Marshal.SizeOf<DynRepV2>()];
+        var repSize = Marshal.SizeOf<DynRepV2>();
+        Span<byte> buf = stackalloc byte[repSize];
         src.ReadExactly(buf);
-        var rep = StructSerialize.FromBytes<DynRepV2>(buf);
+        var dat = MemoryMarshal.Read<DynRepV2>(buf);
 
         writer.WriteSchema(FileTypeId.GetEdfSchema());
-        writer.WriteValue(new FileTypeId { Type = (ushort)rep.FileType, Version = 1 });
+        writer.WriteValue(new FileTypeId { Type = (ushort)dat.FileType, Version = 1 });
 
+        writer.WriteSchema(DateTimeTz.GetEdfSchema());
+        writer.WriteValue(DateTimeTz.FromDateTime(dat.Id.Time.Dt));
 
 
         return 0;

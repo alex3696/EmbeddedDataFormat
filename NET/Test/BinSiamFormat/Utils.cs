@@ -54,9 +54,9 @@ public static class Utils
         return fallback;
     }
 
-    public static DateTime FromByteshhmmssDDMMYY(byte[] val, DateTime fallback = default)
+    public static DateTime FromByteshhmmssDDMMYY(ReadOnlySpan<byte> val, DateTime fallback = default)
         => ExtractTimestamp(val[5], val[4], val[3], val[0], val[1], val[2], fallback);
-    public static void ToByteshhmmssDDMMYY(DateTime dt, byte[] arr)
+    public static void ToByteshhmmssDDMMYY(DateTime dt, Span<byte> arr)
     {
         arr[5] = (100 > dt.Year) ? (byte)dt.Year : (byte)(dt.Year % 100);
         arr[4] = (byte)dt.Month;

@@ -9,37 +9,35 @@ public static class StructSerialize
     {
         int rawSize = Marshal.SizeOf<T>();
         if (rawSize > rawData.Length)
-            throw new ArgumentException($"Not enough data to fill struct. Span length from position: {rawData.Length}, Struct length: {rawSize}");
-        ref byte srcPtr = ref MemoryMarshal.GetReference(rawData);
-        GCHandle handle = GCHandle.Alloc(srcPtr, GCHandleType.Pinned);
-        T retobj = Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject());
-        handle.Free();
-        return retobj;
+            throw new ArgumentException(
+                $"Not enough data to fill struct. Span length from position: {rawData.Length}, Struct length: {rawSize}");
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(rawSize);
+        try
+        {
+            rawData.CopyTo(buffer);
+            return FromBytes<T>(buffer);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
     }
 
-#if NET8_0_OR_GREATER
     public static T FromBytes<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(byte[] rawData, int position = 0)
-#else
-    public static T FromBytes<T>(byte[] rawData, int position = 0)
-#endif
         where T : struct
     {
         int rawsize = Marshal.SizeOf<T>();
         if (rawsize > rawData.Length - position)
             throw new ArgumentException("Not enough data to fill struct. Array length from position: " + (rawData.Length - position) + ", Struct length: " + rawsize);
-
         GCHandle handle = GCHandle.Alloc(rawData, GCHandleType.Pinned);
-        T retobj = Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject() + position);
-        handle.Free();
-        /*
-        IntPtr buffer = Marshal.AllocHGlobal(rawsize);
-        Marshal.Copy(rawData, position, buffer, rawsize);
-        T retobj = default;
-        Marshal.PtrToStructure<T>(buffer, retobj);
-        Marshal.FreeHGlobal(buffer);
-        
-        */
-        return retobj;
+        try
+        {
+            return Marshal.PtrToStructure<T>(handle.AddrOfPinnedObject());
+        }
+        finally
+        {
+            handle.Free();
+        }
     }
     public static byte[] ToBytes<T>(T anything)
         where T : struct
