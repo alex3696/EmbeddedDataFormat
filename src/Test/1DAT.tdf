@@ -62,8 +62,8 @@
 {
   String "Name";
   String "Unit";
-  String "API Code";
-  String "Description";
+  String "ApiCode";
+  String "Desc";
 }>
 <= {"Time";"мс";"";"время измерения от начала дня";}>
 <= {"Press";"0.001 атм";"";"давление";}>

@@ -56,8 +56,8 @@ static const EdfType_t ChartNType =
 		{
 			{ String, "Name" },
 			{ String, "Unit" },
-			{ String, "API Code" },
-			{ String, "Description" },
+			{ String, "ApiCode" },
+			{ String, "Desc" },
 		}
 	}
 };

@@ -116,8 +116,8 @@
 {
   String "Name";
   String "Unit";
-  String "API Code";
-  String "Description";
+  String "ApiCode";
+  String "Desc";
 }>
 <= {"Position";"m";"";"перемещение";}>
 <= {"Weight";"T";"";"вес";}>

@@ -101,8 +101,8 @@
 {
   String "Name";
   String "Unit";
-  String "API Code";
-  String "Description";
+  String "ApiCode";
+  String "Desc";
 }>
 <= {"Depth";"m";"";"глубина";}>
 <= {"Val";"adc";"";"амплитуда";}>
