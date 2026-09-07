@@ -165,10 +165,10 @@ public class TestStructSerialize
         Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(new KeyValue() { Key = "Key2", Value = "Value2" }));
         Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteValue(new KeyValue() { Key = "Key3", Value = "Value3" }));
 
-        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "тестовый ключ 1", "Value 1"));
-        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "тестовый ключ 2", "Value 2"));
-        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "тестовый ключ 3", "Value 3"));
-        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "test NULL string", string.Empty));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, "тестовый ключ 1", default, EdfPrimitiveType.String, "Value 1"));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, "тестовый ключ 2", default, EdfPrimitiveType.String, "Value 2"));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, "тестовый ключ 3", default, EdfPrimitiveType.String, "Value 3"));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, "test NULL string", default, EdfPrimitiveType.String, string.Empty));
 
         const char chBegin = '0'; const char chEnd = '9';
         char ch = chBegin;
@@ -180,7 +180,7 @@ public class TestStructSerialize
             if (chEnd < ch)
                 ch = chBegin;
         }
-        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, EdfPrimitiveType.String, "test 260 string", sb.ToString()));
+        Assert.AreEqual(EdfErrorCode.IsOk, dw.WriteInfData(0, "test 260 string", default, EdfPrimitiveType.String, sb.ToString()));
 
         EdfSchema t = new() { Type = new(EdfPrimitiveType.Int32), Id = 0, Name = "weight variable" };
         dw.WriteSchema(t);
@@ -293,7 +293,7 @@ public class TestStructSerialize
             file.Seek(0, SeekOrigin.End);
             using (var edf = new EdfBinaryWriter(file, cfg))
             {
-                edf.WriteInfData(0, EdfPrimitiveType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
+                edf.WriteInfData(0, "Int32 Key", default, EdfPrimitiveType.Int32, unchecked((int)0xb1b2b3b4));
             }
         }
         // TXT write
@@ -306,7 +306,7 @@ public class TestStructSerialize
         using (var file = new FileStream(txtFile, FileMode.Append))
         using (var edf = new EdfTextWriter(file))
         {
-            edf.WriteInfData(0, EdfPrimitiveType.Int32, "Int32 Key", unchecked((int)0xb1b2b3b4));
+            edf.WriteInfData(0, "Int32 Key", default, EdfPrimitiveType.Int32, unchecked((int)0xb1b2b3b4));
         }
         BinToTxt.Convert(binFile, txtConvFile);
         bool isEqual = FileUtils.FileCompare(txtFile, txtConvFile);

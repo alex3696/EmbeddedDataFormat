@@ -12,9 +12,10 @@ public interface IEdfWriter
 
 public static class IEdfWriterExt
 {
-    public static EdfErrorCode WriteInfData<T>(this IEdfWriter writer, ushort id, EdfPrimitiveType pt, string name, T value)
+    public static EdfErrorCode WriteInfData<T>(this IEdfWriter writer,
+        ushort id, string? name, string? desc, EdfPrimitiveType pt, T value)
     {
-        var sch = new EdfSchema() { Id = id, Type = new(pt), Name = name, };
+        var sch = new EdfSchema() { Id = id, Name = name, Desc = desc, Type = new(pt) };
         return writer.WriteInfData(sch, value);
     }
     public static EdfErrorCode WriteInfData<T>(this IEdfWriter writer, EdfSchema sch, T value)

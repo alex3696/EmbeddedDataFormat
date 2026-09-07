@@ -20,11 +20,17 @@ public static class ObjectSchemaCache<T>
 }
 public static class IEdfWriter_WriteInfData_SchemaRegistry_Extension
 {
-    public static EdfErrorCode WriteInfData<T>(this IEdfWriter writer, T value)
+    public static EdfErrorCode WriteInfData<T>(this IEdfWriter writer
+        , ushort schId, string? schName, string? schDesc, T value)
     {
         var schema = ObjectSchemaCache<T>.Instance
             ?? throw new EdfSchemaNotRegisteredException(typeof(T));
+        if (schId != default) schema.Id = schId;
+        if (schName != default) schema.Name = schName;
+        if (schema.Id != default) schema.Desc = schDesc;
         writer.WriteSchema(schema);
         return writer.WriteValue(value);
     }
+    public static EdfErrorCode WriteInfData<T>(this IEdfWriter writer, T value)
+        => WriteInfData(writer, default, default, default, value);
 }
