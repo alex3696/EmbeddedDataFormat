@@ -66,7 +66,7 @@ public class ChartNType
 }
 
 [EdfSerializable]
-public class Chart2D
+public struct Chart2D
 {
     public float x;
     public float y;

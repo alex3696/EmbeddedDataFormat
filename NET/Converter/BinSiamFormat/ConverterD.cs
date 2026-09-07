@@ -2,6 +2,11 @@ namespace EdfConv.BinSiamFormat;
 
 public static class ConverterD
 {
+    static sbyte ExtractTravel(ushort number) // 6bit integer
+    {
+        sbyte result = (sbyte)((number & 0xFC00) >> 10);
+        return (sbyte)((result > 31) ? (result - 64) : result);
+    }
     public static int DToEdf(Stream src, Stream dst, IEdfWriter writer)
     {
         var repSize = Marshal.SizeOf<DynRepV2>();
@@ -57,7 +62,7 @@ public static class ConverterD
         writer.WriteInfData(0, "Period", "период качаний (мс)", EdfPrimitiveType.UInt32, (uint)(dat.Period * dat.TimeStep));
         writer.WriteInfData(0, "Cycles", "пропущено циклов", EdfPrimitiveType.UInt16, (ushort)dat.Cycles);
 
-        writer.WriteInfData(0, "Pressure", "затрубное давление (атм)", EdfPrimitiveType.Double, (double)( dat.Pressure / 10.0f ));
+        writer.WriteInfData(0, "Pressure", "затрубное давление (атм)", EdfPrimitiveType.Double, (double)(dat.Pressure / 10.0f));
         writer.WriteInfData(0, "BufPressure", "буферное давление (атм)", EdfPrimitiveType.Double, (double)(dat.BufPressure / 10.0f));
         writer.WriteInfData(0, "LinePressure", "линейное давление (атм)", EdfPrimitiveType.Double, (double)(dat.LinePressure / 10.0f));
         writer.WriteInfData(0, "PumpType", "тип привода станка-качалки {}", EdfPrimitiveType.UInt16, (ushort)(dat.PumpType));
@@ -68,15 +73,22 @@ public static class ConverterD
         var chSch = ChartNType.GetEdfSchema();
         chSch.Name = "DynamogrammChartInfo";
         writer.WriteSchema(chSch);
-        writer.WriteValue(new ChartNType() { Name = "Position" , Unit="m", ApiCode = default, Desc = "перемещение" });
+        writer.WriteValue(new ChartNType() { Name = "Position", Unit = "m", ApiCode = default, Desc = "перемещение" });
         writer.WriteValue(new ChartNType() { Name = "Weight", Unit = "T", ApiCode = default, Desc = "вес" });
 
         var dynDataSch = Chart2D.GetEdfSchema();
         dynDataSch.Name = "DynChart";
+        //dynDataSch.Type.Childs[0].Name = string.Empty;
+        //dynDataSch.Type.Childs[1].Name = string.Empty;
         writer.WriteSchema(dynDataSch);
-
-        //EdfWriteSchema(edf, &(const EdfSchema_t){ 0, "DynChart", NULL, Point2DType}, &writed);
-
+        Chart2D p = new() { x = 0, y = 0 };
+        var items = MemoryMarshal.Cast<byte, ushort>(dat.Data);
+        for (int i = 0; i < 1000; i++)
+        {
+            p.x += (float)(ExtractTravel(items[i]) * dat.TravelStep / 1.0E4);
+            p.y = (float)((items[i] & 1023) * dat.LoadStep * 1.0E-3);
+            writer.WriteValue(p);
+        }
         return 0;
     }
 
