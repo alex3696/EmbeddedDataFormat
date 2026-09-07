@@ -3,14 +3,14 @@
 
 <? {10;"";} Struct "FileTypeId"
 {
-  Int16 "Type";
-  Int16 "Version";
+  UInt16 "Type";
+  UInt16 "Version";
 }>
 <= {6;1;}>
 
-<? {11;"BeginDateTime";} Struct "DateTime"
+<? {11;"BeginDateTime";} Struct "DateTimeTz"
 {
-  Int16 "Year";
+  UInt16 "Year";
   UInt8 "Month";
   UInt8 "Day";
   UInt8 "Hour";
@@ -27,10 +27,8 @@
   String "Cluster";
   String "Well";
   String "Shop";
-  Double "Longitude";
-  Double "Latitude";
 }>
-<= {"222";"000222";"000222";"222";0;0;}>
+<= {"222";"000222";"000222";"222";}>
 
 <? {13;"DevInfo";"прибор";} Struct "DeviceInfo"
 {
