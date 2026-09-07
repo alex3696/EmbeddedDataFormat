@@ -2,12 +2,12 @@ namespace EdfConv.BinSiamFormat;
 
 public static class ConverterE
 {
-    public static int EToEdf(Stream src, Stream dst, IEdfWriter writer)
+    public static int EToEdf(Stream src, IEdfWriter writer)
     {
         return 0;
     }
 
-    public static int EdfToE(Stream src, Stream dst, IEdfReader reader)
+    public static int EdfToE(IEdfReader reader, Stream dst)
     {
         return 0;
     }

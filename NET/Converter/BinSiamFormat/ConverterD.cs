@@ -2,12 +2,7 @@ namespace EdfConv.BinSiamFormat;
 
 public static class ConverterD
 {
-    static sbyte ExtractTravel(ushort number) // 6bit integer
-    {
-        sbyte result = (sbyte)((number & 0xFC00) >> 10);
-        return (sbyte)((result > 31) ? (result - 64) : result);
-    }
-    public static int DToEdf(Stream src, Stream dst, IEdfWriter writer)
+    public static int DToEdf(Stream src, IEdfWriter writer)
     {
         var repSize = Marshal.SizeOf<DynRepV2>();
         Span<byte> buf = stackalloc byte[repSize];
@@ -91,8 +86,13 @@ public static class ConverterD
         }
         return 0;
     }
+    static sbyte ExtractTravel(ushort number) // 6bit integer
+    {
+        sbyte result = (sbyte)((number & 0xFC00) >> 10);
+        return (sbyte)((result > 31) ? (result - 64) : result);
+    }
 
-    public static int EdfToD(Stream src, Stream dst, IEdfReader reader)
+    public static int EdfToD(IEdfReader reader, Stream dst)
     {
         return 0;
     }
