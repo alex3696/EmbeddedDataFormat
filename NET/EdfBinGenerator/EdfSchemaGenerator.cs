@@ -51,10 +51,11 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("using EdfNet.Interfaces;");
         sb.AppendLine("using EdfNet.Core;");
         sb.AppendLine("using EdfNet.Extensions;");
-        sb.AppendLine("using EdfNet.Gen;");
+        //sb.AppendLine("using EdfNet.Gen;");
         sb.AppendLine();
-        sb.AppendLine($"namespace {namespaceName};");
-        sb.AppendLine($"public static class {typeLabel}_EdfExtension");
+        //sb.AppendLine($"namespace {namespaceName};");
+        sb.AppendLine($"namespace EdfNet.Gen;");
+        sb.AppendLine($"public static class {typeLabel}_SchemaExtension");
         sb.AppendLine("{");
         // Вызываем раздельные методы генерации
         GenerateSchema(sb, fields, structSymbol, namespaceName);
@@ -73,7 +74,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("    /// <summary>");
         sb.AppendLine("    /// Возвращает автоматически сгенерированный бинарный объект Schema для данного типа.");
         sb.AppendLine("    /// </summary>");
-        sb.AppendLine($"    public static EdfSchema GetEdfSchema_{typeLabel}()");
+        sb.AppendLine($"    public static EdfSchema MakeEdfSchema()");
         sb.AppendLine("    {");
         sb.AppendLine("        return new EdfSchema()");
         sb.AppendLine("        {");
@@ -108,7 +109,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
                     // Вид: new (EdfPrimitiveType.Struct, "Sub", [2, 2]) { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
                     sb.AppendLine($"                    new (EdfPrimitiveType.Struct, \"{f.Name}\", [{dimensionsStr}])");
                     sb.AppendLine("                    {");
-                    sb.AppendLine($"                        Childs = {TypeSymbolUtils.GetShortTypeName(arraySymbol.ElementType, ns)}.GetEdfSchema().Type.Childs");
+                    sb.AppendLine($"                        Childs = {TypeSymbolUtils.GetGlobalTypeName(arraySymbol.ElementType)}.GetEdfSchema().Type.Childs");
                     sb.AppendLine("                    },");
                 }
             }
@@ -118,7 +119,7 @@ public class EdfSchemaGenerator : IIncrementalGenerator
                 // Вид: new (EdfPrimitiveType.Struct, "Sub0") { Childs = SubValByteEnumerator.GetEdfSchema().Type.Childs }
                 sb.AppendLine($"                    new (EdfPrimitiveType.Struct, \"{f.Name}\")");
                 sb.AppendLine("                    {");
-                sb.AppendLine($"                        Childs = {TypeSymbolUtils.GetShortTypeName(fType, ns)}.GetEdfSchema().Type.Childs");
+                sb.AppendLine($"                        Childs = {TypeSymbolUtils.GetGlobalTypeName(fType)}.GetEdfSchema().Type.Childs");
                 sb.AppendLine("                    },");
             }
             else
@@ -133,9 +134,9 @@ public class EdfSchemaGenerator : IIncrementalGenerator
         sb.AppendLine("        };");
         sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine($"    extension({typeName})");
+        sb.AppendLine($"    extension({TypeSymbolUtils.GetGlobalTypeName(structSymbol)})");
         sb.AppendLine("    {");
-        sb.AppendLine($"        public static EdfSchema GetEdfSchema() => GetEdfSchema_{typeLabel}();");
+        sb.AppendLine($"        public static EdfSchema GetEdfSchema() => MakeEdfSchema();");
         sb.AppendLine("    }");
     }
 }

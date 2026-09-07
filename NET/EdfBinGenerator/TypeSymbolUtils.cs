@@ -180,6 +180,12 @@ public static class TypeSymbolUtils
                 return true;
         }
     }
+    public static readonly SymbolDisplayFormat CustomFormat = SymbolDisplayFormat.FullyQualifiedFormat
+        .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted); // Убирает global::
+    public static string GetGlobalTypeName(ITypeSymbol type)
+    {
+        return type.ToDisplayString(CustomFormat);
+    }
     public static string GetShortTypeName(ITypeSymbol type, string currentNamespace)
     {
         // 1. Формируем имя типа с учетом всей цепочки вложенности (для вложенных классов)
