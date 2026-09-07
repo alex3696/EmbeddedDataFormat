@@ -48,7 +48,7 @@ public class EdfResolverGenerator : IIncrementalGenerator
         foreach (var type in distinctTypes)
         {
             if (type is null) continue;
-            string typeName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            string typeName = TypeSymbolUtils.GetGlobalTypeName(type);
             string formatterName = type.ContainingNamespace.IsGlobalNamespace
                 ? $"{type.Name}Formatter"
                 : $"{type.ContainingNamespace.ToDisplayString()}.{type.Name}Formatter";
@@ -70,6 +70,15 @@ public class EdfResolverGenerator : IIncrementalGenerator
         sb.AppendLine("    public static void AutoRegister()");
         sb.AppendLine("    {");
         sb.AppendLine("        EdfNet.Interfaces.GlobalResolverRegistry.Register(new GeneratedEdfResolver());");
+        sb.AppendLine("        // Register schema");
+        foreach (var type in distinctTypes)
+        {
+            if (type is null) continue;
+            string typeName = TypeSymbolUtils.GetGlobalTypeName(type);
+            string originalNamespace = type.ContainingNamespace.ToDisplayString();
+            string schGenName = TypeSymbolUtils.GetShortTypeName(type, originalNamespace).Replace('.', '_');
+            sb.AppendLine($"        EdfNet.Interfaces.EdfSchemaRegistry.Register<{typeName}>(() => {schGenName}_SchemaExtension.MakeEdfSchema());");
+        }
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }

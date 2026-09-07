@@ -49,6 +49,10 @@ public class EdfFormatterNotRegistredException(Type type)
             throw new EdfFormatterNotRegistredException(typeof(T));
     }
 }
+public class EdfSchemaNotRegisteredException(Type type)
+    : EdfException($"EdfSchema for type {type.FullName} not registred")
+{
+}
 
 public class EdfTokenNotSupportedException(TypeTokenType got)
     : EdfException($"EdfTypeToken {got} not supported here")
