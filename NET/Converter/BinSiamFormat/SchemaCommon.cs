@@ -1,4 +1,4 @@
-namespace Test.BinSiamFormat;
+namespace EdfConv.BinSiamFormat;
 
 
 [EdfSerializable(10)]

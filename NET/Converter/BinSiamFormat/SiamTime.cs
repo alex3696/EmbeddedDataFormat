@@ -1,4 +1,4 @@
-namespace Test.BinSiamFormat;
+namespace EdfConv.BinSiamFormat;
 
 [DebuggerDisplay("{Dt,nq}")]
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]

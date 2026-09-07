@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdfNet", "NET\EdfNet\EdfNet
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTest", "NET\NetTesting\NetTest.csproj", "{C8692BB9-8B3A-7B46-28D3-C858039C9009}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "NET\Test\Test.csproj", "{EDC790D9-041C-6541-7B05-2578BE49EDC1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdfConv", "NET\Converter\EdfConv.csproj", "{EDC790D9-041C-6541-7B05-2578BE49EDC1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdfGenerator", "NET\EdfBinGenerator\EdfGenerator.csproj", "{27324F68-AFD8-9D45-4584-F23D9BA0560C}"
 EndProject

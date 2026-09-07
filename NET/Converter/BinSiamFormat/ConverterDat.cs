@@ -1,4 +1,4 @@
-namespace Test.BinSiamFormat;
+namespace EdfConv.BinSiamFormat;
 
 public static class ConverterDat
 {

@@ -1,6 +1,6 @@
 using EdfNet.Core.Binary;
 
-namespace Test.BinSiamFormat;
+namespace EdfConv.BinSiamFormat;
 
 public class Umt3Dat
 {

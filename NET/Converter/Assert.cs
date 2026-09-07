@@ -1,4 +1,4 @@
-namespace Test;
+namespace EdfConv;
 
 public class Assert
 {

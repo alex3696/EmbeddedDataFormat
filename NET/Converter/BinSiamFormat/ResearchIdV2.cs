@@ -1,4 +1,4 @@
-namespace Test.BinSiamFormat;
+namespace EdfConv.BinSiamFormat;
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
 public struct ResearchIdV2

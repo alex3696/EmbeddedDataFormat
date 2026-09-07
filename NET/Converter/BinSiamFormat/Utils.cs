@@ -1,6 +1,6 @@
 using System.Collections.Specialized;
 
-namespace Test.BinSiamFormat;
+namespace EdfConv.BinSiamFormat;
 
 public static class Utils
 {
