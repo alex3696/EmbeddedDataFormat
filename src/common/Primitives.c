@@ -220,13 +220,13 @@ static int AnyBinToStr(PoType t,
 		//*w = sprintf_s(dst, dstLen, "%g", *((uint16_t*)src));
 		return 0;
 	case Single:
-		*w = xprint(dst, dstLen, "%.8g", *((float*)src));
+		*w = xprint(dst, dstLen, "%.9g", *((float*)src));
 		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Double:
 	{
 		double alignedVal;
 		memcpy(&alignedVal, src, sizeof(alignedVal));
-		*w = xprint(dst, dstLen, "%.16g", alignedVal);
+		*w = xprint(dst, dstLen, "%.17g", alignedVal);
 	}
 	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Char: return WriteCharAnyBinToStr(src, srcLen, dst, dstLen, r, w);

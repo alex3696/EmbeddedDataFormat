@@ -92,13 +92,13 @@ public sealed class TextStreamWriter
     }
     public void WriteNumber(float val)
     {
-        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+        if (!val.TryFormat(_buf, out int len, "G9", CultureInfo.InvariantCulture))
             ThrowFormatError(val);
         _stream.Write(_buf, 0, len);
     }
     public void WriteNumber(double val)
     {
-        if (!val.TryFormat(_buf, out int len, default, CultureInfo.InvariantCulture))
+        if (!val.TryFormat(_buf, out int len, "G17", CultureInfo.InvariantCulture))
             ThrowFormatError(val);
         _stream.Write(_buf, 0, len);
     }
