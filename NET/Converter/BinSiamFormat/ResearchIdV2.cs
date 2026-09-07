@@ -18,7 +18,7 @@ public struct ResearchIdV2
     }
     public string? Well
     {
-        readonly get => Encoding.UTF8.GetString(_rawWell);
+        readonly get => Encoding.UTF8.GetStringEndTrim(_rawWell);
         set => Encoding.UTF8.GetBytes(value, _rawWell);
     }
     public SiamTime Time;           ////время начала исследования
