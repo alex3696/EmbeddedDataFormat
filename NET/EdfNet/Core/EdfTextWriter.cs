@@ -51,11 +51,6 @@ public class EdfTextWriter : BaseDisposable, IEdfWriter
         formatter.Serialize(ref writer, val, _options);
         return _enum.PrimOffset == 0 ? EdfErrorCode.IsOk : EdfErrorCode.SrcDataRequred;
     }
-    public EdfErrorCode WriteInfData<T>(ushort id, EdfPrimitiveType pt, string name, T d)
-    {
-        WriteSchema(new EdfSchema() { Id = id, Type = new(pt), Name = name, });
-        return WriteValue(d);
-    }
     public void Flush() => _textWriter.Flush();
 
 }

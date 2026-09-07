@@ -82,12 +82,4 @@ public class EdfBinaryWriter : BaseDisposable, IEdfWriter
         formatter.Serialize(ref writer, val, _options);
         return _state.Enum.PrimOffset == 0 ? EdfErrorCode.IsOk : EdfErrorCode.SrcDataRequred;
     }
-    public EdfErrorCode WriteInfData<T>(ushort id, EdfPrimitiveType pt, string name, T d)
-    {
-        WriteSchema(new EdfSchema() { Id = id, Type = new(pt), Name = name, });
-        return WriteValue(d);
-    }
-
-
-
 }
