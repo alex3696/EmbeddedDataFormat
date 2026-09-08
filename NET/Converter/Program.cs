@@ -49,7 +49,8 @@ internal class Program
         return ext switch
         {
             ".bdf" => st => new EdfBinaryWriter(st),
-            _ => st => new EdfTextWriter(st),
+            ".tdf" => st => new EdfTextWriter(st),
+            _ => throw new ConvertException($"Wrong destination type {ext}"),
         };
     }
     static int ConvertToEdf(string srcFile, string dstFile)
@@ -65,7 +66,7 @@ internal class Program
             ".dat" => UseStreams(srcFile, dstFile, ConverterDat.DatToEdf, MakeWriter(dstExt)),
             ".d" => UseStreams(srcFile, dstFile, ConverterD.DToEdf, MakeWriter(dstExt)),
             ".e" => UseStreams(srcFile, dstFile, ConverterE.EToEdf, MakeWriter(dstExt)),
-            _ => throw new ConvertException($"Unknow extension {srcExt}"),
+            _ => throw new ConvertException($"Unknow source extension {srcExt}"),
         };
     }
     static int ConvertToSiam(string srcFile, string dstFile, Func<IEdfReader, Stream, int> factory)
@@ -83,16 +84,55 @@ internal class Program
     {
         try
         {
+            if (2 > args.Length)
+                throw new ConvertException($"argument 2 required ");
             string srcFile = args[0];
             if (!File.Exists(srcFile))
                 throw new ConvertException($"File not exist {srcFile}");
-            switch (args[1].ToLower())
+
+            string dstFile;
+            string dstType;
+            if (2 == args.Length)
             {
-                case "t": return ConvertToEdf(srcFile, Path.ChangeExtension(srcFile, ".tdf"));
-                case "b": return ConvertToEdf(srcFile, Path.ChangeExtension(srcFile, ".bdf"));
-                case "dat": return ConvertToSiam(srcFile, Path.ChangeExtension(srcFile, ".dat"), ConverterDat.EdfToDat);
-                case "e": return ConvertToSiam(srcFile, Path.ChangeExtension(srcFile, ".e"), ConverterE.EdfToE);
-                case "d": return ConvertToSiam(srcFile, Path.ChangeExtension(srcFile, ".d"), ConverterD.EdfToD);
+                dstType = args[1].ToLower();
+                switch (dstType)
+                {
+                    case "t": dstFile = Path.ChangeExtension(srcFile, ".tdf"); break;
+                    case "b": dstFile = Path.ChangeExtension(srcFile, ".bdf"); break;
+                    case "dat": dstFile = Path.ChangeExtension(srcFile, ".dat"); break;
+                    case "e": dstFile = Path.ChangeExtension(srcFile, ".e"); break;
+                    case "d": dstFile = Path.ChangeExtension(srcFile, ".d"); break;
+                    default:
+                        {
+                            dstFile = args[1];
+                            dstType = "";
+                            var dstExt = Path.GetExtension(dstFile).ToLower();
+                            switch (dstExt)
+                            {
+                                case ".tdf": dstType = "t"; break;
+                                case ".bdf": dstType = "b"; break;
+                                case ".dat": dstType = "dat"; break;
+                                case ".e": dstType = "e"; break;
+                                case ".d": dstType = "d"; break;
+                                default: break;
+                            }
+                        }
+                        break;
+                }
+            }
+            else //if (2 < args.Length)
+            {
+                dstType = args[2];
+                dstFile = args[1];
+            }
+
+            switch (dstType)
+            {
+                case "t": return ConvertToEdf(srcFile, dstFile);
+                case "b": return ConvertToEdf(srcFile, dstFile);
+                case "dat": return ConvertToSiam(srcFile, dstFile, ConverterDat.EdfToDat);
+                case "e": return ConvertToSiam(srcFile, dstFile, ConverterE.EdfToE);
+                case "d": return ConvertToSiam(srcFile, dstFile, ConverterD.EdfToD);
                 default: break;
             }
             throw new ConvertException($"Unknow command {args[1].ToLower()}");

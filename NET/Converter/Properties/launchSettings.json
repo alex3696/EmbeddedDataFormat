@@ -1,8 +1,23 @@
 {
   "profiles": {
-    "Test": {
+    "D to TDF": {
       "commandName": "Project",
       "commandLineArgs": "1D.D t",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "1D.tdf 1D_rest.d": {
+      "commandName": "Project",
+      "commandLineArgs": "1D.tdf 1D_rest.d",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "1D.D b": {
+      "commandName": "Project",
+      "commandLineArgs": "1D.D b",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "1D.bdf 1D_rest_b.d": {
+      "commandName": "Project",
+      "commandLineArgs": "1D.bdf 1D_rest_b.d",
       "workingDirectory": "C:\\Users\\Sav\\Documents"
     }
   }
