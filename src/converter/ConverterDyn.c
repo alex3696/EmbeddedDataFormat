@@ -286,18 +286,18 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				dat.Period = (uint16_t)(*(uint32_t*)bdfr->Blk->Content.Record.Data / dat.TimeStep);
 			else if (IsVarName(bdfr->SchemaPtr, "Cycles"))
 				dat.Cycles = *(uint16_t*)bdfr->Blk->Content.Record.Data;
-			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
-				dat.Pressure = (uint16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
-			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
-				dat.BufPressure = (uint16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
-			else if (IsVarName(bdfr->SchemaPtr, "BeginPos"))
-				dat.LinePressure = (uint16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
+			else if (IsVarName(bdfr->SchemaPtr, "Pressure"))
+				dat.Pressure = (int16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
+			else if (IsVarName(bdfr->SchemaPtr, "BufPressure"))
+				dat.BufPressure = (int16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
+			else if (IsVarName(bdfr->SchemaPtr, "LinePressure"))
+				dat.LinePressure = (int16_t)(*(double*)bdfr->Blk->Content.Record.Data * 10.0);
 			else if (IsVarName(bdfr->SchemaPtr, "PumpType"))
 				dat.PumpType = *(uint16_t*)bdfr->Blk->Content.Record.Data;
 			else if (IsVarName(bdfr->SchemaPtr, "Acc"))
 				dat.Acc = (uint16_t)(*(float*)bdfr->Blk->Content.Record.Data * 10);
 			else if (IsVarName(bdfr->SchemaPtr, "Temp"))
-				dat.Temp = (uint16_t)(*(float*)bdfr->Blk->Content.Record.Data * 10);
+				dat.Temp = (int16_t)(*(float*)bdfr->Blk->Content.Record.Data * 10);
 
 			else if (IsVarName(bdfr->SchemaPtr, "DynChart"))
 			{
