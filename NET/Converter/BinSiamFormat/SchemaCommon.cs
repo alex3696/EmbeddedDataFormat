@@ -1,16 +1,30 @@
 namespace EdfConv.BinSiamFormat;
 
+public enum StdSchemaType : ushort
+{
+    FILETYPEID = 10,
+    BEGINDATETIME,
+    POSITION,
+    DEVICEINFO,
+    REGINFO,
 
-[EdfSerializable(10)]
+    OMEGADATA
+}
+
+[EdfSerializable((ushort)StdSchemaType.FILETYPEID)]
 public class FileTypeId
 {
     public ushort Type;
     public ushort Version;
 }
 
-[EdfSerializable(11, "BeginDateTime")]
+[EdfSerializable((ushort)StdSchemaType.BEGINDATETIME, "BeginDateTime")]
 public class DateTimeTz
 {
+    public DateTime ToDateTime()
+    {
+        return new DateTime(Year, Month, Day, Hour, Min, Sec, mSec, DateTimeKind.Unspecified);
+    }
     public static DateTimeTz FromDateTime(DateTime date, sbyte tz = 0)
     {
         return new DateTimeTz()
@@ -28,7 +42,7 @@ public class DateTimeTz
 
     public ushort Year;
     public byte Month;
-    public byte Day; 
+    public byte Day;
     public byte Hour;
     public byte Min;
     public byte Sec;
@@ -36,7 +50,7 @@ public class DateTimeTz
     public sbyte Tz;
 }
 
-[EdfSerializable(12, "Position")]
+[EdfSerializable((ushort)StdSchemaType.POSITION, "Position")]
 public class Position
 {
     public string? Field;
@@ -45,7 +59,7 @@ public class Position
     public string? Shop;
 }
 
-[EdfSerializable(13, "DevInfo")]
+[EdfSerializable((ushort)StdSchemaType.DEVICEINFO, "DevInfo")]
 public class DeviceInfo
 {
     public ushort SwId;
