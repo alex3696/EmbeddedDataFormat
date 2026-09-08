@@ -5,7 +5,7 @@ namespace EdfNet.Core;
 public class EdfBinaryReader : BaseDisposable, IEdfReader
 {
     public EdfConfig Cfg { get; }
-    public EdfSchema? CurrentSchema;
+    public EdfSchema? CurrentSchema { get; private set; }
     protected readonly Stream _stream;
     private readonly byte[] _blkBuf;
     protected readonly BinBlock _blk;
