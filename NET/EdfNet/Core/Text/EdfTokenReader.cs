@@ -177,6 +177,13 @@ public class EdfTokenReader
             len++;
             while (len < buf.Length && IsAsciiDigit(buf[len])) len++;
         }
+        if (len < buf.Length && ('e' == buf[len] || 'E' == buf[len]))
+        {
+            len++;
+            if (len < buf.Length && ('+' == buf[len] || '-' == buf[len]))
+                len++;
+            while (len < buf.Length && IsAsciiDigit(buf[len])) len++;
+        }
         SetToken(TextTokenType.Number, len);
         return true;
     }
