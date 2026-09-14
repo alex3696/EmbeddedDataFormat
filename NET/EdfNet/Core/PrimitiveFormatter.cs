@@ -175,9 +175,8 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
             throw new InvalidOperationException("Current type is not an array or has no dimensions.");
         if (EdfPrimitiveType.Char == edfType.Type)
         {
-            var len = (int)edfType.GetTotalElements();
-            var chArr = reader.ReadCharArray() as Array;
-            return Unsafe.As<Array, TARRAY>(ref chArr);
+            byte[] chArr = reader.ReadCharArray();
+            return Unsafe.As<byte[], TARRAY>(ref chArr);
         }
         int[] dims = null!;
         try

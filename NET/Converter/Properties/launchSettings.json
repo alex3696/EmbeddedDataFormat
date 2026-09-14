@@ -2,8 +2,8 @@
   "profiles": {
     "DAT >> TDF": {
       "commandName": "Project",
-      "commandLineArgs": "1DAT.DAT t",
       "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "1DAT.DAT 1DAT.tdf t -bench",
     },
     "DAT >> BDF": {
       "commandName": "Project",

@@ -1,4 +1,6 @@
 
+using EdfNet.Utils;
+
 internal class Program
 {
     static int UseStreams(string srcFile, string dstFile
@@ -126,21 +128,31 @@ internal class Program
                 dstFile = args[1];
             }
 
-            switch (dstType)
+            if (2 < args.Length && args[3].Equals("-bench", StringComparison.CurrentCultureIgnoreCase))
             {
-                case "t": return ConvertToEdf(srcFile, dstFile);
-                case "b": return ConvertToEdf(srcFile, dstFile);
-                case "dat": return ConvertToSiam(srcFile, dstFile, ConverterDat.EdfToDat);
-                case "e": return ConvertToSiam(srcFile, dstFile, ConverterE.EdfToE);
-                case "d": return ConvertToSiam(srcFile, dstFile, ConverterD.EdfToD);
-                default: break;
+                string benchString = $"Converter bench: {srcFile} >> {dstFile}";
+                Testing.RunSingleTest(benchString, () => Execute(dstType, srcFile, dstFile));
+                return 0;
             }
-            throw new ConvertException($"Unknow command {args[1].ToLower()}");
+            else
+                return Execute(dstType, srcFile, dstFile);
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.ToString());
         }
         return -1;
+    }
+    private static int Execute(string dstType, string srcFile, string dstFile)
+    {
+        switch (dstType)
+        {
+            case "t": return ConvertToEdf(srcFile, dstFile);
+            case "b": return ConvertToEdf(srcFile, dstFile);
+            case "dat": return ConvertToSiam(srcFile, dstFile, ConverterDat.EdfToDat);
+            case "e": return ConvertToSiam(srcFile, dstFile, ConverterE.EdfToE);
+            case "d": return ConvertToSiam(srcFile, dstFile, ConverterD.EdfToD);
+            default: throw new ConvertException($"Unknow type {dstType} command: {srcFile} >> {dstType}");
+        }
     }
 }

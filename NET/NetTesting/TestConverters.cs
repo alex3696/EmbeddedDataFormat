@@ -1,7 +1,6 @@
 using EdfNet.Converters;
 using EdfNet.Interfaces;
 using EdfNet.Utils;
-using System.Diagnostics;
 
 namespace NetTest;
 
@@ -74,10 +73,10 @@ public class TestConverters
     [TestMethod]
     public void ReaderWriterTest()
     {
-        RunSingleTest("CreateBin", CreateBin);
-        RunSingleTest("CreateText", CreateText);
-        RunSingleTest("BinaryReader", BinaryReader);
-        RunSingleTest("TextReader", TextReader);
+        Testing.RunSingleTest("CreateBin", CreateBin);
+        Testing.RunSingleTest("CreateText", CreateText);
+        Testing.RunSingleTest("BinaryReader", BinaryReader);
+        Testing.RunSingleTest("TextReader", TextReader);
     }
 
     public void BinToTxtConvert() => BinToTxt.Convert(_binFile, _txtFileConv);
@@ -88,7 +87,7 @@ public class TestConverters
         {
             using var src = new FileStream(_binFile, FileMode.Open, FileAccess.Read);
             using var dst = new FileStream(_txtFileConv, FileMode.Create, FileAccess.Write);
-            RunSingleTest("Bin >> Txt", () =>
+            Testing.RunSingleTest("Bin >> Txt", () =>
             {
                 BinToTxt.Convert(src, dst);
             });
@@ -102,42 +101,13 @@ public class TestConverters
         {
             using var src = new FileStream(_txtFile, FileMode.Open, FileAccess.Read);
             using var dst = new FileStream(_binFileConv, FileMode.Create, FileAccess.Write);
-            RunSingleTest("Txt >> Bin", () =>
+            Testing.RunSingleTest("Txt >> Bin", () =>
             {
                 TxtToBin.Convert(src, dst);
             });
         }
         bool isEqual = FileUtils.FileCompare(_binFile, _binFileConv);
         Assert.IsTrue(isEqual);
-    }
-
-    private static void RunSingleTest(string testName, Action testAction)
-    {
-        Console.WriteLine($"=== {testName} ===");
-
-        // Принудительный GC перед тестом
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
-        // Замер памяти до
-        var memBefore = GC.GetTotalMemory(true);
-
-        // Замер времени
-        var sw = Stopwatch.StartNew();
-        testAction();
-        sw.Stop();
-
-        // Замер памяти после
-        var memAfter = GC.GetTotalMemory(true);
-        var memUsed = memAfter - memBefore;
-
-        Console.WriteLine($"Time:     {sw.Elapsed.TotalSeconds:F3}s");
-        Console.WriteLine($"Memory:   {memUsed / 1024.0:F2} KB ({memUsed:N0} bytes)");
-        Console.WriteLine($"Gen0:     {GC.CollectionCount(0)}");
-        Console.WriteLine($"Gen1:     {GC.CollectionCount(1)}");
-        Console.WriteLine($"Gen2:     {GC.CollectionCount(2)}");
-        Console.WriteLine();
     }
 }
 

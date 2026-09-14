@@ -10,7 +10,6 @@
 	<RootNamespace>MyCompany.MyProduct.MyModule</RootNamespace>
 -->
 	<TrimMode>full</TrimMode>
-	<PublishAot>true</PublishAot>
 	<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
 	<EnableAotAnalyzer>true</EnableAotAnalyzer>
     <InvariantGlobalization>true</InvariantGlobalization>
