@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="PublishAotCross" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
 	<ProjectReference Include="..\EdfBinGenerator\EdfGenerator.csproj"
 					  OutputItemType="Analyzer"

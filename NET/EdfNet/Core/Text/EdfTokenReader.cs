@@ -121,9 +121,13 @@ public class EdfTokenReader
     {
         if (_advanceLen < 0) MoveNext();
         if (_tokenType != type)
+        {
+            if (TextTokenType.EOF == _tokenType)
+                throw new EndOfStreamException();
             throw new EdfParseException(
                 $"Expected {Describe(type)} but got {Describe(_tokenType)}",
                 _tokenLine, _tokenColumn);
+        }
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ExpectAdvance(TextTokenType type)
