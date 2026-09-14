@@ -28,6 +28,12 @@ public static class Utils
     {
         return ExtractLevel(val) * speed / EchoFixedSoundSpeed;
     }
+    public static ushort PackLevel(double level, double discrete)
+    {
+        ushort extraBit = (ushort)(Discrete6000 == discrete ? 0x4000 : 0);
+        ushort intLevel = (ushort)(Math.Round(level));
+        return (ushort)(intLevel | extraBit);
+    }
     public static UInt16 ExtractReflections(UInt16 val)
     {
         // ахтунг! параметр передаётся в двоично десятичном виде :-(
@@ -36,6 +42,31 @@ public static class Utils
         UInt16 sig = (UInt16)(val & mask);
         int refect = dec + sig;
         return (refect > 99) ? (UInt16)99 : (UInt16)refect;
+    }
+    /// функция преобразования двоичного в 2/10 число. 0xffff=>65535
+    public static ushort PackReflections(ushort chisl)
+    {
+        ushort pr;
+        uint sum = 0;
+        for (int i = 0; i < 5; ++i)
+        {
+            pr = (ushort)(chisl / 10);
+            sum += ((uint)(chisl - pr * 10)) << (4 * i);
+            chisl = pr;
+        }
+        return (ushort)sum;
+    }
+    public static double UnPow(double v, double pow)
+    {
+        if (0 > v)
+            return Math.Pow(Math.Abs(v), pow) * (-1.0);
+        return Math.Pow(v, pow);
+    }
+    public static double Pow(double v, double p)
+    {
+        if (double.IsNegative(v))
+            return Math.Pow(Math.Abs(v), p) * (-1.0f);
+        return Math.Pow(v, p);
     }
     public static DateTime ExtractTimestamp(byte year2, byte month, byte day, byte hour, byte min, byte sec,
         DateTime fallback = default)

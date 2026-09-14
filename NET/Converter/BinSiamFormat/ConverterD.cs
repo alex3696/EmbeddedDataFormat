@@ -59,9 +59,9 @@ public static class ConverterD
         writer.WriteInfData(0, "Period", "период качаний (мс)", EdfPrimitiveType.UInt32, (uint)(dat.Period * dat.TimeStep));
         writer.WriteInfData(0, "Cycles", "пропущено циклов", EdfPrimitiveType.UInt16, (ushort)dat.Cycles);
 
-        writer.WriteInfData(0, "Pressure", "затрубное давление (атм)", EdfPrimitiveType.Double, (double)(dat.Pressure / 10.0f));
-        writer.WriteInfData(0, "BufPressure", "буферное давление (атм)", EdfPrimitiveType.Double, (double)(dat.BufPressure / 10.0f));
-        writer.WriteInfData(0, "LinePressure", "линейное давление (атм)", EdfPrimitiveType.Double, (double)(dat.LinePressure / 10.0f));
+        writer.WriteInfData(0, "Pressure", "затрубное давление (атм)", EdfPrimitiveType.Double, (double)Math.Round(dat.Pressure / 10.0f, 1));
+        writer.WriteInfData(0, "BufPressure", "буферное давление (атм)", EdfPrimitiveType.Double, (double)Math.Round(dat.BufPressure / 10.0f, 1));
+        writer.WriteInfData(0, "LinePressure", "линейное давление (атм)", EdfPrimitiveType.Double, (double)Math.Round(dat.LinePressure / 10.0f, 1));
         writer.WriteInfData(0, "PumpType", "тип привода станка-качалки {}", EdfPrimitiveType.UInt16, (ushort)(dat.PumpType));
 
         writer.WriteInfData(0, "Acc", "напряжение аккумулятора датчика, (В)", EdfPrimitiveType.Single, (float)(dat.Acc / 10.0f));

@@ -148,17 +148,17 @@ int EchoToEdf(const char* src, const char* edfFile, char mode)
 		&((uint16_t) { ExtractReflections(dat.Reflections) }));
 	EdfWritePrimSchData(edf, Double, 0, "Level", "уровень без поправки на скорость звука (для скорости 341.333 м/с), м",
 		&((double) { ExtractLevel(dat.Level) }));
-	EdfWritePrimSchData(edf, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0 }));
 	EdfWritePrimSchData(edf, UInt16, 0, "Table", "номер таблицы скоростей", &dat.Table);
 	EdfWritePrimSchData(edf, Single, 0, "Speed", "скорость звука, м/с", &speed);
-	EdfWritePrimSchData(edf, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0f }));
-	EdfWritePrimSchData(edf, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0 }));
+	EdfWritePrimSchData(edf, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0 }));
 	EdfWritePrimSchData(edf, UInt16, 0, "Current", "ток, 0.1А", &dat.Current);
 	EdfWritePrimSchData(edf, UInt8, 0, "IdleHour", "время простоя, ч", &dat.IdleHour);
 	EdfWritePrimSchData(edf, UInt8, 0, "IdleMin", "время простоя, мин", &dat.IdleMin);
 	EdfWritePrimSchData(edf, UInt8, 0, "Mode", "режим исследования", &dat.Mode);
-	EdfWritePrimSchData(edf, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
-	EdfWritePrimSchData(edf, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
+	EdfWritePrimSchData(edf, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0 }));
+	EdfWritePrimSchData(edf, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0 }));
 
 	const EdfSchema_t chartsInf = { 0, "EchoChartInfo", NULL, ChartNType };
 	const ChartN_t chartsDat[] =
@@ -173,9 +173,9 @@ int EchoToEdf(const char* src, const char* edfFile, char mode)
 	for (size_t i = 0; i < 3000; i++)
 	{
 		if (dat.Data[i] > 127)
-			p.y = (float)UnPow(-1 * (dat.Data[i] - 127), 1.0 / 0.35) / 1000;
+			p.y = (float)(UnPow(-1 * (dat.Data[i] - 127), 1.0 / 0.35) / 1000.0);
 		else
-			p.y = (float)UnPow(dat.Data[i], 1.0 / 0.35) / 1000;
+			p.y = (float)(UnPow(dat.Data[i], 1.0 / 0.35) / 1000.0);
 
 		p.x = xDiscrete * i * maxDepthMult;
 
@@ -319,7 +319,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 			else if (IsVarName(bdfr->SchemaPtr, "Discrete"))
 				discrete = *((double*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "Reflections"))
-				dat.Reflections = PackReflections(*((uint16_t*)bdfr->Blk->Content.Record.Data));
+				dat.Reflections = PackReflections(*((int16_t*)bdfr->Blk->Content.Record.Data));
 			else if (IsVarName(bdfr->SchemaPtr, "Level"))
 				dat.Level = PackLevel(*((double*)bdfr->Blk->Content.Record.Data), discrete);
 			else if (IsVarName(bdfr->SchemaPtr, "Pressure"))

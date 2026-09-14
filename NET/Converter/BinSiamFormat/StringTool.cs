@@ -74,10 +74,10 @@ public static class StringTool
         }
         return string.Empty;
     }
-    public static readonly byte[] TrailingSymBytes = [(byte)'\0', (byte)'\t', (byte)'\n', (byte)'\r', (byte)' '];
+    public static readonly byte[] TrailingSymBytes = [(byte)'\0', (byte)'\t', (byte)'\n', (byte)'\r'];
     public static string GetStringEndTrim(this Encoding enc, ReadOnlySpan<byte> bytes)
     {
-        var idx = bytes.IndexOf(TrailingSymBytes);
+        var idx = bytes.IndexOfAny(TrailingSymBytes);
         if (idx == 0)
             return string.Empty;
         return idx == -1 ? enc.GetString(bytes) : enc.GetString(bytes[..idx]);

@@ -39,6 +39,26 @@
       "commandName": "Project",
       "commandLineArgs": "1D.bdf 1D_restB.d",
       "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "E >> TDF": {
+      "commandName": "Project",
+      "commandLineArgs": "1E.E t",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "E >> BDF": {
+      "commandName": "Project",
+      "commandLineArgs": "1E.E b",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "E.tdf >> E": {
+      "commandName": "Project",
+      "commandLineArgs": "1E.tdf 1E_restT.e",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "E.bdf >> E": {
+      "commandName": "Project",
+      "commandLineArgs": "1E.bdf 1E_restB.e",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
     }
   }
 }

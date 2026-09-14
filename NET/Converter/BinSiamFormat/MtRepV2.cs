@@ -7,7 +7,7 @@ public struct MtRepV2 // SPSK_FILE_V1_1
     ByteArray40 _rawDescription;     //описание файла
     public string? Description
     {
-        get => Encoding.UTF8.GetString(_rawDescription);
+        get => Encoding.UTF8.GetStringEndTrim(_rawDescription);
         set => Encoding.UTF8.GetBytes(value, _rawDescription);
     }
     public byte Year;               //год

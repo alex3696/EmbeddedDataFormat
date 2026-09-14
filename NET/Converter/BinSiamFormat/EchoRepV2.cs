@@ -3,17 +3,14 @@ namespace EdfConv.BinSiamFormat;
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
 public struct EchoRepV2
 {
-    public EchoRepV2()
-    {
-        Id = new();
-        Data = new byte[3000];
-    }
     public uint FileType;           //тип файла
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 40)]
-    public string? Description;     //описание файла
-
+    ByteArray40 _rawDescription;     //описание файла
+    public string? Description
+    {
+        readonly get => Encoding.UTF8.GetStringEndTrim(_rawDescription);
+        set => Encoding.UTF8.GetBytes(value, _rawDescription);
+    }
     public ResearchIdV2 Id;         //идентификаторы исследования
-
     public ushort Reflections;      //число отражений
     public ushort Level;			//уровень без поправки на скорость звука (для скорости 341.333 м/с), м
     public short Pressure;          //затрубное давление, 0.1 атм (new)
@@ -27,10 +24,6 @@ public struct EchoRepV2
     public ushort Mode;				//режим исследования (new)
     public ushort Acc;              //напряжение аккумулятора датчика, 0.1В (new)
     public short Temp;              //температура датчика, 0.1С (new)
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3000)]
-    public byte[] Data;             //данные динамограммы [3000]
-
+    public ByteArray3000 Data;      //данные динамограммы [1000]
     public ushort crc;						//crc16
-
 }

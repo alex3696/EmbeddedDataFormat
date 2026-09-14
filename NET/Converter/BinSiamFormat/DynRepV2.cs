@@ -8,7 +8,7 @@ public struct DynRepV2
     ByteArray40 _rawDescription;     //описание файла
     public string? Description
     {
-        get => Encoding.UTF8.GetString(_rawDescription);
+        get => Encoding.UTF8.GetStringEndTrim(_rawDescription);
         set => Encoding.UTF8.GetBytes(value, _rawDescription);
     }
     public ResearchIdV2 Id;         //идентификаторы исследования // 40
