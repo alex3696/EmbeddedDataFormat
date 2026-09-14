@@ -17,22 +17,18 @@ public static class BinBlockStreamExtension
     {
         do
         {
-            if (1 != stream.Read(block.Buffer[..1]))
-                throw new EndOfStreamException();
+            stream.ReadExactly(block.Buffer[..1]);
         }
         while (!Enum.IsDefined(block.Type));
-        var spanContentLen = block.Buffer.Slice(1, 2);
 
-        if (2 != stream.Read(spanContentLen))
-            throw new EndOfStreamException();
-        if (0 < block.ContentLen)
+        stream.ReadExactly(block.Buffer.Slice(1, 2));
+        var contentLen = block.ContentLen;
+        if (0 < contentLen)
         {
-            int dataLenAndCrcLen = block.ContentLen + BinBlock.CrcLen;
-            int readed = stream.Read(block.ContentBuffer[..dataLenAndCrcLen]);
-            if (readed != dataLenAndCrcLen)
-                throw new EndOfStreamException();
+            int dataLenAndCrcLen = contentLen + BinBlock.CrcLen;
+            stream.ReadExactly(block.Buffer.Slice(BinBlock.HeaderLen, dataLenAndCrcLen));
             BinaryBlockIntegrityException.ThrowIfCrcWrong(block);
         }
-        return BinBlock.OverheadLen + block.ContentLen;
+        return BinBlock.OverheadLen + contentLen;
     }
 }

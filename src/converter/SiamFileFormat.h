@@ -246,7 +246,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t OmegaDataType =
 {
-	.Type = Struct, .Name = "OMEGA_DATA_V1_1", .Dims = { 0, NULL }, .Fields =
+	.Type = Struct, .Name = "OmegaData_v1_1", .Dims = { 0, NULL }, .Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])

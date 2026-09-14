@@ -164,14 +164,14 @@ public static class ConverterD
         switch (schemaId)
         {
             default: break;
-            case (ushort)StdSchemaType.FILETYPEID:
+            case (ushort)SchemaId.FILETYPEID:
                 if (dat.FileType != reader.ReadValue<FileTypeId>().Type)
                     return;
                 break;
-            case (ushort)StdSchemaType.BEGINDATETIME:
+            case (ushort)SchemaId.BEGINDATETIME:
                 dat.Id.Time.Dt = reader.ReadValue<DateTimeTz>().ToDateTime();
                 break;
-            case (ushort)StdSchemaType.POSITION:
+            case (ushort)SchemaId.POSITION:
                 {
                     var pos = reader.ReadValue<Position>();
                     if (ushort.TryParse(pos.Field, CultureInfo.InvariantCulture, out ushort field))
@@ -182,14 +182,14 @@ public static class ConverterD
                         dat.Id.Shop = shop;
                 }
                 break;
-            case (ushort)StdSchemaType.DEVICEINFO:
+            case (ushort)SchemaId.DEVICEINFO:
                 {
                     var di = reader.ReadValue<DeviceInfo>();
                     dat.Id.DeviceType = di.SwId;
                     dat.Id.DeviceNum = (uint)di.HwNumber;
                 }
                 break;
-            case (ushort)StdSchemaType.REGINFO:
+            case (ushort)SchemaId.REGINFO:
                 {
                     var di = reader.ReadValue<DeviceInfo>();
                     dat.Id.RegType = di.SwId;

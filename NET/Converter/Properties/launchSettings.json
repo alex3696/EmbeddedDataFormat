@@ -1,23 +1,43 @@
 {
   "profiles": {
-    "D to TDF": {
+    "DAT >> TDF": {
+      "commandName": "Project",
+      "commandLineArgs": "1DAT.DAT t",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "DAT >> BDF": {
+      "commandName": "Project",
+      "commandLineArgs": "1DAT.DAT b",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "DAT.bdf >> DAT": {
+      "commandName": "Project",
+      "commandLineArgs": "1DAT.bdf 1DAT_restB.dat",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "DAT.tdf >> DAT": {
+      "commandName": "Project",
+      "commandLineArgs": "1DAT.tdf 1DAT_restT.dat",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "D >> TDF": {
       "commandName": "Project",
       "commandLineArgs": "1D.D t",
       "workingDirectory": "C:\\Users\\Sav\\Documents"
     },
-    "1D.tdf 1D_rest.d": {
-      "commandName": "Project",
-      "commandLineArgs": "1D.tdf 1D_rest.d",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
-    },
-    "1D.D b": {
+    "D >> BDF": {
       "commandName": "Project",
       "commandLineArgs": "1D.D b",
       "workingDirectory": "C:\\Users\\Sav\\Documents"
     },
-    "1D.bdf 1D_rest_b.d": {
+    "D.tdf >> D": {
       "commandName": "Project",
-      "commandLineArgs": "1D.bdf 1D_rest_b.d",
+      "commandLineArgs": "1D.tdf 1D_restT.d",
+      "workingDirectory": "C:\\Users\\Sav\\Documents"
+    },
+    "D.bdf >> D": {
+      "commandName": "Project",
+      "commandLineArgs": "1D.bdf 1D_restB.d",
       "workingDirectory": "C:\\Users\\Sav\\Documents"
     }
   }

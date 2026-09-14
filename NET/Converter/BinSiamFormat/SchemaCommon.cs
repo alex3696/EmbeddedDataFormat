@@ -1,6 +1,6 @@
 namespace EdfConv.BinSiamFormat;
 
-public enum StdSchemaType : ushort
+public enum SchemaId : ushort
 {
     FILETYPEID = 10,
     BEGINDATETIME,
@@ -11,14 +11,14 @@ public enum StdSchemaType : ushort
     OMEGADATA
 }
 
-[EdfSerializable((ushort)StdSchemaType.FILETYPEID)]
+[EdfSerializable((ushort)SchemaId.FILETYPEID)]
 public class FileTypeId
 {
     public ushort Type;
     public ushort Version;
 }
 
-[EdfSerializable((ushort)StdSchemaType.BEGINDATETIME, "BeginDateTime")]
+[EdfSerializable((ushort)SchemaId.BEGINDATETIME, "BeginDateTime")]
 public class DateTimeTz
 {
     public DateTime ToDateTime()
@@ -50,7 +50,7 @@ public class DateTimeTz
     public sbyte Tz;
 }
 
-[EdfSerializable((ushort)StdSchemaType.POSITION, "Position")]
+[EdfSerializable((ushort)SchemaId.POSITION, "Position")]
 public class Position
 {
     public string? Field;
@@ -59,7 +59,7 @@ public class Position
     public string? Shop;
 }
 
-[EdfSerializable((ushort)StdSchemaType.DEVICEINFO, "DevInfo")]
+[EdfSerializable((ushort)SchemaId.DEVICEINFO, "DevInfo")]
 public class DeviceInfo
 {
     public ushort SwId;
@@ -84,4 +84,15 @@ public struct Chart2D
 {
     public float x;
     public float y;
+}
+
+
+[EdfSerializable(id: (ushort)SchemaId.OMEGADATA)]
+public struct OmegaData_v1_1
+{
+    public uint Time;
+    public int Press;
+    public int Temp;
+    public ushort Vbat;
+
 }
