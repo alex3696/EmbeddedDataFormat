@@ -37,7 +37,7 @@ typedef struct
 		EdfConfig_t Config;
 		EdfSchemaContent_t Schema;
 		EdfRecordContent_t Record;
-	} Conent;
+	} Content;
 	//uint16_t Crc;
 } EdfBlock_t;
 

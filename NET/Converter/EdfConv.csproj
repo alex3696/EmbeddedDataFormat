@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+<!--
+	<PublishTrimmed>true</PublishTrimmed>
+	<RootNamespace>MyCompany.MyProduct.MyModule</RootNamespace>
+-->
+	<TrimMode>full</TrimMode>
+	<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+	<EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PublishAotCross" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
+	<ProjectReference Include="..\EdfBinGenerator\EdfGenerator.csproj"
+					  OutputItemType="Analyzer"
+					  ReferenceOutputAssembly="false" />
+	  <!--
+	  <ProjectReference Include="..\NetTesting\NetTest.csproj" />
+		-->
+</ItemGroup>
+
+</Project>

@@ -148,17 +148,17 @@ int EchoToEdf(const char* src, const char* edfFile, char mode)
 		&((uint16_t) { ExtractReflections(dat.Reflections) }));
 	EdfWritePrimSchData(edf, Double, 0, "Level", "уровень без поправки на скорость звука (для скорости 341.333 м/с), м",
 		&((double) { ExtractLevel(dat.Level) }));
-	EdfWritePrimSchData(edf, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "Pressure", "затрубное давление (атм)", &((double) { dat.Pressure / 10.0 }));
 	EdfWritePrimSchData(edf, UInt16, 0, "Table", "номер таблицы скоростей", &dat.Table);
 	EdfWritePrimSchData(edf, Single, 0, "Speed", "скорость звука, м/с", &speed);
-	EdfWritePrimSchData(edf, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0f }));
-	EdfWritePrimSchData(edf, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0f }));
+	EdfWritePrimSchData(edf, Double, 0, "BufPressure", "буферное давление (атм)", &((double) { dat.BufPressure / 10.0 }));
+	EdfWritePrimSchData(edf, Double, 0, "LinePressure", "линейное давление (атм)", &((double) { dat.LinePressure / 10.0 }));
 	EdfWritePrimSchData(edf, UInt16, 0, "Current", "ток, 0.1А", &dat.Current);
 	EdfWritePrimSchData(edf, UInt8, 0, "IdleHour", "время простоя, ч", &dat.IdleHour);
 	EdfWritePrimSchData(edf, UInt8, 0, "IdleMin", "время простоя, мин", &dat.IdleMin);
 	EdfWritePrimSchData(edf, UInt8, 0, "Mode", "режим исследования", &dat.Mode);
-	EdfWritePrimSchData(edf, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
-	EdfWritePrimSchData(edf, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
+	EdfWritePrimSchData(edf, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0 }));
+	EdfWritePrimSchData(edf, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0 }));
 
 	const EdfSchema_t chartsInf = { 0, "EchoChartInfo", NULL, ChartNType };
 	const ChartN_t chartsDat[] =
@@ -173,13 +173,13 @@ int EchoToEdf(const char* src, const char* edfFile, char mode)
 	for (size_t i = 0; i < 3000; i++)
 	{
 		if (dat.Data[i] > 127)
-			p.y = (float)UnPow(-1 * (dat.Data[i] - 127), 1.0 / 0.35) / 1000;
+			p.y = (float)(UnPow(-1 * (dat.Data[i] - 127), 1.0 / 0.35) / 1000.0);
 		else
-			p.y = (float)UnPow(dat.Data[i], 1.0 / 0.35) / 1000;
+			p.y = (float)(UnPow(dat.Data[i], 1.0 / 0.35) / 1000.0);
 
 		p.x = xDiscrete * i * maxDepthMult;
 
-		EdfWriteData(edf, &p, sizeof(struct PointXY));
+		EdfWriteData(edf, &p, sizeof(struct PointXY), NULL);
 	}
 	fclose(f);
 	EdfClose(edf);
@@ -218,7 +218,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 	while (!(err = EdfReadBlock(bdfr)))
 	{
 		MemStream_t src = { 0 };
-		if ((err = MemStreamReadOpen(&src, bdfr->Blk->Conent.Record.Data, GetContentDataLen(bdfr->Blk))))
+		if ((err = MemStreamReadOpen(&src, bdfr->Blk->Content.Record.Data, GetContentDataLen(bdfr->Blk))))
 			return err;
 
 		switch (bdfr->Blk->Type)
@@ -231,7 +231,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 			skip = 0;
 			msDst.WPos = 0;
 			bdfr->SchemaPtr = NULL;
-			err = WriteSchemaBinToCBin(bdfr->Blk->Conent.Schema.Data, GetContentDataLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->Cfg.Blocksize, NULL, &bdfr->SchemaPtr);
+			err = WriteSchemaBinToCBin(bdfr->Blk->Content.Schema.Data, GetContentDataLen(bdfr->Blk), NULL, bdfr->Buf, bdfr->Cfg.Blocksize, NULL, &bdfr->SchemaPtr);
 			if (!err)
 			{
 				writed = 0;
@@ -251,12 +251,12 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				{
 				default: break;
 				case FILETYPEID:
-					if (dat.FileType != ((FileTypeId_t*)bdfr->Blk->Conent.Record.Data)->Type)
+					if (dat.FileType != ((FileTypeId_t*)bdfr->Blk->Content.Record.Data)->Type)
 						return 0;
 					break;//case FILETYPE:
 				case BEGINDATETIME:
 				{
-					DateTime_t* t = (DateTime_t*)bdfr->Blk->Conent.Record.Data;
+					DateTime_t* t = (DateTime_t*)bdfr->Blk->Content.Record.Data;
 					dat.Id.Time.Year = (uint8_t)(t->Year - 2000);
 					dat.Id.Time.Month = t->Month;
 					dat.Id.Time.Day = t->Day;
@@ -315,33 +315,33 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				}//switch
 			}//if (bdfr->SchemaPtr->Id)
 			else if (IsVarName(bdfr->SchemaPtr, "Oper"))
-				dat.Id.Oper = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+				dat.Id.Oper = *((uint16_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "Discrete"))
-				discrete = *((double*)bdfr->Blk->Conent.Record.Data);
+				discrete = *((double*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "Reflections"))
-				dat.Reflections = PackReflections(*((uint16_t*)bdfr->Blk->Conent.Record.Data));
+				dat.Reflections = PackReflections(*((int16_t*)bdfr->Blk->Content.Record.Data));
 			else if (IsVarName(bdfr->SchemaPtr, "Level"))
-				dat.Level = PackLevel(*((double*)bdfr->Blk->Conent.Record.Data), discrete);
+				dat.Level = PackLevel(*((double*)bdfr->Blk->Content.Record.Data), discrete);
 			else if (IsVarName(bdfr->SchemaPtr, "Pressure"))
-				dat.Pressure = (int16_t)round(*((double*)bdfr->Blk->Conent.Record.Data) * 10);
+				dat.Pressure = (int16_t)round(*((double*)bdfr->Blk->Content.Record.Data) * 10);
 			else if (IsVarName(bdfr->SchemaPtr, "Table"))
-				dat.Table = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+				dat.Table = *((uint16_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "Speed"))
-				dat.Speed = (uint16_t)round(*((float*)bdfr->Blk->Conent.Record.Data) * 10);
+				dat.Speed = (uint16_t)round(*((float*)bdfr->Blk->Content.Record.Data) * 10);
 			else if (IsVarName(bdfr->SchemaPtr, "BufPressure"))
-				dat.BufPressure = (int16_t)round(*((double*)bdfr->Blk->Conent.Record.Data) * 10);
+				dat.BufPressure = (int16_t)round(*((double*)bdfr->Blk->Content.Record.Data) * 10);
 			else if (IsVarName(bdfr->SchemaPtr, "LinePressure"))
-				dat.LinePressure = (int16_t)round(*((double*)bdfr->Blk->Conent.Record.Data) * 10);
+				dat.LinePressure = (int16_t)round(*((double*)bdfr->Blk->Content.Record.Data) * 10);
 			else if (IsVarName(bdfr->SchemaPtr, "Current"))
-				dat.Current = *((uint16_t*)bdfr->Blk->Conent.Record.Data);
+				dat.Current = *((uint16_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "IdleHour"))
-				dat.IdleHour = *((uint8_t*)bdfr->Blk->Conent.Record.Data);
+				dat.IdleHour = *((uint8_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "IdleMin"))
-				dat.IdleMin = *((uint8_t*)bdfr->Blk->Conent.Record.Data);
+				dat.IdleMin = *((uint8_t*)bdfr->Blk->Content.Record.Data);
 			else if (IsVarName(bdfr->SchemaPtr, "Acc"))
-				dat.Acc = (int16_t)round(*((float*)bdfr->Blk->Conent.Record.Data) * 10);
+				dat.Acc = (int16_t)round(*((float*)bdfr->Blk->Content.Record.Data) * 10);
 			else if (IsVarName(bdfr->SchemaPtr, "Temp"))
-				dat.Temp = (int16_t)round(*((float*)bdfr->Blk->Conent.Record.Data) * 10);
+				dat.Temp = (int16_t)round(*((float*)bdfr->Blk->Content.Record.Data) * 10);
 
 			else if (IsVarName(bdfr->SchemaPtr, "EchoChart"))
 			{

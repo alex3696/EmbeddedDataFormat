@@ -149,8 +149,8 @@ static const EdfType_t FileTypeIdType =
 		.Count = 2,
 		.Item = (EdfType_t[])
 		{
-			{ Int16, "Type" },
-			{ Int16, "Version" },
+			{ UInt16, "Type" },
+			{ UInt16, "Version" },
 		}
 	}
 };
@@ -164,12 +164,12 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t DateTimeType =
 {
-	.Type = Struct, .Name = "DateTime", .Dims = { 0, NULL }, .Fields =
+	.Type = Struct, .Name = "DateTimeTz", .Dims = { 0, NULL }, .Fields =
 	{
 		.Count = 8,
 		.Item = (EdfType_t[])
 		{
-			{ Int16, "Year" },
+			{ UInt16, "Year" },
 			{ UInt8, "Month" },
 			{ UInt8, "Day" },
 			{ UInt8, "Hour" },
@@ -225,15 +225,13 @@ static const EdfType_t PositionType =
 {
 	.Type = Struct, .Name = "Position", .Dims = { 0, NULL }, .Fields =
 	{
-		.Count = 6,
+		.Count = 4,
 		.Item = (EdfType_t[])
 		{
 			{ String, "Field" },
 			{ String, "Cluster" },
 			{ String, "Well" },
 			{ String, "Shop" },
-			{ Double, "Longitude" },
-			{ Double, "Latitude" },
 		}
 	}
 };
@@ -244,13 +242,11 @@ typedef struct
 	char* Cluster;
 	char* Well;
 	char* Shop;
-	double Longitude;
-	double Latitude;
 } Position_t;
 //-----------------------------------------------------------------------------
 static const EdfType_t OmegaDataType =
 {
-	.Type = Struct, .Name = "OMEGA_DATA_V1_1", .Dims = { 0, NULL }, .Fields =
+	.Type = Struct, .Name = "OmegaData_v1_1", .Dims = { 0, NULL }, .Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])

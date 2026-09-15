@@ -1,0 +1,14 @@
+global using EdfNet.Base;
+global using EdfNet.Core;
+global using EdfNet.Interfaces;
+global using System;
+global using System.Buffers;
+global using System.Buffers.Binary;
+global using System.Collections.Generic;
+global using System.Diagnostics;
+global using System.IO;
+global using System.Linq;
+global using System.Numerics;
+global using System.Runtime.CompilerServices;
+global using System.Runtime.InteropServices;
+global using System.Text;

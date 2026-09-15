@@ -1,0 +1,25 @@
+// -----------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+// -----------------------------------------------------------------------
+
+using BenchmarkDotNet.Running;
+using TestPerfomance;
+
+namespace Bench;
+
+internal class Program
+{
+    static void Main(string[] args)
+    {
+        // var _ = BenchmarkRunner.Run(typeof(Program).Assembly);
+        //BenchmarkRunner.Run<SortedListVsDictionary>();
+        //BenchmarkRunner.Run<PerfCrc16>();
+        //BenchmarkRunner.Run<Schema>();
+        //BenchmarkRunner.Run<DecomposersBench>();
+        BenchmarkRunner.Run<ReaderWriterFileBench>();
+        //BenchmarkRunner.Run<ReadBin_Bench>();
+        BenchmarkRunner.Run<ConvertBin2Txt_Bench>();
+        //BenchmarkRunner.Run<EdfTypeEnumerator_Bench>();
+        //BenchmarkRunner.Run<EdfTypeCreator_Bench>();
+    }
+}

@@ -72,7 +72,7 @@ int EdfWriteConfig(EdfContext_t* dw, size_t* writed);
 // запись схемы данных
 int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed);
 // запись данных
-int EdfWriteData(EdfContext_t* dw, const void* src, size_t srcLen);
+int EdfWriteData(EdfContext_t* dw, const void* src, size_t srcLen, size_t* srcConsumed);
 // закрывает и скидывает текущий блок на диск  
 int EdfFlushData(EdfContext_t* dw, size_t* writed);
 // Чтение данных используя схему 

@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 uint16_t GetContentMaxLen(const EdfContext_t* pEdf)
 {
-	//return pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Conent) - 2;
+	//return pEdf->Cfg.Blocksize - offsetof(EdfBlock_t, Content) - 2;
 	return pEdf->Cfg.Blocksize - EDF_HEADER_SIZE - EDF_CRC_SIZE;
 }
 //-----------------------------------------------------------------------------
@@ -94,7 +94,7 @@ static int ReadStruct(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, vo
 	for (size_t j = 0; j < t->Fields.Count; j++)
 	{
 		const EdfType_t* s = &t->Fields.Item[j];
-		if ((err = EdfReadBin(s, src, mem, &ti, resultPrimOffset, primReaded)))
+		if ((err = EdfReadBin(s, src, mem, (void**)&ti, resultPrimOffset, primReaded)))
 			return err;
 		size_t childCLen = GetTypeCSize(s);
 		ti += childCLen;
@@ -179,7 +179,7 @@ int EdfReadBlock(EdfContext_t* dw)
 	if (dw->Blk->Len > GetContentMaxLen(dw))
 		return ERR_BLK_WRONG_SIZE;
 	// read Block Content
-	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Conent.Schema, dw->Blk->Len)))
+	if ((err = StreamRead(&dw->Stream, &readed, &dw->Blk->Content.Schema, dw->Blk->Len)))
 		return err;
 	// read Block CRC
 	uint16_t crcFile = 0;
@@ -193,9 +193,9 @@ int EdfReadBlock(EdfContext_t* dw)
 	// try read cfg
 	if (btConfig == dw->Blk->Type)
 	{
-		if(dw->Cfg.Blocksize < dw->Blk->Conent.Config.Blocksize)
+		if(dw->Cfg.Blocksize < dw->Blk->Content.Config.Blocksize)
 			return ERR_BLOCK_SIZE_LARGE;
-		dw->Cfg = dw->Blk->Conent.Config;
+		dw->Cfg = dw->Blk->Content.Config;
 	}
 	return 0;
 }

@@ -26,8 +26,8 @@ static const char SepEndStruct[] = "}";
 static const char SepBeginArray[] = "[";
 static const char SepEndArray[] = "]";
 static const char SepVarEnd[] = ";";
-static const char SepRecBegin[] = "\n<= ";
-static const char SepRecEnd[] = ">";
+static const char SepRecBegin[] = "<= ";
+static const char SepRecEnd[] = ">\n";
 
 typedef enum PoType
 {

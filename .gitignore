@@ -60,6 +60,6 @@ doc/~$*
 [Bb]in/
 [Oo]bj/
 [Ll]og/
-src/Test/*.tdf
-src/Test/*.bdf
-src/Test/*Conv.*
+#src/Test/*.tdf
+#src/Test/*.bdf
+#src/Test/*Conv.*

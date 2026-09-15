@@ -31,13 +31,18 @@ static int EdfWriteConfigBin(EdfContext_t* dw, const EdfConfig_t* h, size_t* wri
 {
 	dw->Blk->Type = (uint8_t)btConfig;
 	dw->Blk->Len = (uint16_t)sizeof(EdfConfig_t);
-	memcpy(&dw->Blk->Conent.Config, h, sizeof(EdfConfig_t));
+	memcpy(&dw->Blk->Content.Config, h, sizeof(EdfConfig_t));
 	return EdfWriteBlockBin(&dw->Stream, dw->Blk, writed);
 }
 //-----------------------------------------------------------------------------
 static int EdfWriteConfigTxt(EdfContext_t* dw, const EdfConfig_t* h, size_t* writed)
 {
-	return StreamWriteFmt(&dw->Stream, writed, "<~ {version=%d.%d; bs=%d; encoding=%d; flags=%d; } >\n"
+	int err = 0;
+	const char info[] = "//Edf Config: VersMajor; VersMinor; Blocksize; Encoding; Flags\n";
+	if ((err = StreamWrite(&dw->Stream, writed, info, sizeof(info) - 1)))
+		return err;
+
+	return StreamWriteFmt(&dw->Stream, writed, "<~{%d;%d;%d;%d;%d;}>\n"
 		, h->VersMajor, h->VersMinor
 		, h->Blocksize, h->Encoding, h->Flags);
 }
@@ -56,7 +61,9 @@ int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed)
 	err = (*dw->impl->WriteSchema)(dw, t, writed);
 	if (err)
 		return err;
-	dw->SchemaPtr = t;
+	dw->SchemaPtr = t;	// Если придётся кешировать схему - делаем это тут.
+						// TODO:
+						// однако в EdfWriteData придётся отказаться от буфера и не кэшировать неполные примитивы. 
 	dw->BufLen = 0;
 	return err;
 }
@@ -84,7 +91,7 @@ static int EdfWriteSchemaBin(EdfContext_t* dw, const EdfSchema_t* t, size_t* wri
 	dw->Blk->Type = (uint8_t)btSchema;
 	MemStream_t ms = { 0 };
 	size_t w = 0;
-	if ((err = MemStreamWriteOpen(&ms, dw->Blk->Conent.Schema.Data, GetContentDataMaxLen(dw, btSchema))) ||
+	if ((err = MemStreamWriteOpen(&ms, dw->Blk->Content.Schema.Data, GetContentDataMaxLen(dw, btSchema))) ||
 		(err = WriteSchemaBinToStream((Stream_t*)&ms, t, &w)))
 		return err;
 	dw->Blk->Len = (uint16_t)w;// (uint16_t)ms.WPos;
@@ -92,11 +99,11 @@ static int EdfWriteSchemaBin(EdfContext_t* dw, const EdfSchema_t* t, size_t* wri
 		return err;
 	// --- ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ ДЛЯ СЛЕДУЮЩИХ БЛОКОВ ДАННЫХ ---
 	  // Устанавливаем Id схемы в заголовок для будущих блоков данных
-	dw->Blk->Conent.Record.SchId = t->Id;
+	dw->Blk->Content.Record.SchId = t->Id;
 	// Сброс счетчика примитивов (начинаем с первого примитива новой записи)
-	dw->PrimSkip = dw->Blk->Conent.Record.PrmOffset = 0;
+	dw->PrimSkip = dw->Blk->Content.Record.PrmOffset = 0;
 	// Сброс номера записи (первая запись будет иметь номер 0)
-	dw->RecordId = dw->Blk->Conent.Record.RecId = 0;
+	dw->RecordId = dw->Blk->Content.Record.RecId = 0;
 	// Сброс длины данных для нового блока
 	dw->Blk->Len = 0;
 	return 0;
@@ -143,15 +150,15 @@ static int StreamWriteBlockDataBin(EdfContext_t* dw, size_t* writed)
 	int err = EdfWriteBlockBin(&dw->Stream, dw->Blk, writed);
 	if (err)
 		return err;
-	//dw->Blk->Conent.Record.SchId = dw->SchemaPtr->Id;
-	dw->Blk->Conent.Record.PrmOffset = dw->PrimSkip;
-	dw->Blk->Conent.Record.RecId = dw->RecordId;
+	//dw->Blk->Content.Record.SchId = dw->SchemaPtr->Id;
+	dw->Blk->Content.Record.PrmOffset = dw->PrimSkip;
+	dw->Blk->Content.Record.RecId = dw->RecordId;
 	return err;
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataTxt(EdfContext_t* dw, size_t* writed)
 {
-	return StreamWrite((Stream_t*)&dw->Stream, writed, dw->Blk->Conent.Record.Data, dw->Blk->Len);
+	return StreamWrite((Stream_t*)&dw->Stream, writed, dw->Blk->Content.Record.Data, dw->Blk->Len);
 }
 
 //-----------------------------------------------------------------------------
@@ -196,24 +203,24 @@ EdfContext_t* EdfCreate(uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg, i
 //-----------------------------------------------------------------------------
 int EdfInit(EdfContext_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t* pCfg)
 { 
-	int err = 0;
+	//int err = 0;
 	if (NULL == pEdf)
 		return ERR_WRONG_PARAMETERS;
 	if (NULL == pMem)
 		return ERR_WRONG_PARAMETERS;
-	if (NULL == pCfg)
+	const EdfConfig_t* const cfg = (NULL == pCfg) ? &EdfCfg256 : pCfg;
+	if (cfg->VersMajor != EDF_VERSMAJOR || cfg->VersMinor != EDF_VERSMINOR)
 		return ERR_WRONG_PARAMETERS;
-	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, MIN_BLOCK_SIZE, 0, Default };
-	const size_t bufLen = (NULL == pCfg) ? cfg.Blocksize : pCfg->Blocksize;
-	if (bufLen * 2 > memLen)
+	if (cfg->Blocksize < MIN_BLOCK_SIZE || cfg->Blocksize > MAX_BLOCK_SIZE)
 		return ERR_WRONG_PARAMETERS;
-
-	pEdf->Cfg = (NULL == pCfg)? cfg : *pCfg;
-
+	const size_t bufLen = cfg->Blocksize;
+	if (bufLen > memLen / 2)
+		return ERR_WRONG_PARAMETERS;
+	memset((void*)pEdf, 0, sizeof(EdfContext_t));
+	pEdf->Cfg = *cfg;
 	*(EdfBlock_t**)&pEdf->Blk = (EdfBlock_t*)pMem;
 	*(uint8_t**)&pEdf->Buf = (uint8_t*)(pMem + bufLen);
-
-	return err;
+	return 0;
 }
 //-----------------------------------------------------------------------------
 const EdfImpl_t writeCBinToBin =
@@ -335,11 +342,10 @@ int EdfOpenWithFs(EdfContext_t* edf, const char* file, const char* mode, FileStr
 //-----------------------------------------------------------------------------
 int EdfClose(EdfContext_t* dw)
 {
-	int err = 0;
 	size_t w = 0;
-	if ((err = EdfFlushData(dw, &w)))
-		return err;
-	return StreamClose(&dw->Stream);
+	int err0 = EdfFlushData(dw, &w);
+	int err1 = StreamClose(&dw->Stream);
+	return 0 != err0? err0 : err1;
 }
 //-----------------------------------------------------------------------------
 int EdfWriteSchemaData(EdfContext_t* dw, const EdfSchema_t* ir, const void* d, size_t len)
@@ -347,7 +353,7 @@ int EdfWriteSchemaData(EdfContext_t* dw, const EdfSchema_t* ir, const void* d, s
 	int err;
 	size_t writed = 0;
 	if ((err = EdfWriteSchema(dw, ir, &writed)) ||
-		(err = EdfWriteData(dw, d, len)))
+		(err = EdfWriteData(dw, d, len, NULL)))
 		return err;
 	return 0;
 }

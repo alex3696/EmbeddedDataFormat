@@ -1,0 +1,104 @@
+using EdfNet.Core.Text;
+
+namespace EdfNet.Core;
+
+public class EdfTextReader : BaseDisposable, IEdfReader
+{
+    private EdfConfig _cfg;
+    private EdfBlockType _currentBlockType;
+    private readonly byte[] _readerBuf;
+    private readonly TextStreamReader _bufferedReader;
+    protected readonly EdfTokenReader _tokenReader;
+    protected readonly TextCircularEdfTypeEnumerator _enum = new();
+    protected readonly EdfFormatterOptions _options = EdfFormatterOptions.Default;
+
+    public EdfConfig Cfg => _cfg;
+    public EdfSchema? CurrentSchema { get; private set; }
+
+    public EdfTextReader(Stream stream, EdfConfig? cfg = default)
+    {
+        _cfg = cfg ?? EdfConfig.Default;
+        _readerBuf = ArrayPool<byte>.Shared.Rent(1024);
+        _bufferedReader = new TextStreamReader(stream, _readerBuf);
+        _tokenReader = new(_bufferedReader);
+    }
+    protected override void Dispose(bool disposing)
+    {
+        _enum.Dispose();
+        ArrayPool<byte>.Shared.Return(_readerBuf);
+        base.Dispose(disposing);
+    }
+
+    private int _blockLine = 0;
+    private int _blockColumn =0;
+    public bool ReadBlock()
+    {
+        while(true)
+        {
+            if (!_tokenReader.HasValidToken)
+            {
+                if (!_tokenReader.MoveNext())
+                    return false;
+            }
+            if(_tokenReader.TokenLine == _blockLine &&  _tokenReader.TokenColumn == _blockColumn)
+            {
+                _tokenReader.Advance();
+                continue;
+            }
+            switch (_tokenReader.TokenType)
+            {
+                case TextTokenType.ConfigBegin: ReadConfig(); return true;
+                case TextTokenType.SchemaBegin: ReadSchema(); return true;
+                case TextTokenType.RecBegin: ReadRecord(); return true;
+                //case TextTokenType.BlockEnd: return false;
+                default: _tokenReader.Advance(); break;
+            }
+        }
+    }
+    public EdfBlockType GetBlockType() => _currentBlockType;
+
+    private void ReadConfig()
+    {
+        try
+        {
+            _blockLine = _tokenReader.TokenLine;
+            _blockColumn = _tokenReader.TokenColumn;
+            _currentBlockType = EdfBlockType.Config;
+            _cfg = _tokenReader.TryReadConfig();
+        }
+        catch (EdfParseException ex)
+        {
+            throw new AggregateException($"Config block parse error", ex);
+        }
+    }
+    private void ReadSchema()
+    {
+        try
+        {
+            _blockLine = _tokenReader.TokenLine;
+            _blockColumn = _tokenReader.TokenColumn;
+            _currentBlockType = EdfBlockType.Schema;
+            CurrentSchema = TextEdfSchemaSerializer.ReadSchema(_tokenReader);
+            _enum.Reset(CurrentSchema.Type);
+        }
+        catch (EdfParseException ex)
+        {
+            throw new AggregateException($"Schema block parse error", ex);
+        }
+    }
+    private void ReadRecord()
+    {
+        _blockLine = _tokenReader.TokenLine;
+        _blockColumn = _tokenReader.TokenColumn;
+        _currentBlockType = EdfBlockType.Data;
+    }
+
+    public T ReadValue<T>()
+    {
+        IFormatter<T> formatter = EdfFormatterProvider<T>.Formatter;
+        EdfFormatterNotRegistredException.ThrowIfNull(formatter);
+        var reader = new BufReaderTxt(_tokenReader, _enum);
+        var result = formatter.Deserialize(ref reader, _options);
+        return result;
+    }
+}
