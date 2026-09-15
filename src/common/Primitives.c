@@ -1,6 +1,72 @@
 #include "_pch.h"
 #include "edf.h"
 
+void putchar_(char character)
+{
+	// заглушка 
+	// (void)character;
+}
+// Таблица пар символов от "00" до "99"
+static const char DigitPairs[] =
+"0001020304050607080910111213141516171819"
+"2021222324252627282930313233343536373839"
+"4041424344454647484950515253545556575859"
+"6061626364656667686970717273747576777879"
+"8081828384858687888990919293949596979899";
+
+static inline size_t internal_utoa(uint64_t uval, int is_negative, char* dst, size_t dstLen) {
+	char buf[24]; // Буфер с запасом под uint64 + знак + '\0'
+	char* p = &buf[23];
+	*p = '\0';
+
+	// Основной цикл обработки по 2 цифры
+	while (uval >= 100) {
+		uint32_t rem = (uint32_t)(uval % 100);
+		uval /= 100;
+		p -= 2;
+		p[0] = DigitPairs[rem * 2];
+		p[1] = DigitPairs[rem * 2 + 1];
+	}
+	// Обработка остатка
+	if (uval >= 10) {
+		p -= 2;
+		p[0] = DigitPairs[uval * 2];
+		p[1] = DigitPairs[uval * 2 + 1];
+	}
+	else {
+		*--p = (char)('0' + uval);
+	}
+	// Добавляем минус, если нужно
+	if (is_negative) {
+		*--p = '-';
+	}
+	size_t len = &buf[23] - p;
+	if (len >= dstLen) {
+		return 0; // Буфер слишком мал
+	}
+	memcpy(dst, p, len);
+	dst[len] = '\0';
+	return len;
+}
+// обёртка для знаковых чисел
+static size_t fast_itoa_table(int64_t val, char* dst, size_t dstLen) {
+	int is_negative = 0;
+	uint64_t uval;
+
+	if (val < 0) {
+		is_negative = 1;
+		uval = (val == INT64_MIN) ? (uint64_t)INT64_MAX + 1 : (uint64_t)(-val);
+	}
+	else {
+		uval = (uint64_t)val;
+	}
+
+	return internal_utoa(uval, is_negative, dst, dstLen);
+}
+// обёртка для беззнаковых чисел
+static size_t fast_utoa_table(uint64_t val, char* dst, size_t dstLen) {
+	return internal_utoa(val, 0, dst, dstLen);
+}
 //-----------------------------------------------------------------------------
 typedef int (*WriteStringFn)(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
 	size_t* r, size_t* w);
@@ -97,7 +163,7 @@ static size_t xprint(const uint8_t* buf, size_t bufLen, char* format, ...)
 {
 	va_list arglist;
 	va_start(arglist, format);
-	int writed = vsnprintf((char*)buf, bufLen, format, arglist);
+	int writed = vsnprintf_((char*)buf, bufLen, format, arglist);
 	va_end(arglist);
 	if (writed && (size_t)writed == bufLen)
 		return writed + 1;
@@ -185,37 +251,37 @@ static int AnyBinToStr(PoType t,
 	case Struct:
 	default: *r = *w = 0; return ERR_WRONG_TYPE;
 	case Int8:
-		*w = xprint(dst, dstLen, "%d", (int8_t)src[0]);
-		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+		*w = fast_itoa_table((int8_t)src[0], (char*)dst, dstLen);
+		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
 	case UInt8:
-		*w = xprint(dst, dstLen, "%u", (uint8_t)src[0]);
-		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+		*w = fast_utoa_table((uint8_t)src[0], (char*)dst, dstLen);
+		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
 	case Int16:
-		*w = xprint(dst, dstLen, "%d", *((int16_t*)src));
-		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+		*w = fast_itoa_table(*((int16_t*)src), (char*)dst, dstLen);
+		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
 	case UInt16:
-		*w = xprint(dst, dstLen, "%u", *((uint16_t*)src));
-		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+		*w = fast_utoa_table(*((uint16_t*)src), (char*)dst, dstLen);
+		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
 	case Int32:
-		*w = xprint(dst, dstLen, "%d", *((int32_t*)src));
-		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+		*w = fast_itoa_table(*((int32_t*)src), (char*)dst, dstLen);
+		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
 	case UInt32:
-		*w = xprint(dst, dstLen, "%lu", *((uint32_t*)src));
-		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+		*w = fast_utoa_table(*((uint32_t*)src), (char*)dst, dstLen);
+		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
 	case Int64:
 	{
 		int64_t alignedVal;
-		memcpy(&alignedVal, src, sizeof(alignedVal));
-		*w = xprint(dst, dstLen, "%lld", alignedVal);
+		memcpy(&alignedVal, src, sizeof(int64_t));
+		*w = fast_itoa_table(alignedVal, (char*)dst, dstLen);
+		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
 	}
-	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case UInt64:
 	{
 		uint64_t alignedVal;
-		memcpy(&alignedVal, src, sizeof(alignedVal));
-		*w = xprint(dst, dstLen, "%llu", alignedVal);
+		memcpy(&alignedVal, src, sizeof(uint64_t));
+		*w = fast_utoa_table(alignedVal, (char*)dst, dstLen);
+		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
 	}
-	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Half:
 		//*w = sprintf_s(dst, dstLen, "%g", *((uint16_t*)src));
 		return 0;
@@ -225,8 +291,8 @@ static int AnyBinToStr(PoType t,
 	case Double:
 	{
 		double alignedVal;
-		memcpy(&alignedVal, src, sizeof(alignedVal));
-		*w = xprint(dst, dstLen, "%.17g", alignedVal);
+		memcpy(&alignedVal, src, sizeof(double));
+		*w = xprint(dst, dstLen, "%.15g", alignedVal);
 	}
 	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Char: return WriteCharAnyBinToStr(src, srcLen, dst, dstLen, r, w);

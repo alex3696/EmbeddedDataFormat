@@ -1,6 +1,6 @@
 ﻿#include "_pch.h"
 #include "converter.h"
-
+// Measure-Command { Start-Process .\Cedf.exe -ArgumentList "qwe.bdf", "t" -NoNewWindow -Wait }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
