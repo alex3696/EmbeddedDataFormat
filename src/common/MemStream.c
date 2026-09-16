@@ -36,7 +36,7 @@ static int MemStreamWriteFormatImpl(void* stream, size_t* writed, const char* fo
 		return ERR_DST_SHORT;
 	va_list arglist;
 	va_start(arglist, format);
-	size_t ret = vsnprintf((char*)&s->Buffer[s->WPos], bufFreeLen - 1, format, arglist);
+	size_t ret = vsnprintf_((char*)&s->Buffer[s->WPos], bufFreeLen - 1, format, arglist);
 	va_end(arglist);
 	if (bufFreeLen < ret)
 		return ERR_DST_SHORT;
