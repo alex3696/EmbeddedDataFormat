@@ -94,6 +94,8 @@ static int EdfWriteSchemaBin(EdfContext_t* dw, const EdfSchema_t* t, size_t* wri
 	if ((err = MemStreamWriteOpen(&ms, dw->Blk->Content.Schema.Data, GetContentDataMaxLen(dw, btSchema))) ||
 		(err = WriteSchemaBinToStream((Stream_t*)&ms, t, &w)))
 		return err;
+	if (w > GetContentMaxLen(dw))
+		return ERR_DST_SHORT; // невозможно разместить схему в памяти, если придётся кешировать
 	dw->Blk->Len = (uint16_t)w;// (uint16_t)ms.WPos;
 	if ((err = EdfWriteBlockBin(&dw->Stream, dw->Blk, writed)))
 		return err;

@@ -163,7 +163,7 @@ static size_t xprint(const uint8_t* buf, size_t bufLen, char* format, ...)
 {
 	va_list arglist;
 	va_start(arglist, format);
-	int writed = vsnprintf_((char*)buf, bufLen, format, arglist);
+	int writed = vsnprintf((char*)buf, bufLen, format, arglist);
 	va_end(arglist);
 	if (writed && (size_t)writed == bufLen)
 		return writed + 1;

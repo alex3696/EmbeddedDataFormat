@@ -157,8 +157,8 @@ int EchoToEdf(const char* src, const char* edfFile, char mode)
 	EdfWritePrimSchData(edf, UInt8, 0, "IdleHour", "время простоя, ч", &dat.IdleHour);
 	EdfWritePrimSchData(edf, UInt8, 0, "IdleMin", "время простоя, мин", &dat.IdleMin);
 	EdfWritePrimSchData(edf, UInt8, 0, "Mode", "режим исследования", &dat.Mode);
-	EdfWritePrimSchData(edf, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0 }));
-	EdfWritePrimSchData(edf, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0 }));
+	EdfWritePrimSchData(edf, Single, 0, "Acc", "напряжение аккумулятора датчика, (В)", &((float) { dat.Acc / 10.0f }));
+	EdfWritePrimSchData(edf, Single, 0, "Temp", "температура датчика, (°С)", &((float) { dat.Temp / 10.0f }));
 
 	const EdfSchema_t chartsInf = { 0, "EchoChartInfo", NULL, ChartNType };
 	const ChartN_t chartsDat[] =

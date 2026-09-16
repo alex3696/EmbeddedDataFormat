@@ -13,10 +13,12 @@
 #define EDF_CONTENTRECORDHDR_SIZE       8 // == offsetof(EdfRecordContent_t, Data)
 #define EDF_HEADER_SIZE    (EDF_TYPE_SIZE + EDF_LEN_SIZE)
 
+#define STREAM_FMT_BUF  64
 #define MIN_BLOCK_SIZE	256
 #define MAX_BLOCK_SIZE	4096
 
-#define MEM_BLOCK_SIZE_256	(sizeof(EdfContext_t) + MIN_BLOCK_SIZE*2)
+#define MEM_BLOCK_SIZE(len) (sizeof(EdfContext_t) + len*2)
+#define MEM_BLOCK_SIZE_256	(MEM_BLOCK_SIZE(MIN_BLOCK_SIZE))
 #define MEM_BLOCK_SIZE_512	(sizeof(EdfContext_t) + 512*2)
 #define MEM_BLOCK_SIZE_1024	(sizeof(EdfContext_t) + 1024*2)
 #define MEM_BLOCK_SIZE_2048	(sizeof(EdfContext_t) + 2048*2)

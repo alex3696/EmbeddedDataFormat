@@ -44,33 +44,12 @@ static int StreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)
 //-----------------------------------------------------------------------------
 static int StreamWriteFormatImpl(void* stream, size_t* writed, const char* format, ...)
 {
-#ifdef STREAM_BUF_SIZE
-	size_t ret = 0;
+	FileStream_t* fs = (FileStream_t*)stream;
 	va_list arglist;
 	va_start(arglist, format);
-	ret = vsnprintf_((char*)stream->Buf, STREAM_BUF_SIZE, format, arglist);
+	size_t ret = vsnprintf((char*)fs->FmtBuf, STREAM_FMT_BUF-1, format, arglist);
 	va_end(arglist);
-	return StreamWriteImpl(stream, (void*)stream->Buf, ret - 1);
-#else
-	FILE* f = (FILE*)((FileStream_t*)stream)->Instance;
-	va_list arglist;
-	va_start(arglist, format);
-	int ret = vfprintf(f, format, arglist);
-	va_end(arglist);
-	if (0 > ret)
-	{
-		int err = 0;
-		if ((err = ferror(f)))
-		{
-			LOG_ERRF("Error reading %d", err);
-			return err;
-		}
-	}
-	if (writed)
-		*writed += ret;
-	//fflush(f);
-	return 0;
-#endif
+	return StreamWriteImpl(stream, writed, (void*)fs->FmtBuf, ret - 1);
 }
 //-----------------------------------------------------------------------------
 static int FileStreamClose(void* stream)
