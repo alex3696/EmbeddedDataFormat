@@ -47,9 +47,11 @@ static int StreamWriteFormatImpl(void* stream, size_t* writed, const char* forma
 	FileStream_t* fs = (FileStream_t*)stream;
 	va_list arglist;
 	va_start(arglist, format);
-	size_t ret = vsnprintf((char*)fs->FmtBuf, STREAM_FMT_BUF-1, format, arglist);
+	size_t ret = vsnprintf((char*)fs->FmtBuf, STREAM_FMT_BUF, format, arglist);
 	va_end(arglist);
-	return StreamWriteImpl(stream, writed, (void*)fs->FmtBuf, ret - 1);
+	if (ret && (size_t)ret >= STREAM_FMT_BUF)
+		return ERR_DST_SHORT;
+	return StreamWriteImpl(stream, writed, (void*)fs->FmtBuf, ret);
 }
 //-----------------------------------------------------------------------------
 static int FileStreamClose(void* stream)

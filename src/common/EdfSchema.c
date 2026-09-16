@@ -127,9 +127,14 @@ static int StreamWriteTypeTxt(Stream_t* s, const EdfType_t* t, int noffset, size
 				return err;
 	}
 	// NAME
-	if (t->Name && 0 < strnlength(t->Name, MAX_STR_LEN))
-		if ((err = StreamWriteFmt(s, writed, " \"%.255s\"", t->Name)))
+	size_t strLen = t->Name ? strnlength(t->Name, MAX_STR_LEN) : 0;
+	if (0 < strLen)
+	{
+		if (   (err = StreamWrite(s, writed, " \"", 2))
+			|| (err = StreamWrite(s, writed, t->Name, strLen))
+			|| (err = StreamWrite(s, writed, "\"", 1)))
 			return err;
+	}
 	// CHILDS
 	if (Struct == t->Type && t->Fields.Item && t->Fields.Count)
 	{
@@ -159,12 +164,24 @@ static int StreamWriteTypeTxt(Stream_t* s, const EdfType_t* t, int noffset, size
 int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 {
 	int err = 0;
-	if ((err = StreamWrite(st, writed, "\n<? ", 4)))
+	if ((err = StreamWrite(st, writed, "\n<? {", 5)))
 		return err;
-
-	if ((err = StreamWriteFmt(st, writed, "{%lu;\"%.255s\";", t->Id, t->Name ? t->Name : "")) ||
-		(t->Desc && (err = StreamWriteFmt(st, writed, "\"%.255s\";", t->Desc))) ||
-		(err = StreamWrite(st, writed, "} ", 2)))
+	if ((err = StreamWriteFmt(st, writed, "%lu;", t->Id)))
+		return err;
+	size_t strLen = t->Name ? strnlength(t->Name, MAX_STR_LEN) : 0;
+	if (   (err = StreamWrite(st, writed, "\"", 1))
+		|| (err = StreamWrite(st, writed, t->Name, strLen))
+		|| (err = StreamWrite(st, writed, "\";", 2)))
+		return err;
+	strLen = t->Desc ? strnlength(t->Desc, MAX_STR_LEN) : 0;
+	if (0 < strLen)
+	{
+		if (   (err = StreamWrite(st, writed, "\"", 1))
+			|| (err = StreamWrite(st, writed, t->Desc, strLen))
+			|| (err = StreamWrite(st, writed, "\";", 2)))
+			return err;
+	}
+	if ((err = StreamWrite(st, writed, "} ", 2)))
 		return err;
 
 	if ((err = StreamWriteTypeTxt(st, &t->Type, 0, writed)))

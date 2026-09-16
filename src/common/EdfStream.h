@@ -63,7 +63,7 @@ size_t StreamEmptyLen(const MemStream_t* s);
 int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len);
 //-----------------------------------------------------------------------------
 
-typedef struct Stream
+typedef union Stream
 {
 	const StreamFnImpl_t* Impl;
 	union StreamInstance
