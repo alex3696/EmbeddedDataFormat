@@ -77,6 +77,8 @@ int WriteSchemaBinToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 		return err;
 	if ((err = StreamWriteTypeBin(st, &t->Type, writed, &typeCBinLen)))
 		return err;
+	if (typeCBinLen > st->Inst.Mem.Size)
+		return ERR_DST_SHORT; // невозможно разместить схему в памяти, если придётся кешировать
 	return err;
 }
 //-----------------------------------------------------------------------------
