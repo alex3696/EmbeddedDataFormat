@@ -186,19 +186,18 @@ static int AnyBinToBin(PoType t,
 	{
 	case Struct:
 	default: *r = *w = 0; return ERR_WRONG_TYPE;
-	case Int8:
-	case UInt8:
-	case UInt16:
-	case UInt32:
-	case UInt64:
-	case Int16:
-	case Int32:
-	case Int64:
+	case Int8: 
+	case UInt8: *dst = *src; break;
 	case Half:
+	case Int16:
+	case UInt16: *(uint16_t*)dst = *(const uint16_t*)src; break;
 	case Single:
+	case Int32:
+	case UInt32: *(uint32_t*)dst = *(const uint32_t*)src; break;
 	case Double:
-		memcpy(dst, src, *r);
-		break;
+	case Int64:
+	case UInt64: *(uint64_t*)dst = *(const uint64_t*)src; break;
+		//memcpy(dst, src, *r); break;
 	case Char:
 		if (dstLen < srcLen)
 		{
