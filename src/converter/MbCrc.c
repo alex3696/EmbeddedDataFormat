@@ -109,6 +109,11 @@ uint16_t MbCrc16acc(const void* src, size_t len, uint16_t extCrc)
 	uint32_t crc = extCrc;
 	const uint8_t* data = (const uint8_t*)src;
 	uint32_t word;
+	while (len && !((uintptr_t)data & 3))
+	{
+		crc = (crc >> 8) ^ aucCRC16[(crc ^ *data++) & 0xFF];
+		len--;
+	}
 	while (len >= 4)
 	{
 		word = *(const uint32_t*)data;

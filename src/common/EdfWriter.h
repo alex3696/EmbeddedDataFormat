@@ -67,7 +67,7 @@ typedef struct EdfContext
 	EdfConfig_t Cfg;				// конфигурация
 	const EdfSchema_t* SchemaPtr;	// текущая схема, при записи кешируем схему в Buf
 	Stream_t Stream;				// поток в который пишем или читаем
-
+	uint16_t _Reserved;
 	uint16_t PrimSkip;	/** <Смещение примитива внутри текущей записи (0-65535).
 							Используется при разрыве примитива между блоками.
                             Сбрасывается в 0 при вызове EdfWriteSchema.> */
