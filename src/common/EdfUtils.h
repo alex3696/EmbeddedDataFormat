@@ -44,7 +44,7 @@ void Log_ErrF(const char* const fmt, ...);
 #define runtime_assert(condition, message, code) \
     do { \
         if (!(condition)) { \
-            fprintf(stderr, "Runtime assert: [%u]%s (%s:%d)\n", code, message, __FILE__, __LINE__); \
+            fprintf(stderr, "Runtime assert: [%d]%s (%s:%d)\n", (int)code, message, __FILE__, __LINE__); \
             abort(); \
         } \
     } while(0)

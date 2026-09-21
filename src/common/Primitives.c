@@ -285,15 +285,19 @@ static int AnyBinToStr(PoType t,
 		//*w = sprintf_s(dst, dstLen, "%g", *((uint16_t*)src));
 		return 0;
 	case Single:
-		*w = xprint(dst, dstLen, "%.9g", *((float*)src));
+	{
+		float alignedVal;
+		memcpy(&alignedVal, src, sizeof(float));
+		*w = xprint(dst, dstLen, "%.9g", alignedVal);
 		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+	}
 	case Double:
 	{
 		double alignedVal;
 		memcpy(&alignedVal, src, sizeof(double));
 		*w = xprint(dst, dstLen, "%.17g", alignedVal);
+		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	}
-	return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
 	case Char: return WriteCharAnyBinToStr(src, srcLen, dst, dstLen, r, w);
 	case String: return (*WriteString)(src, srcLen, dst, dstLen, r, w);
 	}//switch (t)
