@@ -207,7 +207,8 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 	dat.Id.ResearchType = 1;
 	memcpy(dat.FileDescription, FileDescEcho, sizeof(FileDescEcho));
 	size_t recN = 0;
-	PointXY_t record = { 0 };
+	PointXY_t* s = NULL;
+	size_t readed = 0;
 
 	size_t skip = 0;
 	uint8_t bDst[3 * 256 + 8] = { 0 };
@@ -345,20 +346,20 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 
 			else if (IsVarName(bdfr->SchemaPtr, "EchoChart"))
 			{
-				PointXY_t* s = NULL;
-				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, NULL))
+				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, &readed))
 					&& recN <= FIELD_ITEMS_COUNT(ECHO_FILE_V2_0, Data))
 				{
 					dat.Data[recN] = (int8_t)round(pow(fabs(s->y * 1000), 0.35));
 					if (0 > s->y)
 						dat.Data[recN] += 127;
 					recN++;
-					record = *s;
 					s = NULL;
-					skip = 0;
+					readed = skip = 0;
 					msDst.WPos = 0;
 				}
-				err = 0;
+				skip = readed;
+				if (err == ERR_SRC_SHORT)
+					err = 0;
 			}//else
 		}//case btData:
 		break;
