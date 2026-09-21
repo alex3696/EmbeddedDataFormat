@@ -151,6 +151,8 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 	memcpy(dat.FileDescription, FileDescDyn, sizeof(FileDescDyn));
 	size_t recN = 0;
 	PointXY_t record = { 0 };
+	PointXY_t* s = NULL;
+	size_t readed = 0;
 
 	size_t skip = 0;
 	uint8_t bDst[3 * 256 + 8] = { 0 };
@@ -301,8 +303,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 
 			else if (IsVarName(bdfr->SchemaPtr, "DynChart"))
 			{
-				PointXY_t* s = NULL;
-				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, NULL))
+				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, &readed))
 					&& recN <= FIELD_ITEMS_COUNT(DYN_FILE_V2_0, Data))
 				{
 					double posDif = recN ? s->x - record.x : s->x;
@@ -312,11 +313,12 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 					dat.Data[recN++] = tr | w;
 					record = *s;
 					s = NULL;
-					skip = 0;
+					readed = skip = 0;
 					msDst.WPos = 0;
 				}
-				skip = skip;
-				err = 0;
+				skip = readed;
+				if (err == ERR_SRC_SHORT)
+					err = 0;
 			}//else
 		}//case btData:
 		break;

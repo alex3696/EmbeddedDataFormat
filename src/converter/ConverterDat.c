@@ -131,12 +131,9 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	dat.FileType = 11;
 	memcpy(dat.FileDescription, FileDescMt, sizeof(FileDescMt));
 
-	OMEGA_DATA_V1_1 record = { 0 };
+	OMEGA_DATA_V1_1* record = { 0 };
 	size_t recN = 0;
-	const size_t data_len = sizeof(OMEGA_DATA_V1_1) - 2;// skip crc, not used yet
-	uint8_t* precord = (void*)&record;
-	uint8_t* const recordBegin = precord;
-	uint8_t* const recordEnd = recordBegin + data_len;
+	size_t readed = 0;
 
 	size_t skip = 0;
 	uint8_t bDst[3 * 256 + 8] = { 0 };
@@ -250,23 +247,18 @@ int EdfToDat(const char* edfFile, const char* datFile)
 						if (1 != fwrite(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
 							return ERR_FWRITE;
 					}
-					uint8_t* pblock = bdfr->Blk->Content.Record.Data;
-					size_t blkDatLen = src.Size;
-
-					while (0 < blkDatLen)
+					while (!(err = EdfReadBin(&OmegaDataType, &src, &msDst, (void**)&record, &skip, &readed)))
 					{
-						size_t len = (size_t)MIN(blkDatLen, (size_t)(recordEnd - precord));
-						memcpy(precord, pblock, len);
-						precord += len;
-						pblock += len;
-						blkDatLen -= (uint16_t)len;
-						if (recordEnd == precord)
-						{
-							precord = recordBegin;
-							if (1 != fwrite(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
-								return ERR_FWRITE;
-						}
-					}//while (0 < blkDatLen)
+						if (1 != fwrite(record, sizeof(OMEGA_DATA_V1_1), 1, f))
+							return ERR_FWRITE;
+						recN++;
+						record = NULL;
+						readed = skip = 0;
+						msDst.WPos = 0;
+					}
+					skip = readed;
+					if (err == ERR_SRC_SHORT)
+						err = 0;
 				}
 				break;//OMEGADATAREC
 
