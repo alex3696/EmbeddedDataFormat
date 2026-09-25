@@ -8,7 +8,7 @@ void Log_ErrF(const char* const fmt, ...)
 {
 	va_list arglist;
 	va_start(arglist, fmt);
-	vsnprintf(errBuf, sizeof(errBuf), fmt, arglist);
+	vsnprintf_(errBuf, sizeof(errBuf), fmt, arglist);
 	perror(errBuf);
 	va_end(arglist);
 }

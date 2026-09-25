@@ -30,50 +30,21 @@ typedef struct StreamFnImpl
 	CloseFn Close;
 	SeekFn Seek;
 } StreamFnImpl_t;
-
-typedef struct Stream
-{
-	const StreamFnImpl_t* Impl;
-	union StreamInstance
-	{
-		struct FileInstance
-		{
-			void* Instance;
-		} File;
-		struct MemInstance
-		{
-			uint8_t* Buffer;
-			size_t Size;
-			size_t RPos;
-			size_t WPos;
-		} Mem;
-	} Inst;
-} Stream_t;
-
-#define StreamWrite(s, w, data, count) (((s)->Impl->Write)((s), (w), data, count))
-#define StreamRead(s, r, data, count) (((s)->Impl->Read)((s), (r), data, count))
-#define StreamWriteFmt(s, w, fmt,...) (((s)->Impl->WriteFmt)((s), (w), fmt, __VA_ARGS__))
-#define StreamClose(s) ((s)->Impl->Close)((s))
-#define StreamSeek(s, offset, origin) ((s)->Impl->Seek)((s),offset, origin)
-
 //-----------------------------------------------------------------------------
 // FileStream
-
 typedef struct FileStream
 {
 	const StreamFnImpl_t* Impl;
 	void* Instance;
-#ifdef STREAM_BUF_SIZE
-	uint8_t Buf[STREAM_BUF_SIZE];
-#endif // 
+	uint8_t FmtBuf[STREAM_FMT_BUF];
 } FileStream_t;
 
 int FileStreamOpen(FileStream_t* w, const char* file, const char* mode);
 
 typedef int(*FileStreamOpenFn)(FileStream_t* w, const char* file, const char* mode);
+
 //-----------------------------------------------------------------------------
 //Memory Stream
-
 typedef struct MemStream
 {
 	const StreamFnImpl_t* Impl;
@@ -90,6 +61,24 @@ int MemStreamWriteOpen(MemStream_t* s, uint8_t* buf, size_t size);
 size_t StreamLen(const MemStream_t* s);
 size_t StreamEmptyLen(const MemStream_t* s);
 int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len);
+//-----------------------------------------------------------------------------
+
+typedef union Stream
+{
+	const StreamFnImpl_t* Impl;
+	union StreamInstance
+	{
+		FileStream_t File;
+		MemStream_t Mem;
+	} Inst;
+} Stream_t;
+
+#define StreamWrite(s, w, data, count) (((s)->Impl->Write)((s), (w), data, count))
+#define StreamRead(s, r, data, count) (((s)->Impl->Read)((s), (r), data, count))
+#define StreamWriteFmt(s, w, fmt,...) (((s)->Impl->WriteFmt)((s), (w), fmt, __VA_ARGS__))
+#define StreamClose(s) ((s)->Impl->Close)((s))
+#define StreamSeek(s, offset, origin) ((s)->Impl->Seek)((s),offset, origin)
+
 //-----------------------------------------------------------------------------
 //Memory Linear Allocator
 typedef struct LineAlloc

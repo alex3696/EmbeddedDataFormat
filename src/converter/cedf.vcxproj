@@ -29,6 +29,7 @@
     <ClCompile Include="..\common\EdfSchema.c" />
     <ClCompile Include="..\common\EdfWriter.c" />
     <ClCompile Include="..\common\PoType.c" />
+    <ClCompile Include="..\common\printf.c" />
     <ClCompile Include="ConverterEdf.c" />
     <ClCompile Include="ConverterDat.c" />
     <ClCompile Include="ConverterDyn.c" />
@@ -36,7 +37,6 @@
     <ClCompile Include="FileStreamImplWin.c" />
     <ClCompile Include="MbCrc.c" />
     <ClCompile Include="main.c" />
-
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Charts.h" />
@@ -49,6 +49,7 @@
     <ClInclude Include="..\common\PoType.h" />
     <ClInclude Include="..\common\Primitives.h" />
     <ClInclude Include="..\common\EdfSchema.h" />
+    <ClInclude Include="..\common\printf.h" />
     <ClInclude Include="..\common\_pch.h" />
     <ClInclude Include="converter.h" />
     <ClInclude Include="edf_cfg.h" />

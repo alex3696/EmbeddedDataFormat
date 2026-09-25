@@ -9,7 +9,6 @@ extern "C" {
 
 //#define LOG_ERR
 //#define LOG_ERRF
-//#define STREAM_BUF_SIZE 64
 
 //-----------------------------------------------------------------------------
 #ifdef __cplusplus

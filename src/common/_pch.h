@@ -19,4 +19,10 @@
 #include "memory.h"
 #include "stdarg.h"
 
+#define PRINTF_DECIMAL_BUFFER_SIZE 64
+#define PRINTF_MAX_INTEGRAL_DIGITS_FOR_DECIMAL 18
+#define PRINTF_USE_DOUBLE_INTERNALLY 1
+#define PRINTF_ALIAS_STANDARD_FUNCTION_NAMES_HARD 0
+#include "printf.h"
+
 #endif //PCH_H

@@ -20,11 +20,11 @@ int EdfWriteConfig(EdfContext_t* dw, size_t* writed)
 {
 	if (!dw->impl->WriteConfig)
 		return ERR_FN_NOT_EXIST;
-	int err = (*dw->impl->WriteConfig)(dw, &dw->Cfg, writed);
-	if (err)
+	int err = 0;
+	if ((err = (*dw->impl->WriteConfig)(dw, &dw->Cfg, writed)))
 		return err;
 	dw->Blk->Len = 0;
-	return err;
+	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
 static int EdfWriteConfigBin(EdfContext_t* dw, const EdfConfig_t* h, size_t* writed)
@@ -55,17 +55,15 @@ int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed)
 	size_t flushed = 0;
 	if ((err = EdfFlushData(dw, &flushed)))
 		return err;
-
 	if (!dw->impl->WriteSchema || !t)
 		return ERR_FN_NOT_EXIST;
-	err = (*dw->impl->WriteSchema)(dw, t, writed);
-	if (err)
+	if ((err = (*dw->impl->WriteSchema)(dw, t, writed)))
 		return err;
 	dw->SchemaPtr = t;	// Если придётся кешировать схему - делаем это тут.
 						// TODO:
 						// однако в EdfWriteData придётся отказаться от буфера и не кэшировать неполные примитивы. 
 	dw->BufLen = 0;
-	return err;
+	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
 /**
@@ -120,11 +118,11 @@ int EdfFlushData(EdfContext_t* dw, size_t* writed)
 {
 	if (NULL == dw->impl->FlushData || 0 == dw->Blk->Len)
 		return 0;
-	int err = (*dw->impl->FlushData)(dw, writed);
-	if (err)
+	int err = 0;
+	if ((err = (*dw->impl->FlushData)(dw, writed)))
 		return err;
 	dw->Blk->Len = 0;
-	return err;
+	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
 /**
@@ -147,13 +145,13 @@ static int StreamWriteBlockDataBin(EdfContext_t* dw, size_t* writed)
 	// На момент вызова dw->Blk->Len содержит только длину поля Data
 	// добавляем размер заголовка (8 байт) к Len и записывает блок
 	dw->Blk->Len += offsetof(EdfRecordContent_t, Data);
-	int err = EdfWriteBlockBin(&dw->Stream, dw->Blk, writed);
-	if (err)
+	int err = 0;
+	if ((err = EdfWriteBlockBin(&dw->Stream, dw->Blk, writed)))
 		return err;
 	//dw->Blk->Content.Record.SchId = dw->SchemaPtr->Id;
 	dw->Blk->Content.Record.PrmOffset = dw->PrimSkip;
 	dw->Blk->Content.Record.RecId = dw->RecordId;
-	return err;
+	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
 static int StreamWriteBlockDataTxt(EdfContext_t* dw, size_t* writed)

@@ -169,6 +169,7 @@
     <ClCompile Include="..\common\EdfUtils.c" />
     <ClCompile Include="..\common\KeyValue.c" />
     <ClCompile Include="..\common\MemStream.c" />
+    <ClCompile Include="..\common\printf.c" />
     <ClCompile Include="..\converter\ConverterDat.c" />
     <ClCompile Include="..\converter\ConverterDyn.c" />
     <ClCompile Include="..\converter\ConverterEcho.c" />

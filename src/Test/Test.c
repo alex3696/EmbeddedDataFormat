@@ -380,6 +380,7 @@ static int WriteSample(EdfContext_t* dw)
 	};
 	writed = 0;
 	err = EdfWriteSchema(dw, &(EdfSchema_t){.Type = comlexChar}, &writed);
+	runtime_assert(0 == err, "Can`t write schema Chat10Test", err);
 	runtime_assert(ERR_SRC_SHORT == EdfWriteData(dw, &(uint8_t){8}, sizeof(uint8_t), &consumed), "fail Chat10Test field 0 UInt8", ERR_SRC_SHORT);
 	len = GetCString("Char", 10, test, sizeof(test));
 	runtime_assert(ERR_SRC_SHORT == EdfWriteData(dw, test, len, &consumed), "fail Chat10Test field 1 Char", ERR_SRC_SHORT);
@@ -471,7 +472,7 @@ static int Test_WriteSample()
 	char* txtConvFile = GetTestFilePath("t_writeConv.tdf");
 	int err = 0;
 
-	uint8_t edfMem[sizeof(EdfContext_t)+300*2] = {0};
+	uint8_t edfMem[MEM_BLOCK_SIZE(300)] = {0};
 	const EdfConfig_t cfg = { EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, 300, 0, Default };
 	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &cfg, &err);
 	
@@ -601,13 +602,14 @@ static void MbCrc16accTest()
 //-----------------------------------------------------------------------------
 int main()
 {
+	int err = 0;
 	LOG_ERR();
 	MbCrc16accTest();
 	TestMemStream();
 
 	Test_WriteSample();
 	assert(0 == CharArrayWriteRead());
-	assert(0 == PackUnpack());
+	runtime_assert((err == PackUnpack())," PackUnpack failed", err);
 	Test_WriteBigVar();
 	DatFormatTest();
 	return 0;
