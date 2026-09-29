@@ -357,7 +357,6 @@ int SchemaCopyСBinToCBin(const EdfSchema_t* srcSch, EdfSchema_t** pDstSch,
 	uint8_t* dstBuf, size_t dstLen, size_t* writed)
 {
 	int err = 0;
-	size_t strLen;
 	LineAlloc_t mem;
 	LineAllocInit(&mem, dstBuf, dstLen);
 	if ((err = MemAlloc(&mem, sizeof(EdfSchema_t), (void**)pDstSch)))
@@ -365,6 +364,7 @@ int SchemaCopyСBinToCBin(const EdfSchema_t* srcSch, EdfSchema_t** pDstSch,
 	EdfSchema_t* dstSch = *pDstSch;
 	dstSch->Id = srcSch->Id;
 	/*
+	size_t strLen;
 	//dstSch->Name = NULL;
 	strLen = srcSch->Name ? strnlength(srcSch->Name, MAX_STR_LEN) : 0;
 	if (0 < strLen)

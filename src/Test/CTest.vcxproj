@@ -76,21 +76,25 @@
     <PublicModuleDirectories>
     </PublicModuleDirectories>
     <SourcePath>..\common;$(SourcePath)</SourcePath>
+    <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PublicModuleDirectories>
     </PublicModuleDirectories>
     <SourcePath>..\common;$(SourcePath)</SourcePath>
+    <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PublicModuleDirectories>
     </PublicModuleDirectories>
     <SourcePath>..\common;$(SourcePath)</SourcePath>
+    <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PublicModuleDirectories>
     </PublicModuleDirectories>
     <SourcePath>..\common;$(SourcePath)</SourcePath>
+    <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
