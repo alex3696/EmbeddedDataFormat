@@ -4,7 +4,7 @@
 void putchar_(char character)
 {
 	// заглушка 
-	// (void)character;
+	(void)character;
 }
 // Таблица пар символов от "00" до "99"
 static const char DigitPairs[] =

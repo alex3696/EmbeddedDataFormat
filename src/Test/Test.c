@@ -1,6 +1,5 @@
 #include "edf.h"
 #include "converter.h"
-#include "assert.h"
 
 //-----------------------------------------------------------------------------
 static char* GetTestFilePath(char* filename)
@@ -58,19 +57,19 @@ static void TestMemStream(void)
 {
 	size_t writed = 0;
 	MemStream_t ms = { 0 };
-	uint8_t buf[256];
-	assert(!MemStreamOpen(&ms, buf, sizeof(buf), 0, "rw"));
+	uint8_t buf[256] = {0};
+	runtime_assert0(!MemStreamOpen(&ms, buf, sizeof(buf), 0, "rw"));
 	const char test[] = "test 123";
 	Stream_t* stream = (Stream_t*)&ms;
-	assert(!StreamWrite(stream, &writed, test, sizeof(test) - 1));
-	assert(!StreamWriteFmt(stream, &writed, " format %d", 1));
+	runtime_assert0(!StreamWrite(stream, &writed, test, sizeof(test) - 1));
+	runtime_assert0(!StreamWriteFmt(stream, &writed, " format %d", 1));
 
 	size_t readed = 0;
 	char outBuf[256] = { 0 };
-	assert(!StreamRead(stream, &readed, outBuf, writed));
+	runtime_assert0(!StreamRead(stream, &readed, outBuf, writed));
 
-	assert(writed == readed);
-	assert(0 == memcmp("test 123 format 1", outBuf, readed));
+	runtime_assert0(writed == readed);
+	runtime_assert0(0 == memcmp("test 123 format 1", outBuf, readed));
 }
 //-----------------------------------------------------------------------------
 static int PackUnpack()
@@ -303,13 +302,13 @@ static int WriteSample(EdfContext_t* dw)
 	size_t len0 = GetEdfSchemaCBinLen(&keyValueType);
 	if (4 == sizeof(void*))
 	{
-		assert(93 == len0);
+		runtime_assert0(93 == len0);
 		if (93 != len0)
 			return ERR_BASE;
 	}
 	else if (8 == sizeof(void*))
 	{
-		assert(137 == len0);
+		runtime_assert0(137 == len0);
 		if (137 != len0)
 			return ERR_BASE;
 	}
@@ -503,7 +502,7 @@ static int Test_WriteSample()
 	err = CompareFiles(txtFile, txtConvFile);
 	if (err)
 		LOG_ERRF("err %d: t_write files not equal", err);
-	assert(0 == err);
+	runtime_assert0(0 == err);
 	return err;
 }
 //-----------------------------------------------------------------------------
@@ -521,15 +520,15 @@ static void WriteBigVar(EdfContext_t* dw)
 	uint32_t test[1000] = { 0 };
 	for (uint32_t i = 0; i < arrLen; i++)
 		test[i] = i;
-	assert(ERR_NO == EdfWriteData(dw, test, sizeof(uint32_t) * arrLen, &consumed));
+	runtime_assert0(ERR_NO == EdfWriteData(dw, test, sizeof(uint32_t) * arrLen, &consumed));
 
 	uint8_t* test2 = (uint8_t*)test;
 	size_t begin = 0;
-	assert(ERR_SRC_SHORT == EdfWriteData(dw, test2 + begin, 15, &consumed));
+	runtime_assert0(ERR_SRC_SHORT == EdfWriteData(dw, test2 + begin, 15, &consumed));
 	begin += consumed;
-	assert(ERR_SRC_SHORT == EdfWriteData(dw, test2 + begin, 154, &consumed));
+	runtime_assert0(ERR_SRC_SHORT == EdfWriteData(dw, test2 + begin, 154, &consumed));
 	begin += consumed;
-	assert(ERR_NO == EdfWriteData(dw, test2 + begin, (sizeof(uint32_t) * arrLen) - begin, &consumed));
+	runtime_assert0(ERR_NO == EdfWriteData(dw, test2 + begin, (sizeof(uint32_t) * arrLen) - begin, &consumed));
 
 	EdfFlushData(dw, &writed);
 }
@@ -556,31 +555,31 @@ static void Test_WriteBigVar()
 
 	if (err)
 		LOG_ERRF("err: t_big %d", err);
-	assert(0 == err);
+	runtime_assert0(0 == err);
 }
 //-----------------------------------------------------------------------------
 static void DatFormatTest()
 {
-	assert(0 == DatToEdf("1DAT.dat", "1DAT.tdf", 't'));
-	assert(0 == DatToEdf("1DAT.dat", "1DAT.bdf", 'b'));
-	assert(0 == BinToText("1DAT.bdf", "1DATConv.tdf"));
-	assert(0 == CompareFiles("1DAT.tdf", "1DATConv.tdf"));
-	assert(0 == EdfToDat("1DAT.bdf", "1DATConv.dat"));
-	assert(0 == CompareFiles("1DAT.dat", "1DATConv.dat"));
+	runtime_assert0(0 == DatToEdf("1DAT.dat", "1DAT.tdf", 't'));
+	runtime_assert0(0 == DatToEdf("1DAT.dat", "1DAT.bdf", 'b'));
+	runtime_assert0(0 == BinToText("1DAT.bdf", "1DATConv.tdf"));
+	runtime_assert0(0 == CompareFiles("1DAT.tdf", "1DATConv.tdf"));
+	runtime_assert0(0 == EdfToDat("1DAT.bdf", "1DATConv.dat"));
+	runtime_assert0(0 == CompareFiles("1DAT.dat", "1DATConv.dat"));
 
-	assert(0 == EchoToEdf("1E.E", "1E.tdf", 't'));
-	assert(0 == EchoToEdf("1E.E", "1E.bdf", 'b'));
-	assert(0 == BinToText("1E.bdf", "1EConv.tdf"));
-	assert(0 == CompareFiles("1E.tdf", "1EConv.tdf"));
-	assert(0 == EdfToEcho("1E.bdf", "1EConv.E"));
-	assert(0 == CompareFiles("1E.E", "1EConv.E"));
+	runtime_assert0(0 == EchoToEdf("1E.E", "1E.tdf", 't'));
+	runtime_assert0(0 == EchoToEdf("1E.E", "1E.bdf", 'b'));
+	runtime_assert0(0 == BinToText("1E.bdf", "1EConv.tdf"));
+	runtime_assert0(0 == CompareFiles("1E.tdf", "1EConv.tdf"));
+	runtime_assert0(0 == EdfToEcho("1E.bdf", "1EConv.E"));
+	runtime_assert0(0 == CompareFiles("1E.E", "1EConv.E"));
 
-	assert(0 == DynToEdf("1D.D", "1D.tdf", 't'));
-	assert(0 == DynToEdf("1D.D", "1D.bdf", 'b'));
-	assert(0 == BinToText("1D.bdf", "1DConv.tdf"));
-	assert(0 == CompareFiles("1D.tdf", "1DConv.tdf"));
-	assert(0 == EdfToDyn("1D.bdf", "1DConv.D"));
-	assert(0 == CompareFiles("1D.D", "1DConv.D"));
+	runtime_assert0(0 == DynToEdf("1D.D", "1D.tdf", 't'));
+	runtime_assert0(0 == DynToEdf("1D.D", "1D.bdf", 'b'));
+	runtime_assert0(0 == BinToText("1D.bdf", "1DConv.tdf"));
+	runtime_assert0(0 == CompareFiles("1D.tdf", "1DConv.tdf"));
+	runtime_assert0(0 == EdfToDyn("1D.bdf", "1DConv.D"));
+	runtime_assert0(0 == CompareFiles("1D.D", "1DConv.D"));
 }
 //-----------------------------------------------------------------------------
 static void MbCrc16accTest()
@@ -596,7 +595,7 @@ static void MbCrc16accTest()
 	uint16_t crcAcc = 0xFFFF;
 	crcAcc = MbCrc16acc(test, 17, crcAcc);
 	crcAcc = MbCrc16acc(test + 17, len - 17, crcAcc);
-	assert(crcAcc == crc);
+	runtime_assert0(crcAcc == crc);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -608,7 +607,7 @@ int main()
 	TestMemStream();
 
 	Test_WriteSample();
-	assert(0 == CharArrayWriteRead());
+	runtime_assert0(0 == CharArrayWriteRead());
 	runtime_assert((err == PackUnpack())," PackUnpack failed", err);
 	Test_WriteBigVar();
 	DatFormatTest();

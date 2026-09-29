@@ -2,6 +2,7 @@
 #define EDFUTILS_H
 
 #include "_pch.h"
+#include "stdlib.h"
 
 // !!! use UTF-8 (no BOM) as source files in MSVC strlen
 // check:	assert(8 == strlen("тест"));
@@ -40,6 +41,13 @@ uint16_t MbCrc16acc(const void* d, size_t len, uint16_t crc);
 void Log_ErrF(const char* const fmt, ...);
 #define LOG_ERRF(fmt, ...) Log_ErrF(fmt, __VA_ARGS__)
 #endif
+
+#define runtime_assert0(condition) \
+        if (!(condition)) { \
+            fprintf(stderr, "Runtime assert: %s:%d \n", __FILE__, __LINE__); \
+            abort(); \
+        } \
+
 
 #define runtime_assert(condition, message, code) \
     do { \
