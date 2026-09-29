@@ -18,11 +18,11 @@
 #define MAX_BLOCK_SIZE	4096
 
 #define MEM_BLOCK_SIZE(len) (sizeof(EdfContext_t) + len*2)
-#define MEM_BLOCK_SIZE_256	(MEM_BLOCK_SIZE(MIN_BLOCK_SIZE))
-#define MEM_BLOCK_SIZE_512	(sizeof(EdfContext_t) + 512*2)
-#define MEM_BLOCK_SIZE_1024	(sizeof(EdfContext_t) + 1024*2)
-#define MEM_BLOCK_SIZE_2048	(sizeof(EdfContext_t) + 2048*2)
-#define MEM_BLOCK_SIZE_4096	(sizeof(EdfContext_t) + MAX_BLOCK_SIZE*2)
+#define MEM_BLOCK_SIZE_256  (MEM_BLOCK_SIZE(MIN_BLOCK_SIZE))
+#define MEM_BLOCK_SIZE_512  (MEM_BLOCK_SIZE(512))
+#define MEM_BLOCK_SIZE_1024 (MEM_BLOCK_SIZE(1024))
+#define MEM_BLOCK_SIZE_2048 (MEM_BLOCK_SIZE(2048))
+#define MEM_BLOCK_SIZE_4096 (MEM_BLOCK_SIZE(MAX_BLOCK_SIZE))
 
 #define MAX_STR_LEN		255
 
@@ -67,11 +67,11 @@ int EdfOpenStream(EdfContext_t* w, Stream_t* stream, const char* mode);
 // Открыть файл для чтения (до)записи, внутри обращается к EdfOpenStream
 int EdfOpenWithFs(EdfContext_t* w, const char* file, const char* mode, FileStreamOpenFn fnOpen);
 int EdfOpenFile(EdfContext_t* w, const char* file, const char* mode);
-// освобождает фнутренние буферы и закрывает файли или поток, 
+// освобождает внутренние буферы и закрывает файли или поток, 
 int EdfClose(EdfContext_t* dw);
 // запись конфигурации
 int EdfWriteConfig(EdfContext_t* dw, size_t* writed);
-// запись схемы данных
+// Запись и кэширование схемы
 int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed);
 // запись данных
 int EdfWriteData(EdfContext_t* dw, const void* src, size_t srcLen, size_t* srcConsumed);

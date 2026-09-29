@@ -1006,7 +1006,7 @@ static void print_exponential_number(output_gadget_t* output, floating_point_t n
   floating_point_t abs_number =  SIGN(negative, number);
 
   int floored_exp10;
-  bool abs_exp10_covered_by_powers_table;
+  bool abs_exp10_covered_by_powers_table = false;
   struct scaling_factor normalization = {0};
   struct floating_point_components decimal_part_components;
   int original_floored_exp10;

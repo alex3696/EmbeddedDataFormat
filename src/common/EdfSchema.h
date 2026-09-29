@@ -45,5 +45,7 @@ int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed);
 int WriteSchemaBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	uint8_t* dst, size_t dstLen, size_t* writed,
 	EdfSchema_t** t);
+int SchemaCopyСBinToCBin(const EdfSchema_t* const srcSch, EdfSchema_t** pDstSch,
+	uint8_t* dstBuf, size_t dstLen, size_t* writed);
 
 #endif

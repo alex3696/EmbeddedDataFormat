@@ -300,7 +300,8 @@ static int WriteSample(EdfContext_t* dw)
 	};
 #pragma pack(pop)
 
-	size_t len0 = GetEdfSchemaCBinLen(&keyValueType);
+	err = EdfWriteSchema(dw, &keyValueType, &writed);
+	size_t len0 = dw->BufLen;
 	if (4 == sizeof(void*))
 	{
 		runtime_assert0(93 == len0);
@@ -313,8 +314,6 @@ static int WriteSample(EdfContext_t* dw)
 		if (137 != len0)
 			return ERR_BASE;
 	}
-		
-	err = EdfWriteSchema(dw, &keyValueType, &writed);
 	EdfWriteData(dw, &((KeyValue_t) { "Key1", "Value1" }), sizeof(KeyValue_t), &consumed);
 	EdfWriteData(dw, &((KeyValue_t) { "Key2", "Value2" }), sizeof(KeyValue_t), &consumed);
 	EdfWriteData(dw, &((KeyValue_t) { "Key3", "Value3" }), sizeof(KeyValue_t), &consumed);

@@ -289,6 +289,106 @@ int WriteSchemaBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,
 	return err;
 }
 //-----------------------------------------------------------------------------
+static int TypeCopyСBinToCBin(const EdfType_t* const srcType, EdfType_t** t, LineAlloc_t* mem)
+{
+	int err = 0;
+	EdfType_t* ti = NULL;
+	if (*t)
+		ti = *t;
+	else
+		if ((err = MemAlloc(mem, sizeof(EdfType_t), (void**)&ti)))
+			return err;
+	// Type
+	if (!IsPoType(srcType->Type))
+		return ERR_BLK_WRONG_TYPE;
+	ti->Type = srcType->Type;
+	// Dims
+	ti->Dims.Count = srcType->Dims.Count;
+	if (ti->Dims.Count)
+	{
+		// allocate array
+		const size_t dimsSize = sizeof(uint16_t) * ti->Dims.Count;
+		if ((err = MemAlloc(mem, dimsSize, (void**)&ti->Dims.Item)))
+			return err;
+		for (uint8_t i = 0; i < ti->Dims.Count; i++)
+		{
+			ti->Dims.Item[i] = srcType->Dims.Item[i];
+		}
+	}
+	// Name
+	ti->Name = NULL;
+	if (srcType->Name)
+	{
+		size_t len = strnlength(srcType->Name, MAX_STR_LEN);
+		if (0 < len)
+		{
+			len++;
+			if ((err = MemAlloc(mem, len, (void**)&ti->Name)))
+				return err;
+			memcpy(ti->Name, srcType->Name, len);
+		}
+	}
+	// fields
+	ti->Fields.Count = srcType->Fields.Count;
+	if (Struct == srcType->Type)
+	{
+		if (ti->Fields.Count)
+		{
+			// allocate array
+			const size_t childsSize = sizeof(EdfType_t) * srcType->Fields.Count;
+			if ((err = MemAlloc(mem, childsSize, (void**)&ti->Fields.Item)))
+				return err;
+			for (uint8_t i = 0; i < ti->Fields.Count; i++)
+			{
+				EdfType_t* ch = &ti->Fields.Item[i];
+				EdfType_t* srcFieldType = (EdfType_t*)&srcType->Fields.Item[i];
+				if ((err = TypeCopyСBinToCBin(srcFieldType, &ch, mem)))
+					return err;
+			}
+		}
+	}
+	*t = ti;
+	return 0;
+}
+
+int SchemaCopyСBinToCBin(const EdfSchema_t* srcSch, EdfSchema_t** pDstSch,
+	uint8_t* dstBuf, size_t dstLen, size_t* writed)
+{
+	int err = 0;
+	size_t strLen;
+	LineAlloc_t mem;
+	LineAllocInit(&mem, dstBuf, dstLen);
+	if ((err = MemAlloc(&mem, sizeof(EdfSchema_t), (void**)pDstSch)))
+		return err;
+	EdfSchema_t* dstSch = *pDstSch;
+	dstSch->Id = srcSch->Id;
+	//dstSch->Name = NULL;
+	strLen = srcSch->Name ? strnlength(srcSch->Name, MAX_STR_LEN) : 0;
+	if (0 < strLen)
+	{
+		strLen++;// add '\0'
+		if ((err = MemAlloc(&mem, strLen, (void**)&dstSch->Name)))
+			return err;
+		memcpy(dstSch->Name, srcSch->Name, strLen);
+	}
+	//dstSch->Desc = NULL;
+	strLen = srcSch->Desc ? strnlength(srcSch->Desc, MAX_STR_LEN) : 0;
+	if (0 < strLen)
+	{
+		strLen++;// add '\0'
+		if ((err = MemAlloc(&mem, strLen, (void**)&dstSch->Desc)))
+			return err;
+		memcpy(dstSch->Desc, srcSch->Desc, strLen);
+	}
+	EdfType_t* dstType = &dstSch->Type;
+	if ((err = TypeCopyСBinToCBin(&srcSch->Type, &dstType, &mem)))
+		return err;
+	if (writed)
+		*writed = mem.WPos;
+	return err;
+}
+
+//-----------------------------------------------------------------------------
 size_t GetTypeCSize(const EdfType_t* t)
 {
 	size_t sz = 0;

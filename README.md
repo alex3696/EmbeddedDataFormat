@@ -266,7 +266,7 @@ int EdfOpenWithFs(EdfContext_t* ctx, const char* file, const char* mode, FileStr
 
 // ===== Запись =====
 int EdfWriteConfig(EdfContext_t* ctx, size_t* writed);        // Запись конфигурации
-int EdfWriteSchema(EdfContext_t* ctx, const EdfSchema_t* sch, size_t* writed);  // Запись схемы
+int EdfWriteSchema(EdfContext_t* ctx, const EdfSchema_t* sch, size_t* writed);  // Запись и кэширование схемы
 int EdfWriteData(EdfContext_t* ctx, const void* data, size_t len);  // Запись данных
 int EdfFlushData(EdfContext_t* ctx, size_t* writed);          // Закрытие текущего блока
 
@@ -474,22 +474,7 @@ if (len > 255) {
 
 #### 2. Кэширование схемы в контексте
 
-**После `EdfWriteSchema()` контекст кэширует указатель на схему! **
-
-❌ ОПАСНО: Undefined behavior
-```c
-{
-    EdfSchema_t localSchema = {...};
-    EdfWriteSchema(ctx, &localSchema, NULL);
-}
-// тут localSchema уже удалена, ctx->SchemaPtr указывает на мусор!
-```
-✅ Правильно: схема — статическая
-```c
-static const EdfSchema_t schema = {...};
-EdfWriteSchema(ctx, &schema, NULL);
-```
-❌ пока сойдёт и так, но в будущем будет исправлено - **Гарантируйте**, что схема остаётся в памяти на весь сеанс записи данных.
+EdfWriteSchema - контекст кэширует схему и неважно где она объявлена.
 
 #### 3. Многопоточность
 

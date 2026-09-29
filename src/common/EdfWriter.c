@@ -59,10 +59,11 @@ int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed)
 		return ERR_FN_NOT_EXIST;
 	if ((err = (*dw->impl->WriteSchema)(dw, t, writed)))
 		return err;
-	dw->SchemaPtr = t;	// Если придётся кешировать схему - делаем это тут.
-						// TODO:
-						// однако в EdfWriteData придётся отказаться от буфера и не кэшировать неполные примитивы. 
-	dw->BufLen = 0;
+	//кешируем схему в оперативку для быстрого доступа при записи
+	//ранее просто хранил указатель (который мог быть в памяти программ)
+	//для микроконтроллера это обращение накладно 
+	if ((err = SchemaCopyСBinToCBin(t, &dw->SchemaPtr, dw->Buf, dw->Cfg.Blocksize, &dw->BufLen)))
+		return err;
 	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
