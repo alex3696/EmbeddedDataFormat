@@ -107,45 +107,59 @@ static int WriteElement(const EdfType_t* t,
 	{
 		if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
 			return err;
+#ifndef EDF_DISABLE_TEXT_MODE
 		return EdfWriteSep(dw, dw->impl->SepVarEnd, ppdst, dstLen, skip, wqty, writed);
+#else
+		return err;
+#endif
 	}
 	size_t totalElement = GetTotalElements(&t->Dims);
+#ifndef EDF_DISABLE_TEXT_MODE
 	if (1 < totalElement)
 	{
 		if ((err = EdfWriteSep(dw, dw->impl->BeginArray, ppdst, dstLen, skip, wqty, writed)))
 			return err;
 	}
+#endif
 	for (size_t i = 0; i < totalElement; i++)
 	{
 		if (Struct == t->Type)
 		{
 			if (t->Fields.Count)
 			{
+#ifndef EDF_DISABLE_TEXT_MODE
 				if ((err = EdfWriteSep(dw, dw->impl->BeginStruct, ppdst, dstLen, skip, wqty, writed)))
 					return err;
+#endif
 				for (size_t j = 0; j < t->Fields.Count; j++)
 				{
 					const EdfType_t* s = &t->Fields.Item[j];
 					if ((err = WriteElement(s, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed, dw)))
 						return err;
 				}
+#ifndef EDF_DISABLE_TEXT_MODE
 				if ((err = EdfWriteSep(dw, dw->impl->EndStruct, ppdst, dstLen, skip, wqty, writed)))
 					return err;
+#endif
 			}
 		}
 		else
 		{
 			if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
 				return err;
+#ifndef EDF_DISABLE_TEXT_MODE
 			if ((err = (EdfWriteSep(dw, dw->impl->SepVarEnd, ppdst, dstLen, skip, wqty, writed))))
 				return err;
+#endif
 		}
 	}
+#ifndef EDF_DISABLE_TEXT_MODE
 	if (1 < totalElement)
 	{
 		if ((err = (EdfWriteSep(dw, dw->impl->EndArray, ppdst, dstLen, skip, wqty, writed))))
 			return err;
 	}
+#endif
 	return err;
 }
 //-----------------------------------------------------------------------------
@@ -156,12 +170,16 @@ static int WriteSingleValue(EdfContext_t* dw,
 	size_t* readed, size_t* writed)
 {
 	int err;
+#ifndef EDF_DISABLE_TEXT_MODE
 	if (ERR_NO != (err = EdfWriteSep(dw, dw->impl->RecBegin, dst, dstLen, skip, wqty, writed)))
 		return err;
+#endif
 	if (ERR_NO != (err = WriteElement(&dw->SchemaPtr->Type, src, srcLen, dst, dstLen, skip, wqty, readed, writed, dw)))
 		return err;
+#ifndef EDF_DISABLE_TEXT_MODE
 	if (ERR_NO != (err = EdfWriteSep(dw, dw->impl->RecEnd, dst, dstLen, skip, wqty, writed)))
 		return err;
+#endif
 	return err;
 }
 //-----------------------------------------------------------------------------

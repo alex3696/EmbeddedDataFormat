@@ -29,6 +29,7 @@ static int MemStreamWriteImpl(void* stream, size_t* writed, void const* data, si
 //-----------------------------------------------------------------------------
 static int MemStreamWriteFormatImpl(void* stream, size_t* writed, const char* format, ...)
 {
+#ifndef EDF_DISABLE_TEXT_MODE
 	MemStream_t* s = (MemStream_t*)stream;
 	MemStreamMove(s);
 	size_t bufFreeLen = s->Size - s->WPos;
@@ -44,6 +45,12 @@ static int MemStreamWriteFormatImpl(void* stream, size_t* writed, const char* fo
 	if (writed)
 		*writed += ret;
 	return 0;
+#else
+	(void)stream;
+	(void)writed;
+	(void)format;
+	return ERR_FN_NOT_EXIST;
+#endif
 }
 //-----------------------------------------------------------------------------
 static int MemStreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)

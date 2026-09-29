@@ -36,7 +36,9 @@ typedef struct FileStream
 {
 	const StreamFnImpl_t* Impl;
 	void* Instance;
+#ifndef EDF_DISABLE_TEXT_MODE
 	uint8_t FmtBuf[STREAM_FMT_BUF];
+#endif
 } FileStream_t;
 
 int FileStreamOpen(FileStream_t* w, const char* file, const char* mode);

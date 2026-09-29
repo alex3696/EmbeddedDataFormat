@@ -44,6 +44,7 @@ static int StreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)
 //-----------------------------------------------------------------------------
 static int StreamWriteFormatImpl(void* stream, size_t* writed, const char* format, ...)
 {
+#ifndef EDF_DISABLE_TEXT_MODE
 	FileStream_t* fs = (FileStream_t*)stream;
 	va_list arglist;
 	va_start(arglist, format);
@@ -52,6 +53,12 @@ static int StreamWriteFormatImpl(void* stream, size_t* writed, const char* forma
 	if (ret && (size_t)ret >= STREAM_FMT_BUF)
 		return ERR_DST_SHORT;
 	return StreamWriteImpl(stream, writed, (void*)fs->FmtBuf, ret);
+#else
+	(void)stream;
+	(void)writed;
+	(void)format;
+	return ERR_FN_NOT_EXIST;
+#endif
 }
 //-----------------------------------------------------------------------------
 static int FileStreamClose(void* stream)

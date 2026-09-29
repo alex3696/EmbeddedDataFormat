@@ -9,6 +9,7 @@ extern "C" {
 
 //#define LOG_ERR
 //#define LOG_ERRF
+//#define EDF_DISABLE_TEXT_MODE
 
 //-----------------------------------------------------------------------------
 #ifdef __cplusplus

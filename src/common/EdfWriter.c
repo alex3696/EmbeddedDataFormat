@@ -228,6 +228,12 @@ const EdfImpl_t writeCBinToBin =
 	.WriteSchema = EdfWriteSchemaBin,
 	.FlushData = StreamWriteBlockDataBin
 };
+const EdfImpl_t readBinToCBin =
+{
+	.WritePrimitive = BinToBin,
+};
+
+#ifndef EDF_DISABLE_TEXT_MODE
 const EdfImpl_t writeCBinToTxt =
 {
 	.WritePrimitive = CBinToStr,
@@ -242,15 +248,11 @@ const EdfImpl_t writeCBinToTxt =
 	.RecBegin = SepRecBegin,
 	.RecEnd = SepRecEnd,
 };
-const EdfImpl_t readBinToCBin =
-{
-	.WritePrimitive = BinToBin,
-};
 const EdfImpl_t readTxtToCBin =
 {
-	//.WritePrimitive = StrToBin,
+	0 //.WritePrimitive = StrToBin,
 };
-
+#endif
 //-----------------------------------------------------------------------------
 int EdfOpenStream(EdfContext_t* f, Stream_t* stream, const char* mode)
 {
@@ -269,6 +271,13 @@ int EdfOpenStream(EdfContext_t* f, Stream_t* stream, const char* mode)
 			err = SeekEnd(f);
 		}
 	}
+	else if (0 == strncmp("rb", mode, 2))
+	{
+		f->Stream = *stream;
+		f->BufLen = 0;
+		f->impl = &readBinToCBin;
+	}
+#ifndef EDF_DISABLE_TEXT_MODE
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2))
 	{
 		f->Stream = *stream;
@@ -280,19 +289,15 @@ int EdfOpenStream(EdfContext_t* f, Stream_t* stream, const char* mode)
 		}
 		return err;
 	}
-	else if (0 == strncmp("rb", mode, 2))
+#else
+	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2) || 0 == strncmp("rt", mode, 2))
 	{
 		f->Stream = *stream;
 		f->BufLen = 0;
-		f->impl = &readBinToCBin;
+		f->impl = NULL;
+		err = ERR_FN_NOT_EXIST;
 	}
-	if (0 == strncmp("rt", mode, 2))
-	{
-		f->Stream = *stream;
-		f->BufLen = 0;
-		f->impl = &readTxtToCBin;
-		err = ERR_WRONG_PARAMETERS;
-	}
+#endif
 	return err;
 }
 //-----------------------------------------------------------------------------

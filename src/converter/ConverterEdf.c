@@ -34,6 +34,7 @@ int ChangeExt(char* file, const char* ext)
 //-----------------------------------------------------------------------------
 int BinToText(const char* srcFile, const char* dstFile)
 {
+#ifndef EDF_DISABLE_TEXT_MODE
 	int err = 0;
 	size_t writed = 0;
 	uint8_t edfMemReader[MEM_BLOCK_SIZE_512];
@@ -136,6 +137,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 	}
 	EdfClose(br);
 	EdfClose(tw);
+#endif
 	return 0;
 }
 //-----------------------------------------------------------------------------
