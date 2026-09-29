@@ -317,6 +317,7 @@ static int TypeCopyСBinToCBin(const EdfType_t* const srcType, EdfType_t** t, Li
 	}
 	// Name
 	ti->Name = NULL;
+	/*
 	if (srcType->Name)
 	{
 		size_t len = strnlength(srcType->Name, MAX_STR_LEN);
@@ -328,6 +329,7 @@ static int TypeCopyСBinToCBin(const EdfType_t* const srcType, EdfType_t** t, Li
 			memcpy(ti->Name, srcType->Name, len);
 		}
 	}
+	*/
 	// fields
 	ti->Fields.Count = srcType->Fields.Count;
 	if (Struct == srcType->Type)
@@ -362,6 +364,7 @@ int SchemaCopyСBinToCBin(const EdfSchema_t* srcSch, EdfSchema_t** pDstSch,
 		return err;
 	EdfSchema_t* dstSch = *pDstSch;
 	dstSch->Id = srcSch->Id;
+	/*
 	//dstSch->Name = NULL;
 	strLen = srcSch->Name ? strnlength(srcSch->Name, MAX_STR_LEN) : 0;
 	if (0 < strLen)
@@ -380,6 +383,7 @@ int SchemaCopyСBinToCBin(const EdfSchema_t* srcSch, EdfSchema_t** pDstSch,
 			return err;
 		memcpy(dstSch->Desc, srcSch->Desc, strLen);
 	}
+	*/
 	EdfType_t* dstType = &dstSch->Type;
 	if ((err = TypeCopyСBinToCBin(&srcSch->Type, &dstType, &mem)))
 		return err;
