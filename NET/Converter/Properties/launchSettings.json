@@ -2,63 +2,63 @@
   "profiles": {
     "DAT >> TDF": {
       "commandName": "Project",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
-      "commandLineArgs": "1DAT.DAT 1DAT.tdf t -bench",
+      "commandLineArgs": "12_1_mt.DAT 12_1_mt.tdf t -bench",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "DAT >> BDF": {
       "commandName": "Project",
-      "commandLineArgs": "1DAT.DAT b",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "12_1_mt.DAT b",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "DAT.bdf >> DAT": {
       "commandName": "Project",
-      "commandLineArgs": "1DAT.bdf 1DAT_restB.dat",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "12_1_mt.bdf 12_1_mt_restB.dat",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "DAT.tdf >> DAT": {
       "commandName": "Project",
-      "commandLineArgs": "1DAT.tdf 1DAT_restT.dat",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "12_1_mt.tdf 12_1_mt_restT.dat",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "D >> TDF": {
       "commandName": "Project",
-      "commandLineArgs": "1D.D t",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "6_1_dyn.D t",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "D >> BDF": {
       "commandName": "Project",
-      "commandLineArgs": "1D.D b",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "6_1_dyn.D b",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "D.tdf >> D": {
       "commandName": "Project",
-      "commandLineArgs": "1D.tdf 1D_restT.d",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "6_1_dyn.tdf 6_1_dyn_restT.d",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "D.bdf >> D": {
       "commandName": "Project",
-      "commandLineArgs": "1D.bdf 1D_restB.d",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "6_1_dyn.bdf 6_1_dyn_restB.d",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "E >> TDF": {
       "commandName": "Project",
-      "commandLineArgs": "1E.E t",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "5_1_echo.E t",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "E >> BDF": {
       "commandName": "Project",
-      "commandLineArgs": "1E.E b",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "5_1_echo.E b",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "E.tdf >> E": {
       "commandName": "Project",
-      "commandLineArgs": "1E.tdf 1E_restT.e",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "5_1_echo.tdf 5_1_echo_restT.e",
+      "workingDirectory": "..\\..\\TestFiles"
     },
     "E.bdf >> E": {
       "commandName": "Project",
-      "commandLineArgs": "1E.bdf 1E_restB.e",
-      "workingDirectory": "C:\\Users\\Sav\\Documents"
+      "commandLineArgs": "5_1_echo.bdf 5_1_echo_restB.e",
+      "workingDirectory": "..\\..\\TestFiles"
     }
   }
 }

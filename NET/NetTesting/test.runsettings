@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <DisableAppDomain>true</DisableAppDomain>
+    <DisableParallelization>false</DisableParallelization>
+
+    <EnvironmentVariables>
+      <TEST_DATA_DIR>..\..\..\..\..\TestFiles</TEST_DATA_DIR>
+    </EnvironmentVariables>
+
+  </RunConfiguration>
+</RunSettings>

@@ -78,7 +78,12 @@ public class ComplexVariable
 [TestClass]
 public class TestStructSerialize
 {
-    public static string _testPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}";
+    //public static string _testPath = $"{Environment.GetFolderPath(Environment. SpecialFolder.MyDocuments)}";
+    //public static string _testPath = Environment.CurrentDirectory;
+    //public static string _testPath = AppDomain.CurrentDomain.BaseDirectory;
+    public static string _testPath = Environment.GetEnvironmentVariable("TEST_DATA_DIR") 
+                          ?? throw new InvalidOperationException("Переменная TEST_DATA_DIR не задана.");
+
     public static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
     static byte[] GetCString(string str, int len)

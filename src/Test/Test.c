@@ -560,26 +560,26 @@ static void Test_WriteBigVar()
 //-----------------------------------------------------------------------------
 static void DatFormatTest()
 {
-	runtime_assert0(0 == DatToEdf("1DAT.dat", "1DAT.tdf", 't'));
-	runtime_assert0(0 == DatToEdf("1DAT.dat", "1DAT.bdf", 'b'));
-	runtime_assert0(0 == BinToText("1DAT.bdf", "1DATConv.tdf"));
-	runtime_assert0(0 == CompareFiles("1DAT.tdf", "1DATConv.tdf"));
-	runtime_assert0(0 == EdfToDat("1DAT.bdf", "1DATConv.dat"));
-	runtime_assert0(0 == CompareFiles("1DAT.dat", "1DATConv.dat"));
+	runtime_assert0(0 == DatToEdf( "12_1_mt.DAT", "12_1_mt.tdf", 't'));
+	runtime_assert0(0 == DatToEdf( "12_1_mt.DAT", "12_1_mt.bdf", 'b'));
+	runtime_assert0(0 == BinToText("12_1_mt.bdf", "12_1_mt_Conv.tdf"));
+	runtime_assert0(0 == EdfToDat( "12_1_mt.bdf", "12_1_mt_Conv.dat"));
+	runtime_assert0(0 == CompareFiles("12_1_mt.tdf",  "12_1_mt_Conv.tdf"));
+	runtime_assert0(0 == CompareFiles("12_1_mt.dat",  "12_1_mt_Conv.dat"));
 
-	runtime_assert0(0 == EchoToEdf("1E.E", "1E.tdf", 't'));
-	runtime_assert0(0 == EchoToEdf("1E.E", "1E.bdf", 'b'));
-	runtime_assert0(0 == BinToText("1E.bdf", "1EConv.tdf"));
-	runtime_assert0(0 == CompareFiles("1E.tdf", "1EConv.tdf"));
-	runtime_assert0(0 == EdfToEcho("1E.bdf", "1EConv.E"));
-	runtime_assert0(0 == CompareFiles("1E.E", "1EConv.E"));
+	runtime_assert0(0 == EchoToEdf("5_1_echo.E",   "5_1_echo.tdf", 't'));
+	runtime_assert0(0 == EchoToEdf("5_1_echo.E",   "5_1_echo.bdf", 'b'));
+	runtime_assert0(0 == BinToText("5_1_echo.bdf", "5_1_echo_Conv.tdf"));
+	runtime_assert0(0 == EdfToEcho("5_1_echo.bdf", "5_1_echo_Conv.E"));
+	runtime_assert0(0 == CompareFiles("5_1_echo.tdf", "5_1_echo_Conv.tdf"));
+	runtime_assert0(0 == CompareFiles("5_1_echo.E",   "5_1_echo_Conv.E"));
 
-	runtime_assert0(0 == DynToEdf("1D.D", "1D.tdf", 't'));
-	runtime_assert0(0 == DynToEdf("1D.D", "1D.bdf", 'b'));
-	runtime_assert0(0 == BinToText("1D.bdf", "1DConv.tdf"));
-	runtime_assert0(0 == CompareFiles("1D.tdf", "1DConv.tdf"));
-	runtime_assert0(0 == EdfToDyn("1D.bdf", "1DConv.D"));
-	runtime_assert0(0 == CompareFiles("1D.D", "1DConv.D"));
+	runtime_assert0(0 == DynToEdf("6_1_dyn.D",     "6_1_dyn.tdf", 't'));
+	runtime_assert0(0 == DynToEdf("6_1_dyn.D",     "6_1_dyn.bdf", 'b'));
+	runtime_assert0(0 == BinToText("6_1_dyn.bdf",  "6_1_dyn_Conv.tdf"));
+	runtime_assert0(0 == EdfToDyn("6_1_dyn.bdf",   "6_1_dyn_Conv.D"));
+	runtime_assert0(0 == CompareFiles("6_1_dyn.tdf",  "6_1_dyn_Conv.tdf"));
+	runtime_assert0(0 == CompareFiles("6_1_dyn.D",    "6_1_dyn_Conv.D"));
 }
 //-----------------------------------------------------------------------------
 static void MbCrc16accTest()
