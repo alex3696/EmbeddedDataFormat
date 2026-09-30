@@ -174,6 +174,7 @@
   <ItemGroup>
     <ClCompile Include="..\common\BinReader.c" />
     <ClCompile Include="..\common\EdfUtils.c" />
+    <ClCompile Include="..\common\itoa.c" />
     <ClCompile Include="..\common\KeyValue.c" />
     <ClCompile Include="..\common\MemStream.c" />
     <ClCompile Include="..\common\printf.c" />
@@ -198,6 +199,7 @@
     <ClInclude Include="..\common\EdfConfig.h" />
     <ClInclude Include="..\common\edf.h" />
     <ClInclude Include="..\common\EdfStream.h" />
+    <ClInclude Include="..\common\itoa.h" />
     <ClInclude Include="..\common\KeyValue.h" />
     <ClInclude Include="..\common\PoType.h" />
     <ClInclude Include="..\common\Primitives.h" />
