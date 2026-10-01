@@ -72,7 +72,7 @@ int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed)
 	//кешируем схему в оперативку для быстрого доступа при записи
 	//ранее просто хранил указатель (который мог быть в памяти программ)
 	//для микроконтроллера это обращение накладно 
-	if ((err = SchemaCopyСBinToCBin(t, &dw->SchemaPtr, dw->Buf, dw->Cfg.Blocksize, &dw->BufLen)))
+	if ((err = SchemaCopyСBinToCBin(t, (EdfSchema_t**)&dw->SchemaPtr, dw->Buf, dw->Cfg.Blocksize, &dw->BufLen)))
 		return err;
 	return ERR_NO;
 }
