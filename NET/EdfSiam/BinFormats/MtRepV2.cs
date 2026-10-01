@@ -1,4 +1,4 @@
-namespace EdfConv.BinSiamFormat;
+namespace EdfSiam.BinFormats;
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
 public struct MtRepV2 // SPSK_FILE_V1_1

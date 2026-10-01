@@ -1,10 +1,10 @@
 using System.Globalization;
 
-namespace EdfConv.BinSiamFormat;
+namespace EdfSiam.Converters;
 
-public static class ConverterE
+public class ConverterE : IExternConverter
 {
-    public static int EToEdf(Stream src, IEdfWriter writer)
+    public int ToEdf(Stream src, IEdfWriter writer)
     {
         var repSize = Marshal.SizeOf<EchoRepV2>();
         Span<byte> buf = stackalloc byte[repSize];
@@ -81,7 +81,7 @@ public static class ConverterE
         return 0;
     }
 
-    public static int EdfToE(IEdfReader reader, Stream dst)
+    public int FromEdf(IEdfReader reader, Stream dst)
     {
         var dat = new EchoRepV2
         {

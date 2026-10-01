@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace EdfConv.BinSiamFormat;
+namespace EdfSiam.BinFormats;
 
 [InlineArray(6)] public struct ByteArray6 { public byte Slot; }
 [InlineArray(40)] public struct ByteArray40 { public byte Slot; }

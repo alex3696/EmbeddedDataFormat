@@ -2,11 +2,11 @@ using EdfNet.Core.Binary;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace EdfConv.BinSiamFormat;
+namespace EdfSiam.Converters;
 
-public static class ConverterDat
+public class ConverterDat : IExternConverter
 {
-    public static int DatToEdf(Stream src, IEdfWriter writer)
+    public int ToEdf(Stream src, IEdfWriter writer)
     {
         var repSize = Marshal.SizeOf<MtRepV2>();
         Span<byte> buf = stackalloc byte[repSize];
@@ -68,8 +68,7 @@ public static class ConverterDat
         }
         return 0;
     }
-
-    public static int EdfToDat(IEdfReader reader, Stream dst)
+    public int FromEdf(IEdfReader reader, Stream dst)
     {
         var dat = new MtRepV2
         {

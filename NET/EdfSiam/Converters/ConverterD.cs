@@ -1,10 +1,10 @@
 using System.Globalization;
 
-namespace EdfConv.BinSiamFormat;
+namespace EdfSiam.Converters;
 
-public static class ConverterD
+public class ConverterD : IExternConverter
 {
-    public static int DToEdf(Stream src, IEdfWriter writer)
+    public int ToEdf(Stream src, IEdfWriter writer)
     {
         var repSize = Marshal.SizeOf<DynRepV2>();
         Span<byte> buf = stackalloc byte[repSize];
@@ -94,7 +94,7 @@ public static class ConverterD
         return (sbyte)((result > 31) ? (result - 64) : result);
     }
 
-    public static int EdfToD(IEdfReader reader, Stream dst)
+    public int FromEdf(IEdfReader reader, Stream dst)
     {
         var dat = new DynRepV2();
         // 

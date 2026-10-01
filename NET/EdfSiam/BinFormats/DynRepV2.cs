@@ -1,4 +1,4 @@
-namespace EdfConv.BinSiamFormat;
+namespace EdfSiam.BinFormats;
 
 // 2 122
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]

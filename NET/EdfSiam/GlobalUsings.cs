@@ -1,8 +1,9 @@
-global using EdfConv.BinSiamFormat;
 global using EdfNet.Converters;
 global using EdfNet.Core;
-global using EdfNet.Interfaces;
 global using EdfNet.Gen;
+global using EdfNet.Interfaces;
+global using EdfSiam.BinFormats;
+global using EdfSiam.Common;
 global using System.Buffers;
 global using System.Diagnostics;
 global using System.Runtime.InteropServices;

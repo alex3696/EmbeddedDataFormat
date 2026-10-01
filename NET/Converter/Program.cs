@@ -1,8 +1,15 @@
-
+using EdfNet.Converters;
+using EdfNet.Core;
+using EdfNet.Interfaces;
 using EdfNet.Utils;
+using EdfSiam.Converters;
 
 internal class Program
 {
+    static readonly ConverterDat _convDat = new();
+    static readonly ConverterD _convDyn = new();
+    static readonly ConverterE _convEcho = new();
+
     static int UseStreams(string srcFile, string dstFile
         , Func<IEdfReader, Stream, int> func, Func<Stream, IEdfReader> readerFactory)
     {
@@ -65,9 +72,9 @@ internal class Program
         {
             ".bdf" => UseStreams(srcFile, dstFile, BinToTxt.Convert),
             ".tdf" => UseStreams(srcFile, dstFile, TxtToBin.Convert),
-            ".dat" => UseStreams(srcFile, dstFile, ConverterDat.DatToEdf, MakeWriter(dstExt)),
-            ".d" => UseStreams(srcFile, dstFile, ConverterD.DToEdf, MakeWriter(dstExt)),
-            ".e" => UseStreams(srcFile, dstFile, ConverterE.EToEdf, MakeWriter(dstExt)),
+            ".dat" => UseStreams(srcFile, dstFile, _convDat.ToEdf, MakeWriter(dstExt)),
+            ".d" => UseStreams(srcFile, dstFile, _convDyn.ToEdf, MakeWriter(dstExt)),
+            ".e" => UseStreams(srcFile, dstFile, _convEcho.ToEdf, MakeWriter(dstExt)),
             _ => throw new ConvertException($"Unknow source extension {srcExt}"),
         };
     }
@@ -149,9 +156,9 @@ internal class Program
         {
             case "t": return ConvertToEdf(srcFile, dstFile);
             case "b": return ConvertToEdf(srcFile, dstFile);
-            case "dat": return ConvertToSiam(srcFile, dstFile, ConverterDat.EdfToDat);
-            case "e": return ConvertToSiam(srcFile, dstFile, ConverterE.EdfToE);
-            case "d": return ConvertToSiam(srcFile, dstFile, ConverterD.EdfToD);
+            case "dat": return ConvertToSiam(srcFile, dstFile, _convDat.FromEdf);
+            case "e": return ConvertToSiam(srcFile, dstFile, _convEcho.FromEdf);
+            case "d": return ConvertToSiam(srcFile, dstFile, _convDyn.FromEdf);
             default: throw new ConvertException($"Unknow type {dstType} command: {srcFile} >> {dstType}");
         }
     }

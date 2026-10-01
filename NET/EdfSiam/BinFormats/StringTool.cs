@@ -1,4 +1,4 @@
-namespace EdfConv.BinSiamFormat;
+namespace EdfSiam.BinFormats;
 
 public static class EncodingExt
 {

@@ -20,10 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EdfNet\EdfNet.csproj" />
-	<ProjectReference Include="..\EdfBinGenerator\EdfGenerator.csproj"
-					  OutputItemType="Analyzer"
-					  ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\EdfSiam\EdfSiam.csproj" />
 	  <!--
 	  <ProjectReference Include="..\NetTesting\NetTest.csproj" />
 		-->

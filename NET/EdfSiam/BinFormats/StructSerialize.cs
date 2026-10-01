@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace EdfConv.BinSiamFormat;
+namespace EdfSiam.BinFormats;
 
 public static class StructSerialize
 {
