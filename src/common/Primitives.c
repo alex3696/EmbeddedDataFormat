@@ -137,8 +137,10 @@ static int AnyBinToBin(PoType t,
 	case UInt32: *(uint32_t*)dst = *(const uint32_t*)src; break;
 	case Double:
 	case Int64:
-	case UInt64: *(uint64_t*)dst = *(const uint64_t*)src; break;
-		//memcpy(dst, src, *r); break;
+	case UInt64: *(uint32_t*)dst = *(const uint32_t*)src;
+				 *(uint32_t*)(dst+4) = *(const uint32_t*)(src+4); break;
+				// *(uint64_t*)dst = *(const uint64_t*)src; break; не работает на контроллерах
+				//memcpy(dst, src, *r); break;
 	case Char:
 		if (dstLen < srcLen)
 		{
