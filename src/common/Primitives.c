@@ -112,11 +112,10 @@ static size_t xprint(const uint8_t* buf, size_t bufLen, char* format, ...)
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-static int AnyBinToBin(PoType t,
+int CBinToBin(PoType t,
 	const uint8_t* src, size_t srcLen,
 	uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w,
-	WriteStringFn WriteString)
+	size_t* r, size_t* w)
 {
 	*r = *w = GetSizeOf(t);// переопределится для строки
 	if (srcLen < *r)
@@ -127,20 +126,16 @@ static int AnyBinToBin(PoType t,
 	{
 	case Struct:
 	default: *r = *w = 0; return ERR_WRONG_TYPE;
-	case Int8: 
-	case UInt8: *dst = *src; break;
-	case Half:
-	case Int16:
-	case UInt16: *(uint16_t*)dst = *(const uint16_t*)src; break;
-	case Single:
-	case Int32:
-	case UInt32: *(uint32_t*)dst = *(const uint32_t*)src; break;
-	case Double:
-	case Int64:
-	case UInt64: *(uint32_t*)dst = *(const uint32_t*)src;
-				 *(uint32_t*)(dst+4) = *(const uint32_t*)(src+4); break;
-				// *(uint64_t*)dst = *(const uint64_t*)src; break; не работает на контроллерах
-				//memcpy(dst, src, *r); break;
+	case Int8: case UInt8:
+		*dst = *src; break;
+	case Half: case Int16: case UInt16:
+		*(uint16_t*)dst = *(const uint16_t*)src; break;
+	case Single: case Int32: case UInt32:
+		*(uint32_t*)dst = *(const uint32_t*)src; break;
+	case Double: case Int64: case UInt64:
+		*(uint32_t*)dst = *(const uint32_t*)src; 
+		*(uint32_t*)(dst + 4) = *(const uint32_t*)(src + 4); break;
+		//memcpy(dst, src, *r); break;
 	case Char:
 		if (dstLen < srcLen)
 		{
@@ -150,17 +145,9 @@ static int AnyBinToBin(PoType t,
 		*r = *w = srcLen;
 		memcpy(dst, src, srcLen);
 		return 0;
-	case String: return (*WriteString)(src, srcLen, dst, dstLen, r, w);
+	case String: return WriteStringCBinToBin(src, srcLen, dst, dstLen, r, w);
 	}//switch
 	return 0;
-}
-//-----------------------------------------------------------------------------
-int CBinToBin(PoType t,
-	const uint8_t* src, size_t srcLen,
-	uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
-{
-	return AnyBinToBin(t, src, srcLen, dst, dstLen, r, w, WriteStringCBinToBin);
 }
 //-----------------------------------------------------------------------------
 int BinToBin(PoType t,
@@ -168,7 +155,37 @@ int BinToBin(PoType t,
 	uint8_t* dst, size_t dstLen,
 	size_t* r, size_t* w)
 {
-	return AnyBinToBin(t, src, srcLen, dst, dstLen, r, w, WriteStringBinToBin);
+	*r = *w = GetSizeOf(t);// переопределится для строки
+	if (srcLen < *r)
+		return ERR_SRC_SHORT;
+	if (dstLen < *w)
+		return ERR_DST_SHORT;
+	switch (t)
+	{
+	case Struct:
+	default: *r = *w = 0; return ERR_WRONG_TYPE;
+	case Int8: case UInt8:
+		*dst = *src; break;
+	case Half: case Int16: case UInt16:
+		*(uint16_t*)dst = *(const uint16_t*)src; break;
+	case Single: case Int32: case UInt32:
+		*(uint32_t*)dst = *(const uint32_t*)src; break;
+	case Double: case Int64: case UInt64:
+		*(uint32_t*)dst = *(const uint32_t*)src;
+		*(uint32_t*)(dst + 4) = *(const uint32_t*)(src + 4); break;
+		//memcpy(dst, src, *r); break;
+	case Char:
+		if (dstLen < srcLen)
+		{
+			*r = *w = 0;
+			return ERR_DST_SHORT;
+		}
+		*r = *w = srcLen;
+		memcpy(dst, src, srcLen);
+		return 0;
+	case String: return WriteStringBinToBin(src, srcLen, dst, dstLen, r, w);
+	}//switch
+	return 0;
 }
 //-----------------------------------------------------------------------------
 static int AnyBinToStr(PoType t,
