@@ -1,5 +1,6 @@
 #include "_pch.h"
 #include "edf.h"
+#include "itoa.h"
 //-----------------------------------------------------------------------------
 static void MemStreamMove(MemStream_t* s)
 {
@@ -25,32 +26,6 @@ static int MemStreamWriteImpl(void* stream, size_t* writed, void const* data, si
 	if (writed)
 		*writed += len;
 	return 0;
-}
-//-----------------------------------------------------------------------------
-static int MemStreamWriteFormatImpl(void* stream, size_t* writed, const char* format, ...)
-{
-#ifndef EDF_DISABLE_TEXT_MODE
-	MemStream_t* s = (MemStream_t*)stream;
-	MemStreamMove(s);
-	size_t bufFreeLen = s->Size - s->WPos;
-	if (0 == bufFreeLen)
-		return ERR_DST_SHORT;
-	va_list arglist;
-	va_start(arglist, format);
-	size_t ret = vsnprintf_((char*)&s->Buffer[s->WPos], bufFreeLen - 1, format, arglist);
-	va_end(arglist);
-	if (bufFreeLen < ret)
-		return ERR_DST_SHORT;
-	s->WPos += ret;
-	if (writed)
-		*writed += ret;
-	return 0;
-#else
-	(void)stream;
-	(void)writed;
-	(void)format;
-	return ERR_FN_NOT_EXIST;
-#endif
 }
 //-----------------------------------------------------------------------------
 static int MemStreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)
@@ -105,9 +80,9 @@ int MemStreamWriteOpen(MemStream_t* s, uint8_t* buf, size_t size)
 	return MemStreamOpen(s, buf, size, 0, "w");
 }
 
-const StreamFnImpl_t rwMemSt = { T_MEM_STREAM, MemStreamWriteImpl ,MemStreamReadImpl ,MemStreamWriteFormatImpl,MemStreamClose };
-const StreamFnImpl_t wMemSt = { T_MEM_STREAM, MemStreamWriteImpl ,NULL ,MemStreamWriteFormatImpl,MemStreamClose };
-const StreamFnImpl_t rMemSt = { T_MEM_STREAM, NULL ,MemStreamReadImpl ,NULL,MemStreamClose };
+const StreamFnImpl_t rwMemSt = { T_MEM_STREAM, MemStreamWriteImpl, MemStreamReadImpl, MemStreamClose };
+const StreamFnImpl_t wMemSt =  { T_MEM_STREAM, MemStreamWriteImpl, NULL,              MemStreamClose };
+const StreamFnImpl_t rMemSt =  { T_MEM_STREAM, NULL,               MemStreamReadImpl, MemStreamClose };
 
 //-----------------------------------------------------------------------------
 int MemStreamOpen(MemStream_t* s, uint8_t* buf, size_t size, size_t datalen, const char* inMode)
@@ -173,3 +148,58 @@ int MemAlloc(LineAlloc_t* m, size_t len, void** pptr)
 	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+#ifndef EDF_DISABLE_TEXT_MODE
+static int MemStreamWriteUInt32Txt(MemStream_t* s, size_t* writed, uint32_t val)
+{
+	MemStreamMove(s);
+	size_t bufFreeLen = s->Size - s->WPos;
+	if (0 == bufFreeLen)
+		return ERR_DST_SHORT;
+	size_t ret = UInt32ToA(val, (char*)&s->Buffer[s->WPos], bufFreeLen);
+	if (0 == ret)
+		return ERR_DST_SHORT;
+	s->WPos += ret;
+	if (writed)
+		(*writed) += ret;
+	return ERR_NO;
+}
+//-----------------------------------------------------------------------------
+static int FileStreamWriteBufUInt32Txt(FileStream_t* st, size_t* writed, uint32_t val, uint8_t* buf, size_t bufLen)
+{
+	size_t ret = UInt32ToA(val, (char*)buf, bufLen);
+	if (0 == ret)
+		return ERR_DST_SHORT;
+	return StreamWrite(st, writed, buf, ret);
+}
+//-----------------------------------------------------------------------------
+static int FileStreamWriteUInt32Txt(FileStream_t* st, size_t* writed, uint32_t val)
+{
+	return FileStreamWriteBufUInt32Txt((FileStream_t*)st, writed, val, st->FmtBuf, sizeof(st->FmtBuf));
+	//if (st->FmtBuf)
+	//{
+	//	return FileStreamWriteBufUInt32Txt((FileStream_t*)st, writed, val, st->FmtBuf, sizeof(st->FmtBuf));
+	//}
+	//else
+	//{
+	//	uint8_t buf[24];
+	//	return FileStreamWriteBufUInt32Txt((FileStream_t*)st, writed, val, buf, sizeof(buf));
+	//}
+}
+#endif
+//-----------------------------------------------------------------------------
+int StreamWriteUInt32Txt(Stream_t* st, size_t* writed, uint32_t val)
+{
+#ifndef EDF_DISABLE_TEXT_MODE
+	switch (st->Impl->TypeId)
+	{
+	default: break;
+	case T_MEM_STREAM: return MemStreamWriteUInt32Txt((MemStream_t*)st, writed, val);
+	case T_FILE_STREAM: return FileStreamWriteUInt32Txt((FileStream_t*)st, writed, val);
+	}
+#endif
+	(void)st;
+	(void)writed;
+	(void)val;
+	return ERR_WRONG_TYPE;
+}

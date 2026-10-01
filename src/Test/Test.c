@@ -62,9 +62,7 @@ static void TestMemStream(void)
 	const char test[] = "test 123";
 	Stream_t* stream = (Stream_t*)&ms;
 	runtime_assert0(!StreamWrite(stream, &writed, test, sizeof(test) - 1));
-#ifndef EDF_DISABLE_TEXT_MODE
-	runtime_assert0(!StreamWriteFmt(stream, &writed, " format %d", 1));
-#endif
+	runtime_assert0(!StreamWrite(stream, &writed, " format 1", 9));
 	size_t readed = 0;
 	char outBuf[256] = { 0 };
 	runtime_assert0(!StreamRead(stream, &readed, outBuf, writed));

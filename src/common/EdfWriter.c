@@ -18,10 +18,10 @@ static int EdfWriteBlockBin(Stream_t* st, EdfBlock_t* blk, size_t* writed)
 //-----------------------------------------------------------------------------
 int EdfWriteConfig(EdfContext_t* dw, size_t* writed)
 {
-	if (!dw->impl->WriteConfig)
+	if (!dw->WriteConfig)
 		return ERR_FN_NOT_EXIST;
 	int err = 0;
-	if ((err = (*dw->impl->WriteConfig)(dw, &dw->Cfg, writed)))
+	if ((err = (*dw->WriteConfig)(dw, &dw->Cfg, writed)))
 		return err;
 	dw->Blk->Len = 0;
 	return ERR_NO;
@@ -42,9 +42,19 @@ static int EdfWriteConfigTxt(EdfContext_t* dw, const EdfConfig_t* h, size_t* wri
 	if ((err = StreamWrite(&dw->Stream, writed, info, sizeof(info) - 1)))
 		return err;
 
-	return StreamWriteFmt(&dw->Stream, writed, "<~{%d;%d;%d;%d;%d;}>\n"
-		, h->VersMajor, h->VersMinor
-		, h->Blocksize, h->Encoding, h->Flags);
+	if (   (err = StreamWrite(&dw->Stream, writed, "<~{", 3))
+		|| (err = StreamWriteUInt32Txt(&dw->Stream, writed, h->VersMajor))
+		|| (err = StreamWrite(&dw->Stream, writed, ";", 1))
+		|| (err = StreamWriteUInt32Txt(&dw->Stream, writed, h->VersMinor))
+		|| (err = StreamWrite(&dw->Stream, writed, ";", 1))
+		|| (err = StreamWriteUInt32Txt(&dw->Stream, writed, h->Blocksize))
+		|| (err = StreamWrite(&dw->Stream, writed, ";", 1))
+		|| (err = StreamWriteUInt32Txt(&dw->Stream, writed, h->Encoding))
+		|| (err = StreamWrite(&dw->Stream, writed, ";", 1))
+		|| (err = StreamWriteUInt32Txt(&dw->Stream, writed, h->Flags))
+		|| (err = StreamWrite(&dw->Stream, writed, ";}>\n", 4)) )
+		return err;
+	return ERR_NO;
 }
 
 // Write Schema
@@ -55,9 +65,9 @@ int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed)
 	size_t flushed = 0;
 	if ((err = EdfFlushData(dw, &flushed)))
 		return err;
-	if (!dw->impl->WriteSchema || !t)
+	if (!dw->WriteSchema || !t)
 		return ERR_FN_NOT_EXIST;
-	if ((err = (*dw->impl->WriteSchema)(dw, t, writed)))
+	if ((err = (*dw->WriteSchema)(dw, t, writed)))
 		return err;
 	//кешируем схему в оперативку для быстрого доступа при записи
 	//ранее просто хранил указатель (который мог быть в памяти программ)
@@ -117,10 +127,10 @@ static int EdfWriteSchemaTxt(EdfContext_t* w, const EdfSchema_t* t, size_t* writ
 //-----------------------------------------------------------------------------
 int EdfFlushData(EdfContext_t* dw, size_t* writed)
 {
-	if (NULL == dw->impl->FlushData || 0 == dw->Blk->Len)
+	if (NULL == dw->FlushData || 0 == dw->Blk->Len)
 		return 0;
 	int err = 0;
-	if ((err = (*dw->impl->FlushData)(dw, writed)))
+	if ((err = (*dw->FlushData)(dw, writed)))
 		return err;
 	dw->Blk->Len = 0;
 	return ERR_NO;
@@ -222,51 +232,24 @@ int EdfInit(EdfContext_t* pEdf, uint8_t* pMem, size_t memLen, const EdfConfig_t*
 	return 0;
 }
 //-----------------------------------------------------------------------------
-const EdfImpl_t writeCBinToBin =
-{
-	.WritePrimitive = CBinToBin,
-	.WriteConfig = EdfWriteConfigBin,
-	.WriteSchema = EdfWriteSchemaBin,
-	.FlushData = StreamWriteBlockDataBin
-};
-const EdfImpl_t readBinToCBin =
-{
-	.WritePrimitive = BinToBin,
-};
-
-#ifndef EDF_DISABLE_TEXT_MODE
-const EdfImpl_t writeCBinToTxt =
-{
-	.WritePrimitive = CBinToStr,
-	.WriteConfig = EdfWriteConfigTxt,
-	.WriteSchema = EdfWriteSchemaTxt,
-	.FlushData = StreamWriteBlockDataTxt,
-	.BeginStruct = SepBeginStruct,
-	.EndStruct = SepEndStruct,
-	.BeginArray = SepBeginArray,
-	.EndArray = SepEndArray,
-	.SepVarEnd = SepVarEnd,
-	.RecBegin = SepRecBegin,
-	.RecEnd = SepRecEnd,
-};
-const EdfImpl_t readTxtToCBin =
-{
-	0 //.WritePrimitive = StrToBin,
-};
-#endif
-//-----------------------------------------------------------------------------
 int EdfOpenStream(EdfContext_t* f, Stream_t* stream, const char* mode)
 {
 	if (2 > strnlength(mode, 2))
 		return ERR_WRONG_PARAMETERS;
 	int err = 0;
 	f->SchemaPtr = NULL;
-
+	f->Stream = *stream;
+	f->BufLen = 0;
+	f->WritePrimitive = NULL;
+	f->WriteConfig = NULL;
+	f->WriteSchema = NULL;
+	f->FlushData = NULL;
 	if (0 == strncmp("wb", mode, 2) || 0 == strncmp("ab", mode, 2))
 	{
-		f->Stream = *stream;
-		f->BufLen = 0;
-		f->impl = &writeCBinToBin;
+		f->WritePrimitive = CBinToBin;
+		f->WriteConfig = EdfWriteConfigBin;
+		f->WriteSchema = EdfWriteSchemaBin;
+		f->FlushData = StreamWriteBlockDataBin;
 		if (strchr(mode, 'a'))
 		{
 			err = SeekEnd(f);
@@ -274,16 +257,15 @@ int EdfOpenStream(EdfContext_t* f, Stream_t* stream, const char* mode)
 	}
 	else if (0 == strncmp("rb", mode, 2))
 	{
-		f->Stream = *stream;
-		f->BufLen = 0;
-		f->impl = &readBinToCBin;
+		f->WritePrimitive = BinToBin;
 	}
 #ifndef EDF_DISABLE_TEXT_MODE
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2))
 	{
-		f->Stream = *stream;
-		f->BufLen = 0;
-		f->impl = &writeCBinToTxt;
+		f->WritePrimitive = CBinToStr;
+		f->WriteConfig = EdfWriteConfigTxt;
+		f->WriteSchema = EdfWriteSchemaTxt;
+		f->FlushData = StreamWriteBlockDataTxt;
 		if (strchr(mode, 'a'))
 		{
 			err = StreamSeek(stream, 0, FSEEK_END);
@@ -293,9 +275,6 @@ int EdfOpenStream(EdfContext_t* f, Stream_t* stream, const char* mode)
 #else
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2) || 0 == strncmp("rt", mode, 2))
 	{
-		f->Stream = *stream;
-		f->BufLen = 0;
-		f->impl = NULL;
 		err = ERR_FN_NOT_EXIST;
 	}
 #endif

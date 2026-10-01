@@ -13,7 +13,7 @@
 #define EDF_CONTENTRECORDHDR_SIZE       8 // == offsetof(EdfRecordContent_t, Data)
 #define EDF_HEADER_SIZE    (EDF_TYPE_SIZE + EDF_LEN_SIZE)
 
-#define STREAM_FMT_BUF  64
+#define STREAM_FMT_BUF  20
 #define MIN_BLOCK_SIZE	256
 #define MAX_BLOCK_SIZE	4096
 

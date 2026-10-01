@@ -34,7 +34,6 @@ int ChangeExt(char* file, const char* ext)
 //-----------------------------------------------------------------------------
 int BinToText(const char* srcFile, const char* dstFile)
 {
-#ifndef EDF_DISABLE_TEXT_MODE
 	int err = 0;
 	size_t writed = 0;
 	uint8_t edfMemReader[MEM_BLOCK_SIZE_512];
@@ -55,9 +54,7 @@ int BinToText(const char* srcFile, const char* dstFile)
 	// будем конвертировать из Edf строк сразу в текст без промежуточного конвертирования в Си строки (char*)
 	// для этого переопределяем функцию чтения и записи примитивов, в частности для String(char*)
 	// поскольку в Си char* может ссылаться в любую область, а в Edf строка BStr-формата без терминатора
-	EdfImpl_t impl = *tw->impl;
-	impl.WritePrimitive = BinToStr;
-	tw->impl = &impl;
+	tw->WritePrimitive = BinToStr;
 	/*
 	size_t skip = 0;
 	void* dst = NULL;
@@ -137,7 +134,6 @@ int BinToText(const char* srcFile, const char* dstFile)
 	}
 	EdfClose(br);
 	EdfClose(tw);
-#endif
 	return 0;
 }
 //-----------------------------------------------------------------------------

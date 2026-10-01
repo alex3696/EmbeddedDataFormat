@@ -42,25 +42,6 @@ static int StreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int StreamWriteFormatImpl(void* stream, size_t* writed, const char* format, ...)
-{
-#ifndef EDF_DISABLE_TEXT_MODE
-	FileStream_t* fs = (FileStream_t*)stream;
-	va_list arglist;
-	va_start(arglist, format);
-	size_t ret = vsnprintf_((char*)fs->FmtBuf, STREAM_FMT_BUF, format, arglist);
-	va_end(arglist);
-	if (ret && (size_t)ret >= STREAM_FMT_BUF)
-		return ERR_DST_SHORT;
-	return StreamWriteImpl(stream, writed, (void*)fs->FmtBuf, ret);
-#else
-	(void)stream;
-	(void)writed;
-	(void)format;
-	return ERR_FN_NOT_EXIST;
-#endif
-}
-//-----------------------------------------------------------------------------
 static int FileStreamClose(void* stream)
 {
 	FILE* f = (FILE*)((FileStream_t*)stream)->Instance;
@@ -78,9 +59,9 @@ int FileStreamSeek(FileStream_t* stream, long offset, int origin)
 }
 //-----------------------------------------------------------------------------
 
-const StreamFnImpl_t rwFileSt = { T_FILE_STREAM, StreamWriteImpl ,StreamReadImpl ,StreamWriteFormatImpl,FileStreamClose, FileStreamSeek };
-const StreamFnImpl_t wFileSt = { T_FILE_STREAM, StreamWriteImpl ,NULL ,StreamWriteFormatImpl,FileStreamClose, FileStreamSeek };
-const StreamFnImpl_t rFileSt = { T_FILE_STREAM, NULL ,StreamReadImpl ,NULL,FileStreamClose, FileStreamSeek };
+const StreamFnImpl_t rwFileSt ={ T_FILE_STREAM, StreamWriteImpl, StreamReadImpl, FileStreamClose, FileStreamSeek };
+const StreamFnImpl_t wFileSt = { T_FILE_STREAM, StreamWriteImpl, NULL,           FileStreamClose, FileStreamSeek };
+const StreamFnImpl_t rFileSt = { T_FILE_STREAM, NULL,            StreamReadImpl, FileStreamClose, FileStreamSeek };
 
 //-----------------------------------------------------------------------------
 int FileStreamOpen(FileStream_t* s, const char* file, const char* inMode)

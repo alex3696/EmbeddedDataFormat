@@ -9,7 +9,7 @@ static int EdfWriteSep(EdfContext_t* dw,
 	size_t* writed)
 {
 	// игнорируем любые разделители, если мы не в текстовом режиме
-	if(!dw->impl->BeginStruct)
+	if(dw->WritePrimitive == CBinToBin)
 		return 0;
 
 	if (0 < (*skip))
@@ -42,6 +42,15 @@ static int EdfWriteSep(EdfContext_t* dw,
 	(*dst) += srcLen;
 	return 0;
 }
+
+#define EdfWriteSepBeginStruct(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepBeginStruct, dst, dstLen, skip, wqty, writed))
+#define EdfWriteSepEndStruct(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepEndStruct, dst, dstLen, skip, wqty, writed))
+#define EdfWriteSepBeginArray(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepBeginArray, dst, dstLen, skip, wqty, writed))
+#define EdfWriteSepEndArray(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepEndArray, dst, dstLen, skip, wqty, writed))
+#define EdfWriteSepRecBegin(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepRecBegin, dst, dstLen, skip, wqty, writed))
+#define EdfWriteSepRecEnd(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepRecEnd, dst, dstLen, skip, wqty, writed))
+#define EdfWriteSepVarEnd(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepVarEnd, dst, dstLen, skip, wqty, writed))
+
 //-----------------------------------------------------------------------------
 // 
 static int WriteOnePrimitive(EdfContext_t* dw, const EdfType_t* t,
@@ -70,7 +79,7 @@ static int WriteOnePrimitive(EdfContext_t* dw, const EdfType_t* t,
 	{
 		charLen = *srcLen;
 	}
-	if ((err = (*dw->impl->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
+	if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
@@ -84,7 +93,7 @@ static int WriteOnePrimitive(EdfContext_t* dw, const EdfType_t* t,
 		*dstLen = GetContentDataMaxLen(dw, btData);
 		*ppdst = dw->Blk->Content.Record.Data;
 		// Пытаемся записать ЕЩЕ РАЗ
-		if ((err = (*dw->impl->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
+		if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
 			return err;// если снова ошибка, выходим
 	}
 	(*wqty)++;
@@ -108,7 +117,7 @@ static int WriteElement(const EdfType_t* t,
 		if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
 			return err;
 #ifndef EDF_DISABLE_TEXT_MODE
-		return EdfWriteSep(dw, dw->impl->SepVarEnd, ppdst, dstLen, skip, wqty, writed);
+		return EdfWriteSepVarEnd(dw, ppdst, dstLen, skip, wqty, writed);
 #else
 		return err;
 #endif
@@ -117,7 +126,7 @@ static int WriteElement(const EdfType_t* t,
 #ifndef EDF_DISABLE_TEXT_MODE
 	if (1 < totalElement)
 	{
-		if ((err = EdfWriteSep(dw, dw->impl->BeginArray, ppdst, dstLen, skip, wqty, writed)))
+		if ((err = EdfWriteSepBeginArray(dw, ppdst, dstLen, skip, wqty, writed)))
 			return err;
 	}
 #endif
@@ -128,7 +137,7 @@ static int WriteElement(const EdfType_t* t,
 			if (t->Fields.Count)
 			{
 #ifndef EDF_DISABLE_TEXT_MODE
-				if ((err = EdfWriteSep(dw, dw->impl->BeginStruct, ppdst, dstLen, skip, wqty, writed)))
+				if ((err = EdfWriteSepBeginStruct(dw, ppdst, dstLen, skip, wqty, writed)))
 					return err;
 #endif
 				for (size_t j = 0; j < t->Fields.Count; j++)
@@ -138,7 +147,7 @@ static int WriteElement(const EdfType_t* t,
 						return err;
 				}
 #ifndef EDF_DISABLE_TEXT_MODE
-				if ((err = EdfWriteSep(dw, dw->impl->EndStruct, ppdst, dstLen, skip, wqty, writed)))
+				if ((err = EdfWriteSepEndStruct(dw, ppdst, dstLen, skip, wqty, writed)))
 					return err;
 #endif
 			}
@@ -148,7 +157,7 @@ static int WriteElement(const EdfType_t* t,
 			if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
 				return err;
 #ifndef EDF_DISABLE_TEXT_MODE
-			if ((err = (EdfWriteSep(dw, dw->impl->SepVarEnd, ppdst, dstLen, skip, wqty, writed))))
+			if ((err = (EdfWriteSepVarEnd(dw, ppdst, dstLen, skip, wqty, writed))))
 				return err;
 #endif
 		}
@@ -156,7 +165,7 @@ static int WriteElement(const EdfType_t* t,
 #ifndef EDF_DISABLE_TEXT_MODE
 	if (1 < totalElement)
 	{
-		if ((err = (EdfWriteSep(dw, dw->impl->EndArray, ppdst, dstLen, skip, wqty, writed))))
+		if ((err = (EdfWriteSepEndArray(dw, ppdst, dstLen, skip, wqty, writed))))
 			return err;
 	}
 #endif
@@ -171,13 +180,13 @@ static int WriteSingleValue(EdfContext_t* dw,
 {
 	int err;
 #ifndef EDF_DISABLE_TEXT_MODE
-	if (ERR_NO != (err = EdfWriteSep(dw, dw->impl->RecBegin, dst, dstLen, skip, wqty, writed)))
+	if (ERR_NO != (err = EdfWriteSepRecBegin(dw, dst, dstLen, skip, wqty, writed)))
 		return err;
 #endif
 	if (ERR_NO != (err = WriteElement(&dw->SchemaPtr->Type, src, srcLen, dst, dstLen, skip, wqty, readed, writed, dw)))
 		return err;
 #ifndef EDF_DISABLE_TEXT_MODE
-	if (ERR_NO != (err = EdfWriteSep(dw, dw->impl->RecEnd, dst, dstLen, skip, wqty, writed)))
+	if (ERR_NO != (err = EdfWriteSepRecEnd(dw, dst, dstLen, skip, wqty, writed)))
 		return err;
 #endif
 	return err;
@@ -187,7 +196,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 {
 	if (dw == NULL || NULL == dw->SchemaPtr)
 		return ERR_WRONG_TYPE;
-	if (dw->impl->WritePrimitive == NULL)  // режим чтения
+	if (dw->WritePrimitive == NULL)  // режим чтения
 		return ERR_WRONG_PARAMETERS;
 	if (vsrc == NULL || xsrcLen == 0)
 		return ERR_NO;

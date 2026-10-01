@@ -11,7 +11,6 @@
 
 typedef int(*WriteFn)	(void* stream, size_t* writed, void const* data, size_t len);
 typedef int(*ReadFn)	(void* stream, size_t* readed, void* dst, size_t);
-typedef int(*WriteFmtFn)(void* stream, size_t* writed, const char* format, ...);
 typedef int(*CloseFn)	(void* stream);
 typedef int(*SeekFn)	(void* stream, long offset, int origin);
 
@@ -26,7 +25,6 @@ typedef struct StreamFnImpl
 	StreamType_t TypeId;
 	WriteFn Write;
 	ReadFn Read;
-	WriteFmtFn WriteFmt;
 	CloseFn Close;
 	SeekFn Seek;
 } StreamFnImpl_t;
@@ -77,10 +75,10 @@ typedef union Stream
 
 #define StreamWrite(s, w, data, count) (((s)->Impl->Write)((s), (w), data, count))
 #define StreamRead(s, r, data, count) (((s)->Impl->Read)((s), (r), data, count))
-#define StreamWriteFmt(s, w, fmt,...) (((s)->Impl->WriteFmt)((s), (w), fmt, __VA_ARGS__))
 #define StreamClose(s) ((s)->Impl->Close)((s))
 #define StreamSeek(s, offset, origin) ((s)->Impl->Seek)((s),offset, origin)
 
+int StreamWriteUInt32Txt(Stream_t* st, size_t* writed, uint32_t val);
 //-----------------------------------------------------------------------------
 //Memory Linear Allocator
 typedef struct LineAlloc

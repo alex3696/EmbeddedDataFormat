@@ -41,22 +41,6 @@ typedef struct
 	//uint16_t Crc;
 } EdfBlock_t;
 
-typedef struct EdfImpl
-{
-	WritePrimitivesFn WritePrimitive;
-	WriteConfigFn WriteConfig;
-	WriteSchemaFn WriteSchema;
-	FlushDataFn FlushData;
-	const char* BeginStruct;
-	const char* EndStruct;
-	const char* BeginArray;
-	const char* EndArray;
-	const char* SepVarEnd;
-	const char* RecBegin;
-	const char* RecEnd;
-} EdfImpl_t;
-//typedef struct EdfImpl EdfImpl_t;
-
 uint16_t GetContentMaxLen(const EdfContext_t* pEdf);
 uint16_t GetContentDataMaxLen(const EdfContext_t* pEdf, EdfBlockType bt);
 uint16_t GetContentDataLen(const EdfBlock_t* blk);
@@ -67,20 +51,23 @@ typedef struct EdfContext
 	EdfConfig_t Cfg;				// конфигурация
 	const EdfSchema_t* SchemaPtr;	// текущая схема, при записи кешируем схему в Buf
 	Stream_t Stream;				// поток в который пишем или читаем
-	uint16_t _Reserved;
-	uint16_t PrimSkip;	/** <Смещение примитива внутри текущей записи (0-65535).
-							Используется при разрыве примитива между блоками.
-                            Сбрасывается в 0 при вызове EdfWriteSchema.> */
 	uint32_t RecordId;	/** <Номер текущей записи (счетчик успешно завершенных записей).
 							Инкрементируется после каждой полной записи.
 							Сбрасывается в 0 при вызове EdfWriteSchema. */
+	uint16_t PrimSkip;	/** <Смещение примитива внутри текущей записи (0-65535).
+							Используется при разрыве примитива между блоками.
+                            Сбрасывается в 0 при вызове EdfWriteSchema.> */
+	uint16_t _Reserved;
 
 	EdfBlock_t* const Blk;	// буфер блока
 
 	size_t BufLen;
 	uint8_t* const Buf;
 
-	const EdfImpl_t* impl;
+	WritePrimitivesFn WritePrimitive;
+	WriteConfigFn WriteConfig;
+	WriteSchemaFn WriteSchema;
+	FlushDataFn FlushData;
 
 } EdfContext_t;
 

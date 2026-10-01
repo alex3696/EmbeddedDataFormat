@@ -125,7 +125,9 @@ static int StreamWriteTypeTxt(Stream_t* s, const EdfType_t* t, int noffset, size
 	if (t->Dims.Count && t->Dims.Item)
 	{
 		for (size_t i = 0; i < t->Dims.Count; i++)
-			if ((err = StreamWriteFmt(s, writed, "[%u]", t->Dims.Item[i])))
+			if (   (err = StreamWrite(s, writed, "[", 1))
+				|| (err = StreamWriteUInt32Txt(s, writed, t->Dims.Item[i]))
+				|| (err = StreamWrite(s, writed, "]", 1)) )
 				return err;
 	}
 	// NAME
@@ -168,7 +170,8 @@ int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed)
 	int err = 0;
 	if ((err = StreamWrite(st, writed, "\n<? {", 5)))
 		return err;
-	if ((err = StreamWriteFmt(st, writed, "%lu;", t->Id)))
+	if (   (err = StreamWriteUInt32Txt(st, writed, t->Id))
+		|| (err = StreamWrite(st, writed, ";", 1)) )
 		return err;
 	size_t strLen = t->Name ? strnlength(t->Name, MAX_STR_LEN) : 0;
 	if (   (err = StreamWrite(st, writed, "\"", 1))
