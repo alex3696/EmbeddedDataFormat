@@ -122,28 +122,30 @@ int CBinToBin(PoType t,
 	case Struct:
 	default: *r = *w = 0; return ERR_WRONG_TYPE;
 	case Int8: case UInt8:
-		*r = *w = sizeof(uint8_t);
-		if (srcLen < *r) return ERR_SRC_SHORT;
-		if (dstLen < *w) return ERR_DST_SHORT;
+		if (srcLen < sizeof(uint8_t)) return ERR_SRC_SHORT;
+		if (dstLen < sizeof(uint8_t)) return ERR_DST_SHORT;
 		*dst = *src;
+		*r = *w = sizeof(uint8_t);
 		break;
 	case Half: case Int16: case UInt16:
+		if (srcLen < sizeof(uint16_t)) return ERR_SRC_SHORT;
+		if (dstLen < sizeof(uint16_t)) return ERR_DST_SHORT;
+		*(uint16_t*)dst = *(const uint16_t*)src;
 		*r = *w = sizeof(uint16_t);
-		if (srcLen < *r) return ERR_SRC_SHORT;
-		if (dstLen < *w) return ERR_DST_SHORT;
-		*(uint16_t*)dst = *(const uint16_t*)src; break;
+		break;
 	case Single: case Int32: case UInt32:
+		if (srcLen < sizeof(uint32_t)) return ERR_SRC_SHORT;
+		if (dstLen < sizeof(uint32_t)) return ERR_DST_SHORT;
+		*(uint32_t*)dst = *(const uint32_t*)src;
 		*r = *w = sizeof(uint32_t);
-		if (srcLen < *r) return ERR_SRC_SHORT;
-		if (dstLen < *w) return ERR_DST_SHORT;
-		*(uint32_t*)dst = *(const uint32_t*)src; break;
+		break;
 	case Double: case Int64: case UInt64:
+		if (srcLen < sizeof(uint64_t)) return ERR_SRC_SHORT;
+		if (dstLen < sizeof(uint64_t)) return ERR_DST_SHORT;
+		*(uint32_t*)dst = *(const uint32_t*)src;//memcpy(dst, src, *r); break;
+		*(uint32_t*)(dst + 4) = *(const uint32_t*)(src + 4);
 		*r = *w = sizeof(uint64_t);
-		if (srcLen < *r) return ERR_SRC_SHORT;
-		if (dstLen < *w) return ERR_DST_SHORT;
-		*(uint32_t*)dst = *(const uint32_t*)src; 
-		*(uint32_t*)(dst + 4) = *(const uint32_t*)(src + 4); break;
-		//memcpy(dst, src, *r); break;
+		break;
 	case Char:
 		if (dstLen < srcLen)
 		{
