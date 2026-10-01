@@ -1,67 +1,73 @@
 #include "_pch.h"
 #include "edf.h"
 
+typedef struct
+{
+	const uint8_t* psrc;
+	uint8_t* pdst;
+	size_t srcLen;
+	size_t dstLen;
+	size_t readed;
+	size_t writed;
+
+	EdfContext_t* edf;
+	size_t skip;
+	size_t wqty;
+} WalkContext_t;
+
 //-----------------------------------------------------------------------------
-static int EdfWriteSep(EdfContext_t* dw,
-	const char* const src,
-	uint8_t** dst, size_t* dstSize,
-	size_t* skip, size_t* wqty,
-	size_t* writed)
+static int EdfWriteSep(WalkContext_t* ctx, const char* const sep)
 {
 	// игнорируем любые разделители, если мы не в текстовом режиме
-	if(dw->WritePrimitive == CBinToBin)
+	if(ctx->edf->WritePrimitive == CBinToBin)
 		return 0;
 
-	if (0 < (*skip))
+	if (0 < ctx->skip)
 	{
-		(*skip)--;
+		ctx->skip--;
 		return 0;
 	}
-	size_t srcLen = src ? strnlength(src, 10) : 0;
-	if (!srcLen)
+	size_t sepLen = sep ? strnlength(sep, 10) : 0;
+	if (!sepLen)
 	{
-		(*wqty)++;
+		ctx->wqty++;
 		return 0;
 	}
-	if (srcLen > *dstSize)
+	if (sepLen > ctx->dstLen)
 	{
 		int err = 0;
-		dw->Blk->Len += (uint16_t)(*writed);
-		if ((err = EdfFlushData(dw, writed)))
+		ctx->edf->Blk->Len += (uint16_t)(ctx->writed);
+		if ((err = EdfFlushData(ctx->edf, &ctx->writed)))
 			return err;
-		*writed = 0;
-		*dstSize = GetContentDataMaxLen(dw, btData);
-		*dst = dw->Blk->Content.Record.Data;
-		if (srcLen > *dstSize)
+		ctx->writed = 0;
+		ctx->dstLen = GetContentDataMaxLen(ctx->edf, btData);
+		ctx->pdst = ctx->edf->Blk->Content.Record.Data;
+		if (sepLen > ctx->dstLen)
 			return ERR_DST_SHORT;
 	}
-	(*wqty)++;
-	memcpy(*dst, src, srcLen);
-	(*dstSize) -= srcLen;
-	(*writed) += srcLen;
-	(*dst) += srcLen;
+	ctx->wqty++;
+	memcpy(ctx->pdst, sep, sepLen);
+	ctx->dstLen -= sepLen;
+	ctx->writed += sepLen;
+	ctx->pdst += sepLen;
 	return 0;
 }
 
-#define EdfWriteSepBeginStruct(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepBeginStruct, dst, dstLen, skip, wqty, writed))
-#define EdfWriteSepEndStruct(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepEndStruct, dst, dstLen, skip, wqty, writed))
-#define EdfWriteSepBeginArray(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepBeginArray, dst, dstLen, skip, wqty, writed))
-#define EdfWriteSepEndArray(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepEndArray, dst, dstLen, skip, wqty, writed))
-#define EdfWriteSepRecBegin(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepRecBegin, dst, dstLen, skip, wqty, writed))
-#define EdfWriteSepRecEnd(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepRecEnd, dst, dstLen, skip, wqty, writed))
-#define EdfWriteSepVarEnd(ctx, dst, dstLen, skip, wqty, writed) (EdfWriteSep(ctx, SepVarEnd, dst, dstLen, skip, wqty, writed))
+#define EdfWriteSepBeginStruct(ctx) (EdfWriteSep(ctx, SepBeginStruct))
+#define EdfWriteSepEndStruct(ctx) (EdfWriteSep(ctx, SepEndStruct))
+#define EdfWriteSepBeginArray(ctx) (EdfWriteSep(ctx, SepBeginArray))
+#define EdfWriteSepEndArray(ctx) (EdfWriteSep(ctx, SepEndArray))
+#define EdfWriteSepRecBegin(ctx) (EdfWriteSep(ctx, SepRecBegin))
+#define EdfWriteSepRecEnd(ctx) (EdfWriteSep(ctx, SepRecEnd))
+#define EdfWriteSepVarEnd(ctx) (EdfWriteSep(ctx, SepVarEnd))
 
 //-----------------------------------------------------------------------------
 // 
-static int WriteOnePrimitive(EdfContext_t* dw, const EdfType_t* t,
-	const uint8_t** ppsrc, size_t* srcLen,
-	uint8_t** ppdst, size_t* dstLen,
-	size_t* skip, size_t* wqty,
-	size_t* readed, size_t* writed)
+static int WriteOnePrimitive(const EdfType_t* t, WalkContext_t* ctx)
 {
-	if (0 < (*skip))
+	if (0 < (ctx->skip))
 	{
-		(*skip)--;
+		ctx->skip--;
 		return ERR_NO;
 	}
 	int err = 0;
@@ -72,52 +78,49 @@ static int WriteOnePrimitive(EdfContext_t* dw, const EdfType_t* t,
 		charLen = GetTotalElements(&t->Dims);
 		if (charLen == 0)
 			return ERR_WRONG_TYPE;
-		if (charLen > *srcLen)
+		if (charLen > ctx->srcLen)
 			return ERR_SRC_SHORT;
 	}
 	else
 	{
-		charLen = *srcLen;
+		charLen = ctx->srcLen;
 	}
-	if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
+	if ((err = (ctx->edf->WritePrimitive)(t->Type, ctx->psrc, charLen, ctx->pdst, ctx->dstLen, &r, &w)))
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
 		// Сбрасываем блок
-		dw->Blk->Len += (uint16_t)(*writed);
-		dw->PrimSkip = (uint16_t)(*wqty);
-		if ((err = EdfFlushData(dw, &w)))
+		ctx->edf->Blk->Len += (uint16_t)(ctx->writed);
+		ctx->edf->PrimSkip = (uint16_t)(ctx->wqty);
+		if ((err = EdfFlushData(ctx->edf, &w)))
 			return err;
 		// Сбрасываем счетчики для нового блока
-		*writed = 0;
-		*dstLen = GetContentDataMaxLen(dw, btData);
-		*ppdst = dw->Blk->Content.Record.Data;
+		ctx->writed = 0;
+		ctx->dstLen = GetContentDataMaxLen(ctx->edf, btData);
+		ctx->pdst = ctx->edf->Blk->Content.Record.Data;
 		// Пытаемся записать ЕЩЕ РАЗ
-		if ((err = (*dw->WritePrimitive)(t->Type, *ppsrc, charLen, *ppdst, *dstLen, &r, &w)))
+		if ((err = (ctx->edf->WritePrimitive)(t->Type, ctx->psrc, charLen, ctx->pdst, ctx->dstLen, &r, &w)))
 			return err;// если снова ошибка, выходим
 	}
-	(*wqty)++;
-	*readed += r;
-	*writed += w;
-	*ppsrc += r; *srcLen -= r;
-	*ppdst += w; *dstLen -= w;
+	(ctx->wqty)++;
+	ctx->readed += r;
+	ctx->writed += w;
+	ctx->psrc += r;
+	ctx->srcLen -= r;
+	ctx->pdst += w;
+	ctx->dstLen -= w;
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int WriteElement(const EdfType_t* t,
-	const uint8_t** ppsrc, size_t *srcLen,
-	uint8_t** ppdst, size_t *dstLen,
-	size_t* skip, size_t* wqty,
-	size_t* readed, size_t* writed,
-	EdfContext_t* dw)
+static int WriteElement(const EdfType_t* t, WalkContext_t* ctx)
 {
 	int err = ERR_NO;
 	if (Char == t->Type)
 	{
-		if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
+		if ((err = WriteOnePrimitive(t, ctx)))
 			return err;
 #ifndef EDF_DISABLE_TEXT_MODE
-		return EdfWriteSepVarEnd(dw, ppdst, dstLen, skip, wqty, writed);
+		return EdfWriteSepVarEnd(ctx);
 #else
 		return err;
 #endif
@@ -126,7 +129,7 @@ static int WriteElement(const EdfType_t* t,
 #ifndef EDF_DISABLE_TEXT_MODE
 	if (1 < totalElement)
 	{
-		if ((err = EdfWriteSepBeginArray(dw, ppdst, dstLen, skip, wqty, writed)))
+		if ((err = EdfWriteSepBeginArray(ctx)))
 			return err;
 	}
 #endif
@@ -134,30 +137,27 @@ static int WriteElement(const EdfType_t* t,
 	{
 		if (Struct == t->Type)
 		{
-			if (t->Fields.Count)
+#ifndef EDF_DISABLE_TEXT_MODE
+			if ((err = EdfWriteSepBeginStruct(ctx)))
+				return err;
+#endif
+			for (size_t j = 0; j < t->Fields.Count; j++)
 			{
-#ifndef EDF_DISABLE_TEXT_MODE
-				if ((err = EdfWriteSepBeginStruct(dw, ppdst, dstLen, skip, wqty, writed)))
+				const EdfType_t* s = &t->Fields.Item[j];
+				if ((err = WriteElement(s, ctx)))
 					return err;
-#endif
-				for (size_t j = 0; j < t->Fields.Count; j++)
-				{
-					const EdfType_t* s = &t->Fields.Item[j];
-					if ((err = WriteElement(s, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed, dw)))
-						return err;
-				}
-#ifndef EDF_DISABLE_TEXT_MODE
-				if ((err = EdfWriteSepEndStruct(dw, ppdst, dstLen, skip, wqty, writed)))
-					return err;
-#endif
 			}
+#ifndef EDF_DISABLE_TEXT_MODE
+			if ((err = EdfWriteSepEndStruct(ctx)))
+				return err;
+#endif
 		}
 		else
 		{
-			if ((err = WriteOnePrimitive(dw, t, ppsrc, srcLen, ppdst, dstLen, skip, wqty, readed, writed)))
+			if ((err = WriteOnePrimitive(t, ctx)))
 				return err;
 #ifndef EDF_DISABLE_TEXT_MODE
-			if ((err = (EdfWriteSepVarEnd(dw, ppdst, dstLen, skip, wqty, writed))))
+			if ((err = (EdfWriteSepVarEnd(ctx))))
 				return err;
 #endif
 		}
@@ -165,28 +165,24 @@ static int WriteElement(const EdfType_t* t,
 #ifndef EDF_DISABLE_TEXT_MODE
 	if (1 < totalElement)
 	{
-		if ((err = (EdfWriteSepEndArray(dw, ppdst, dstLen, skip, wqty, writed))))
+		if ((err = (EdfWriteSepEndArray(ctx))))
 			return err;
 	}
 #endif
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int WriteSingleValue(EdfContext_t* dw,
-	const uint8_t** src, size_t* srcLen,
-	uint8_t** dst, size_t* dstLen,
-	size_t* skip, size_t* wqty,
-	size_t* readed, size_t* writed)
+static int WriteSingleValue(WalkContext_t* ctx)
 {
 	int err;
 #ifndef EDF_DISABLE_TEXT_MODE
-	if (ERR_NO != (err = EdfWriteSepRecBegin(dw, dst, dstLen, skip, wqty, writed)))
+	if (ERR_NO != (err = EdfWriteSepRecBegin(ctx)))
 		return err;
 #endif
-	if (ERR_NO != (err = WriteElement(&dw->SchemaPtr->Type, src, srcLen, dst, dstLen, skip, wqty, readed, writed, dw)))
+	if (ERR_NO != (err = WriteElement(&ctx->edf->SchemaPtr->Type, ctx)))
 		return err;
 #ifndef EDF_DISABLE_TEXT_MODE
-	if (ERR_NO != (err = EdfWriteSepRecEnd(dw, dst, dstLen, skip, wqty, writed)))
+	if (ERR_NO != (err = EdfWriteSepRecEnd(ctx)))
 		return err;
 #endif
 	return err;
@@ -203,25 +199,27 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 	if (srcConsumed != NULL)
 		*srcConsumed = 0;
 
-	const uint8_t* src = (const uint8_t*)vsrc;
-	size_t srcLen = xsrcLen;
-
-	size_t dstLen = GetContentDataMaxLen(dw, btData) - dw->Blk->Len;
-	uint8_t* dst = dw->Blk->Content.Record.Data + dw->Blk->Len;
+	WalkContext_t ctx = { 0 };
+	ctx.edf = dw;
+	ctx.psrc = (const uint8_t*)vsrc;
+	ctx.srcLen = xsrcLen;
+	ctx.dstLen = GetContentDataMaxLen(dw, btData) - dw->Blk->Len;
+	ctx.pdst = dw->Blk->Content.Record.Data + dw->Blk->Len;
 
 	int wr;
 	do
 	{
-		size_t skip = dw->PrimSkip;
-		size_t r = 0, w = 0, wqty = dw->PrimSkip;
-		wr = WriteSingleValue(dw, &src, &srcLen, &dst, &dstLen, &skip, &wqty, &r, &w);
+		ctx.writed = ctx.readed = 0;
+		ctx.wqty = ctx.skip = dw->PrimSkip;
+		wr = WriteSingleValue(&ctx);
+
 		// Увеличиваем размер занятых данных в текущем блоке на то, что вернул WriteSingleValue.
 		// (Если внутри происходил EdfFlushData, 'w' содержит корректный остаток для нового блока)
-		if (dw->Blk->Len + w > 0xFFFF)
+		if (dw->Blk->Len + ctx.writed > 0xFFFF)
 			return ERR_WRONG_PARAMETERS;
-		dw->Blk->Len += (uint16_t)w;
+		dw->Blk->Len += (uint16_t)ctx.writed;
 		if (srcConsumed != NULL)
-			*srcConsumed += r;
+			*srcConsumed += ctx.readed;
 
 		switch (wr)
 		{
@@ -230,7 +228,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 		case ERR_SRC_SHORT:
 			// Входной буфер оборвался на середине примитива/массива.
 			// Запоминаем позицию в схеме (wqty), чтобы при следующем вызове начать с нужного места.
-			dw->PrimSkip = (uint16_t)wqty;
+			dw->PrimSkip = (uint16_t)ctx.wqty;
 			return ERR_SRC_SHORT;
 		case ERR_NO:
 			dw->PrimSkip = 0;
@@ -244,7 +242,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 			return ERR_DST_SHORT;
 			break;
 		}
-	} while (0 < srcLen);
+	} while (0 < ctx.srcLen);
 	return wr;
 }
 
