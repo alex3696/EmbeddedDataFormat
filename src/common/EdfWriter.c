@@ -259,7 +259,7 @@ int EdfOpenStream(EdfContext_t* f, Stream_t* stream, const char* mode)
 	{
 		f->WritePrimitive = BinToBin;
 	}
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 	else if (0 == strncmp("wt", mode, 2) || 0 == strncmp("at", mode, 2))
 	{
 		f->WritePrimitive = CBinToStr;

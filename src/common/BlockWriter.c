@@ -119,14 +119,14 @@ static int WriteElement(const EdfType_t* t, WalkContext_t* ctx)
 	{
 		if ((err = WriteOnePrimitive(t, ctx)))
 			return err;
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 		return EdfWriteSepVarEnd(ctx);
 #else
 		return err;
 #endif
 	}
 	size_t totalElement = GetTotalElements(&t->Dims);
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 	if (1 < totalElement)
 	{
 		if ((err = EdfWriteSepBeginArray(ctx)))
@@ -137,7 +137,7 @@ static int WriteElement(const EdfType_t* t, WalkContext_t* ctx)
 	{
 		if (Struct == t->Type)
 		{
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 			if ((err = EdfWriteSepBeginStruct(ctx)))
 				return err;
 #endif
@@ -147,7 +147,7 @@ static int WriteElement(const EdfType_t* t, WalkContext_t* ctx)
 				if ((err = WriteElement(s, ctx)))
 					return err;
 			}
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 			if ((err = EdfWriteSepEndStruct(ctx)))
 				return err;
 #endif
@@ -156,13 +156,13 @@ static int WriteElement(const EdfType_t* t, WalkContext_t* ctx)
 		{
 			if ((err = WriteOnePrimitive(t, ctx)))
 				return err;
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 			if ((err = (EdfWriteSepVarEnd(ctx))))
 				return err;
 #endif
 		}
 	}
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 	if (1 < totalElement)
 	{
 		if ((err = (EdfWriteSepEndArray(ctx))))
@@ -175,13 +175,13 @@ static int WriteElement(const EdfType_t* t, WalkContext_t* ctx)
 static int WriteSingleValue(WalkContext_t* ctx)
 {
 	int err;
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 	if (ERR_NO != (err = EdfWriteSepRecBegin(ctx)))
 		return err;
 #endif
 	if (ERR_NO != (err = WriteElement(&ctx->edf->SchemaPtr->Type, ctx)))
 		return err;
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 	if (ERR_NO != (err = EdfWriteSepRecEnd(ctx)))
 		return err;
 #endif

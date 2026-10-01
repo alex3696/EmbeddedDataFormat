@@ -149,7 +149,7 @@ int MemAlloc(LineAlloc_t* m, size_t len, void** pptr)
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 static int MemStreamWriteUInt32Txt(MemStream_t* s, size_t* writed, uint32_t val)
 {
 	MemStreamMove(s);
@@ -190,7 +190,7 @@ static int FileStreamWriteUInt32Txt(FileStream_t* st, size_t* writed, uint32_t v
 //-----------------------------------------------------------------------------
 int StreamWriteUInt32Txt(Stream_t* st, size_t* writed, uint32_t val)
 {
-#ifndef EDF_DISABLE_TEXT_MODE
+#ifdef EDF_ENABLE_TEXT_MODE
 	switch (st->Impl->TypeId)
 	{
 	default: break;
