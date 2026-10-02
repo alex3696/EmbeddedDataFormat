@@ -269,7 +269,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				case POSITION:
 				{
 					Position_t* p = NULL;
-					if ((err = EdfReadBin(&PositionType, &src, &msDst, &p, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &p, &skip, NULL)))
 						return err;
 
 					unsigned long ulVal = strtoul(p->Field, NULL, 10);
@@ -298,7 +298,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				case DEVICEINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.Id.DeviceType = (uint16_t)dvc->SwId;
 					dat.Id.DeviceNum = (uint32_t)dvc->HwNumber;
@@ -307,7 +307,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 				case REGINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.Id.RegType = (uint16_t)dvc->SwId;
 					dat.Id.RegNum = (uint32_t)dvc->HwNumber;
@@ -346,7 +346,7 @@ int EdfToEcho(const char* edfFile, const char* echoFile)
 
 			else if (IsVarName(bdfr->SchemaPtr, "EchoChart"))
 			{
-				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, &readed))
+				while (!(err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &s, &skip, &readed))
 					&& recN <= FIELD_ITEMS_COUNT(ECHO_FILE_V2_0, Data))
 				{
 					dat.Data[recN] = (int8_t)round(pow(fabs(s->y * 1000), 0.35));

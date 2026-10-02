@@ -7,7 +7,7 @@
 //-----------------------------------------------------------------------------
 static const EdfType_t UInt16ValueType =
 {
-	Struct, "UInt16Value", { 0, NULL },
+	Struct, "UInt16Value", {0},
 	.Fields =
 	{
 		.Count = 4,
@@ -35,7 +35,7 @@ int UnpackUInt16KeyVal(MemStream_t* src, LineAlloc_t* dst,
 //-----------------------------------------------------------------------------
 static const EdfType_t UInt32ValueType =
 {
-	Struct, "UInt32Value", { 0, NULL },
+	Struct, "UInt32Value", {0},
 	.Fields =
 	{
 		.Count = 4,
@@ -63,7 +63,7 @@ int UnpackUInt32KeyVal(MemStream_t* src, LineAlloc_t* dst,
 //-----------------------------------------------------------------------------
 static const EdfType_t DoubleValueType =
 {
-	Struct, "DoubleValue", { 0, NULL },
+	Struct, "DoubleValue", {0},
 	.Fields =
 	{
 		.Count = 4,

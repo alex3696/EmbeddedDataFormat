@@ -192,7 +192,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case POSITION:
 				{
 					Position_t* p = NULL;
-					if ((err = EdfReadBin(&PositionType, &src, &msDst, &p, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &p, &skip, NULL)))
 						return err;
 
 					unsigned long ulVal = strtoul(p->Field, NULL, 10);
@@ -221,7 +221,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case DEVICEINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.SensType = (uint16_t)dvc->SwId;
 					dat.SensVer = (uint16_t)dvc->SwModel;
@@ -231,7 +231,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 				case REGINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.RegType = (uint16_t)dvc->SwId;
 					dat.RegVer = (uint16_t)dvc->SwModel;
@@ -247,7 +247,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 						if (1 != fwrite(&dat, sizeof(SPSK_FILE_V1_1), 1, f))
 							return ERR_FWRITE;
 					}
-					while (!(err = EdfReadBin(&OmegaDataType, &src, &msDst, (void**)&record, &skip, &readed)))
+					while (!(err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, (void**)&record, &skip, &readed)))
 					{
 						if (1 != fwrite(record, sizeof(OMEGA_DATA_V1_1), 1, f))
 							return ERR_FWRITE;

@@ -213,7 +213,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				case POSITION:
 				{
 					Position_t* p = NULL;
-					if ((err = EdfReadBin(&PositionType, &src, &msDst, &p, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &p, &skip, NULL)))
 						return err;
 
 					unsigned long ulVal = strtoul(p->Field, NULL, 10);
@@ -242,7 +242,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				case DEVICEINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.Id.DeviceType = (uint16_t)dvc->SwId;
 					dat.Id.DeviceNum = (uint32_t)dvc->HwNumber;
@@ -251,7 +251,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 				case REGINFO:
 				{
 					DeviceInfo_t* dvc = NULL;
-					if ((err = EdfReadBin(&DeviceInfoType, &src, &msDst, &dvc, &skip, NULL)))
+					if ((err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &dvc, &skip, NULL)))
 						return err;
 					dat.Id.RegType = (uint16_t)dvc->SwId;
 					dat.Id.RegNum = (uint32_t)dvc->HwNumber;
@@ -303,7 +303,7 @@ int EdfToDyn(const char* edfFile, const char* dynFile)
 
 			else if (IsVarName(bdfr->SchemaPtr, "DynChart"))
 			{
-				while (!(err = EdfReadBin(&Point2DType, &src, &msDst, &s, &skip, &readed))
+				while (!(err = EdfReadBin(&bdfr->SchemaPtr->Type, &src, &msDst, &s, &skip, &readed))
 					&& recN <= FIELD_ITEMS_COUNT(DYN_FILE_V2_0, Data))
 				{
 					double posDif = recN ? s->x - record.x : s->x;

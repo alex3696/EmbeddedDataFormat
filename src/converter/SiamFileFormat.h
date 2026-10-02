@@ -138,13 +138,13 @@ static const char FileDescMt[] = "OMEGA SAMT DATA V1.1";
 static const EdfType_t FileDescriptionType =
 {
 	.Type = Char, .Name = "FileDescription",
-	.Dims = { 1, (uint16_t[]) { FIELD_SIZEOF(DYN_FILE_V2_0, FileDescription) } }
+	.Dims = { .Count = 1, .Item = (uint16_t[]) { FIELD_SIZEOF(DYN_FILE_V2_0, FileDescription) } }
 };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 static const EdfType_t FileTypeIdType =
 {
-	.Type = Struct, .Name = "FileTypeId", .Dims = { 0, NULL }, .Fields =
+	.Type = Struct, .Name = "FileTypeId", .Dims = {0}, .Fields =
 	{
 		.Count = 2,
 		.Item = (EdfType_t[])
@@ -164,7 +164,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t DateTimeType =
 {
-	.Type = Struct, .Name = "DateTimeTz", .Dims = { 0, NULL }, .Fields =
+	.Type = Struct, .Name = "DateTimeTz", .Dims = {0}, .Fields =
 	{
 		.Count = 8,
 		.Item = (EdfType_t[])
@@ -195,7 +195,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t DeviceInfoType =
 {
-	.Type = Struct, .Name = "DeviceInfo", .Dims = { 0, NULL }, .Fields =
+	.Type = Struct, .Name = "DeviceInfo", .Dims = {0}, .Fields =
 	{
 		.Count = 6,
 		.Item = (EdfType_t[])
@@ -223,7 +223,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t PositionType =
 {
-	.Type = Struct, .Name = "Position", .Dims = { 0, NULL }, .Fields =
+	.Type = Struct, .Name = "Position", .Dims = {0}, .Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])
@@ -246,7 +246,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 static const EdfType_t OmegaDataType =
 {
-	.Type = Struct, .Name = "OmegaData_v1_1", .Dims = { 0, NULL }, .Fields =
+	.Type = Struct, .Name = "OmegaData_v1_1", .Dims = {0}, .Fields =
 	{
 		.Count = 4,
 		.Item = (EdfType_t[])

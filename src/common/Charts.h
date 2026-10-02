@@ -7,7 +7,7 @@
 //-----------------------------------------------------------------------------
 static const EdfType_t ChartXYDescriptionType =
 {
-	Struct, "ChartXYDescriptionType", { 0, NULL },
+	Struct, "ChartXYDescriptionType", {0},
 	.Fields =
 	{
 		.Count = 3,
@@ -28,7 +28,7 @@ typedef struct ChartXYDesct
 //-----------------------------------------------------------------------------
 static const EdfType_t Point2DType =
 {
-	Struct, "Chart2D", { 0, NULL },
+	Struct, "Chart2D", {0},
 	.Fields =
 	{
 		.Count = 2,
@@ -48,7 +48,7 @@ typedef struct PointXY
 //-----------------------------------------------------------------------------
 static const EdfType_t ChartNType =
 {
-	Struct, "ChartNType", { 0, NULL },
+	Struct, "ChartNType", {0},
 	.Fields =
 	{
 		.Count = 4,
