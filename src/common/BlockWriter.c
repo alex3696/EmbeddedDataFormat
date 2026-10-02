@@ -8,15 +8,15 @@ static int EdfWriteSep(EdfContext_t* edf, const char* const sep)
 	if(edf->WritePrimitive == CBinToBin)
 		return 0;
 
-	if (0 < edf->WalkCtx.skip)
+	if (0 < edf->PrimSkip)
 	{
-		edf->WalkCtx.skip--;
+		edf->PrimSkip--;
 		return 0;
 	}
 	size_t sepLen = sep ? strnlength(sep, 10) : 0;
 	if (!sepLen)
 	{
-		edf->WalkCtx.wqty++;
+		edf->wqty++;
 		return 0;
 	}
 	if (sepLen > edf->WalkCtx.dstLen)
@@ -31,7 +31,7 @@ static int EdfWriteSep(EdfContext_t* edf, const char* const sep)
 		if (sepLen > edf->WalkCtx.dstLen)
 			return ERR_DST_SHORT;
 	}
-	edf->WalkCtx.wqty++;
+	edf->wqty++;
 	memcpy(edf->WalkCtx.pdst, sep, sepLen);
 	edf->WalkCtx.dstLen -= sepLen;
 	edf->WalkCtx.writed += sepLen;
@@ -51,9 +51,9 @@ static int EdfWriteSep(EdfContext_t* edf, const char* const sep)
 // 
 static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 {
-	if (0 < (edf->WalkCtx.skip))
+	if (0 < (edf->PrimSkip))
 	{
-		edf->WalkCtx.skip--;
+		edf->PrimSkip--;
 		return ERR_NO;
 	}
 	int err = 0;
@@ -61,7 +61,7 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 	size_t charLen;
 	if (Char == t->Type)
 	{
-		charLen = GetTotalElements(&t->Dims);
+		charLen = GetTotalElements((EdfDims_t*)&t->Dims);
 		if (charLen == 0)
 			return ERR_WRONG_TYPE;
 		if (charLen > edf->WalkCtx.srcLen)
@@ -77,9 +77,10 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 			return err;
 		// Сбрасываем блок
 		edf->Blk->Len += (uint16_t)(edf->WalkCtx.writed);
-		edf->PrimSkip = (uint16_t)(edf->WalkCtx.wqty);
+		edf->PrimSkip = edf->wqty;
 		if ((err = EdfFlushData(edf, &w)))
 			return err;
+		edf->PrimSkip = 0;
 		// Сбрасываем счетчики для нового блока
 		edf->WalkCtx.writed = 0;
 		edf->WalkCtx.dstLen = GetContentDataMaxLen(edf, btData);
@@ -88,7 +89,7 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 		if ((err = (edf->WritePrimitive)(t->Type, edf->WalkCtx.psrc, charLen, edf->WalkCtx.pdst, edf->WalkCtx.dstLen, &r, &w)))
 			return err;// если снова ошибка, выходим
 	}
-	(edf->WalkCtx.wqty)++;
+	edf->wqty++;
 	edf->WalkCtx.readed += r;
 	edf->WalkCtx.writed += w;
 	edf->WalkCtx.psrc += r;
@@ -194,7 +195,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 	do
 	{
 		dw->WalkCtx.writed = dw->WalkCtx.readed = 0;
-		dw->WalkCtx.wqty = dw->WalkCtx.skip = dw->PrimSkip;
+		dw->wqty = dw->PrimSkip;
 		wr = WriteSingleValue(dw);
 
 		// Увеличиваем размер занятых данных в текущем блоке на то, что вернул WriteSingleValue.
@@ -212,7 +213,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 		case ERR_SRC_SHORT:
 			// Входной буфер оборвался на середине примитива/массива.
 			// Запоминаем позицию в схеме (wqty), чтобы при следующем вызове начать с нужного места.
-			dw->PrimSkip = (uint16_t)dw->WalkCtx.wqty;
+			dw->PrimSkip = dw->wqty;
 			return ERR_SRC_SHORT;
 		case ERR_NO:
 			dw->PrimSkip = 0;

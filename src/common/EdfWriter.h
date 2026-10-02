@@ -55,8 +55,6 @@ typedef struct
 	size_t readed;
 	size_t writed;
 
-	size_t skip;
-	size_t wqty;
 } WalkContext_t;
 //-----------------------------------------------------------------------------
 typedef struct EdfContext
@@ -70,8 +68,9 @@ typedef struct EdfContext
 	uint16_t PrimSkip;	/** <Смещение примитива внутри текущей записи (0-65535).
 							Используется при разрыве примитива между блоками.
                             Сбрасывается в 0 при вызове EdfWriteSchema.> */
-	uint16_t _Reserved;
+	uint16_t wqty;
 
+	size_t BlkQty;
 	EdfBlock_t* const Blk;	// буфер блока
 
 	size_t BufLen;

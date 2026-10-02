@@ -2,15 +2,17 @@
 #include "edf.h"
 
 //-----------------------------------------------------------------------------
-static int EdfWriteBlockBin(Stream_t* st, EdfBlock_t* blk, size_t* writed)
+static int EdfWriteBlockBin(EdfContext_t* dw, size_t* writed)
 {
+	EdfBlock_t* blk = dw->Blk;
 	int err = 0;
 	uint16_t* blkCrc = (uint16_t*)((uint8_t*)blk + EDF_HEADER_SIZE + blk->Len);
 	*blkCrc = MbCrc16(blk, EDF_HEADER_SIZE + blk->Len);
-	if ((err = StreamWrite(st, NULL, blk, EDF_HEADER_SIZE + blk->Len + EDF_CRC_SIZE)))
+	if ((err = StreamWrite(&dw->Stream, NULL, blk, EDF_HEADER_SIZE + blk->Len + EDF_CRC_SIZE)))
 		return err;
 	*writed = blk->Len;
-	return 0;
+	dw->BlkQty++;
+	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
 
@@ -32,7 +34,7 @@ static int EdfWriteConfigBin(EdfContext_t* dw, const EdfConfig_t* h, size_t* wri
 	dw->Blk->Type = (uint8_t)btConfig;
 	dw->Blk->Len = (uint16_t)sizeof(EdfConfig_t);
 	memcpy(&dw->Blk->Content.Config, h, sizeof(EdfConfig_t));
-	return EdfWriteBlockBin(&dw->Stream, dw->Blk, writed);
+	return EdfWriteBlockBin(dw, writed);
 }
 //-----------------------------------------------------------------------------
 static int EdfWriteConfigTxt(EdfContext_t* dw, const EdfConfig_t* h, size_t* writed)
@@ -104,7 +106,7 @@ static int EdfWriteSchemaBin(EdfContext_t* dw, const EdfSchema_t* t, size_t* wri
 		(err = WriteSchemaBinToStream((Stream_t*)&ms, t, &w)))
 		return err;
 	dw->Blk->Len = (uint16_t)w;// (uint16_t)ms.WPos;
-	if ((err = EdfWriteBlockBin(&dw->Stream, dw->Blk, writed)))
+	if ((err = EdfWriteBlockBin(dw, writed)))
 		return err;
 	// --- ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ ДЛЯ СЛЕДУЮЩИХ БЛОКОВ ДАННЫХ ---
 	  // Устанавливаем Id схемы в заголовок для будущих блоков данных
@@ -157,7 +159,7 @@ static int StreamWriteBlockDataBin(EdfContext_t* dw, size_t* writed)
 	// добавляем размер заголовка (8 байт) к Len и записывает блок
 	dw->Blk->Len += offsetof(EdfRecordContent_t, Data);
 	int err = 0;
-	if ((err = EdfWriteBlockBin(&dw->Stream, dw->Blk, writed)))
+	if ((err = EdfWriteBlockBin(dw, writed)))
 		return err;
 	//dw->Blk->Content.Record.SchId = dw->SchemaPtr->Id;
 	dw->Blk->Content.Record.PrmOffset = dw->PrimSkip;
