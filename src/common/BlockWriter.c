@@ -56,46 +56,41 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 		edf->PrimSkip--;
 		return ERR_NO;
 	}
-	int err = 0;
-	size_t r = 0, w = 0;
-	size_t charLen;
+	WalkContext_t tryCtx = { edf->WalkCtx.psrc, edf->WalkCtx.pdst, edf->WalkCtx.srcLen, edf->WalkCtx.dstLen };
 	if (Char == t->Type)
 	{
-		charLen = GetTotalElements((EdfDims_t*)&t->Dims);
-		if (charLen == 0)
+		tryCtx.srcLen = GetTotalElements((EdfDims_t*)&t->Dims);
+		if (0 == tryCtx.srcLen)
 			return ERR_WRONG_TYPE;
-		if (charLen > edf->WalkCtx.srcLen)
+		if (tryCtx.srcLen > edf->WalkCtx.srcLen)
 			return ERR_SRC_SHORT;
 	}
-	else
-	{
-		charLen = edf->WalkCtx.srcLen;
-	}
-	if ((err = (edf->WritePrimitive)(t->Type, edf->WalkCtx.psrc, charLen, edf->WalkCtx.pdst, edf->WalkCtx.dstLen, &r, &w)))
+	int err = 0;
+	if ((err = (edf->WritePrimitive)(t->Type, &tryCtx)))
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
 		// Сбрасываем блок
 		edf->Blk->Len += (uint16_t)(edf->WalkCtx.writed);
 		edf->PrimSkip = edf->wqty;
-		if ((err = EdfFlushData(edf, &w)))
+		if ((err = EdfFlushData(edf, &tryCtx.writed)))
 			return err;
 		edf->PrimSkip = 0;
 		// Сбрасываем счетчики для нового блока
 		edf->WalkCtx.writed = 0;
-		edf->WalkCtx.dstLen = GetContentDataMaxLen(edf, btData);
-		edf->WalkCtx.pdst = edf->Blk->Content.Record.Data;
+		tryCtx.dstLen = edf->WalkCtx.dstLen = GetContentDataMaxLen(edf, btData);
+		tryCtx.pdst = edf->WalkCtx.pdst = edf->Blk->Content.Record.Data;
 		// Пытаемся записать ЕЩЕ РАЗ
-		if ((err = (edf->WritePrimitive)(t->Type, edf->WalkCtx.psrc, charLen, edf->WalkCtx.pdst, edf->WalkCtx.dstLen, &r, &w)))
+		if ((err = (edf->WritePrimitive)(t->Type, &tryCtx)))
 			return err;// если снова ошибка, выходим
 	}
 	edf->wqty++;
-	edf->WalkCtx.readed += r;
-	edf->WalkCtx.writed += w;
-	edf->WalkCtx.psrc += r;
-	edf->WalkCtx.srcLen -= r;
-	edf->WalkCtx.pdst += w;
-	edf->WalkCtx.dstLen -= w;
+	edf->WalkCtx.readed += tryCtx.readed;
+	edf->WalkCtx.writed += tryCtx.writed;
+	edf->WalkCtx.psrc += tryCtx.readed;
+	edf->WalkCtx.srcLen -= tryCtx.readed;
+	edf->WalkCtx.pdst += tryCtx.writed;
+	edf->WalkCtx.dstLen -= tryCtx.writed;
 	return err;
 }
 //-----------------------------------------------------------------------------

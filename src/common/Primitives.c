@@ -9,94 +9,88 @@ void putchar_(char character)
 }
 
 //-----------------------------------------------------------------------------
-typedef int (*WriteStringFn)(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w);
+typedef int (*WriteStringFn)(WalkContext_t*);
 //-----------------------------------------------------------------------------
-static int WriteStringCBinToStr(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+static int WriteStringCBinToStr(WalkContext_t* ctx)
 {
-	*r = sizeof(char*);
-	if (srcLen < *r)
+	ctx->readed = sizeof(char*);
+	if (ctx->srcLen < ctx->readed)
 		return ERR_SRC_SHORT;
 	// print text without buf
-	const char* str = *(char**)src;
+	const char* str = *(char**)ctx->psrc;
 	size_t len = (NULL == str) ? 0 : strnlength(str, MAX_STR_LEN);
-	if (dstLen < len + 2)
+	if (ctx->dstLen < len + 2)
 		return ERR_DST_SHORT;
-	*w = 2 + len;
-	*dst++ = '"';
-	memcpy(dst, str, len);
-	dst += len;
-	*dst++ = '"';
+	ctx->writed = 2 + len;
+	*ctx->pdst++ = '"';
+	memcpy(ctx->pdst, str, len);
+	ctx->pdst += len;
+	*ctx->pdst++ = '"';
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int WriteStringBinToStr(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+static int WriteStringBinToStr(WalkContext_t* ctx)
 {
-	*r = *w = 0;
-	size_t sLen = src[0];
-	if (srcLen < 1 + sLen)
+	ctx->readed = ctx->writed = 0;
+	size_t sLen = ctx->psrc[0];
+	if (ctx->srcLen < 1 + sLen)
 		return ERR_SRC_SHORT;
-	*r = 1 + sLen;
-	const char* found = memchr(&src[1], '\0', sLen);
-	size_t pos = found - (char*)(&src[1]);
+	ctx->readed = 1 + sLen;
+	const char* found = memchr(&ctx->psrc[1], '\0', sLen);
+	size_t pos = found - (char*)(&ctx->psrc[1]);
 	if (pos < sLen)
 		sLen = pos;
-	if (dstLen < sLen + 2)
+	if (ctx->dstLen < sLen + 2)
 		return ERR_DST_SHORT;
-	*dst++ = '"';
-	memcpy(dst, src + 1, sLen);
-	dst += sLen;
-	*dst++ = '"';
-	*w = 2 + sLen;
+	*ctx->pdst++ = '"';
+	memcpy(ctx->pdst, ctx->psrc + 1, sLen);
+	ctx->pdst += sLen;
+	*ctx->pdst++ = '"';
+	ctx->writed = 2 + sLen;
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int WriteStringBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+static int WriteStringBinToBin(WalkContext_t* ctx)
 {
-	size_t sLen = src[0];
+	size_t sLen = ctx->psrc[0];
 	size_t blength = 1;
-	*r = *w = 0;
+	ctx->readed = ctx->writed = 0;
 	blength += sLen;
-	if (srcLen < blength)
+	if (ctx->srcLen < blength)
 		return ERR_SRC_SHORT;
-	if (dstLen < blength)
+	if (ctx->dstLen < blength)
 		return ERR_DST_SHORT;
-	memcpy(dst, src, blength);
-	*r = *w = blength;
+	memcpy(ctx->pdst, ctx->psrc, blength);
+	ctx->readed = ctx->writed = blength;
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int WriteStringCBinToBin(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+static int WriteStringCBinToBin(WalkContext_t* ctx)
 {
-	*r = sizeof(char*);
-	if (srcLen < *r)
+	ctx->readed = sizeof(char*);
+	if (ctx->srcLen < ctx->readed)
 		return ERR_SRC_SHORT;
-	const char* str = *(char**)src;
+	const char* str = *(char**)ctx->psrc;
 	size_t len = (NULL == str) ? 0 : strnlength(str, MAX_STR_LEN);
-	if (dstLen < len + 1)
+	if (ctx->dstLen < len + 1)
 		return ERR_DST_SHORT;
-	(*dst) = (uint8_t)len;
-	dst++;
-	memcpy(dst, str, len);
-	*w = len + 1;
+	(*ctx->pdst) = (uint8_t)len;
+	ctx->pdst++;
+	memcpy(ctx->pdst, str, len);
+	ctx->writed = len + 1;
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int WriteCharAnyBinToStr(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+static int WriteCharAnyBinToStr(WalkContext_t* ctx)
 {
-	size_t actual_len = strnlength((const char*)src, srcLen);
-	if (dstLen < actual_len + 2)
+	size_t actual_len = strnlength((const char*)ctx->psrc, ctx->srcLen);
+	if (ctx->dstLen < actual_len + 2)
 		return ERR_DST_SHORT;
-	*r = srcLen;
-	*w = actual_len + 2;
-	dst[0] = '"';
-	memcpy(dst + 1, src, actual_len);
-	dst[actual_len + 2 - 1] = '"';
+	ctx->readed = ctx->srcLen;
+	ctx->writed = actual_len + 2;
+	ctx->pdst[0] = '"';
+	memcpy(ctx->pdst + 1, ctx->psrc, actual_len);
+	ctx->pdst[actual_len + 2 - 1] = '"';
 	return ERR_NO;
 }
 //-----------------------------------------------------------------------------
@@ -111,182 +105,181 @@ static size_t xprint(const uint8_t* buf, size_t bufLen, char* format, ...)
 	return writed;
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-int CBinToBin(PoType t,
-	const uint8_t* src, size_t srcLen,
-	uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+int CBinToBin(PoType t, WalkContext_t* ctx)
 {
 	switch (t)
 	{
 	case Struct:
-	default: *r = *w = 0; return ERR_WRONG_TYPE;
+	default: ctx->readed = ctx->writed = 0; return ERR_WRONG_TYPE;
 	case Int8: case UInt8:
-		if (srcLen < sizeof(uint8_t)) return ERR_SRC_SHORT;
-		if (dstLen < sizeof(uint8_t)) return ERR_DST_SHORT;
-		*dst = *src;
-		*r = *w = sizeof(uint8_t);
+		if (sizeof(uint8_t) > ctx->srcLen) return ERR_SRC_SHORT;
+		if (sizeof(uint8_t) > ctx->dstLen) return ERR_DST_SHORT;
+		*ctx->pdst = *ctx->psrc;
+		ctx->readed = ctx->writed = sizeof(uint8_t);
 		break;
 	case Half: case Int16: case UInt16:
-		if (srcLen < sizeof(uint16_t)) return ERR_SRC_SHORT;
-		if (dstLen < sizeof(uint16_t)) return ERR_DST_SHORT;
-		*(uint16_t*)dst = *(const uint16_t*)src;
-		*r = *w = sizeof(uint16_t);
+		if (sizeof(uint16_t) > ctx->srcLen) return ERR_SRC_SHORT;
+		if (sizeof(uint16_t) > ctx->dstLen) return ERR_DST_SHORT;
+		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint16_t));
+		*(uint16_t*)ctx->pdst = *(const uint16_t*)ctx->psrc;
+		ctx->readed = ctx->writed = sizeof(uint16_t);
 		break;
 	case Single: case Int32: case UInt32:
-		if (srcLen < sizeof(uint32_t)) return ERR_SRC_SHORT;
-		if (dstLen < sizeof(uint32_t)) return ERR_DST_SHORT;
-		*(uint32_t*)dst = *(const uint32_t*)src;
-		*r = *w = sizeof(uint32_t);
+		if (sizeof(uint32_t) > ctx->srcLen) return ERR_SRC_SHORT;
+		if (sizeof(uint32_t) > ctx->dstLen) return ERR_DST_SHORT;
+		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint32_t)); //
+		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;
+		ctx->readed = ctx->writed = sizeof(uint32_t);
 		break;
 	case Double: case Int64: case UInt64:
-		if (srcLen < sizeof(uint64_t)) return ERR_SRC_SHORT;
-		if (dstLen < sizeof(uint64_t)) return ERR_DST_SHORT;
-		*(uint32_t*)dst = *(const uint32_t*)src;//memcpy(dst, src, *r); break;
-		*(uint32_t*)(dst + 4) = *(const uint32_t*)(src + 4);
-		*r = *w = sizeof(uint64_t);
+		if (sizeof(uint64_t) > ctx->srcLen) return ERR_SRC_SHORT;
+		if (sizeof(uint64_t) > ctx->dstLen) return ERR_DST_SHORT;
+		memcpy(ctx->pdst, ctx->psrc, sizeof(uint64_t));
+		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;//memcpy(dst, src, *r); break;
+		*(uint32_t*)(ctx->pdst + 4) = *(const uint32_t*)(ctx->psrc + 4);
+		ctx->readed = ctx->writed = sizeof(uint64_t);
 		break;
 	case Char:
-		if (dstLen < srcLen)
+		if (ctx->dstLen < ctx->srcLen)
 		{
-			*r = *w = 0;
+			ctx->readed = ctx->writed = 0;
 			return ERR_DST_SHORT;
 		}
-		*r = *w = srcLen;
-		memcpy(dst, src, srcLen);
+		ctx->readed = ctx->writed = ctx->srcLen;
+		memcpy(ctx->pdst, ctx->psrc, ctx->srcLen);
 		return 0;
-	case String: return WriteStringCBinToBin(src, srcLen, dst, dstLen, r, w);
+	case String: return WriteStringCBinToBin(ctx);
 	}//switch
 	return 0;
 }
 //-----------------------------------------------------------------------------
-int BinToBin(PoType t,
-	const uint8_t* src, size_t srcLen,
-	uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+int BinToBin(PoType t, WalkContext_t* ctx)
 {
-	*r = *w = GetSizeOf(t);// переопределится для строки
-	if (srcLen < *r)
-		return ERR_SRC_SHORT;
-	if (dstLen < *w)
-		return ERR_DST_SHORT;
 	switch (t)
 	{
 	case Struct:
-	default: *r = *w = 0; return ERR_WRONG_TYPE;
+	default: ctx->readed = ctx->writed = 0; return ERR_WRONG_TYPE;
 	case Int8: case UInt8:
-		*dst = *src; break;
+		if (sizeof(uint8_t) > ctx->srcLen) return ERR_SRC_SHORT;
+		if (sizeof(uint8_t) > ctx->dstLen) return ERR_DST_SHORT;
+		*ctx->pdst = *ctx->psrc;
+		ctx->readed = ctx->writed = sizeof(uint8_t);
+		break;
 	case Half: case Int16: case UInt16:
-		*(uint16_t*)dst = *(const uint16_t*)src; break;
+		if (sizeof(uint16_t) > ctx->srcLen) return ERR_SRC_SHORT;
+		if (sizeof(uint16_t) > ctx->dstLen) return ERR_DST_SHORT;
+		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint16_t));
+		*(uint16_t*)ctx->pdst = *(const uint16_t*)ctx->psrc;
+		ctx->readed = ctx->writed = sizeof(uint16_t);
+		break;
 	case Single: case Int32: case UInt32:
-		*(uint32_t*)dst = *(const uint32_t*)src; break;
+		if (sizeof(uint32_t) > ctx->srcLen) return ERR_SRC_SHORT;
+		if (sizeof(uint32_t) > ctx->dstLen) return ERR_DST_SHORT;
+		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint32_t)); //
+		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;
+		ctx->readed = ctx->writed = sizeof(uint32_t);
+		break;
 	case Double: case Int64: case UInt64:
-		*(uint32_t*)dst = *(const uint32_t*)src;
-		*(uint32_t*)(dst + 4) = *(const uint32_t*)(src + 4); break;
-		//memcpy(dst, src, *r); break;
+		if (sizeof(uint64_t) > ctx->srcLen) return ERR_SRC_SHORT;
+		if (sizeof(uint64_t) > ctx->dstLen) return ERR_DST_SHORT;
+		memcpy(ctx->pdst, ctx->psrc, sizeof(uint64_t));
+		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;//memcpy(dst, src, *r); break;
+		*(uint32_t*)(ctx->pdst + 4) = *(const uint32_t*)(ctx->psrc + 4);
+		ctx->readed = ctx->writed = sizeof(uint64_t);
+		break;
 	case Char:
-		if (dstLen < srcLen)
+		if (ctx->dstLen < ctx->srcLen)
 		{
-			*r = *w = 0;
+			ctx->readed = ctx->writed = 0;
 			return ERR_DST_SHORT;
 		}
-		*r = *w = srcLen;
-		memcpy(dst, src, srcLen);
+		ctx->readed = ctx->writed = ctx->srcLen;
+		memcpy(ctx->pdst, ctx->psrc, ctx->srcLen);
 		return 0;
-	case String: return WriteStringBinToBin(src, srcLen, dst, dstLen, r, w);
+	case String: return WriteStringBinToBin(ctx);
 	}//switch
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int AnyBinToStr(PoType t,
-	const uint8_t* src, size_t srcLen,
-	uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w,
-	WriteStringFn WriteString)
+static int AnyBinToStr(PoType t, WalkContext_t* ctx, WriteStringFn WriteString)
 {
-	*r = GetSizeOf(t);// переопределится для строки
-	if (srcLen < *r)
+	ctx->readed = GetSizeOf(t);// переопределится для строки
+	if (ctx->srcLen < ctx->readed)
 	{
-		*w = 0;
+		ctx->writed = 0;
 		return ERR_SRC_SHORT;
 	}
-	if (dstLen < 1)
+	if (ctx->dstLen < 1)
 	{
-		*w = 0;
+		ctx->writed = 0;
 		return ERR_DST_SHORT;
 	}
 	switch (t)
 	{
 	case Struct:
-	default: *r = *w = 0; return ERR_WRONG_TYPE;
+	default: ctx->readed = ctx->writed = 0; return ERR_WRONG_TYPE;
 	case Int8:
-		*w = Int32ToA((int8_t)src[0], (char*)dst, dstLen);
-		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
+		ctx->writed = Int32ToA((int8_t)ctx->psrc[0], (char*)ctx->pdst, ctx->dstLen);
+		return (ctx->writed == 0) ? ERR_DST_SHORT : ERR_NO;
 	case UInt8:
-		*w = UInt32ToA((uint8_t)src[0], (char*)dst, dstLen);
-		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
+		ctx->writed = UInt32ToA((uint8_t)ctx->psrc[0], (char*)ctx->pdst, ctx->dstLen);
+		return (ctx->writed == 0) ? ERR_DST_SHORT : ERR_NO;
 	case Int16:
-		*w = Int32ToA(*((int16_t*)src), (char*)dst, dstLen);
-		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
+		ctx->writed = Int32ToA(*((int16_t*)ctx->psrc), (char*)ctx->pdst, ctx->dstLen);
+		return (ctx->writed == 0) ? ERR_DST_SHORT : ERR_NO;
 	case UInt16:
-		*w = UInt32ToA(*((uint16_t*)src), (char*)dst, dstLen);
-		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
+		ctx->writed = UInt32ToA(*((uint16_t*)ctx->psrc), (char*)ctx->pdst, ctx->dstLen);
+		return (ctx->writed == 0) ? ERR_DST_SHORT : ERR_NO;
 	case Int32:
-		*w = Int32ToA(*((int32_t*)src), (char*)dst, dstLen);
-		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
+		ctx->writed = Int32ToA(*((int32_t*)ctx->psrc), (char*)ctx->pdst, ctx->dstLen);
+		return (ctx->writed == 0) ? ERR_DST_SHORT : ERR_NO;
 	case UInt32:
-		*w = UInt32ToA(*((uint32_t*)src), (char*)dst, dstLen);
-		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
+		ctx->writed = UInt32ToA(*((uint32_t*)ctx->psrc), (char*)ctx->pdst, ctx->dstLen);
+		return (ctx->writed == 0) ? ERR_DST_SHORT : ERR_NO;
 	case Int64:
 	{
 		int64_t alignedVal;
-		memcpy(&alignedVal, src, sizeof(int64_t));
-		*w = Int64ToA(alignedVal, (char*)dst, dstLen);
-		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
+		memcpy(&alignedVal, ctx->psrc, sizeof(int64_t));
+		ctx->writed = Int64ToA(alignedVal, (char*)ctx->pdst, ctx->dstLen);
+		return (ctx->writed == 0) ? ERR_DST_SHORT : ERR_NO;
 	}
 	case UInt64:
 	{
 		uint64_t alignedVal;
-		memcpy(&alignedVal, src, sizeof(uint64_t));
-		*w = UInt64ToA(alignedVal, (char*)dst, dstLen);
-		return (*w == 0) ? ERR_DST_SHORT : ERR_NO;
+		memcpy(&alignedVal, ctx->psrc, sizeof(uint64_t));
+		ctx->writed = UInt64ToA(alignedVal, (char*)ctx->pdst, ctx->dstLen);
+		return (ctx->writed == 0) ? ERR_DST_SHORT : ERR_NO;
 	}
 	case Half:
-		//*w = sprintf_s(dst, dstLen, "%g", *((uint16_t*)src));
+		//ctx->writed = sprintf_s(dst, ctx->dstLen, "%g", *((uint16_t*)src));
 		return 0;
 	case Single:
 	{
 		float alignedVal;
-		memcpy(&alignedVal, src, sizeof(float));
-		*w = xprint(dst, dstLen, "%.9g", alignedVal);
-		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+		memcpy(&alignedVal, ctx->psrc, sizeof(float));
+		ctx->writed = xprint(ctx->pdst, ctx->dstLen, "%.9g", alignedVal);
+		return (ctx->dstLen < ctx->writed) ? ERR_DST_SHORT : ERR_NO;
 	}
 	case Double:
 	{
 		double alignedVal;
-		memcpy(&alignedVal, src, sizeof(double));
-		*w = xprint(dst, dstLen, "%.17g", alignedVal);
-		return (dstLen < *w) ? ERR_DST_SHORT : ERR_NO;
+		memcpy(&alignedVal, ctx->psrc, sizeof(double));
+		ctx->writed = xprint(ctx->pdst, ctx->dstLen, "%.17g", alignedVal);
+		return (ctx->dstLen < ctx->writed) ? ERR_DST_SHORT : ERR_NO;
 	}
-	case Char: return WriteCharAnyBinToStr(src, srcLen, dst, dstLen, r, w);
-	case String: return (*WriteString)(src, srcLen, dst, dstLen, r, w);
+	case Char: return WriteCharAnyBinToStr(ctx);
+	case String: return (*WriteString)(ctx);
 	}//switch (t)
 }
 //-----------------------------------------------------------------------------
-int CBinToStr(PoType t,
-	const uint8_t* src, size_t srcLen,
-	uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+int CBinToStr(PoType t, WalkContext_t* ctx)
 {
-	return AnyBinToStr(t, src, srcLen, dst, dstLen, r, w, WriteStringCBinToStr);
+	return AnyBinToStr(t, ctx, WriteStringCBinToStr);
 }
 //-----------------------------------------------------------------------------
-int BinToStr(PoType t,
-	const uint8_t* src, size_t srcLen,
-	uint8_t* dst, size_t dstLen,
-	size_t* r, size_t* w)
+int BinToStr(PoType t, WalkContext_t* ctx)
 {
-	return AnyBinToStr(t, src, srcLen, dst, dstLen, r, w, WriteStringBinToStr);
+	return AnyBinToStr(t, ctx, WriteStringBinToStr);
 }
 //-----------------------------------------------------------------------------
 int StreamWriteString(Stream_t* s, const char* str, size_t* writed)

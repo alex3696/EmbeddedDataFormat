@@ -66,4 +66,18 @@ typedef enum EdfBlockType
 
 uint8_t IsBlockType(EdfBlockType t);
 
+
+typedef struct
+{
+	const uint8_t* psrc;
+	uint8_t* pdst;
+	size_t srcLen;
+	size_t dstLen;
+	size_t readed;
+	size_t writed;
+
+} WalkContext_t;
+
+typedef int (*WritePrimitiveFn)(PoType t, WalkContext_t* ctx);
+
 #endif

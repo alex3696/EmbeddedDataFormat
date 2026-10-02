@@ -46,16 +46,6 @@ uint16_t GetContentDataMaxLen(const EdfContext_t* pEdf, EdfBlockType bt);
 uint16_t GetContentDataLen(const EdfBlock_t* blk);
 
 
-typedef struct
-{
-	const uint8_t* psrc;
-	uint8_t* pdst;
-	size_t srcLen;
-	size_t dstLen;
-	size_t readed;
-	size_t writed;
-
-} WalkContext_t;
 //-----------------------------------------------------------------------------
 typedef struct EdfContext
 {
@@ -76,7 +66,7 @@ typedef struct EdfContext
 	size_t BufLen;
 	uint8_t* const Buf;
 
-	WritePrimitivesFn WritePrimitive;
+	WritePrimitiveFn WritePrimitive;
 	WriteConfigFn WriteConfig;
 	WriteSchemaFn WriteSchema;
 	FlushDataFn FlushData;
