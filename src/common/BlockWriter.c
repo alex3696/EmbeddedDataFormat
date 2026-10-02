@@ -112,7 +112,7 @@ static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 		return err;
 #endif
 	}
-	size_t totalElement = GetTotalElements(&t->Dims);
+	size_t totalElement = GetTotalElements((EdfDims_t*)&t->Dims);
 #ifdef EDF_ENABLE_TEXT_MODE
 	if (1 < totalElement)
 	{

@@ -458,11 +458,14 @@ int IsVarName(const EdfSchema_t* r, const char* varName)
 	return IsVar(r, 0, varName);
 }
 //-----------------------------------------------------------------------------
-size_t GetTotalElements(const EdfDims_t* const dim)
+uint16_t GetTotalElements(EdfDims_t* const dim)
 {
-	size_t totalElement = 1;
+	if (dim->TotalElements)
+		return dim->TotalElements;
+	uint16_t totalElement = 1;
 	if (dim && dim->Count && dim->Item)
-		for (size_t i = 0; i < dim->Count; i++)
+		for (uint8_t i = 0; i < dim->Count; i++)
 			totalElement *= dim->Item[i];
+	dim->TotalElements = totalElement;
 	return totalElement;
 }

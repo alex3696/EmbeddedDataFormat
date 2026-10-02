@@ -62,7 +62,7 @@ static int ReadPrimitive(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem,
 		case Char:
 		{
 			// Char - это массив фиксированной длины
-			size_t charArrayLen = GetTotalElements(&t->Dims);
+			size_t charArrayLen = GetTotalElements((EdfDims_t*)&t->Dims);
 			if (charArrayLen == 0)
 				return ERR_WRONG_TYPE;
 			if ((err = StreamRead(src, NULL, (uint8_t*)(*presult), charArrayLen)))
@@ -153,7 +153,7 @@ int EdfReadBin(const EdfType_t* t, MemStream_t* src, LineAlloc_t* mem, void** pr
 {
 	if (t->Type == Char)
 		return ReadElement(t, src, mem, presult, resultPrimOffset, primReaded);
-	size_t totalElement = GetTotalElements(&t->Dims);
+	size_t totalElement = GetTotalElements((EdfDims_t*)& t->Dims);
 	if (1 < totalElement)
 		return ReadArray(t, src, totalElement, mem, presult, resultPrimOffset, primReaded);
 	return ReadElement(t, src, mem, presult, resultPrimOffset, primReaded);

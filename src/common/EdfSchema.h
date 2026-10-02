@@ -6,14 +6,15 @@
 
 typedef struct
 {
-	uint8_t Count;
 	uint16_t* Item;
+	uint8_t Count;
+	uint16_t TotalElements; // кэш итогового количества
 } EdfDims_t;
 
 typedef struct
 {
-	uint8_t Count;
 	struct EdfType* Item;
+	uint8_t Count;
 } EdfField_t;
 
 typedef struct EdfType
@@ -34,7 +35,7 @@ typedef struct
 
 int IsVar(const EdfSchema_t* r, int32_t varId, const char* varName);
 int IsVarName(const EdfSchema_t* r, const char* varName);
-size_t GetTotalElements(const EdfDims_t* const dims);
+uint16_t GetTotalElements(EdfDims_t* const dims);
 
 size_t GetEdfSchemaCBinLen(const EdfSchema_t* sch);
 size_t GetEdfTypeCBinLen(const EdfType_t* t);
