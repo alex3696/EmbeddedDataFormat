@@ -56,41 +56,41 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 		edf->PrimSkip--;
 		return ERR_NO;
 	}
-	WalkContext_t tryCtx = { edf->WalkCtx.psrc, edf->WalkCtx.pdst, edf->WalkCtx.srcLen, edf->WalkCtx.dstLen };
+	size_t srcLen = 0;
 	if (Char == t->Type)
 	{
-		tryCtx.srcLen = GetTotalElements((EdfDims_t*)&t->Dims);
-		if (0 == tryCtx.srcLen)
-			return ERR_WRONG_TYPE;
-		if (tryCtx.srcLen > edf->WalkCtx.srcLen)
+		srcLen = edf->WalkCtx.srcLen;
+		if (0 == srcLen)
 			return ERR_SRC_SHORT;
+		if (srcLen > edf->WalkCtx.srcLen)
+			return ERR_SRC_SHORT;
+		edf->WalkCtx.srcLen = GetTotalElements((EdfDims_t*)&t->Dims);
 	}
 	int err = 0;
-	if ((err = (edf->WritePrimitive)(t->Type, &tryCtx)))
+	if ((err = (edf->WritePrimitive)(t->Type, &edf->WalkCtx)))
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
 		// Сбрасываем блок
 		edf->Blk->Len += (uint16_t)(edf->WalkCtx.writed);
 		edf->PrimSkip = edf->wqty;
-		if ((err = EdfFlushData(edf, &tryCtx.writed)))
+		size_t writed = 0;
+		if ((err = EdfFlushData(edf, &writed)))
 			return err;
 		edf->PrimSkip = 0;
 		// Сбрасываем счетчики для нового блока
 		edf->WalkCtx.writed = 0;
-		tryCtx.dstLen = edf->WalkCtx.dstLen = GetContentDataMaxLen(edf, btData);
-		tryCtx.pdst = edf->WalkCtx.pdst = edf->Blk->Content.Record.Data;
+		edf->WalkCtx.dstLen = GetContentDataMaxLen(edf, btData);
+		edf->WalkCtx.pdst = edf->Blk->Content.Record.Data;
 		// Пытаемся записать ЕЩЕ РАЗ
-		if ((err = (edf->WritePrimitive)(t->Type, &tryCtx)))
+		if ((err = (edf->WritePrimitive)(t->Type, &edf->WalkCtx)))
 			return err;// если снова ошибка, выходим
 	}
 	edf->wqty++;
-	edf->WalkCtx.readed += tryCtx.readed;
-	edf->WalkCtx.writed += tryCtx.writed;
-	edf->WalkCtx.psrc += tryCtx.readed;
-	edf->WalkCtx.srcLen -= tryCtx.readed;
-	edf->WalkCtx.pdst += tryCtx.writed;
-	edf->WalkCtx.dstLen -= tryCtx.writed;
+	if (Char == t->Type)
+	{
+		edf->WalkCtx.srcLen = srcLen - GetTotalElements((EdfDims_t*)&t->Dims);
+	}
 	return err;
 }
 //-----------------------------------------------------------------------------

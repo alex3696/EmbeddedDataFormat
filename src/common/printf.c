@@ -1591,6 +1591,7 @@ static int vsnprintf_impl(output_gadget_t* output, const char* format, va_list a
   append_termination_via_gadget(output);
 
   /* return written chars without terminating \0 */
+  //return (int)(output->pos > output->max_chars? output->max_chars : output->pos);
   return (int)output->pos;
 }
 
