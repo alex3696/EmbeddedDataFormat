@@ -319,7 +319,7 @@ int StreamReadString(MemStream_t* tsrc, LineAlloc_t* tmem, char** ti)
 		}
 	}
 	*ti = pstr;
-	*tsrc = src;
+	memcpy(tsrc, &src, sizeof(MemStream_t));
 	*tmem = mem;
 	return 0;
 }

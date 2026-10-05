@@ -56,36 +56,30 @@ int FileStreamSeek(FileStream_t* stream, long offset, int origin)
 	return fseek(f, offset, origin);
 }
 //-----------------------------------------------------------------------------
-
-const StreamFnImpl_t rwFileSt ={ T_FILE_STREAM, StreamWriteImpl, StreamReadImpl, FileStreamClose, FileStreamSeek };
-const StreamFnImpl_t wFileSt = { T_FILE_STREAM, StreamWriteImpl, NULL,           FileStreamClose, FileStreamSeek };
-const StreamFnImpl_t rFileSt = { T_FILE_STREAM, NULL,            StreamReadImpl, FileStreamClose, FileStreamSeek };
-
-//-----------------------------------------------------------------------------
 int FileStreamOpen(FileStream_t* s, const char* file, const char* inMode)
 {
 	const char a[] = "ab+";
 	const char w[] = "wb";
 	const char r[] = "rb";
 	const char* mode = NULL;
-	const StreamFnImpl_t* impl = NULL;
+	StreamFnImpl_t impl = {0};
 
 	int  err = ERR_WRONG_PARAMETERS;
 
 	if (0 == strcmp("wb", inMode))
 	{
 		mode = w;
-		impl = &wFileSt;
+		impl = (StreamFnImpl_t){ T_FILE_STREAM, StreamWriteImpl, NULL,           FileStreamClose, FileStreamSeek };
 	}
 	else if (0 == strcmp("ab", inMode))
 	{
 		mode = a;
-		impl = &rwFileSt;
+		impl = (StreamFnImpl_t){ T_FILE_STREAM, StreamWriteImpl, StreamReadImpl, FileStreamClose, FileStreamSeek };
 	}
 	else if (0 == strcmp("rb", inMode))
 	{
 		mode = r;
-		impl = &rFileSt;
+		impl = (StreamFnImpl_t){ T_FILE_STREAM, NULL,            StreamReadImpl, FileStreamClose, FileStreamSeek };
 	}
 
 	if (mode)
@@ -94,15 +88,11 @@ int FileStreamOpen(FileStream_t* s, const char* file, const char* inMode)
 		err = fopen_s(&f, file, mode);
 		if (!err)
 		{
-			*s = (FileStream_t)
-			{
-				.Impl = impl,
-				.Instance = (void*)f
-			};
+			memcpy((FileStream_t*)&s->Impl, &impl, sizeof(StreamFnImpl_t));
+			s->Instance = (void*)f;
 			return 0;
 		}
 	}
-	LOG_ERR();
 	return err;
 }
 

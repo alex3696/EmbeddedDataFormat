@@ -498,8 +498,6 @@ static int Test_WriteSample()
 
 	BinToText(binFile, txtConvFile);
 	err = CompareFiles(txtFile, txtConvFile);
-	if (err)
-		vsnprintf("err %d: t_write files not equal", err);
 	runtime_assert0(0 == err);
 	return err;
 }

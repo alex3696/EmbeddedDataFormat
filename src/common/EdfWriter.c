@@ -240,7 +240,12 @@ int EdfOpenStream(EdfContext_t* f, Stream_t* stream, const char* mode)
 		return ERR_WRONG_PARAMETERS;
 	int err = 0;
 	f->SchemaPtr = NULL;
-	f->Stream = *stream;
+	switch (stream->Impl.TypeId)
+	{
+		default: return ERR_WRONG_PARAMETERS;
+		case T_FILE_STREAM: memcpy(&f->Stream, stream, sizeof(FileStream_t)); break;
+		case T_MEM_STREAM: memcpy(&f->Stream, stream, sizeof(MemStream_t)); break;
+	}
 	f->BufLen = 0;
 	f->WritePrimitive = NULL;
 	f->WriteConfig = NULL;

@@ -80,38 +80,46 @@ int MemStreamWriteOpen(MemStream_t* s, uint8_t* buf, size_t size)
 	return MemStreamOpen(s, buf, size, 0, "w");
 }
 
-const StreamFnImpl_t rwMemSt = { T_MEM_STREAM, MemStreamWriteImpl, MemStreamReadImpl, MemStreamClose };
-const StreamFnImpl_t wMemSt =  { T_MEM_STREAM, MemStreamWriteImpl, NULL,              MemStreamClose };
-const StreamFnImpl_t rMemSt =  { T_MEM_STREAM, NULL,               MemStreamReadImpl, MemStreamClose };
-
 //-----------------------------------------------------------------------------
 int MemStreamOpen(MemStream_t* s, uint8_t* buf, size_t size, size_t datalen, const char* inMode)
 {
 	if (NULL == inMode || 0 == strcmp("rw", inMode) || 0 == strcmp("wr", inMode))
 	{
-		s->Impl = &rwMemSt;
-		s->Buffer = buf;
-		s->Size = size;
-		s->RPos = 0;
-		s->WPos = datalen;
+		MemStream_t rwMemSt =
+		{
+			.Impl = { T_MEM_STREAM, MemStreamWriteImpl, MemStreamReadImpl, MemStreamClose },
+			.Buffer = buf,
+			.Size = size,
+			.RPos = 0,
+			.WPos = datalen,
+		};
+		memcpy(s, &rwMemSt, sizeof(MemStream_t));
 		return 0;
 	}
 	else if (0 == strcmp("w", inMode) || 0 == strcmp("wb", inMode))
 	{
-		s->Impl = &wMemSt;
-		s->Buffer = buf;
-		s->Size = size;
-		s->RPos = 0;
-		s->WPos = 0;
+		MemStream_t wMemSt =
+		{
+			.Impl = { T_MEM_STREAM, MemStreamWriteImpl, NULL,              MemStreamClose },
+			.Buffer = buf,
+			.Size = size,
+			.RPos = 0,
+			.WPos = 0,
+		};
+		memcpy(s, &wMemSt, sizeof(MemStream_t));
 		return 0;
 	}
 	else if (0 == strcmp("r", inMode) || 0 == strcmp("rb", inMode))
 	{
-		s->Impl = &rMemSt;
-		s->Buffer = buf;
-		s->Size = size;
-		s->RPos = 0;
-		s->WPos = size;
+		MemStream_t rMemSt =
+		{
+			.Impl = { T_MEM_STREAM, NULL,               MemStreamReadImpl, MemStreamClose },
+			.Buffer = buf,
+			.Size = size,
+			.RPos = 0,
+			.WPos = size,
+		};
+		memcpy(s, &rMemSt, sizeof(MemStream_t));
 		return 0;
 	}
 	return ERR_WRONG_PARAMETERS;
@@ -191,7 +199,7 @@ static int FileStreamWriteUInt32Txt(FileStream_t* st, size_t* writed, uint32_t v
 int StreamWriteUInt32Txt(Stream_t* st, size_t* writed, uint32_t val)
 {
 #ifdef EDF_ENABLE_TEXT_MODE
-	switch (st->Impl->TypeId)
+	switch (st->Impl.TypeId)
 	{
 	default: break;
 	case T_MEM_STREAM: return MemStreamWriteUInt32Txt((MemStream_t*)st, writed, val);

@@ -32,7 +32,7 @@ typedef struct StreamFnImpl
 // FileStream
 typedef struct FileStream
 {
-	const StreamFnImpl_t* Impl;
+	const StreamFnImpl_t Impl;
 	void* Instance;
 #ifdef EDF_ENABLE_TEXT_MODE
 	uint8_t FmtBuf[STREAM_FMT_BUF];
@@ -47,8 +47,8 @@ typedef int(*FileStreamOpenFn)(FileStream_t* w, const char* file, const char* mo
 //Memory Stream
 typedef struct MemStream
 {
-	const StreamFnImpl_t* Impl;
-	uint8_t* Buffer;
+	const StreamFnImpl_t Impl;
+	uint8_t*const Buffer;
 	size_t Size;
 	size_t RPos;
 	size_t WPos;
@@ -65,7 +65,7 @@ int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len);
 
 typedef union Stream
 {
-	const StreamFnImpl_t* Impl;
+	const StreamFnImpl_t Impl;
 	union StreamInstance
 	{
 		FileStream_t File;
@@ -73,10 +73,10 @@ typedef union Stream
 	} Inst;
 } Stream_t;
 
-#define StreamWrite(s, w, data, count) (((s)->Impl->Write)((s), (w), data, count))
-#define StreamRead(s, r, data, count) (((s)->Impl->Read)((s), (r), data, count))
-#define StreamClose(s) ((s)->Impl->Close)((s))
-#define StreamSeek(s, offset, origin) ((s)->Impl->Seek)((s),offset, origin)
+#define StreamWrite(s, w, data, count) (((s)->Impl.Write)((s), (w), data, count))
+#define StreamRead(s, r, data, count) (((s)->Impl.Read)((s), (r), data, count))
+#define StreamClose(s) ((s)->Impl.Close)((s))
+#define StreamSeek(s, offset, origin) ((s)->Impl.Seek)((s),offset, origin)
 
 int StreamWriteUInt32Txt(Stream_t* st, size_t* writed, uint32_t val);
 //-----------------------------------------------------------------------------
