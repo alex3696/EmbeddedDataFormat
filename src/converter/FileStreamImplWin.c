@@ -11,7 +11,6 @@ static int StreamWriteImpl(void* stream, size_t* writed, void const* data, size_
 		int err = 0;
 		if ((err = ferror(f)))
 		{
-			LOG_ERRF("Error writing %d", err);
 			return err;
 		}
 	}
@@ -33,7 +32,6 @@ static int StreamReadImpl(void* stream, size_t* readed, void* dst, size_t len)
 		int err = 0;
 		if ((err = ferror(f)))
 		{
-			LOG_ERRF("Error reading %d", err);
 			return err;
 		}
 	}

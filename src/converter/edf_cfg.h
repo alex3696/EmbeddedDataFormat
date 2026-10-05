@@ -7,9 +7,7 @@ extern "C" {
 #endif
 //-----------------------------------------------------------------------------
 
-//#define LOG_ERR
-//#define LOG_ERRF
-#define EDF_ENABLE_TEXT_MODE
+//#define EDF_ENABLE_TEXT_MODE
 
 //-----------------------------------------------------------------------------
 #ifdef __cplusplus

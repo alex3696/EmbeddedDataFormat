@@ -34,27 +34,11 @@ uint16_t MbCrc16acc(const void* d, size_t len, uint16_t crc);
 #endif 
 
 #ifndef LOG_ERR
-#define LOG_ERR() printf("\n err: %d %s %s ", __LINE__, __FILE__, __FUNCTION__)
+#define LOG_ERR() fprintf(stderr, "Error: %d %s %s ", __LINE__, __FUNCTION__, __FILE__)
+#define LOG_ERR_CODE(message, code) fprintf(stderr, "Error [%d] %s: %d %s %s ", code, message, __LINE__, __FUNCTION__, __FILE__)
 #endif
 
-#ifndef LOG_ERRF
-void Log_ErrF(const char* const fmt, ...);
-#define LOG_ERRF(fmt, ...) Log_ErrF(fmt, __VA_ARGS__)
-#endif
-
-#define runtime_assert0(condition) \
-        if (!(condition)) { \
-            fprintf(stderr, "Runtime assert: %s:%d \n", __FILE__, __LINE__); \
-            abort(); \
-        } \
-
-
-#define runtime_assert(condition, message, code) \
-    do { \
-        if (!(condition)) { \
-            fprintf(stderr, "Runtime assert: [%d]%s (%s:%d)\n", (int)code, message, __FILE__, __LINE__); \
-            abort(); \
-        } \
-    } while(0)
+#define runtime_assert0(condition)                if (!(condition)) { LOG_ERR(); abort(); } 
+#define runtime_assert(condition, message, code)  if (!(condition)) { LOG_ERR_CODE(message, code); abort(); } 
 
 #endif //EDFUTILS_H

@@ -499,7 +499,7 @@ static int Test_WriteSample()
 	BinToText(binFile, txtConvFile);
 	err = CompareFiles(txtFile, txtConvFile);
 	if (err)
-		LOG_ERRF("err %d: t_write files not equal", err);
+		vsnprintf("err %d: t_write files not equal", err);
 	runtime_assert0(0 == err);
 	return err;
 }
@@ -551,8 +551,6 @@ static void Test_WriteBigVar()
 	BinToText(binFile, txtConvFile);
 	err = CompareFiles(txtFile, txtConvFile);
 
-	if (err)
-		LOG_ERRF("err: t_big %d", err);
 	runtime_assert0(0 == err);
 }
 //-----------------------------------------------------------------------------
