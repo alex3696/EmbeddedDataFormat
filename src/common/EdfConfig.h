@@ -18,6 +18,7 @@ typedef struct
 	uint32_t Flags; //Options_t
 } EdfConfig_t;
 
+#define CreateConfig(blkLen) ((EdfConfig_t){ EDF_VERSMAJOR,EDF_VERSMINOR, EDF_ENCODING, blkLen, 0, Default })
 extern const EdfConfig_t EdfCfg256;
 
 #endif

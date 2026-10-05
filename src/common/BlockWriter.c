@@ -125,8 +125,7 @@ static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 #endif
 			for (size_t j = 0; j < t->Fields.Count; j++)
 			{
-				const EdfType_t* s = &t->Fields.Item[j];
-				if ((err = WriteElement(s, edf)))
+				if ((err = WriteElement(&t->Fields.Item[j], edf)))
 					return err;
 			}
 #ifdef EDF_ENABLE_TEXT_MODE
@@ -191,11 +190,14 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 	{
 		dw->WalkCtx.writed = dw->WalkCtx.readed = 0;
 		dw->wqty = dw->PrimSkip;
+#ifdef EDF_ENABLE_TEXT_MODE
 		wr = WriteSingleValue(dw);
-
+#else
+		wr = WriteElement(&dw->SchemaPtr->Type, dw);
+#endif
 		// Увеличиваем размер занятых данных в текущем блоке на то, что вернул WriteSingleValue.
 		// (Если внутри происходил EdfFlushData, 'w' содержит корректный остаток для нового блока)
-		if (dw->Blk->Len + dw->WalkCtx.writed > 0xFFFF)
+		if (dw->Blk->Len + GetContentDataMaxLen(dw, btData) > 0xFFFF)
 			return ERR_WRONG_PARAMETERS;
 		dw->Blk->Len += (uint16_t)dw->WalkCtx.writed;
 		if (srcConsumed != NULL)
