@@ -44,7 +44,7 @@ typedef struct
 uint16_t GetContentMaxLen(const EdfContext_t* pEdf);
 uint16_t GetContentDataMaxLen(const EdfContext_t* pEdf, EdfBlockType bt);
 uint16_t GetContentDataLen(const EdfBlock_t* blk);
-
+#define GetDataMaxLen(blkSize) (blkSize - EDF_HEADER_SIZE - EDF_CRC_SIZE - offsetof(EdfRecordContent_t, Data))
 
 //-----------------------------------------------------------------------------
 typedef struct EdfContext
