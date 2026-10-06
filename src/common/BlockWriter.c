@@ -221,9 +221,6 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 		wr = WriteElement(&dw->SchemaPtr->Type, dw);
 #endif
 		// Увеличиваем размер занятых данных в текущем блоке на то, что вернул WriteSingleValue.
-		// (Если внутри происходил EdfFlushData, 'w' содержит корректный остаток для нового блока)
-		if (dw->Blk->Len + GetDataMaxLen(dw->Cfg.Blocksize) > 0xFFFF)
-			return ERR_WRONG_PARAMETERS;
 		dw->Blk->Len += (uint16_t)dw->WalkCtx.writed;
 		if (srcConsumed != NULL)
 			*srcConsumed += dw->WalkCtx.readed;
