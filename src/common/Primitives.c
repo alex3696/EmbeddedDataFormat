@@ -205,7 +205,7 @@ int BinToBin(PoType t, WalkContext_t* ctx)
 	case Double: case Int64: case UInt64:
 		if (sizeof(uint64_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint64_t) > ctx->dstLen) return ERR_DST_SHORT;
-		memcpy(ctx->pdst, ctx->psrc, sizeof(uint64_t));
+		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint64_t));
 		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;//memcpy(dst, src, *r); break;
 		*(uint32_t*)(ctx->pdst + 4) = *(const uint32_t*)(ctx->psrc + 4);
 		writed = readed = sizeof(uint64_t);
