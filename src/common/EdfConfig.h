@@ -6,6 +6,7 @@
 typedef enum Options
 {
 	Default = 0,
+	DisableStructBlockTransfer = 1,
 } Options_t;
 
 typedef struct

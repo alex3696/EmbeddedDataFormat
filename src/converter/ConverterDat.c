@@ -30,7 +30,7 @@ int DatToEdf(const char* src, const char* edfFile, char mode)
 		return ERR_WRONG_PARAMETERS;
 
 	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
-	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &EdfCfg256, &err);
+	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &CreateConfig(256), &err);
 
 	size_t writed = 0;
 	if ((err = EdfOpenFile(edf, edfFile, edfMode)))

@@ -440,6 +440,45 @@ int8_t HasDynamicFields(const EdfType_t* t)
 	return 0;
 }
 //-----------------------------------------------------------------------------
+static size_t GetTypeInfoR(const EdfType_t* t, uint8_t* hasDynamicFields)
+{
+	size_t sz = 0;
+	switch (t->Type)
+	{
+	case Struct:
+		if (t->Fields.Item && t->Fields.Count)
+		{
+			for (uint8_t i = 0; i < t->Fields.Count; i++)
+				sz += GetTypeInfoR(&t->Fields.Item[i], hasDynamicFields);
+		}
+		break;
+	case String:
+		sz = sizeof(char*);
+		*hasDynamicFields = 1;
+		break;
+	default:
+		sz = GetSizeOf(t->Type);
+		break;
+	}//switch
+	if (t->Dims.Item && t->Dims.Count)
+		for (uint8_t i = 0; i < t->Dims.Count; i++)
+			sz *= t->Dims.Item[i];
+	return sz;
+}
+//-----------------------------------------------------------------------------
+int GetTypeInfo(const EdfType_t* t, uint16_t* cSize, uint8_t* hasDynamicFields)
+{
+	if (cSize)
+		*cSize = 0;
+	if (hasDynamicFields)
+		*hasDynamicFields = 0;
+	size_t sz = GetTypeInfoR(t, hasDynamicFields);
+	if (sz > 65535)
+		return ERR_WRONG_TYPE;
+	*cSize = (uint16_t)sz;
+	return ERR_NO;
+}
+//-----------------------------------------------------------------------------
 int IsVar(const EdfSchema_t* r, int32_t varId, const char* varName)
 {
 	if (varId && r->Id == varId)

@@ -41,6 +41,7 @@ size_t GetEdfSchemaCBinLen(const EdfSchema_t* sch);
 size_t GetEdfTypeCBinLen(const EdfType_t* t);
 size_t GetTypeCSize(const EdfType_t* t);
 int8_t HasDynamicFields(const EdfType_t* t);
+int GetTypeInfo(const EdfType_t* t, uint16_t* cSize, uint8_t* hasDynamicFields);
 int WriteSchemaBinToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed);
 int WriteSchemaTxtToStream(Stream_t* st, const EdfSchema_t* t, size_t* writed);
 int WriteSchemaBinToCBin(uint8_t* src, size_t srcLen, size_t* readed,

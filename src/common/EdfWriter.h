@@ -51,6 +51,10 @@ typedef struct EdfContext
 {
 	EdfConfig_t Cfg;				// конфигурация
 	const EdfSchema_t* SchemaPtr;	// текущая схема, при записи кешируем схему в Buf
+	uint16_t TypeCSize;
+	uint8_t HasDynamicFields;
+	uint8_t Reserved;
+
 	Stream_t Stream;				// поток в который пишем или читаем
 	uint32_t RecordId;	/** <Номер текущей записи (счетчик успешно завершенных записей).
 							Инкрементируется после каждой полной записи.

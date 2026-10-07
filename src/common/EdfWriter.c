@@ -10,7 +10,8 @@ static int EdfWriteBlockBin(EdfContext_t* dw, size_t* writed)
 	*blkCrc = MbCrc16(blk, EDF_HEADER_SIZE + blk->Len);
 	if ((err = StreamWrite(&dw->Stream, NULL, blk, EDF_HEADER_SIZE + blk->Len + EDF_CRC_SIZE)))
 		return err;
-	*writed = blk->Len;
+	if(writed)
+		*writed = blk->Len;
 	dw->BlkQty++;
 	return ERR_NO;
 }
@@ -76,6 +77,10 @@ int EdfWriteSchema(EdfContext_t* dw, const EdfSchema_t* t, size_t* writed)
 	//для микроконтроллера это обращение накладно 
 	if ((err = SchemaCopyСBinToCBin(t, (EdfSchema_t**)&dw->SchemaPtr, dw->Buf, dw->Cfg.Blocksize, &dw->BufLen)))
 		return err;
+	if (dw->WritePrimitive == CBinToBin)
+		GetTypeInfo(&dw->SchemaPtr->Type, &dw->TypeCSize, &dw->HasDynamicFields);
+	else
+		dw->TypeCSize = dw->HasDynamicFields = 0;
 	return ERR_NO;
 }
 //-----------------------------------------------------------------------------

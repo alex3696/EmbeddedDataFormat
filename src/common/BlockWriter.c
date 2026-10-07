@@ -194,17 +194,16 @@ static int WriteSingleValue(EdfContext_t* edf)
 }
 #endif
 //-----------------------------------------------------------------------------
-int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* srcConsumed)
+int EdfWriteDataParse(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* srcConsumed)
 {
-	if (dw == NULL || NULL == dw->SchemaPtr)
-		return ERR_WRONG_TYPE;
-	if (dw->WritePrimitive == NULL)  // режим чтения
-		return ERR_WRONG_PARAMETERS;
-	if (vsrc == NULL || xsrcLen == 0)
-		return ERR_NO;
-	if (srcConsumed != NULL)
-		*srcConsumed = 0;
-	
+	//if (dw == NULL || NULL == dw->SchemaPtr)
+	//	return ERR_WRONG_TYPE;
+	//if (dw->WritePrimitive == NULL)  // режим чтения
+	//	return ERR_WRONG_PARAMETERS;
+	//if (vsrc == NULL || xsrcLen == 0)
+	//	return ERR_NO;
+	//if (srcConsumed != NULL)
+	//	*srcConsumed = 0;
 	dw->WalkCtx.psrc = (const uint8_t*)vsrc;
 	dw->WalkCtx.srcLen = xsrcLen;
 	dw->WalkCtx.dstLen = GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
@@ -249,4 +248,77 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 	} while (0 < dw->WalkCtx.srcLen);
 	return wr;
 }
+//-----------------------------------------------------------------------------
+//typedef struct
+//{
+//	uint8_t Raw[100];
+//} Raw100_t;
+//-----------------------------------------------------------------------------
+int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* srcConsumed)
+{
+	//Raw100_t r;
+	if (dw == NULL || NULL == dw->SchemaPtr)
+		return ERR_WRONG_TYPE;
+	if (dw->WritePrimitive == NULL)  // режим чтения
+		return ERR_WRONG_PARAMETERS;
+	if (vsrc == NULL || xsrcLen == 0)
+		return ERR_NO;
+	if (srcConsumed != NULL)
+		*srcConsumed = 0;
 
+	if (dw->WritePrimitive == CBinToBin
+		&& !dw->HasDynamicFields
+		&& 0 == dw->PrimSkip
+		&& xsrcLen >= dw->TypeCSize)
+	{
+		int err;
+		const uint8_t* src = (uint8_t*)vsrc;
+		const size_t structLen = dw->TypeCSize;
+		size_t totalStructsCount = xsrcLen / structLen;
+		size_t freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
+		size_t maxFullStructsCount = freeLen / structLen;
+		while (totalStructsCount)
+		{
+			size_t currCount = totalStructsCount < maxFullStructsCount ? totalStructsCount : maxFullStructsCount;
+			if (xsrcLen && 0 == currCount) // если полностью в блок структура не входит
+			{
+				if (0 < (dw->Cfg.Flags & DisableStructBlockTransfer))
+				{
+					if ((err = EdfFlushData(dw, NULL)))
+						return err;
+					freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize);
+					maxFullStructsCount = freeLen / structLen;
+					continue;
+				}
+				else
+				{
+					if ((err = EdfWriteDataParse(dw, (void*)src, structLen, srcConsumed)))
+						return err;
+					totalStructsCount -= 1;
+					xsrcLen -= structLen;
+					src += currCount;
+					freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
+					maxFullStructsCount = freeLen / structLen;
+					continue;
+				}
+			}
+			size_t currLen = currCount * structLen;
+			uint8_t* dst = dw->Blk->Content.Record.Data + dw->Blk->Len;
+			memcpy(dst, src, currLen);
+			dw->Blk->Len += (uint16_t)currLen;
+			dw->RecordId += currCount;
+			if (srcConsumed != NULL)
+				*srcConsumed += currLen;
+			totalStructsCount -= currCount;
+			if(!totalStructsCount)
+				return ERR_NO;
+			xsrcLen -= currLen;
+			src += currCount;
+			freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
+			maxFullStructsCount = freeLen / structLen;
+		}
+	}
+	else
+		return EdfWriteDataParse(dw, vsrc, xsrcLen, srcConsumed);
+	return ERR_NO;
+}
