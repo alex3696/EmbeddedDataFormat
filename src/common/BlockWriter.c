@@ -296,7 +296,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 						return err;
 					totalStructsCount -= 1;
 					xsrcLen -= structLen;
-					src += currCount;
+					src += structLen;
 					freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
 					maxFullStructsCount = freeLen / structLen;
 					continue;
@@ -313,7 +313,7 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 			if(!totalStructsCount)
 				return ERR_NO;
 			xsrcLen -= currLen;
-			src += currCount;
+			src += currLen;
 			freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
 			maxFullStructsCount = freeLen / structLen;
 		}

@@ -44,7 +44,7 @@ int DatToEdf(const char* src, const char* edfFile, char mode)
 	EdfWriteSchemaData(edf, &typeInf, &(FileTypeId_t){ (uint16_t)dat.FileType, 1}, sizeof(FileTypeId_t));
 
 	const EdfSchema_t beginDtInf = { BEGINDATETIME, "BeginDateTime", NULL, DateTimeType };
-	const DateTime_t beginDtDat = { dat.Year + 2000, dat.Month, dat.Day, };
+	const DateTime_t beginDtDat = { dat.Year + 2000, dat.Month, dat.Day, 0, 0, 0, 0 };
 	err = EdfWriteSchemaData(edf, &beginDtInf, &beginDtDat, sizeof(DateTime_t));
 	runtime_assert(0 == err, "", err);
 
