@@ -5,7 +5,7 @@
 static int EdfWriteSep(EdfContext_t* edf, const char* const sep)
 {
 	// игнорируем любые разделители, если мы не в текстовом режиме
-	if(edf->WritePrimitive == CBinToBin)
+	if (edf->WritePrimitive == CBinToBin)
 		return 0;
 
 	if (0 < edf->PrimSkip)
@@ -157,7 +157,7 @@ static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 	if (Struct == t->Type)
 	{
 		size_t totalElement = GetTotalElements((EdfDims_t*)&t->Dims);
-		while(totalElement--)
+		while (totalElement--)
 		{
 			for (size_t j = 0; j < t->Fields.Count; j++)
 			{
@@ -275,31 +275,26 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 		int err;
 		const uint8_t* src = (uint8_t*)vsrc;
 		const size_t structLen = dw->TypeCSize;
-		size_t totalStructsCount = xsrcLen / structLen;
-		size_t freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
-		size_t maxFullStructsCount = freeLen / structLen;
-		while (totalStructsCount)
+		size_t structsCount = xsrcLen / structLen;
+		size_t rem = xsrcLen % structLen;
+		while (structsCount)
 		{
-			size_t currCount = totalStructsCount < maxFullStructsCount ? totalStructsCount : maxFullStructsCount;
-			if (xsrcLen && 0 == currCount) // если полностью в блок структура не входит
+			size_t maxFullStructsCount = (GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len) / structLen;
+			size_t currCount = structsCount < maxFullStructsCount ? structsCount : maxFullStructsCount;
+			if (!currCount) // если полностью в блок структура не входит
 			{
-				if (0 < (dw->Cfg.Flags & DisableStructBlockTransfer))
+				if (dw->Cfg.Flags & DisableStructBlockTransfer)
 				{
 					if ((err = EdfFlushData(dw, NULL)))
 						return err;
-					freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize);
-					maxFullStructsCount = freeLen / structLen;
 					continue;
 				}
 				else
 				{
 					if ((err = EdfWriteDataParse(dw, (void*)src, structLen, srcConsumed)))
 						return err;
-					totalStructsCount -= 1;
-					xsrcLen -= structLen;
+					structsCount -= 1;
 					src += structLen;
-					freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
-					maxFullStructsCount = freeLen / structLen;
 					continue;
 				}
 			}
@@ -310,14 +305,11 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 			dw->RecordId += currCount;
 			if (srcConsumed != NULL)
 				*srcConsumed += currLen;
-			totalStructsCount -= currCount;
-			if(!totalStructsCount)
-				return ERR_NO;
-			xsrcLen -= currLen;
+			structsCount -= currCount;
 			src += currLen;
-			freeLen = (uint16_t)GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
-			maxFullStructsCount = freeLen / structLen;
 		}
+		if (rem)
+			return EdfWriteDataParse(dw, src, rem, srcConsumed);
 	}
 	else
 		return EdfWriteDataParse(dw, vsrc, xsrcLen, srcConsumed);

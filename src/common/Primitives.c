@@ -131,28 +131,28 @@ int CBinToBin(PoType t, WalkContext_t* ctx)
 	case Struct:
 	default: return ERR_WRONG_TYPE;
 	case Int8: case UInt8:
-		if (sizeof(uint8_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint8_t) > ctx->dstLen) return ERR_DST_SHORT;
+		if (sizeof(uint8_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		*ctx->pdst = *ctx->psrc;
 		writed = readed = sizeof(uint8_t);
 		break;
 	case Half: case Int16: case UInt16:
-		if (sizeof(uint16_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint16_t) > ctx->dstLen) return ERR_DST_SHORT;
+		if (sizeof(uint16_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint16_t));
 		*(uint16_t*)ctx->pdst = *(const uint16_t*)ctx->psrc;
 		writed = readed = sizeof(uint16_t);
 		break;
 	case Single: case Int32: case UInt32:
-		if (sizeof(uint32_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint32_t) > ctx->dstLen) return ERR_DST_SHORT;
+		if (sizeof(uint32_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint32_t)); //
 		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;
 		writed = readed = sizeof(uint32_t);
 		break;
 	case Double: case Int64: case UInt64:
-		if (sizeof(uint64_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint64_t) > ctx->dstLen) return ERR_DST_SHORT;
+		if (sizeof(uint64_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		 //memcpy(ctx->pdst, ctx->psrc, sizeof(uint64_t));
 		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;//memcpy(dst, src, *r); break;
 		*(uint32_t*)(ctx->pdst + 4) = *(const uint32_t*)(ctx->psrc + 4);
@@ -183,38 +183,35 @@ int BinToBin(PoType t, WalkContext_t* ctx)
 	case Struct:
 	default: return ERR_WRONG_TYPE;
 	case Int8: case UInt8:
-		if (sizeof(uint8_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint8_t) > ctx->dstLen) return ERR_DST_SHORT;
+		if (sizeof(uint8_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		*ctx->pdst = *ctx->psrc;
 		writed = readed = sizeof(uint8_t);
 		break;
 	case Half: case Int16: case UInt16:
-		if (sizeof(uint16_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint16_t) > ctx->dstLen) return ERR_DST_SHORT;
+		if (sizeof(uint16_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint16_t));
 		*(uint16_t*)ctx->pdst = *(const uint16_t*)ctx->psrc;
 		writed = readed = sizeof(uint16_t);
 		break;
 	case Single: case Int32: case UInt32:
-		if (sizeof(uint32_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint32_t) > ctx->dstLen) return ERR_DST_SHORT;
+		if (sizeof(uint32_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint32_t)); //
 		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;
 		writed = readed = sizeof(uint32_t);
 		break;
 	case Double: case Int64: case UInt64:
-		if (sizeof(uint64_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		if (sizeof(uint64_t) > ctx->dstLen) return ERR_DST_SHORT;
+		if (sizeof(uint64_t) > ctx->srcLen) return ERR_SRC_SHORT;
 		//memcpy(ctx->pdst, ctx->psrc, sizeof(uint64_t));
 		*(uint32_t*)ctx->pdst = *(const uint32_t*)ctx->psrc;//memcpy(dst, src, *r); break;
 		*(uint32_t*)(ctx->pdst + 4) = *(const uint32_t*)(ctx->psrc + 4);
 		writed = readed = sizeof(uint64_t);
 		break;
 	case Char:
-		if (ctx->dstLen < ctx->srcLen)
-		{
-			return ERR_DST_SHORT;
-		}
+		if (ctx->dstLen < ctx->srcLen) return ERR_DST_SHORT;
 		memcpy(ctx->pdst, ctx->psrc, ctx->srcLen);
 		writed = readed = ctx->srcLen;
 		break;

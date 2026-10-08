@@ -30,7 +30,9 @@ int DatToEdf(const char* src, const char* edfFile, char mode)
 		return ERR_WRONG_PARAMETERS;
 
 	uint8_t edfMem[MEM_BLOCK_SIZE_256] = { 0 };
-	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &CreateConfig(256), &err);
+	EdfConfig_t cfg = CreateConfig(256);
+	//cfg.Flags = DisableStructBlockTransfer;
+	EdfContext_t* edf = EdfCreate(edfMem, sizeof(edfMem), &cfg, &err);
 
 	size_t writed = 0;
 	if ((err = EdfOpenFile(edf, edfFile, edfMode)))
@@ -93,15 +95,33 @@ int DatToEdf(const char* src, const char* edfFile, char mode)
 		return err;
 
 	OMEGA_DATA_V1_1 record;
+
+	const size_t dataLen = sizeof(OMEGA_DATA_V1_1) - 2;
+	uint8_t rawData[(sizeof(OMEGA_DATA_V1_1) - 2) * 100];
 	do
 	{
-		if (1 == fread(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
+		size_t qty = 0;
+		while (!feof(f) && qty < sizeof(rawData) / dataLen)
 		{
-			if ((err = EdfWriteData(edf, &record, sizeof(OMEGA_DATA_V1_1) - 2, NULL)))
-				return err;
-			//EdfFlushData(edf, &writed);
+			if (1 == fread(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
+			{
+				uint8_t* dst = rawData + qty * dataLen;
+				memcpy(dst, &record, dataLen);
+				qty++;
+			}
 		}
+		if ((err = EdfWriteData(edf, &rawData, qty * dataLen, NULL)))
+			return err;
 	} while (!feof(f));
+	//do
+	//{
+	//	if (1 == fread(&record, sizeof(OMEGA_DATA_V1_1), 1, f))
+	//	{
+	//		if ((err = EdfWriteData(edf, &record, sizeof(OMEGA_DATA_V1_1) - 2, NULL)))
+	//			return err;
+	//		//EdfFlushData(edf, &writed);
+	//	}
+	//} while (!feof(f));
 
 	fclose(f);
 	EdfClose(edf);
