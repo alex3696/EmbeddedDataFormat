@@ -89,14 +89,15 @@ static int WriteChar(const EdfType_t* t, EdfContext_t* edf)
 	}
 	int err = ERR_NO;
 	size_t srcLen = edf->WalkCtx.srcLen;
-	if (0 == srcLen)
-		return ERR_SRC_SHORT;
-	if (srcLen > edf->WalkCtx.srcLen)
-		return ERR_SRC_SHORT;
 	size_t totalChars = GetTotalElements((EdfDims_t*)&t->Dims);
+	if (srcLen < totalChars)
+		return ERR_SRC_SHORT;
 	edf->WalkCtx.srcLen = totalChars;
 	if ((err = WriteOnePrimitive(t, edf)))
+	{
+		edf->WalkCtx.srcLen = srcLen;
 		return err;
+	}
 	edf->WalkCtx.srcLen = srcLen - totalChars;
 	return err;
 }

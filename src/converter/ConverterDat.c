@@ -131,7 +131,7 @@ int EdfToDat(const char* edfFile, const char* datFile)
 	dat.FileType = 11;
 	memcpy(dat.FileDescription, FileDescMt, sizeof(FileDescMt));
 
-	OMEGA_DATA_V1_1* record = { 0 };
+	OMEGA_DATA_V1_1* record = NULL;
 	size_t recN = 0;
 	size_t readed = 0;
 
