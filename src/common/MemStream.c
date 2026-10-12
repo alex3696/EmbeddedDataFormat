@@ -47,16 +47,6 @@ static int MemStreamClose(void* stream)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-size_t StreamLen(const MemStream_t* s)
-{
-	return s->WPos - s->RPos;
-}
-//-----------------------------------------------------------------------------
-size_t StreamEmptyLen(const MemStream_t* s)
-{
-	return s->Size - (s->WPos - s->RPos);
-}
-//-----------------------------------------------------------------------------
 int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len)
 {
 	if (StreamLen(src) < len)
@@ -134,11 +124,6 @@ int LineAllocInit(LineAlloc_t* w, uint8_t* buf, size_t size)
 	w->Size = size;
 	w->WPos = 0;
 	return ERR_NO;
-}
-//-----------------------------------------------------------------------------
-size_t MemGetAvailableLen(LineAlloc_t* w)
-{
-	return w->Size - w->WPos;
 }
 //-----------------------------------------------------------------------------
 int MemAlloc(LineAlloc_t* m, size_t len, void** pptr)

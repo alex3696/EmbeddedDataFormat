@@ -54,8 +54,8 @@ typedef enum PoType
 } PoType;
 
 uint8_t GetSizeOf(enum PoType p);
-uint8_t IsPrimitive(PoType p);
-uint8_t IsPoType(PoType p);
+static inline uint8_t IsPrimitive(PoType p) { return Struct < p && String >= p; }
+static inline uint8_t IsPoType(PoType p) { return Struct <= p && String >= p; }
 
 typedef enum EdfBlockType
 {
@@ -63,9 +63,7 @@ typedef enum EdfBlockType
 	btSchema = 63, //0x3f, ?
 	btData = 61, //0x3d, =
 } EdfBlockType;
-
-uint8_t IsBlockType(EdfBlockType t);
-
+static inline uint8_t IsBlockType(EdfBlockType t) { return btConfig == t || btSchema == t || btData == t; }
 
 //-----------------------------------------------------------------------------
 typedef struct

@@ -18,8 +18,7 @@ static int WriteStringCBinToStr(WalkContext_t* ctx)
 	// print text without buf
 	const char* str = *(char**)ctx->Src.Pos;
 	size_t len = (NULL == str) ? 0 : strnlength(str, MAX_STR_LEN);
-	if (IoBufferGetRemain(&ctx->Dst) < len + 2)
-		return ERR_DST_SHORT;
+	if (2 + len > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
 	*ctx->Dst.Pos = '"';
 	memcpy(ctx->Dst.Pos + 1, str, len);
 	*(ctx->Dst.Pos + len + 1) = '"';
@@ -30,20 +29,19 @@ static int WriteStringCBinToStr(WalkContext_t* ctx)
 //-----------------------------------------------------------------------------
 static int WriteStringBinToStr(WalkContext_t* ctx)
 {
-	size_t sLen = ctx->Src.Pos[0];
-	if (IoBufferGetRemain(&ctx->Src) < 1 + sLen)
-		return ERR_SRC_SHORT;
-	const char* found = memchr(&ctx->Src.Pos[1], '\0', sLen);
+	if (1 > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
+	size_t len = ctx->Src.Pos[0];
+	if (1 + len > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
+	const char* found = memchr(&ctx->Src.Pos[1], '\0', len);
 	size_t pos = found - (char*)(&ctx->Src.Pos[1]);
-	if (pos < sLen)
-		sLen = pos;
-	if (IoBufferGetRemain(&ctx->Dst) < sLen + 2)
-		return ERR_DST_SHORT;
+	if (pos < len)
+		len = pos;
+	if (2 + len > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
 	*ctx->Dst.Pos = '"';
-	memcpy(ctx->Dst.Pos + 1, &ctx->Src.Pos[1], sLen);
-	*(ctx->Dst.Pos + sLen + 1) = '"';
-	IoBufferAdvance(&ctx->Dst, 2 + sLen);
-	IoBufferAdvance(&ctx->Src, 1 + sLen);
+	memcpy(ctx->Dst.Pos + 1, &ctx->Src.Pos[1], len);
+	*(ctx->Dst.Pos + len + 1) = '"';
+	IoBufferAdvance(&ctx->Dst, 2 + len);
+	IoBufferAdvance(&ctx->Src, 1 + len);
 	return 0;
 }
 //-----------------------------------------------------------------------------
@@ -157,9 +155,10 @@ int BinToBin(const EdfType_t* t, WalkContext_t* ctx)
 	} break;
 	case String:
 	{
+		if (1 > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
 		size_t blength = 1 + ctx->Src.Pos[0];
+		if (blength > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
 		if (blength > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
-		if (blength > IoBufferGetRemain(&ctx->Src)) return ERR_DST_SHORT;
 		memcpy(ctx->Dst.Pos, ctx->Src.Pos, blength);
 		writed = readed = blength;
 	} break;
@@ -169,7 +168,7 @@ int BinToBin(const EdfType_t* t, WalkContext_t* ctx)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-static int AnyBinToStr(const EdfType_t* t, WalkContext_t* ctx, WriteStringFn WriteString)
+static inline int AnyBinToStr(const EdfType_t* t, WalkContext_t* ctx, WriteStringFn WriteString)
 {
 	size_t readed, writed;
 	switch (t->Type)

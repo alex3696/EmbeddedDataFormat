@@ -104,7 +104,7 @@ static const uint16_t T0[256] = {
 		0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
 };
 
-uint16_t MbCrc16acc32(const void* src, size_t len, uint16_t extCrc)
+static inline uint16_t MbCrc16acc32(const void* src, size_t len, uint16_t extCrc)
 {
 	uint32_t crc = extCrc;
 	const uint8_t* data = (const uint8_t*)src;
@@ -235,7 +235,7 @@ static const uint16_t T3[256] = {
 		0x6031, 0x9C30, 0xD830, 0x2431, 0x5030, 0xAC31, 0xE831, 0x1430
 };
 
-uint16_t MbCrc16accS4(const void* src, size_t len, uint16_t extCrc)
+static inline uint16_t MbCrc16accS4(const void* src, size_t len, uint16_t extCrc)
 {
 	uint32_t crc = extCrc;
 	const uint8_t* data = (const uint8_t*)src;

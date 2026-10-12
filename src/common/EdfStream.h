@@ -58,8 +58,8 @@ int MemStreamOpen(MemStream_t* s, uint8_t* buf, size_t size, size_t datalen, con
 int MemStreamReadOpen(MemStream_t* s, uint8_t* buf, size_t size);
 int MemStreamWriteOpen(MemStream_t* s, uint8_t* buf, size_t size);
 
-size_t StreamLen(const MemStream_t* s);
-size_t StreamEmptyLen(const MemStream_t* s);
+static inline size_t StreamLen(const MemStream_t* s) { return s->WPos - s->RPos; }
+static inline size_t StreamEmptyLen(const MemStream_t* s) { return s->Size - (s->WPos - s->RPos); }
 int StreamCpy(MemStream_t* src, MemStream_t* dst, size_t len);
 //-----------------------------------------------------------------------------
 
@@ -89,7 +89,7 @@ typedef struct LineAlloc
 } LineAlloc_t;
 
 int LineAllocInit(LineAlloc_t* w, uint8_t* buf, size_t size);
-size_t MemGetAvailableLen(LineAlloc_t* w);
+static inline size_t MemGetAvailableLen(LineAlloc_t* w) { return w->Size - w->WPos; }
 int MemAlloc(LineAlloc_t* w, size_t len, void** dst);
 
 

@@ -61,11 +61,9 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 		edf->PrimSkip = edf->CurrPrim;
 		if ((err = EdfFlushData(edf, NULL)))
 			return err;
-		edf->PrimSkip = 0;
-		// Сбрасываем счетчики для нового блока
 		IoBufferReset(&edf->WalkCtx.Dst);
-		// Пытаемся записать ЕЩЕ РАЗ
-		if ((err = (edf->WritePrimitive)(t, &edf->WalkCtx)))
+		edf->PrimSkip = 0;// Сбрасываем счетчики для нового блока
+		if ((err = (edf->WritePrimitive)(t, &edf->WalkCtx)))// Пытаемся записать ЕЩЕ РАЗ
 			return err;// если снова ошибка, выходим
 	}
 	edf->CurrPrim++;
@@ -240,7 +238,8 @@ int EdfWriteData(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* src
 			size_t currCount = structsCount < maxFullStructsCount ? structsCount : maxFullStructsCount;
 			if (!currCount) // если полностью в блок структура не входит
 			{
-				if (dw->Cfg.Flags & DisableStructBlockTransfer)
+				if ((dw->Cfg.Flags & DisableStructBlockTransfer)
+					|| (GetDataMaxLen(dw->Cfg.Blocksize) == dw->Blk->Len))
 				{
 					if ((err = EdfFlushData(dw, NULL)))
 						return err;
