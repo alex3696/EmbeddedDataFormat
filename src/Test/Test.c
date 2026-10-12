@@ -498,7 +498,7 @@ static int Test_WriteSample()
 
 	BinToText(binFile, txtConvFile);
 	err = CompareFiles(txtFile, txtConvFile);
-	runtime_assert0(0 == err);
+	runtime_assert(0 == err, "t_write.tdf file not equal", err);
 	return err;
 }
 //-----------------------------------------------------------------------------
