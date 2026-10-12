@@ -78,6 +78,5 @@ typedef struct
 
 } WalkContext_t;
 
-typedef int (*WritePrimitiveFn)(PoType t, WalkContext_t* ctx);
 
 #endif

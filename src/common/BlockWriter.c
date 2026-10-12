@@ -57,7 +57,7 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 		return ERR_NO;
 	}
 	int err = 0;
-	if ((err = (edf->WritePrimitive)(t->Type, &edf->WalkCtx)))
+	if ((err = (edf->WritePrimitive)(t, &edf->WalkCtx)))
 	{
 		if (ERR_DST_SHORT != err)
 			return err;
@@ -73,42 +73,20 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 		edf->WalkCtx.dstLen = GetDataMaxLen(edf->Cfg.Blocksize);
 		edf->WalkCtx.pdst = edf->Blk->Content.Record.Data;
 		// Пытаемся записать ЕЩЕ РАЗ
-		if ((err = (edf->WritePrimitive)(t->Type, &edf->WalkCtx)))
+		if ((err = (edf->WritePrimitive)(t, &edf->WalkCtx)))
 			return err;// если снова ошибка, выходим
 	}
 	edf->wqty++;
 	return err;
 }
 //-----------------------------------------------------------------------------
-static int WriteChar(const EdfType_t* t, EdfContext_t* edf)
-{
-	if (0 < edf->PrimSkip)
-	{
-		edf->PrimSkip--;
-		return ERR_NO;
-	}
-	int err = ERR_NO;
-	size_t srcLen = edf->WalkCtx.srcLen;
-	size_t totalChars = GetTotalElements((EdfDims_t*)&t->Dims);
-	if (srcLen < totalChars)
-		return ERR_SRC_SHORT;
-	edf->WalkCtx.srcLen = totalChars;
-	if ((err = WriteOnePrimitive(t, edf)))
-	{
-		edf->WalkCtx.srcLen = srcLen;
-		return err;
-	}
-	edf->WalkCtx.srcLen = srcLen - totalChars;
-	return err;
-}
 #ifdef EDF_ENABLE_TEXT_MODE
-//-----------------------------------------------------------------------------
 static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 {
 	int err = ERR_NO;
 	if (Char == t->Type)
 	{
-		if ((err = WriteChar(t, edf)))
+		if ((err = WriteOnePrimitive(t, edf)))
 			return err;
 		return EdfWriteSepVarEnd(edf);
 	}
@@ -169,7 +147,7 @@ static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 	else
 	{
 		if (Char == t->Type)
-			return WriteChar(t, edf);
+			return WriteOnePrimitive(t, edf);
 		size_t totalElement = GetTotalElements((EdfDims_t*)&t->Dims);
 		while (totalElement--)
 		{
@@ -197,14 +175,6 @@ static int WriteSingleValue(EdfContext_t* edf)
 //-----------------------------------------------------------------------------
 int EdfWriteDataParse(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* srcConsumed)
 {
-	//if (dw == NULL || NULL == dw->SchemaPtr)
-	//	return ERR_WRONG_TYPE;
-	//if (dw->WritePrimitive == NULL)  // режим чтения
-	//	return ERR_WRONG_PARAMETERS;
-	//if (vsrc == NULL || xsrcLen == 0)
-	//	return ERR_NO;
-	//if (srcConsumed != NULL)
-	//	*srcConsumed = 0;
 	dw->WalkCtx.psrc = (const uint8_t*)vsrc;
 	dw->WalkCtx.srcLen = xsrcLen;
 	dw->WalkCtx.dstLen = GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;

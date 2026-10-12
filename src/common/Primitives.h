@@ -3,11 +3,13 @@
 
 #include "_pch.h"
 #include "PoType.h"
+#include "EdfSchema.h"
+typedef int (*WritePrimitiveFn)(const EdfType_t* t, WalkContext_t* ctx);
 
-int BinToBin(PoType t, WalkContext_t* ctx);
-int CBinToBin(PoType t, WalkContext_t* ctx);
-int CBinToStr(PoType t, WalkContext_t* ctx);
-int BinToStr(PoType t, WalkContext_t* ctx);
+int BinToBin(const EdfType_t* t, WalkContext_t* ctx);
+int CBinToBin(const EdfType_t* t, WalkContext_t* ctx);
+int CBinToStr(const EdfType_t* t, WalkContext_t* ctx);
+int BinToStr(const EdfType_t* t, WalkContext_t* ctx);
 
 // BinToCBin // required dynamic mem allocator
 
