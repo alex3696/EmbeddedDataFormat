@@ -67,16 +67,33 @@ typedef enum EdfBlockType
 uint8_t IsBlockType(EdfBlockType t);
 
 
+//-----------------------------------------------------------------------------
 typedef struct
 {
-	const uint8_t* psrc;
-	uint8_t* pdst;
-	size_t srcLen;
-	size_t dstLen;
-	size_t readed;
-	size_t writed;
+	uint8_t* Pos;
+	const uint8_t* const BufBegin;
+	const uint8_t* const BufEnd;
+} IoBuffer_t;
 
+static inline void IoBufferInit(IoBuffer_t* buf, const uint8_t* const data, size_t len, size_t pos)
+{
+	memcpy((void*)&buf->BufBegin, &data, sizeof(uint8_t*)); //((uint8_t*)buf->BufBegin) = (uint8_t*)data;
+	uint8_t* d = (uint8_t*)data + len;
+	memcpy((void*)&buf->BufEnd, &d, sizeof(uint8_t*)); //(uint8_t*)buf->BufEnd = (uint8_t*)(data + len);
+	buf->Pos = (uint8_t*)data + pos;
+}
+
+static inline void IoBufferAdvance(IoBuffer_t* buf, size_t len) { buf->Pos += len; }
+static inline void IoBufferReset(IoBuffer_t* buf) { buf->Pos = (uint8_t*)buf->BufBegin; }
+static inline size_t IoBufferGetAdvanced(const IoBuffer_t* buf) { return buf->Pos - buf->BufBegin; }
+static inline size_t IoBufferGetRemain(const IoBuffer_t* buf) { return buf->BufEnd - buf->Pos; }
+static inline size_t IoBufferGetSize(const IoBuffer_t* buf) { return buf->BufEnd - buf->BufBegin; }
+
+//-----------------------------------------------------------------------------
+typedef struct
+{
+	IoBuffer_t Src;
+	IoBuffer_t Dst;
 } WalkContext_t;
-
-
+//-----------------------------------------------------------------------------
 #endif

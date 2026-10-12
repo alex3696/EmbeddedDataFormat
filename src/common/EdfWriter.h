@@ -62,7 +62,7 @@ typedef struct EdfContext
 	uint16_t PrimSkip;	/** <Смещение примитива внутри текущей записи (0-65535).
 							Используется при разрыве примитива между блоками.
                             Сбрасывается в 0 при вызове EdfWriteSchema.> */
-	uint16_t wqty;
+	uint16_t CurrPrim;
 
 	size_t BlkQty;
 	EdfBlock_t* const Blk;	// буфер блока

@@ -16,26 +16,21 @@ static int EdfWriteSep(EdfContext_t* edf, const char* const sep)
 	size_t sepLen = sep ? strnlength(sep, 10) : 0;
 	if (!sepLen)
 	{
-		edf->wqty++;
+		edf->CurrPrim++;
 		return 0;
 	}
-	if (sepLen > edf->WalkCtx.dstLen)
+	if (sepLen > IoBufferGetRemain(&edf->WalkCtx.Dst))
 	{
 		int err = 0;
-		edf->Blk->Len += (uint16_t)(edf->WalkCtx.writed);
-		if ((err = EdfFlushData(edf, &edf->WalkCtx.writed)))
+		//edf->Blk->Len = (uint16_t)IoBufferGetAdvanced(&edf->WalkCtx.Dst);
+		if ((err = EdfFlushData(edf, NULL)))
 			return err;
-		edf->WalkCtx.writed = 0;
-		edf->WalkCtx.dstLen = GetDataMaxLen(edf->Cfg.Blocksize);
-		edf->WalkCtx.pdst = edf->Blk->Content.Record.Data;
-		if (sepLen > edf->WalkCtx.dstLen)
-			return ERR_DST_SHORT;
+		IoBufferReset(&edf->WalkCtx.Dst);
 	}
-	edf->wqty++;
-	memcpy(edf->WalkCtx.pdst, sep, sepLen);
-	edf->WalkCtx.dstLen -= sepLen;
-	edf->WalkCtx.writed += sepLen;
-	edf->WalkCtx.pdst += sepLen;
+	memcpy(edf->WalkCtx.Dst.Pos, sep, sepLen);
+	IoBufferAdvance(&edf->WalkCtx.Dst, sepLen);
+	edf->CurrPrim++;
+	edf->Blk->Len = (uint16_t)IoBufferGetAdvanced(&edf->WalkCtx.Dst);
 	return 0;
 }
 
@@ -62,21 +57,19 @@ static int WriteOnePrimitive(const EdfType_t* t, EdfContext_t* edf)
 		if (ERR_DST_SHORT != err)
 			return err;
 		// Сбрасываем блок
-		edf->Blk->Len += (uint16_t)(edf->WalkCtx.writed);
-		edf->PrimSkip = edf->wqty;
-		size_t writed = 0;
-		if ((err = EdfFlushData(edf, &writed)))
+		//edf->Blk->Len = (uint16_t)IoBufferGetAdvanced(&edf->WalkCtx.Dst);
+		edf->PrimSkip = edf->CurrPrim;
+		if ((err = EdfFlushData(edf, NULL)))
 			return err;
 		edf->PrimSkip = 0;
 		// Сбрасываем счетчики для нового блока
-		edf->WalkCtx.writed = 0;
-		edf->WalkCtx.dstLen = GetDataMaxLen(edf->Cfg.Blocksize);
-		edf->WalkCtx.pdst = edf->Blk->Content.Record.Data;
+		IoBufferReset(&edf->WalkCtx.Dst);
 		// Пытаемся записать ЕЩЕ РАЗ
 		if ((err = (edf->WritePrimitive)(t, &edf->WalkCtx)))
 			return err;// если снова ошибка, выходим
 	}
-	edf->wqty++;
+	edf->CurrPrim++;
+	edf->Blk->Len = (uint16_t)IoBufferGetAdvanced(&edf->WalkCtx.Dst);
 	return err;
 }
 //-----------------------------------------------------------------------------
@@ -175,25 +168,19 @@ static int WriteSingleValue(EdfContext_t* edf)
 //-----------------------------------------------------------------------------
 int EdfWriteDataParse(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t* srcConsumed)
 {
-	dw->WalkCtx.psrc = (const uint8_t*)vsrc;
-	dw->WalkCtx.srcLen = xsrcLen;
-	dw->WalkCtx.dstLen = GetDataMaxLen(dw->Cfg.Blocksize) - dw->Blk->Len;
-	dw->WalkCtx.pdst = dw->Blk->Content.Record.Data + dw->Blk->Len;
-
+	IoBufferInit(&dw->WalkCtx.Src, (uint8_t*)vsrc, xsrcLen, 0);
+	IoBufferInit(&dw->WalkCtx.Dst, dw->Blk->Content.Record.Data, GetDataMaxLen(dw->Cfg.Blocksize), dw->Blk->Len);
 	int wr;
 	do
 	{
-		dw->WalkCtx.writed = dw->WalkCtx.readed = 0;
-		dw->wqty = dw->PrimSkip;
+		dw->CurrPrim = dw->PrimSkip;
 #ifdef EDF_ENABLE_TEXT_MODE
 		wr = WriteSingleValue(dw);
 #else
 		wr = WriteElement(&dw->SchemaPtr->Type, dw);
 #endif
-		// Увеличиваем размер занятых данных в текущем блоке на то, что вернул WriteSingleValue.
-		dw->Blk->Len += (uint16_t)dw->WalkCtx.writed;
 		if (srcConsumed != NULL)
-			*srcConsumed += dw->WalkCtx.readed;
+			*srcConsumed = IoBufferGetAdvanced(&dw->WalkCtx.Src);
 
 		switch (wr)
 		{
@@ -201,8 +188,8 @@ int EdfWriteDataParse(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t
 		case ERR_WRONG_TYPE: return ERR_WRONG_TYPE;
 		case ERR_SRC_SHORT:
 			// Входной буфер оборвался на середине примитива/массива.
-			// Запоминаем позицию в схеме (wqty), чтобы при следующем вызове начать с нужного места.
-			dw->PrimSkip = dw->wqty;
+			// Запоминаем позицию в схеме (CurrPrim), чтобы при следующем вызове начать с нужного места.
+			dw->PrimSkip = dw->CurrPrim;
 			return ERR_SRC_SHORT;
 		case ERR_NO:
 			dw->PrimSkip = 0;
@@ -211,12 +198,12 @@ int EdfWriteDataParse(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t
 		case ERR_DST_SHORT:
 			//dstLen = GetContentDataMaxLen(dw, btData);
 			//dst = dw->Blk->Content.Record.Data;
-			//dw->PrimSkip = (uint16_t)wqty;
+			//dw->PrimSkip = (uint16_t)CurrPrim;
 			//wr = 0;
 			return ERR_DST_SHORT;
 			break;
 		}
-	} while (0 < dw->WalkCtx.srcLen);
+	} while (0 < IoBufferGetRemain(&dw->WalkCtx.Src));
 	return wr;
 }
 //-----------------------------------------------------------------------------
