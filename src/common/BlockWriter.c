@@ -119,8 +119,8 @@ static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 	}
 	return ERR_NO;
 }
-#else
-static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
+#endif
+static int WriteElement_BinMode(const EdfType_t* t, EdfContext_t* edf)
 {
 	int err = ERR_NO;
 	if (Struct == t->Type)
@@ -130,7 +130,7 @@ static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 		{
 			for (size_t j = 0; j < t->Fields.Count; j++)
 			{
-				if ((err = WriteElement(&t->Fields.Item[j], edf)))
+				if ((err = WriteElement_BinMode(&t->Fields.Item[j], edf)))
 					return err;
 			}
 		}
@@ -140,6 +140,19 @@ static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 		if (Char == t->Type)
 			return WriteOnePrimitive(t, edf);
 		size_t totalElement = GetTotalElements((EdfDims_t*)&t->Dims);
+		if (0 < edf->PrimSkip)
+		{
+			if (totalElement < edf->PrimSkip)
+			{
+				edf->PrimSkip -= (uint16_t)totalElement;
+				totalElement = 0;
+			}
+			else
+			{
+				totalElement -= edf->PrimSkip;
+				edf->PrimSkip = 0;
+			}
+		}
 		while (totalElement--)
 		{
 			if ((err = WriteOnePrimitive(t, edf)))
@@ -148,7 +161,6 @@ static int WriteElement(const EdfType_t* t, EdfContext_t* edf)
 	}
 	return ERR_NO;
 }
-#endif
 //-----------------------------------------------------------------------------
 #ifdef EDF_ENABLE_TEXT_MODE
 static int WriteSingleValue(EdfContext_t* edf)
@@ -173,9 +185,12 @@ int EdfWriteDataParse(EdfContext_t* dw, const void* vsrc, size_t xsrcLen, size_t
 	{
 		dw->CurrPrim = dw->PrimSkip;
 #ifdef EDF_ENABLE_TEXT_MODE
-		wr = WriteSingleValue(dw);
+		if (dw->WritePrimitive == CBinToBin)
+			wr = WriteElement_BinMode(&dw->SchemaPtr->Type, dw);
+		else
+			wr = WriteSingleValue(dw);
 #else
-		wr = WriteElement(&dw->SchemaPtr->Type, dw);
+		wr = WriteElement_BinMode(&dw->SchemaPtr->Type, dw);
 #endif
 		if (srcConsumed != NULL)
 			*srcConsumed = IoBufferGetAdvanced(&dw->WalkCtx.Src);
