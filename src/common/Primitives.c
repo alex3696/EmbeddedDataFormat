@@ -91,13 +91,15 @@ int CBinToBin(const EdfType_t* t, WalkContext_t* ctx)
 		writed = readed = sizeof(uint64_t);
 		break;
 	case Char:
+	{
 		size_t totalChars = GetTotalElements((EdfDims_t*)&t->Dims);
 		if (totalChars > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
 		if (totalChars > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
 		memcpy(ctx->Dst.Pos, ctx->Src.Pos, totalChars);
 		writed = readed = totalChars;
-		break;
+	} break;
 	case String:
+	{
 		if (sizeof(char*) > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
 		const char* str = *(char**)ctx->Src.Pos;
 		size_t len = (NULL == str) ? 0 : strnlength(str, MAX_STR_LEN);
@@ -106,7 +108,7 @@ int CBinToBin(const EdfType_t* t, WalkContext_t* ctx)
 		memcpy(ctx->Dst.Pos + 1, str, len);
 		writed = len + 1;
 		readed = sizeof(char*);
-		break;
+	} break;
 	}//switch
 	IoBufferAdvance(&ctx->Dst, writed);
 	IoBufferAdvance(&ctx->Src, readed);
@@ -146,19 +148,21 @@ int BinToBin(const EdfType_t* t, WalkContext_t* ctx)
 		writed = readed = sizeof(uint64_t);
 		break;
 	case Char:
+	{
 		size_t totalChars = GetTotalElements((EdfDims_t*)&t->Dims);
 		if (totalChars > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
 		if (totalChars > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
 		memcpy(ctx->Dst.Pos, ctx->Src.Pos, totalChars);
 		writed = readed = totalChars;
-		break;
+	} break;
 	case String:
+	{
 		size_t blength = 1 + ctx->Src.Pos[0];
 		if (blength > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
 		if (blength > IoBufferGetRemain(&ctx->Src)) return ERR_DST_SHORT;
 		memcpy(ctx->Dst.Pos, ctx->Src.Pos, blength);
 		writed = readed = blength;
-		break;
+	} break;
 	}//switch
 	IoBufferAdvance(&ctx->Dst, writed);
 	IoBufferAdvance(&ctx->Src, readed);
@@ -216,8 +220,7 @@ static int AnyBinToStr(const EdfType_t* t, WalkContext_t* ctx, WriteStringFn Wri
 		writed = Int64ToA(alignedVal, (char*)ctx->Dst.Pos, IoBufferGetRemain(&ctx->Dst));
 		if (0 == writed) return ERR_DST_SHORT;
 		readed = sizeof(uint64_t);
-		break;
-	}
+	} break;
 	case UInt64:
 	{
 		if (sizeof(uint64_t) > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
@@ -226,8 +229,7 @@ static int AnyBinToStr(const EdfType_t* t, WalkContext_t* ctx, WriteStringFn Wri
 		writed = UInt64ToA(alignedVal, (char*)ctx->Dst.Pos, IoBufferGetRemain(&ctx->Dst));
 		if (0 == writed) return ERR_DST_SHORT;
 		readed = sizeof(uint64_t);
-		break;
-	}
+	} break;
 	case Half:
 		//ctx->writed = sprintf_s(dst, ctx->dstLen, "%g", *((uint16_t*)src));
 		return ERR_WRONG_TYPE;
@@ -239,8 +241,7 @@ static int AnyBinToStr(const EdfType_t* t, WalkContext_t* ctx, WriteStringFn Wri
 		writed = xprint(ctx->Dst.Pos, IoBufferGetRemain(&ctx->Dst), "%.9g", alignedVal);
 		if (writed > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
 		readed = sizeof(float);
-		break;
-	}
+	} break;
 	case Double:
 	{
 		if (sizeof(double) > IoBufferGetRemain(&ctx->Src)) return ERR_SRC_SHORT;
@@ -249,9 +250,9 @@ static int AnyBinToStr(const EdfType_t* t, WalkContext_t* ctx, WriteStringFn Wri
 		writed = xprint(ctx->Dst.Pos, IoBufferGetRemain(&ctx->Dst), "%.17g", alignedVal);
 		if (writed > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
 		readed = sizeof(double);
-		break;
-	}
+	} break;
 	case Char:
+	{
 		size_t totalChars = GetTotalElements((EdfDims_t*)&t->Dims);
 		size_t actualChars = strnlength((const char*)ctx->Src.Pos, totalChars);
 		if (actualChars + 2 > IoBufferGetRemain(&ctx->Dst)) return ERR_DST_SHORT;
@@ -261,7 +262,7 @@ static int AnyBinToStr(const EdfType_t* t, WalkContext_t* ctx, WriteStringFn Wri
 		ctx->Dst.Pos[actualChars + 1] = '"';
 		readed = totalChars;
 		writed = actualChars + 2;
-		break;
+	} break;
 	case String: return (*WriteString)(ctx);
 		
 	}//switch (t)
