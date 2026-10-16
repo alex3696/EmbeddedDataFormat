@@ -9,6 +9,69 @@ public readonly ref struct BufReaderBin : IBufReader
     {
         _state = state;
     }
+    public bool SkipRecord()
+    {
+        BinaryBlockSequenceException.ThrowIfNotEqualPrimOffset(0, _state.Enum.PrimOffset);
+        if(null != _state.Enum.RootType
+            && !_state.Enum.RootType.HasDynamicFields
+            && _state.ReadAvailableLen >= _state.Enum.RootType.FlatLen )
+        {
+            _state.Readed += (int)_state.Enum.RootType.FlatLen;
+            _state.Enum.RecordId++;
+            return true;
+        }
+        var primCount = _state.Enum.PrimCount;
+        while (0 < primCount && SkipPrimitive())
+        {
+            primCount--;
+        }
+        return 0 == primCount;
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool SkipPrimitive()
+    {
+        int begin = 0;
+        int len;
+        var pt = CurrentType.Type;
+        switch (pt)
+        {
+            default: throw new PrimitiveNotSupportedException(pt);
+            case EdfPrimitiveType.UInt8:
+            case EdfPrimitiveType.Int8: len = 1; break;
+            case EdfPrimitiveType.UInt16:
+            case EdfPrimitiveType.Int16: len = 2; break;
+            case EdfPrimitiveType.UInt32:
+            case EdfPrimitiveType.Int32:
+            case EdfPrimitiveType.Single: len = 4; break;
+            case EdfPrimitiveType.UInt64:
+            case EdfPrimitiveType.Int64:
+            case EdfPrimitiveType.Double: len = 8; break;
+            case EdfPrimitiveType.Char: len = (int)CurrentType.GetTotalElements(); break;
+            case EdfPrimitiveType.String:
+                begin = len = 1;
+                if (1 < _state.ReadAvailableLen)
+                    len = _state.ReadAvailableBuf[0];
+                break;
+        }
+        try
+        {
+            if (len > _state.ReadAvailableLen)
+                DownloadBlock(len);
+        }
+        catch(BinaryBlockSequenceException)
+        {
+            if (EdfBlockType.Data != _state.Blk.Type)
+                return false;
+            throw;
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+        _state.Readed += begin + len;
+        _state.Enum.MoveNext();
+        return true;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ValidatePrimitiveAndEnsureLen(EdfPrimitiveType got, int len)

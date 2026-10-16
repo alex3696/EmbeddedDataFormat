@@ -78,4 +78,69 @@ public class EdfType : IEquatable<EdfType>
         _totalElements = (int)totalElement;
         return totalElement;
     }
+
+    private bool? _hasDynamicFields = default;
+    private uint? _flatLen = default;
+
+    public bool HasDynamicFields
+    {
+        get
+        {
+            if (null != _hasDynamicFields)
+                return _hasDynamicFields.Value;
+            GetTypeInfo(out bool hasDynamicFields, out uint flatLen);
+            return hasDynamicFields;
+        }
+    }
+    public uint FlatLen
+    {
+        get
+        {
+            if (null != _flatLen)
+                return _flatLen.Value;
+            GetTypeInfo(out bool hasDynamicFields, out uint flatLen);
+            return flatLen;
+        }
+    }
+    public void GetTypeInfo(out bool hasDynamicFields, out uint sz)
+    {
+        if (null == _hasDynamicFields || null == _flatLen)
+        {
+            GetTypeInfo(this, out hasDynamicFields, out sz);
+            _hasDynamicFields = hasDynamicFields;
+            _flatLen = sz;
+        }
+        else
+        {
+            hasDynamicFields = _hasDynamicFields.Value;
+            sz = _flatLen.Value;
+        }
+    }
+    public static void GetTypeInfo(EdfType t, out bool hasDynamicFields, out uint sz)
+    {
+        switch (t.Type)
+        {
+            case EdfPrimitiveType.Struct:
+                sz = 0;
+                hasDynamicFields = false;
+                for (int i = 0; i < t.Childs.Length; i++)
+                {
+                    GetTypeInfo(t.Childs[i], out bool dynField, out uint len);
+                    sz += len;
+                    if (dynField)
+                        hasDynamicFields = true;
+                }
+                break;
+            case EdfPrimitiveType.String:
+                sz = 1;
+                hasDynamicFields = true;
+                break;
+            default:
+                sz = t.Type.GetSizeOf();
+                hasDynamicFields = false;
+                break;
+        }//switch
+        for (int i = 0; i < t.Dims.Length; i++)
+            sz *= t.Dims[i];
+    }
 }

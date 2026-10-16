@@ -6,6 +6,10 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
 {
     public EdfConfig Cfg { get; }
     public EdfSchema? CurrentSchema { get; private set; }
+    private uint _schemaBlockSeq = 0;
+    private bool _schemaHasDynamicFields;
+    private uint _schemaTypeSize;
+
     protected readonly Stream _stream;
     private readonly byte[] _blkBuf;
     protected readonly BinBlock _blk;
@@ -62,14 +66,20 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
     public EdfConfig? ReadConfig() => _blk.TryReadConfig();
     public EdfSchema? ReadSchema()
     {
-        CurrentSchema = _blk.TryReadSchema();
+        if (_schemaBlockSeq == _blk.Seq)
+            return CurrentSchema;
+        CurrentSchema = null;
+        var sch = _blk.TryReadSchema();
         _state.Readed = 0;
-        if (CurrentSchema?.Type != null)
-        {
-            _state.Enum.Reset(CurrentSchema.Type);
-            OnSchemaBlockRead();
-        }
-        return CurrentSchema;
+        _schemaBlockSeq = 0;
+        if (sch?.Type == null)
+            return null;
+        _state.Enum.Reset(sch.Type);
+        _schemaBlockSeq = _blk.Seq;
+        sch.Type.GetTypeInfo(out _schemaHasDynamicFields, out _schemaTypeSize);
+        CurrentSchema = sch;
+        OnSchemaBlockRead();
+        return sch;
     }
 
     protected virtual void OnSchemaBlockRead()
@@ -83,7 +93,17 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
         BinaryBlockSequenceException.ThrowIfNotEqualRecordId(_state.Enum.RecordId, _blk.RecordId);
         BinaryBlockSequenceException.ThrowIfNotEqualPrimOffset(_state.Enum.PrimOffset, _blk.PrimOffset);
     }
-
+    public ushort SkipRecords(ushort recordsToSkip = ushort.MaxValue)
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
+        ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
+        BinaryBlockSequenceException.ThrowIfBlockTypeNotEqual(EdfBlockType.Data, _state.Blk.Type);
+        var reader = new BufReaderBin(_state);
+        ushort skipped = 0;
+        while (skipped < recordsToSkip && reader.SkipRecord())
+            skipped++;
+        return skipped;
+    }
     public T ReadValue<T>()
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);

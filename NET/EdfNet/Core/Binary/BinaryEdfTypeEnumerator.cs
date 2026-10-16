@@ -28,6 +28,9 @@ public struct BinaryEdfTypeEnumerator : IDisposable
         ArrayPool<EdfType>.Shared.Return(_cache);
     }
     public readonly bool IsEnded => _cacheLen > 0 ? _sp >= _cacheLen : _sp == 0;
+    public readonly ushort Count => (ushort)(_cacheLen > 0 ? _cacheLen : 0);
+    public readonly EdfType? RootType => _cachedRoot;
+
     public bool Restart()
     {
         if (_cachedRoot is null)

@@ -5,6 +5,9 @@ public sealed class BinaryCircularEdfTypeEnumerator : IDisposable
     private BinaryEdfTypeEnumerator _enm = new();
     public uint RecordId = 0;
     public ushort PrimOffset = 0;
+    public ushort PrimCount => _enm.Count;
+    public EdfType CurrentType => _enm.Current;
+    public EdfType? RootType => _enm.RootType;
 
     public void Dispose()
     {
@@ -33,5 +36,4 @@ public sealed class BinaryCircularEdfTypeEnumerator : IDisposable
         }
         return false;
     }
-    public EdfType CurrentType => _enm.Current;
 }
