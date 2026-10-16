@@ -6,6 +6,7 @@ public class BinBlock
     public const int CrcLen = sizeof(ushort);
     public const int OverheadLen = HeaderLen + CrcLen;
     public readonly int MaxPayloadLen;
+    public uint Seq = 0;
     public EdfBlockType Type
     {
         get => (EdfBlockType)_buffer[0];

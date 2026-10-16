@@ -52,6 +52,7 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
         return false;
     }
 
+    public uint BlockSeq => _blk.Seq;
     public EdfBlockType GetBlockType() => _blk.Type;
     public ushort GetBlockLen() => _blk.TotalLen;
     public ReadOnlySpan<byte> GetBlockData() => _blk.CurrentData;

@@ -10,6 +10,7 @@ public static class BinBlockStreamExtension
         block.UpdateCrc();
         var bb = block.BinaryBlock;
         stream.Write(bb);
+        block.Seq++;
         return bb.Length;
     }
 
@@ -29,6 +30,7 @@ public static class BinBlockStreamExtension
             stream.ReadExactly(block.Buffer.Slice(BinBlock.HeaderLen, dataLenAndCrcLen));
             BinaryBlockIntegrityException.ThrowIfCrcWrong(block);
         }
+        block.Seq++;
         return BinBlock.OverheadLen + contentLen;
     }
 }
