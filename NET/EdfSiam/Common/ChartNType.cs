@@ -1,6 +1,6 @@
 namespace EdfSiam.Common;
 
-[EdfSerializable]
+[EdfSerializable(id: (ushort)SchemaId.CHARTINFO, name: "ChartInfo")]
 public class ChartNType
 {
     public string? Name;
