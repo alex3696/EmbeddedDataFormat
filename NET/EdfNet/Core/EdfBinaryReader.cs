@@ -7,8 +7,6 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
     public EdfConfig Cfg { get; }
     public EdfSchema? CurrentSchema { get; private set; }
     private uint _schemaBlockSeq = 0;
-    private bool _schemaHasDynamicFields;
-    private uint _schemaTypeSize;
 
     protected readonly Stream _stream;
     private readonly byte[] _blkBuf;
@@ -76,7 +74,6 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
             return null;
         _state.Enum.Reset(sch.Type);
         _schemaBlockSeq = _blk.Seq;
-        sch.Type.GetTypeInfo(out _schemaHasDynamicFields, out _schemaTypeSize);
         CurrentSchema = sch;
         OnSchemaBlockRead();
         return sch;
