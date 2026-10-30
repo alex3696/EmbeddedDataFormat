@@ -33,14 +33,14 @@ public struct ChartExactData
     public int Temp;
 }
 
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1010)]
 public struct ChartMultiData0
 {
     public uint Time;
     public ushort VPwr;
     public ushort RIso;
 }
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1011)]
 public struct ChartMultiData1
 {
     public uint Time;
@@ -49,7 +49,7 @@ public struct ChartMultiData1
     public int Press1;
     public int Temp1;
 }
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1012)]
 public struct ChartMultiData2
 {
     public uint Time;
@@ -60,7 +60,7 @@ public struct ChartMultiData2
     public int Press2;
     public int Temp2;
 }
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1013)]
 public struct ChartMultiData3
 {
     public uint Time;
@@ -73,7 +73,7 @@ public struct ChartMultiData3
     public int Press3;
     public int Temp3;
 }
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1014)]
 public struct ChartMultiData4
 {
     public uint Time;
@@ -88,7 +88,7 @@ public struct ChartMultiData4
     public int Press4;
     public int Temp4;
 }
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1015)]
 public struct ChartMultiData5
 {
     public uint Time;
@@ -105,7 +105,7 @@ public struct ChartMultiData5
     public int Press5;
     public int Temp5;
 }
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1016)]
 public struct ChartMultiData6
 {
     public uint Time;
@@ -124,7 +124,7 @@ public struct ChartMultiData6
     public int Press6;
     public int Temp6;
 }
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1017)]
 public struct ChartMultiData7
 {
     public uint Time;
@@ -145,7 +145,7 @@ public struct ChartMultiData7
     public int Press7;
     public int Temp7;
 }
-[EdfSerializable(id: 1003)]
+[EdfSerializable(id: 1018)]
 public struct ChartMultiData8
 {
     public uint Time;
