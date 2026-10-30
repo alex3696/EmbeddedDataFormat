@@ -64,6 +64,10 @@ public readonly ref struct BufReaderBin : IBufReader
                 return false;
             throw;
         }
+        catch (EndOfStreamException)
+        {
+            return false;
+        }
         catch (Exception)
         {
             throw;

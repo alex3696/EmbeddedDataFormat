@@ -90,16 +90,49 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
         BinaryBlockSequenceException.ThrowIfNotEqualRecordId(_state.Enum.RecordId, _blk.RecordId);
         BinaryBlockSequenceException.ThrowIfNotEqualPrimOffset(_state.Enum.PrimOffset, _blk.PrimOffset);
     }
-    public ushort SkipRecords(ushort recordsToSkip = ushort.MaxValue)
+    public uint SkipRecords(uint recordsToSkip = uint.MaxValue)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
         BinaryBlockSequenceException.ThrowIfBlockTypeNotEqual(EdfBlockType.Data, _state.Blk.Type);
         var reader = new BufReaderBin(_state);
-        ushort skipped = 0;
+        uint skipped = 0;
         while (skipped < recordsToSkip && reader.SkipRecord())
             skipped++;
         return skipped;
+    }
+    public uint GetRecordCount()
+    {
+        ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
+        if (!_stream.CanSeek)
+            throw new InvalidOperationException("Stream must be seekable to get record count.");
+        uint qty = 0;
+        long currentposition = _stream.Position - _blk.TotalLen;
+        uint seq = _blk.Seq;
+
+        if (EdfBlockType.Schema == GetBlockType())
+            ReadBlock();
+        try
+        {
+            while (GetBlockType() == EdfBlockType.Data)
+            {
+                qty += SkipRecords();
+                if (!ReadBlock())
+                    break;
+            }
+        }
+        catch (EndOfStreamException)
+        {
+        }
+        finally
+        {
+            _blk.Seq = seq;
+            _state.Enum.Reset(CurrentSchema.Type);
+            _stream.Seek(currentposition, SeekOrigin.Begin);
+            ReadBlock();
+        }
+        //ReadSchema();
+        return qty;
     }
     public T ReadValue<T>()
     {
