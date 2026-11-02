@@ -13,11 +13,11 @@ public struct TMDeviceInfo
 {
     public byte Idx;
     public byte Addr;
-    public string SensType;
+    public string? SensType;
     public ushort SensVer;
     public ushort Location;
     public int Depth_mm;
-    public string SensNum;
+    public string? SensNum;
     public ushort Par1;
     public ushort Par2;
     public ushort Par3;

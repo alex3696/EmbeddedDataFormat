@@ -12,9 +12,9 @@ public readonly ref struct BufReaderBin : IBufReader
     public bool SkipRecord()
     {
         BinaryBlockSequenceException.ThrowIfNotEqualPrimOffset(0, _state.Enum.PrimOffset);
-        if(null != _state.Enum.RootType
+        if (null != _state.Enum.RootType
             && !_state.Enum.RootType.HasDynamicFields
-            && _state.ReadAvailableLen >= _state.Enum.RootType.FlatLen )
+            && _state.ReadAvailableLen >= _state.Enum.RootType.FlatLen)
         {
             _state.Readed += (int)_state.Enum.RootType.FlatLen;
             _state.Enum.RecordId++;
@@ -30,35 +30,34 @@ public readonly ref struct BufReaderBin : IBufReader
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool SkipPrimitive()
     {
-        int begin = 0;
         int len;
         var pt = CurrentType.Type;
-        switch (pt)
-        {
-            default: throw new PrimitiveNotSupportedException(pt);
-            case EdfPrimitiveType.UInt8:
-            case EdfPrimitiveType.Int8: len = 1; break;
-            case EdfPrimitiveType.UInt16:
-            case EdfPrimitiveType.Int16: len = 2; break;
-            case EdfPrimitiveType.UInt32:
-            case EdfPrimitiveType.Int32:
-            case EdfPrimitiveType.Single: len = 4; break;
-            case EdfPrimitiveType.UInt64:
-            case EdfPrimitiveType.Int64:
-            case EdfPrimitiveType.Double: len = 8; break;
-            case EdfPrimitiveType.Char: len = (int)CurrentType.GetTotalElements(); break;
-            case EdfPrimitiveType.String:
-                begin = len = 1;
-                if (1 < _state.ReadAvailableLen)
-                    len = _state.ReadAvailableBuf[0];
-                break;
-        }
         try
         {
-            if (len > _state.ReadAvailableLen)
-                DownloadBlock(len);
+            switch (pt)
+            {
+                default: throw new PrimitiveNotSupportedException(pt);
+                case EdfPrimitiveType.UInt8:
+                case EdfPrimitiveType.Int8: len = 1; break;
+                case EdfPrimitiveType.UInt16:
+                case EdfPrimitiveType.Int16: len = 2; break;
+                case EdfPrimitiveType.UInt32:
+                case EdfPrimitiveType.Int32:
+                case EdfPrimitiveType.Single: len = 4; break;
+                case EdfPrimitiveType.UInt64:
+                case EdfPrimitiveType.Int64:
+                case EdfPrimitiveType.Double: len = 8; break;
+                case EdfPrimitiveType.Char: len = (int)CurrentType.GetTotalElements(); break;
+                case EdfPrimitiveType.String:
+                    EnsureData(1);
+                    len = 1;
+                    if (1 <= _state.ReadAvailableLen)
+                        len += _state.ReadAvailableBuf[0];
+                    break;
+            }
+            EnsureData(len);
         }
-        catch(BinaryBlockSequenceException)
+        catch (BinaryBlockSequenceException)
         {
             if (EdfBlockType.Data != _state.Blk.Type)
                 return false;
@@ -72,7 +71,7 @@ public readonly ref struct BufReaderBin : IBufReader
         {
             throw;
         }
-        _state.Readed += begin + len;
+        _state.Readed += len;
         _state.Enum.MoveNext();
         return true;
     }
@@ -177,17 +176,17 @@ public readonly ref struct BufReaderBin : IBufReader
     public string? ReadString()
     {
         WrongPrimitiveException.ThrowIfNotEqual(CurrentType.Type, EdfPrimitiveType.String);
-        EnsureData(1);
+        int len = 1;
+        EnsureData(len);
         var src = _state.ReadAvailableBuf;
-        var lenByte = src[0];
-        if (lenByte == 0)
+        string? str = null;
+        if (0 < src[0])
         {
-            _state.Readed++;
-            return null;
+            len += src[0];
+            EnsureData(len);
+            str = Encoding.UTF8.GetString(src.Slice(1, src[0]));
         }
-        EnsureData(lenByte);
-        var str = Encoding.UTF8.GetString(src.Slice(1, lenByte));
-        _state.Readed += 1 + lenByte;
+        _state.Readed += len;
         _state.Enum.MoveNext();
         return str;
     }

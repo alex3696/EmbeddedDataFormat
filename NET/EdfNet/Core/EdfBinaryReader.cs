@@ -109,17 +109,11 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
         uint qty = 0;
         long currentposition = _stream.Position - _blk.TotalLen;
         uint seq = _blk.Seq;
-
         if (EdfBlockType.Schema == GetBlockType())
             ReadBlock();
         try
         {
-            while (GetBlockType() == EdfBlockType.Data)
-            {
-                qty += SkipRecords();
-                if (!ReadBlock())
-                    break;
-            }
+            qty = SkipRecords();
         }
         catch (EndOfStreamException)
         {
@@ -131,7 +125,6 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
             _stream.Seek(currentposition, SeekOrigin.Begin);
             ReadBlock();
         }
-        //ReadSchema();
         return qty;
     }
     public T ReadValue<T>()
