@@ -158,18 +158,18 @@ public class EdfFormatterGenerator : IIncrementalGenerator
             if (TypeSymbolUtils.IsSupportedPrimitive(underlying))
             {
                 string varname = $"{memberAccess}";
-                string expr = GetReadExpression(underlying, varname, i8, currentNamespace);
+                string expr = GetReadExpression(underlying, varname, member.IsProperty(), i8, currentNamespace);
                 sb.AppendLine($"{expr}");
                 return;
             }
             string varname2 = $"{memberAccess}";
-            string expr2 = GetReadExpression(underlying, varname2, i8, currentNamespace);
+            string expr2 = GetReadExpression(underlying, varname2, member.IsProperty(), i8, currentNamespace);
             sb.AppendLine($"{expr2}");
             return;
         }
 
         string varname3 = $"{memberAccess}";
-        string expr3 = GetReadExpression(memberType, varname3, i8, currentNamespace);
+        string expr3 = GetReadExpression(memberType, varname3, member.IsProperty(), i8, currentNamespace);
         sb.AppendLine($"{expr3}");
     }
 
@@ -204,7 +204,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         }
     }
 
-    private static string GetReadExpression(ITypeSymbol type, string varName, string indent, string currentNamespace)
+    private static string GetReadExpression(ITypeSymbol type, string varName, bool isProperty, string indent, string currentNamespace)
     {
         if (type.SpecialType == SpecialType.System_String)
         {
@@ -219,9 +219,10 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         {
             string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
             StringBuilder sb = new();
-            if (type.IsReferenceType)
+            if (isProperty)
             {
                 string tmpVar = $"{varName}_{indent.Length}";
+                tmpVar = tmpVar.ToLower();
                 tmpVar = tmpVar.Replace(" ", "");
                 tmpVar = tmpVar.Replace(".", "_");
                 tmpVar = tmpVar.Replace(",", "_");
@@ -352,7 +353,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         var dims = member.ExtractArrayDimensionValues();
         string arrayTypeName = isArray ? TypeSymbolUtils.GetArrayTypeName(arrayType!, currentNamespace) : member.GetMemberType()!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         string elemTypeName = TypeSymbolUtils.GetShortTypeName(elementType, currentNamespace);
-        string localVar = $"_{member.Name}";
+        string localVar = $"_{member.Name}".ToLower();
 
         if (isArray && dims.Length > 0)
         {
@@ -372,7 +373,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         {
             string indexAccess = string.Join(", ", indices);
             string varname = $"{arrayVar}[{indexAccess}]";
-            string expr = GetReadExpression(elementType, varname, indent, currentNamespace);
+            string expr = GetReadExpression(elementType, varname, false, indent, currentNamespace);
             sb.AppendLine($"{expr}");
             return;
         }

@@ -245,6 +245,15 @@ public static class TypeSymbolUtils
     public static bool IsConst(this ISymbol symbol) => symbol is IFieldSymbol f && f.IsConst;
     public static bool IsImplicitlyDeclared(this ISymbol symbol) => symbol is IFieldSymbol f && f.IsImplicitlyDeclared;
     public static bool IsIgnored(this ISymbol symbol) => null != GetAttribute(symbol, Common.IgnoreAttribute);
+    public static bool IsProperty(this ISymbol symbol)
+    {
+        if (symbol.IsReadOnly()
+            || symbol.IsConst()
+            || symbol.IsImplicitlyDeclared()
+            || symbol.IsIgnored())
+            return false;
+        return symbol is IPropertySymbol;
+    }
     public static bool IsSupportedMemberType(this ISymbol symbol)
     {
         if (symbol.IsReadOnly()

@@ -3,6 +3,7 @@ using EdfNet.Interfaces;
 using EdfNet.Utils;
 using System.Runtime.InteropServices;
 using System.Text;
+using static System.Environment;
 namespace NetTest;
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
@@ -81,8 +82,9 @@ public class TestStructSerialize
     //public static string _testPath = $"{Environment.GetFolderPath(Environment. SpecialFolder.MyDocuments)}";
     //public static string _testPath = Environment.CurrentDirectory;
     //public static string _testPath = AppDomain.CurrentDomain.BaseDirectory;
-    public static string _testPath = Environment.GetEnvironmentVariable("TEST_DATA_DIR") 
-                          ?? throw new InvalidOperationException("Переменная TEST_DATA_DIR не задана.");
+    public static string _testPath = Environment.GetEnvironmentVariable("TEST_DATA_DIR")
+                          //?? throw new InvalidOperationException("Переменная TEST_DATA_DIR не задана.");
+                          ?? GetFolderPath(SpecialFolder.MyDocuments);
 
     public static string GetTestFilePath(string filename) => Path.Combine(_testPath, filename);
 
