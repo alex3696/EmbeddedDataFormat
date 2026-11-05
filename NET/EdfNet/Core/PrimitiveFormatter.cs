@@ -9,10 +9,10 @@ public class PrimitiveFormatterUInt8 : IFormatter<byte>
     {
         writer.Write(val);
     }
-    public byte Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref byte val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadUInt8();
+        val = reader.ReadUInt8();
     }
 }
 public class PrimitiveFormatterInt8 : IFormatter<sbyte>
@@ -22,10 +22,10 @@ public class PrimitiveFormatterInt8 : IFormatter<sbyte>
     {
         writer.Write(val);
     }
-    public sbyte Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref sbyte val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadInt8();
+        val = reader.ReadInt8();
     }
 }
 public class PrimitiveFormatterUInt16 : IFormatter<ushort>
@@ -35,10 +35,10 @@ public class PrimitiveFormatterUInt16 : IFormatter<ushort>
     {
         writer.Write(val);
     }
-    public ushort Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref ushort val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadUInt16();
+        val = reader.ReadUInt16();
     }
 }
 public class PrimitiveFormatterInt16 : IFormatter<short>
@@ -48,10 +48,10 @@ public class PrimitiveFormatterInt16 : IFormatter<short>
     {
         writer.Write(val);
     }
-    public short Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref short val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadInt16();
+        val = reader.ReadInt16();
     }
 }
 public class PrimitiveFormatterUInt32 : IFormatter<uint>
@@ -61,10 +61,10 @@ public class PrimitiveFormatterUInt32 : IFormatter<uint>
     {
         writer.Write(val);
     }
-    public uint Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref uint val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadUInt32();
+        val = reader.ReadUInt32();
     }
 }
 public class PrimitiveFormatterInt32 : IFormatter<int>
@@ -74,10 +74,10 @@ public class PrimitiveFormatterInt32 : IFormatter<int>
     {
         writer.Write(val);
     }
-    public int Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref int val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadInt32();
+        val = reader.ReadInt32();
     }
 }
 public class PrimitiveFormatterUInt64 : IFormatter<ulong>
@@ -87,10 +87,10 @@ public class PrimitiveFormatterUInt64 : IFormatter<ulong>
     {
         writer.Write(val);
     }
-    public ulong Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref ulong val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadUInt64();
+        val = reader.ReadUInt64();
     }
 }
 public class PrimitiveFormatterInt64 : IFormatter<long>
@@ -100,10 +100,10 @@ public class PrimitiveFormatterInt64 : IFormatter<long>
     {
         writer.Write(val);
     }
-    public long Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref long val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadInt64();
+        val = reader.ReadInt64();
     }
 }
 public class PrimitiveFormatterSingle : IFormatter<float>
@@ -113,10 +113,10 @@ public class PrimitiveFormatterSingle : IFormatter<float>
     {
         writer.Write(val);
     }
-    public float Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref float val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadSingle();
+        val = reader.ReadSingle();
     }
 }
 public class PrimitiveFormatterDouble : IFormatter<double>
@@ -126,10 +126,10 @@ public class PrimitiveFormatterDouble : IFormatter<double>
     {
         writer.Write(val);
     }
-    public double Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref double val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadDouble();
+        val = reader.ReadDouble();
     }
 }
 public class PrimitiveFormatterString : IFormatter<string?>
@@ -139,10 +139,10 @@ public class PrimitiveFormatterString : IFormatter<string?>
     {
         writer.Write(val);
     }
-    public string? Deserialize<TReader>(ref TReader reader, Interfaces.EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref string? val, Interfaces.EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
-        return reader.ReadString();
+        val = reader.ReadString();
     }
 }
 public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
@@ -167,7 +167,7 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
             writer.Write(item);
         }
     }
-    public TARRAY Deserialize<TReader>(ref TReader reader, Interfaces.EdfFormatterOptions options)
+    public void Deserialize<TReader>(ref TReader reader, ref TARRAY val, Interfaces.EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct
     {
         var edfType = reader.CurrentType;
@@ -176,7 +176,8 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
         if (EdfPrimitiveType.Char == edfType.Type)
         {
             byte[] chArr = reader.ReadCharArray();
-            return Unsafe.As<byte[], TARRAY>(ref chArr);
+            val = Unsafe.As<byte[], TARRAY>(ref chArr);
+            return;
         }
         int[] dims = null!;
         try
@@ -190,7 +191,7 @@ public class PrimitiveArrayFormatter<TARRAY, TITEM> : IFormatter<TARRAY>
             {
                 arr.GetElementAtFlatIndexUnsafe<TITEM>(i) = reader.Read<TITEM>();
             }
-            return Unsafe.As<Array, TARRAY>(ref arr);//return (TARRAY)(object)arr;
+            val = Unsafe.As<Array, TARRAY>(ref arr);//return (TARRAY)(object)arr;
         }
         finally
         {

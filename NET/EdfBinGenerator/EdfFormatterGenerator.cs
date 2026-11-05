@@ -79,7 +79,7 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         {
             GenerateDeserializeMember(sb, member, "result", currentNamespace);
         }
-        sb.AppendLine("        return result;");
+        //sb.AppendLine("        return result;");
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }
