@@ -157,17 +157,20 @@ public class EdfFormatterGenerator : IIncrementalGenerator
             var underlying = memberType.UnwrapNullable();
             if (TypeSymbolUtils.IsSupportedPrimitive(underlying))
             {
-                string expr = GetReadExpression(underlying, currentNamespace);
-                sb.AppendLine($"{i8}{memberAccess} = {expr};");
+                string varname = $"{memberAccess}";
+                string expr = GetReadExpression(underlying, varname, i8, currentNamespace);
+                sb.AppendLine($"{expr}");
                 return;
             }
-            string expr2 = GetReadExpression(underlying, currentNamespace);
-            sb.AppendLine($"{i8}{memberAccess} = {expr2};");
+            string varname2 = $"{memberAccess}";
+            string expr2 = GetReadExpression(underlying, varname2, i8, currentNamespace);
+            sb.AppendLine($"{expr2}");
             return;
         }
 
-        string expr3 = GetReadExpression(memberType, currentNamespace);
-        sb.AppendLine($"{i8}{memberAccess} = {expr3};");
+        string varname3 = $"{memberAccess}";
+        string expr3 = GetReadExpression(memberType, varname3, i8, currentNamespace);
+        sb.AppendLine($"{expr3}");
     }
 
     private static void WriteValue(StringBuilder sb, ITypeSymbol type, string access, string indent, string currentNamespace)
@@ -201,21 +204,38 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         }
     }
 
-    private static string GetReadExpression(ITypeSymbol type, string currentNamespace)
+    private static string GetReadExpression(ITypeSymbol type, string varName, string indent, string currentNamespace)
     {
         if (type.SpecialType == SpecialType.System_String)
         {
-            return "reader.ReadString()";
+            return $"{indent}{varName} = reader.ReadString();";
         }
         else if (TypeSymbolUtils.IsSupportedPrimitive(type))
         {
             var primSuffix = type.MapToEdfPrimitiveType();
-            return $"reader.Read{primSuffix}()";
+            return $"{indent}{varName} = reader.Read{primSuffix}();";
         }
         else if (type.IsSerializable())
         {
             string typeName = TypeSymbolUtils.GetShortTypeName(type, currentNamespace);
-            return $"EdfFormatterProvider<{typeName}>.Formatter.Deserialize(ref reader, options)";
+            StringBuilder sb = new();
+            if (type.IsReferenceType)
+            {
+                string tmpVar = $"{varName}_{indent.Length}";
+                tmpVar = tmpVar.Replace(" ", "");
+                tmpVar = tmpVar.Replace(".", "_");
+                tmpVar = tmpVar.Replace(",", "_");
+                tmpVar = tmpVar.Replace("[", "_");
+                tmpVar = tmpVar.Replace("]", "_");
+                sb.AppendLine($"{indent}{typeName} {tmpVar} = (null=={varName})? new() : {varName};");
+                sb.AppendLine($"{indent}EdfFormatterProvider<{typeName}>.Formatter.Deserialize(ref reader, ref {tmpVar}, options);");
+                sb.Append($"{indent}{varName} = {tmpVar};");
+            }
+            else
+            {
+                sb.Append($"{indent}EdfFormatterProvider<{typeName}>.Formatter.Deserialize(ref reader, ref {varName}, options);");
+            }
+            return sb.ToString();
         }
         else
         {
@@ -351,8 +371,9 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         if (depth >= dims.Length)
         {
             string indexAccess = string.Join(", ", indices);
-            string expr = GetReadExpression(elementType, currentNamespace);
-            sb.AppendLine($"{indent}{arrayVar}[{indexAccess}] = {expr};");
+            string varname = $"{arrayVar}[{indexAccess}]";
+            string expr = GetReadExpression(elementType, varname, indent, currentNamespace);
+            sb.AppendLine($"{expr}");
             return;
         }
 

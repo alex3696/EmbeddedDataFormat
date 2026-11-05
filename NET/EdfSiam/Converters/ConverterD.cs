@@ -203,10 +203,10 @@ public class ConverterD : IExternConverter
         Span<byte> byteSpan = dat.Data;
         Span<ushort> items = MemoryMarshal.Cast<byte, ushort>(byteSpan);
         Chart2D record = default;
-        Chart2D s;
+        Chart2D s = default;
         for (int i = 0; i < 1000; ++i)
         {
-            s = reader.ReadValue<Chart2D>();
+            reader.ReadValue(ref s);
             double posDif = 0 < i ? s.x - record.x : s.x;
             ushort tr = (ushort)((((ushort)Math.Round(posDif * 1.0E4 / dat.TravelStep)) & 0x003f) << 10);
             ushort w = (ushort)(((ushort)Math.Round(s.y * 1.0E3 / dat.LoadStep)) & 0x003f);

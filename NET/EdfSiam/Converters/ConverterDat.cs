@@ -166,12 +166,13 @@ public class ConverterDat : IExternConverter
         dst.Write(hdrBuf);
 
         MtRepData rec = default;
+        OmegaData_v1_1 record = default;
         Span<byte> recBuf = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref rec, 1));
         try
         {
             while (true)
             {
-                var record = reader.ReadValue<OmegaData_v1_1>();
+                reader.ReadValue(ref record);
                 //rec.Time = record.Time;
                 //rec.Press = record.Press;
                 //rec.Temp = record.Temp;

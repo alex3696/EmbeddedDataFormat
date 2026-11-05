@@ -186,10 +186,10 @@ public class ConverterE : IExternConverter
         Span<byte> byteSpan = dat.Data;
         Span<ushort> items = MemoryMarshal.Cast<byte, ushort>(byteSpan);
         //Chart2D record = default;
-        Chart2D s;
+        Chart2D s = default;
         for (int i = 0; i < 3000; ++i)
         {
-            s = reader.ReadValue<Chart2D>();
+            reader.ReadValue(ref s);
             dat.Data[i] = (byte)Math.Round(Math.Pow(Math.Abs(s.y * 1000d), 0.35d));
             if (0 > s.y)
                 dat.Data[i] += 127;
