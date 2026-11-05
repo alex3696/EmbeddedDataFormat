@@ -71,10 +71,10 @@ public class EdfFormatterGenerator : IIncrementalGenerator
         }
         sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine($"    public {typeName} Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)");
+        sb.AppendLine($"    public void Deserialize<TReader>(ref TReader reader, ref {typeName} result, EdfFormatterOptions options)");
         sb.AppendLine("        where TReader : struct, IBufReader, allows ref struct");
         sb.AppendLine("    {");
-        sb.AppendLine($"        {typeName} result = new {typeName}();");
+        //sb.AppendLine($"        {typeName} result = new {typeName}();");
         foreach (var member in GetSerializableMembers(type))
         {
             GenerateDeserializeMember(sb, member, "result", currentNamespace);

@@ -30,17 +30,17 @@ public class EdfTextReader : BaseDisposable, IEdfReader
     }
 
     private int _blockLine = 0;
-    private int _blockColumn =0;
+    private int _blockColumn = 0;
     public bool ReadBlock()
     {
-        while(true)
+        while (true)
         {
             if (!_tokenReader.HasValidToken)
             {
                 if (!_tokenReader.MoveNext())
                     return false;
             }
-            if(_tokenReader.TokenLine == _blockLine &&  _tokenReader.TokenColumn == _blockColumn)
+            if (_tokenReader.TokenLine == _blockLine && _tokenReader.TokenColumn == _blockColumn)
             {
                 _tokenReader.Advance();
                 continue;
@@ -94,11 +94,20 @@ public class EdfTextReader : BaseDisposable, IEdfReader
     }
 
     public T ReadValue<T>()
+        where T : new()
     {
         IFormatter<T> formatter = EdfFormatterProvider<T>.Formatter;
         EdfFormatterNotRegistredException.ThrowIfNull(formatter);
         var reader = new BufReaderTxt(_tokenReader, _enum);
-        var result = formatter.Deserialize(ref reader, _options);
+        T result = new();
+        formatter.Deserialize(ref reader, ref result, _options);
         return result;
+    }
+    public void ReadValue<T>(ref T result)
+    {
+        IFormatter<T> formatter = EdfFormatterProvider<T>.Formatter;
+        EdfFormatterNotRegistredException.ThrowIfNull(formatter);
+        var reader = new BufReaderTxt(_tokenReader, _enum);
+        formatter.Deserialize(ref reader, ref result, _options);
     }
 }

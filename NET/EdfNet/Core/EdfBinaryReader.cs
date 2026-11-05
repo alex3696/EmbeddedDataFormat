@@ -128,6 +128,7 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
         return qty;
     }
     public T ReadValue<T>()
+        where T : new()
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
@@ -135,6 +136,18 @@ public class EdfBinaryReader : BaseDisposable, IEdfReader
         IFormatter<T> formatter = EdfFormatterProvider<T>.Formatter;
         EdfFormatterNotRegistredException.ThrowIfNull(formatter);
         var reader = new BufReaderBin(_state);
-        return formatter.Deserialize(ref reader, _options);
+        T result = new();
+        formatter.Deserialize(ref reader, ref result, _options);
+        return result;
+    }
+    public void ReadValue<T>(ref T result)
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
+        ArgumentNullException.ThrowIfNull(CurrentSchema, nameof(CurrentSchema));
+        BinaryBlockSequenceException.ThrowIfBlockTypeNotEqual(EdfBlockType.Data, _state.Blk.Type);
+        IFormatter<T> formatter = EdfFormatterProvider<T>.Formatter;
+        EdfFormatterNotRegistredException.ThrowIfNull(formatter);
+        var reader = new BufReaderBin(_state);
+        formatter.Deserialize(ref reader, ref result, _options);
     }
 }

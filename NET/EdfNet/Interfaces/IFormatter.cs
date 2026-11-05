@@ -4,6 +4,6 @@ public interface IFormatter<T>
 {
     void Serialize<TWriter>(ref TWriter writer, in T value, EdfFormatterOptions options)
         where TWriter : struct, IBufWriter, allows ref struct;
-    T Deserialize<TReader>(ref TReader reader, EdfFormatterOptions options)
+    void Deserialize<TReader>(ref TReader reader, ref T val, EdfFormatterOptions options)
         where TReader : struct, IBufReader, allows ref struct;
 }
